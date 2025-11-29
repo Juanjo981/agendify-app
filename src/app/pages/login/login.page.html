@@ -1,0 +1,61 @@
+<ion-content class="login-bg">
+  <div class="login-wrapper">
+    <div class="login-card">
+
+      <!-- LOGO + NOMBRE -->
+      <img src="assets/img/logo2.png" class="logo" alt="Agendify logo" />
+      <h2>Inicia sesión</h2>
+      <p class="subtitle">Gestiona tu agenda de forma inteligente</p>
+
+      <!-- FORMULARIO -->
+      <form [formGroup]="loginForm" (ngSubmit)="login()" autocomplete="on">
+
+        <!-- USUARIO -->
+        <ion-item lines="none">
+          <ion-input
+            placeholder="Usuario"
+            formControlName="usuario"
+            type="text"
+            inputmode="text"
+          ></ion-input>
+        </ion-item>
+
+        <!-- CONTRASEÑA + OJO -->
+        <ion-item lines="none">
+          <ion-input
+            placeholder="Contraseña"
+            [type]="verPassword ? 'text' : 'password'"
+            formControlName="contrasena"
+            inputmode="text"
+          ></ion-input>
+          <ion-icon
+            slot="end"
+            [name]="verPassword ? 'eye-off' : 'eye'"
+            class="eye-icon"
+            (click)="togglePassword()"
+          ></ion-icon>
+        </ion-item>
+
+        <!-- BOTÓN -->
+        <ion-button
+          expand="block"
+          class="login-button"
+          type="submit"
+          [disabled]="loginForm.invalid"
+        >
+          INICIAR SESIÓN
+        </ion-button>
+      </form>
+
+      <!-- LINKS INFERIORES -->
+      <div class="extras">
+        <p class="link-light">¿Olvidaste tu contraseña?</p>
+        <p class="link-bold">
+          ¿Aún no tienes cuenta?
+          <a (click)="goToRegister()">Regístrate</a>
+        </p>
+      </div>
+
+    </div>
+  </div>
+</ion-content>

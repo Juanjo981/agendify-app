@@ -1,0 +1,122 @@
+<ion-content class="login-bg">
+  <div class="login-wrapper">
+    <div class="login-card">
+
+      <img src="assets/img/logo2.png" class="logo" alt="Agendify logo" />
+      <h2>Crear cuenta</h2>
+      <p class="subtitle">Registra tus datos para empezar</p>
+
+      <form [formGroup]="registroForm" (ngSubmit)="registrarse()" autocomplete="off">
+
+        <!-- NOMBRE -->
+        <ion-item lines="none">
+          <ion-input placeholder="Nombre" formControlName="nombre"></ion-input>
+        </ion-item>
+        <div *ngIf="registroForm.get('nombre')?.touched && registroForm.get('nombre')?.invalid" class="error-text">
+          Nombre es requerido
+        </div>
+
+        <!-- APELLIDO -->
+        <ion-item lines="none">
+          <ion-input placeholder="Apellido" formControlName="apellido"></ion-input>
+        </ion-item>
+        <div *ngIf="registroForm.get('apellido')?.touched && registroForm.get('apellido')?.invalid" class="error-text">
+          Apellido es requerido
+        </div>
+
+        <!-- EMAIL -->
+        <ion-item lines="none">
+          <ion-input type="email" placeholder="Correo electrónico" formControlName="email"></ion-input>
+        </ion-item>
+        <div *ngIf="registroForm.get('email')?.touched && registroForm.get('email')?.invalid" class="error-text">
+          Correo válido es requerido
+        </div>
+
+        <!-- USUARIO -->
+        <ion-item lines="none">
+          <ion-input placeholder="Usuario" formControlName="usuario"></ion-input>
+        </ion-item>
+        <div *ngIf="registroForm.get('usuario')?.touched && registroForm.get('usuario')?.invalid" class="error-text">
+          Usuario es requerido
+        </div>
+
+        <!-- CONTRASEÑA -->
+        <ion-item lines="none">
+          <ion-input
+            [type]="verPassword ? 'text' : 'password'"
+            placeholder="Contraseña"
+            formControlName="contrasena"
+          ></ion-input>
+          <ion-icon
+            slot="end"
+            [name]="verPassword ? 'eye-off' : 'eye'"
+            class="eye-icon"
+            (click)="togglePassword()"
+          ></ion-icon>
+        </ion-item>
+        <div *ngIf="registroForm.get('contrasena')?.touched && registroForm.get('contrasena')?.invalid" class="error-text">
+          Contraseña es requerida
+        </div>
+
+        <!-- FECHA NACIMIENTO -->
+        <ion-item lines="none">
+          <ion-input type="date" formControlName="fecha_nacimiento"></ion-input>
+        </ion-item>
+        <div *ngIf="registroForm.get('fecha_nacimiento')?.touched && registroForm.get('fecha_nacimiento')?.invalid" class="error-text">
+          Fecha de nacimiento es requerida
+        </div>
+
+        <!-- DOMICILIO -->
+        <ion-item lines="none">
+          <ion-input placeholder="Domicilio" formControlName="domicilio"></ion-input>
+        </ion-item>
+
+        <!-- TELÉFONO -->
+        <ion-item lines="none">
+          <ion-input type="tel" placeholder="Teléfono" formControlName="numero_telefono"></ion-input>
+        </ion-item>
+        <div *ngIf="registroForm.get('numero_telefono')?.touched && registroForm.get('numero_telefono')?.invalid" class="error-text">
+          Teléfono es requerido
+        </div>
+
+        <!-- ROL -->
+        <ion-item lines="none">
+          <ion-label>Rol</ion-label>
+          <ion-select formControlName="idRol" interface="popover">
+            <ion-select-option [value]="3">Profesional</ion-select-option>
+            <ion-select-option [value]="4">Recepcionista</ion-select-option>
+          </ion-select>
+        </ion-item>
+        <div *ngIf="registroForm.get('idRol')?.touched && registroForm.get('idRol')?.invalid" class="error-text">
+          Rol es requerido
+        </div>
+
+        <!-- ESPECIALIDAD (solo si es profesional) -->
+        <ion-item *ngIf="registroForm.get('idRol')?.value == 3" lines="none">
+          <ion-input placeholder="Especialidad" formControlName="especialidad"></ion-input>
+        </ion-item>
+        <div
+          *ngIf="registroForm.get('idRol')?.value == 3 && registroForm.get('especialidad')?.touched && registroForm.get('especialidad')?.invalid"
+          class="error-text"
+        >
+          Especialidad es requerida
+        </div>
+
+        <!-- BOTÓN REGISTRARSE -->
+        <ion-button expand="block" type="submit" class="login-button" [disabled]="registroForm.invalid">
+          REGISTRARSE
+        </ion-button>
+
+        <!-- VOLVER AL LOGIN -->
+        <div class="extras">
+          <p class="link-bold">
+            ¿Ya tienes cuenta?
+            <a (click)="goToLogin()">Inicia sesión</a>
+          </p>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+</ion-content>
