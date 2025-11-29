@@ -15,17 +15,27 @@ export class AuthService {
       .post(`${this.baseUrl}/login`, { usuario, contrasena })
       .toPromise()
       .then((response: any) => {
-        // Guardar token o usuario si es necesario
+        // Guarda todo el objeto del usuario
         localStorage.setItem('usuario', JSON.stringify(response));
         return response;
       });
   }
 
-  logout() {
+  logout(): void {
     localStorage.removeItem('usuario');
   }
 
   isLoggedIn(): boolean {
-    return !!localStorage.getItem('usuario');
+    return localStorage.getItem('usuario') !== null;
+  }
+
+  getUsuario(): any {
+    const data = localStorage.getItem('usuario');
+    return data ? JSON.parse(data) : null;
+  }
+
+  getNombre(): string {
+    const user = this.getUsuario();
+    return user?.nombre || '';
   }
 }

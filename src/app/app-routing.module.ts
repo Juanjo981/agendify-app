@@ -17,11 +17,6 @@ const routes: Routes = [
     loadComponent: () =>
       import('./pages/dashboard/dashboard.page').then((m) => m.DashboardPage),
   },
-  // Si más adelante necesitas tabs, puedes incluirlo aquí
-  {
-    path: 'tabs',
-    loadChildren: () => import('./tabs/tabs.module').then(m => m.TabsPageModule)
-  },
   {
     path: 'registro',
     loadComponent: () =>
