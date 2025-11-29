@@ -1,0 +1,7 @@
+{
+  "name": "agendify-app",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}
