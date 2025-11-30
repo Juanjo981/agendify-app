@@ -1,24 +1,96 @@
+<!-- Header superior fijo -->
 <ion-header class="dashboard-header">
   <ion-toolbar class="toolbar-custom">
     <div class="toolbar-content">
-      
+
+
       <!-- Logo a la izquierda -->
       <div class="logo-full">
         <img src="assets/img/logo-barra.png" alt="Agendify logo" />
       </div>
 
-      <!-- Menú de usuario a la derecha -->
-      <div class="user-menu" (click)="toggleMenu()">
-        <span class="username">{{ nombreUsuario }}</span>
-        <ion-icon name="chevron-down-outline"></ion-icon>
+      <!-- Contenedor derecho -->
+      <div class="toolbar-right">
+        <div class="notification-wrapper" (click)="toggleNotificaciones()">
+          <ion-icon name="notifications-outline"></ion-icon>
+          <div *ngIf="notificaciones.length > 0" class="notification-badge">
+            {{ notificaciones.length }}
+          </div>
+        </div>
+
+        <div class="user-menu" (click)="toggleMenu()">
+          <span class="username">{{ nombreUsuario }}</span>
+          <ion-icon name="chevron-down-outline"></ion-icon>
+        </div>
       </div>
     </div>
   </ion-toolbar>
 
   <!-- Menú desplegable flotante -->
-  <div *ngIf="menuAbierto" class="dropdown-menu">
+  <div *ngIf="menuAbierto" class="dropdown-menu" role="menu">
     <ion-item (click)="irAMiPerfil()">Mi perfil</ion-item>
     <ion-item (click)="irAConfiguracion()">Configuración</ion-item>
     <ion-item (click)="confirmarSalir()">Salir</ion-item>
   </div>
+
+  <div *ngIf="notificacionesAbiertas" class="notificacion-menu" role="menu">
+    <div *ngFor="let noti of notificaciones.slice(0, 5)" class="noti-item">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      <span>{{ noti }}</span>
+    </div>
+    <div class="ver-todas" (click)="verTodasNotificaciones()">
+      Ver todas las notificaciones
+    </div>
+  </div>
+
 </ion-header>
+
+<!-- Layout general: menú lateral + contenido -->
+<div class="dashboard-layout">
+
+  <!-- Menú lateral con ancho dinámico -->
+  <aside class="sidebar" [style.width.px]="sidebarWidth">
+    <ion-list>
+
+      <ion-item button routerLink="/dashboard/agenda" routerLinkActive="activo"
+        [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
+        <ion-icon slot="start" name="calendar-outline"></ion-icon>
+        <ion-label>Agenda</ion-label>
+      </ion-item>
+
+      <ion-item button routerLink="/dashboard/pacientes" routerLinkActive="activo"
+        [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
+        <ion-icon slot="start" name="people-outline"></ion-icon>
+        <ion-label>Pacientes</ion-label>
+      </ion-item>
+
+      <ion-item button routerLink="/dashboard/estadisticas" routerLinkActive="activo"
+        [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
+        <ion-icon slot="start" name="bar-chart-outline"></ion-icon>
+        <ion-label>Estadísticas</ion-label>
+      </ion-item>
+
+      <ion-item button routerLink="/dashboard/configuracion" routerLinkActive="activo"
+        [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
+        <ion-icon slot="start" name="settings-outline"></ion-icon>
+        <ion-label>Configuración</ion-label>
+      </ion-item>
+    </ion-list>
+    <!-- Botón hamburguesa para contraer/expandir sidebar -->
+    <div class="sidebar-toggle" (click)="toggleSidebar()" title="Contraer menú">
+      <ion-icon [name]="sidebarContraido ? 'chevron-forward-outline' : 'chevron-back-outline'"></ion-icon>
+    </div>
+
+  </aside>
+
+  <!-- Divider para redimensionar -->
+  <div class="resizer" (mousedown)="startResizing($event)"></div>
+
+  <!-- Contenido principal -->
+  <main class="main-content">
+    <ion-content>
+      <ion-router-outlet class="dashboard-content"></ion-router-outlet>
+    </ion-content>
+  </main>
+
+</div>
