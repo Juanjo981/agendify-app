@@ -21,6 +21,7 @@ export class DashboardPage implements OnInit {
   private maxSidebarWidth = 320;
   sidebarContraido = false;
   notificacionesAbiertas = false;
+  menuInferiorAbierto = false;
 
   notificaciones: string[] = [
     'Cita nueva agendada',
@@ -74,6 +75,10 @@ export class DashboardPage implements OnInit {
     this.sidebarWidth = this.sidebarContraido ? 72 : 220;
   }
 
+  toggleMenuInferior() {
+    this.menuInferiorAbierto = !this.menuInferiorAbierto;
+  }
+
   ngOnInit() {
     // Redirigir si no ha iniciado sesión
     if (!this.authService.isLoggedIn()) {
@@ -94,12 +99,12 @@ export class DashboardPage implements OnInit {
 
   irAMiPerfil() {
     this.menuAbierto = false;
-    this.navCtrl.navigateForward('/perfil');
+    this.navCtrl.navigateForward('/dashboard/perfil');
   }
 
   irAConfiguracion() {
     this.menuAbierto = false;
-    this.navCtrl.navigateForward('/configuracion');
+    this.navCtrl.navigateForward('dashboard/configuracion');
   }
 
   cerrarSesion() {

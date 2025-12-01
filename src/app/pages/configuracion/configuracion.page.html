@@ -1,0 +1,57 @@
+<ion-content class="configuracion-content">
+  <div class="configuracion-container glass">
+
+    <h2>⚙️ Configuración</h2>
+
+    <!-- Sección: Cuenta -->
+    <section class="config-section">
+      <div class="config-header">
+        <h3>Cuenta</h3>
+      </div>
+
+      <ion-item lines="full">
+        <ion-label>Recibir boletines</ion-label>
+        <ion-toggle [(ngModel)]="config.boletines"></ion-toggle>
+      </ion-item>
+
+      <ion-item lines="full">
+        <ion-label>Recibir encuestas</ion-label>
+        <ion-toggle [(ngModel)]="config.encuestas"></ion-toggle>
+      </ion-item>
+    </section>
+
+    <!-- Sección: Aplicación -->
+    <section class="config-section">
+      <div class="config-header">
+        <h3>Aplicación</h3>
+      </div>
+
+      <ion-item lines="full">
+        <ion-label>Idioma de la app</ion-label>
+        <ion-select [(ngModel)]="config.idioma">
+          <ion-select-option value="es">Español</ion-select-option>
+          <ion-select-option value="en">Inglés</ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <ion-item lines="full">
+        <ion-label>Zona horaria</ion-label>
+        <ion-select [(ngModel)]="config.zonaHoraria">
+          <ion-select-option value="GMT-6">GMT-6 (CDMX)</ion-select-option>
+          <ion-select-option value="GMT-5">GMT-5</ion-select-option>
+        </ion-select>
+      </ion-item>
+    </section>
+
+    <!-- Sección: Acciones -->
+    <section class="config-section">
+      <div class="config-header">
+        <h3>Acciones</h3>
+      </div>
+
+      <ion-button expand="block" color="primary" fill="solid" (click)="guardar()">Guardar configuración</ion-button>
+      <ion-button expand="block" color="medium" fill="clear" (click)="restablecer()">Restablecer valores</ion-button>
+    </section>
+
+  </div>
+</ion-content>

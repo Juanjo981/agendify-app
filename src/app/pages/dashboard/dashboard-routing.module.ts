@@ -6,7 +6,20 @@ import { DashboardPage } from './dashboard.page';
 const routes: Routes = [
   {
     path: '',
-    component: DashboardPage
+    redirectTo: 'agenda',
+    pathMatch: 'full'
+  },
+  {
+    path: 'agenda',
+    loadChildren: () => import('../agenda/agenda.page').then(m => m.AgendaPage)
+  },
+  {
+    path: 'perfil',
+    loadComponent: () => import('../perfil/perfil.page').then(m => m.PerfilPage)
+  },
+  {
+    path: 'configuracion',
+    loadComponent: () => import('../configuracion/configuracion.page').then(m => m.ConfiguracionPage)
   }
 ];
 
@@ -14,4 +27,4 @@ const routes: Routes = [
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule],
 })
-export class DashboardPageRoutingModule {}
+export class DashboardPageRoutingModule { }

@@ -1,0 +1,121 @@
+<ion-content class="perfil-content">
+  <div class="perfil-container glass animate__animated animate__fadeIn">
+
+    <h2>👤 Mi perfil</h2>
+
+    <!-- Información personal -->
+    <section class="perfil-section">
+      <div class="perfil-header">
+        <h3>Información personal</h3>
+        <a (click)="toggleEditar('personal')" class="editar-link">
+          {{ editarPersonal ? 'CANCELAR' : 'EDITAR' }}
+        </a>
+      </div>
+
+      <ion-item [class.readonly]="!editarPersonal">
+        <ion-label position="stacked">Nombre completo</ion-label>
+        <ion-input [(ngModel)]="perfil.nombre" [readonly]="!editarPersonal"></ion-input>
+      </ion-item>
+
+      <ion-item [class.readonly]="!editarPersonal">
+        <ion-label position="stacked">Correo electrónico</ion-label>
+        <ion-input [(ngModel)]="perfil.email" type="email" [readonly]="!editarPersonal"></ion-input>
+      </ion-item>
+
+      <ion-item [class.readonly]="!editarPersonal">
+        <ion-label position="stacked">Usuario</ion-label>
+        <ion-input [(ngModel)]="perfil.usuario" [readonly]="!editarPersonal"></ion-input>
+      </ion-item>
+
+      <ion-item [class.readonly]="!editarPersonal">
+        <ion-label position="stacked">Teléfono</ion-label>
+        <ion-input [(ngModel)]="perfil.telefono" type="tel" [readonly]="!editarPersonal"></ion-input>
+      </ion-item>
+
+      <ion-item [class.readonly]="!editarPersonal">
+        <ion-label position="stacked">Domicilio</ion-label>
+        <ion-input [(ngModel)]="perfil.domicilio" [readonly]="!editarPersonal"></ion-input>
+      </ion-item>
+
+      <ion-item [class.readonly]="!editarPersonal">
+        <ion-label position="stacked">Especialidad</ion-label>
+        <ion-input [(ngModel)]="perfil.especialidad" [readonly]="!editarPersonal"></ion-input>
+      </ion-item>
+    </section>
+
+    <!-- Preferencias -->
+    <section class="perfil-section">
+      <div class="perfil-header">
+        <h3>Preferencias</h3>
+        <a (click)="toggleEditar('preferencias')" class="editar-link">
+          {{ editarPreferencias ? 'CANCELAR' : 'EDITAR' }}
+        </a>
+      </div>
+
+      <ion-item [class.readonly]="!editarPreferencias">
+        <ion-label>Idioma</ion-label>
+        <ion-select [(ngModel)]="perfil.idioma" [disabled]="!editarPreferencias">
+          <ion-select-option value="es">Español</ion-select-option>
+          <ion-select-option value="en">Inglés</ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <ion-item [class.readonly]="!editarPreferencias">
+        <ion-label>Zona horaria</ion-label>
+        <ion-select [(ngModel)]="perfil.zonaHoraria" [disabled]="!editarPreferencias">
+          <ion-select-option value="GMT-6">GMT-6 (CDMX)</ion-select-option>
+          <ion-select-option value="GMT-5">GMT-5</ion-select-option>
+        </ion-select>
+      </ion-item>
+    </section>
+
+    <!-- Seguridad -->
+    <section class="perfil-section">
+      <div class="perfil-header">
+        <h3>Seguridad</h3>
+        <a (click)="toggleEditar('seguridad')" class="editar-link">
+          {{ editarSeguridad ? 'CANCELAR' : 'EDITAR' }}
+        </a>
+      </div>
+
+      <ion-item [class.readonly]="!editarSeguridad">
+        <ion-label position="stacked">Contraseña actual</ion-label>
+        <ion-input type="password" [(ngModel)]="passwordActual" [readonly]="!editarSeguridad"></ion-input>
+      </ion-item>
+
+      <ion-item [class.readonly]="!editarSeguridad">
+        <ion-label position="stacked">Nueva contraseña</ion-label>
+        <ion-input type="password" [(ngModel)]="nuevaPassword" [readonly]="!editarSeguridad"></ion-input>
+      </ion-item>
+
+      <ion-item [class.readonly]="!editarSeguridad">
+        <ion-label position="stacked">Confirmar nueva contraseña</ion-label>
+        <ion-input type="password" [(ngModel)]="confirmarPassword" [readonly]="!editarSeguridad"></ion-input>
+      </ion-item>
+    </section>
+
+    <!-- Notificaciones -->
+    <section class="perfil-section">
+      <div class="perfil-header">
+        <h3>Notificaciones</h3>
+        <a (click)="toggleEditar('notificaciones')" class="editar-link">
+          {{ editarNotificaciones ? 'CANCELAR' : 'EDITAR' }}
+        </a>
+      </div>
+
+      <ion-item lines="none">
+        <ion-label>Correo electrónico</ion-label>
+        <ion-toggle [(ngModel)]="perfil.notificacionEmail" [disabled]="!editarNotificaciones"></ion-toggle>
+      </ion-item>
+
+      <ion-item lines="none">
+        <ion-label>SMS</ion-label>
+        <ion-toggle [(ngModel)]="perfil.notificacionSMS" [disabled]="!editarNotificaciones"></ion-toggle>
+      </ion-item>
+    </section>
+
+    <div class="perfil-actions">
+      <ion-button expand="block" color="primary" (click)="guardarCambios()">Guardar cambios</ion-button>
+    </div>
+  </div>
+</ion-content>

@@ -1,0 +1,50 @@
+.perfil-content {
+  --background: transparent;
+  display: flex;
+  justify-content: center;
+}
+
+.perfil-container {
+  max-width: 800px;
+  width: 100%;
+  margin: 20px auto;
+  padding: 2rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.perfil-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.editar-link {
+  color: #3b5bdb;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.perfil-section {
+  margin-top: 2rem;
+}
+
+ion-item.readonly {
+  --color: #999;
+  --highlight-color-focused: transparent;
+
+  ion-label {
+    color: #999 !important;
+  }
+
+  ion-input,
+  ion-select {
+    color: #999 !important;
+    pointer-events: none;
+  }
+}
+

@@ -1,0 +1,48 @@
+<ion-content class="agenda-content">
+
+  <!-- Encabezado de bienvenida -->
+  <div class="agenda-header">
+    <h2>¡Bienvenido, {{ nombreUsuario }}!</h2>
+    <p>Estas son tus citas para hoy:</p>
+  </div>
+
+  <!-- Calendario -->
+  <div class="calendar-container">
+    <ion-datetime
+      presentation="date"
+      [value]="today"
+      (ionChange)="onDateChange(getDateValue($event.detail.value))"
+      class="custom-calendar">
+    </ion-datetime>
+  </div>
+
+  <!-- Resumen diario -->
+  <div class="daily-summary">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Resumen del día</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>Total de citas: {{ resumen.total }}</p>
+        <p>Citas confirmadas: {{ resumen.confirmadas }}</p>
+        <p>Citas pendientes: {{ resumen.pendientes }}</p>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Lista de citas -->
+  <div class="appointments-list">
+    <ion-list>
+      <ion-item *ngFor="let cita of citas">
+        <ion-icon slot="start" name="time-outline"></ion-icon>
+        <ion-label>
+          <h3>{{ cita.hora }} - {{ cita.paciente }}</h3>
+          <p>{{ cita.motivo }}</p>
+        </ion-label>
+        <ion-badge color="success" *ngIf="cita.estado === 'confirmada'">Confirmada</ion-badge>
+        <ion-badge color="warning" *ngIf="cita.estado === 'pendiente'">Pendiente</ion-badge>
+      </ion-item>
+    </ion-list>
+  </div>
+
+</ion-content>

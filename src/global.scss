@@ -40,3 +40,7 @@
 body {
   font-family: 'Inter', sans-serif;
 }
+
+ion-content {
+  --padding-bottom: calc( env(safe-area-inset-bottom) + 80px );
+}

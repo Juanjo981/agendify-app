@@ -119,6 +119,7 @@
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -298,6 +299,7 @@
 
   &:hover {
     background: rgba(255, 255, 255, 0.4);
+
     ion-icon {
       transform: scale(1.1);
     }
@@ -402,15 +404,150 @@
   }
 }
 
+.bottom-menu {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(237, 241, 255, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(180, 185, 235, 0.3);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+  z-index: 9999;
+  transform: translateY(calc(100% - 45px));
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+
+  &.abierto {
+    transform: translateY(0);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  .bottom-toggle {
+    height: 45px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.2s ease-in-out;
+
+    &:hover {
+      background: rgba(180, 185, 235, 0.1);
+    }
+
+    ion-icon {
+      font-size: 24px;
+      color: #6366f1;
+      transition: transform 0.3s ease-in-out;
+    }
+  }
+
+  .bottom-content {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 16px;
+
+    ion-item {
+      --background: transparent;
+      --min-height: 44px;
+      border-radius: 12px;
+      font-size: 14px;
+      margin-bottom: 4px;
+      transition: background 0.2s;
+
+      ion-icon {
+        font-size: 18px;
+        color: #3940a4;
+        margin-right: 8px;
+      }
+
+      ion-label {
+        color: #2c2f55;
+        font-weight: 500;
+      }
+
+      &:hover {
+        --background: rgba(100, 110, 255, 0.07);
+      }
+    }
+  }
+}
+
+
+
 
 
 /* ========== CONTENIDO PRINCIPAL ========== */
 .main-content {
-  background: #fff;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 /* ========== RESPONSIVO ========== */
+
+/* 📱 Cuando la pantalla es pequeña, el layout pasa a columna */
+@media (max-width: 1024px) {
+
+  .dashboard-layout {
+    display: flex;
+    flex-direction: column !important;
+    width: 100%;
+    height: auto;
+  }
+
+  /* La sidebar ya NO estará al lado → se oculta o se hace menú inferior */
+  .sidebar {
+    display: none !important;
+  }
+
+  .resizer {
+    display: none !important;
+  }
+
+  /* El contenido ocupa todo el ancho */
+  .main-content {
+    width: 100% !important;
+    flex: 1;
+    display: block;
+  }
+
+  ion-content, 
+  ion-router-outlet {
+    display: block;
+    width: 100% !important;
+    min-height: calc(100vh - 60px); /* dejando espacio para el header */
+  }
+
+  /* Menú inferior visible SOLO en móviles */
+  .bottom-menu {
+    display: block !important;
+  }
+}
+
+/* 📱 Muy pequeño (< 600px) para asegurar que nada se collapse */
+@media (max-width: 600px) {
+  .main-content {
+    padding: 0 !important;
+  }
+
+  ion-content {
+    --padding-start: 0;
+    --padding-end: 0;
+    --padding-top: 0;
+    --padding-bottom: 80px; /* bottom-menu */
+  }
+}
+
+// Solo visible en móviles
+@media (min-width: 769px) {
+  .bottom-menu {
+    display: none !important;
+  }
+}
+
 @media (max-width: 768px) {
   .toolbar-content {
     flex-direction: row;

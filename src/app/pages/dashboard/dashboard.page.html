@@ -64,6 +64,12 @@
         <ion-label>Pacientes</ion-label>
       </ion-item>
 
+      <ion-item button routerLink="/dashboard/sesiones" routerLinkActive="activo"
+        [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
+        <ion-icon slot="start" name="cash-outline"></ion-icon>
+        <ion-label>Sesiones</ion-label>
+      </ion-item>      
+
       <ion-item button routerLink="/dashboard/estadisticas" routerLinkActive="activo"
         [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
         <ion-icon slot="start" name="bar-chart-outline"></ion-icon>
@@ -92,5 +98,38 @@
       <ion-router-outlet class="dashboard-content"></ion-router-outlet>
     </ion-content>
   </main>
+
+</div>
+<!-- Menú inferior solo visible en móviles -->
+<div class="bottom-menu" [class.abierto]="menuInferiorAbierto">
+
+  <!-- Botón central para expandir -->
+  <div class="bottom-toggle" (click)="toggleMenuInferior()">
+    <ion-icon [name]="menuInferiorAbierto ? 'chevron-down-outline' : 'chevron-up-outline'"></ion-icon>
+  </div>
+
+  <!-- Contenido del menú expandido -->
+  <div class="bottom-content">
+    <ion-item button routerLink="/dashboard/agenda" lines="none">
+      <ion-icon name="calendar-outline" slot="start"></ion-icon>
+      <ion-label>Agenda</ion-label>
+    </ion-item>
+    <ion-item button routerLink="/dashboard/pacientes" lines="none">
+      <ion-icon name="people-outline" slot="start"></ion-icon>
+      <ion-label>Pacientes</ion-label>
+    </ion-item>
+    <ion-item button routerLink="/dashboard/sesiones" lines="none">
+      <ion-icon slot="start" name="cash-outline"></ion-icon>
+      <ion-label>Sesiones</ion-label>
+    </ion-item>
+    <ion-item button routerLink="/dashboard/estadisticas" lines="none">
+      <ion-icon name="bar-chart-outline" slot="start"></ion-icon>
+      <ion-label>Estadísticas</ion-label>
+    </ion-item>
+    <ion-item button routerLink="/dashboard/configuracion" lines="none">
+      <ion-icon name="settings-outline" slot="start"></ion-icon>
+      <ion-label>Configuración</ion-label>
+    </ion-item>
+  </div>
 
 </div>
