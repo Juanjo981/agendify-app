@@ -23,14 +23,29 @@ export class DashboardPage implements OnInit {
   notificacionesAbiertas = false;
   menuInferiorAbierto = false;
 
-  notificaciones: string[] = [
-    'Cita nueva agendada',
-    'Paciente Juan canceló su cita',
-    'Recordatorio enviado',
-    'Archivo subido por Ana',
-    'Confirmación de pago recibida',
-    'Cita reprogramada por Laura'
+  // Tabs
+  activeTab: 'messages' | 'events' | 'status' = 'messages';
+  activeList: any[] = [];
+
+  // Datos de prueba (puedes reemplazar después por backend)
+  notificacionesMessages = [
+    { text: 'Nuevo mensaje de Ana', fecha: 'Hace 2 min' },
+    { text: 'Tu cita ha sido confirmada', fecha: 'Hace 10 min' },
+    { text: 'Tu cita ha sido cancelada', fecha: 'Ayer' },
+    
   ];
+
+  notificacionesEvents = [
+    { text: 'La sesión de Pedro comienza en 1 hora', fecha: 'Hoy 2:00 PM' },
+    { text: 'Recordatorio: grupo semanal mañana', fecha: 'Ayer' },
+  ];
+
+  notificacionesStatus = [
+    { text: 'Servidor sincronizado correctamente', fecha: 'Hace 5 min' },
+    { text: 'Respaldo automático completado', fecha: 'Hoy 7:00 AM' },
+  ];
+
+  
 
 
   constructor(
@@ -55,6 +70,27 @@ export class DashboardPage implements OnInit {
     };
     document.addEventListener('mousemove', mouseMove);
     document.addEventListener('mouseup', stopResize);
+  }
+
+  changeTab(tab: 'messages' | 'events' | 'status') {
+    this.activeTab = tab;
+    this.updateActiveList();
+  }
+
+  updateActiveList() {
+    if (this.activeTab === 'messages') {
+      this.activeList = this.notificacionesMessages;
+    }
+    else if (this.activeTab === 'events') {
+      this.activeList = this.notificacionesEvents;
+    }
+    else {
+      this.activeList = this.notificacionesStatus;
+    }
+  }
+
+  totalNotificaciones() {
+    return this.notificacionesMessages.length + this.notificacionesEvents.length + this.notificacionesStatus.length;
   }
 
   toggleNotificaciones() {
@@ -90,6 +126,8 @@ export class DashboardPage implements OnInit {
 
     // Mostrar botón menú si el ancho es menor a 768px (móvil)
     this.mostrarBotonMenu = this.platform.width() < 768;
+
+    this.updateActiveList();
   }
 
   toggleMenu() {

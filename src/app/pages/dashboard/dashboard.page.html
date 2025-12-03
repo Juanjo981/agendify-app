@@ -12,11 +12,15 @@
       <!-- Contenedor derecho -->
       <div class="toolbar-right">
         <div class="notification-wrapper" (click)="toggleNotificaciones()">
-          <ion-icon name="notifications-outline"></ion-icon>
-          <div *ngIf="notificaciones.length > 0" class="notification-badge">
-            {{ notificaciones.length }}
+          <div class="notif-icon-container">
+            <ion-icon name="notifications-outline"></ion-icon>
+
+            <div *ngIf="totalNotificaciones() > 0" class="notification-badge">
+              {{ totalNotificaciones() }}
+            </div>
           </div>
         </div>
+
 
         <div class="user-menu" (click)="toggleMenu()">
           <span class="username">{{ nombreUsuario }}</span>
@@ -26,22 +30,116 @@
     </div>
   </ion-toolbar>
 
-  <!-- Menú desplegable flotante -->
-  <div *ngIf="menuAbierto" class="dropdown-menu" role="menu">
-    <ion-item (click)="irAMiPerfil()">Mi perfil</ion-item>
-    <ion-item (click)="irAConfiguracion()">Configuración</ion-item>
-    <ion-item (click)="confirmarSalir()">Salir</ion-item>
+  <!-- Menú desplegable de usuario estilo premium -->
+  <div *ngIf="menuAbierto" class="user-dropdown" role="menu">
+
+    <!-- HEADER DEL PERFIL -->
+    <div class="user-header">
+      <div class="avatar-wrapper">
+        <img src="assets/img/default-avatar.jpg" alt="avatar" class="avatar" />
+      </div>
+
+      <div class="user-info">
+        <h3>{{ nombreUsuario }}</h3>
+        <p>Profesional de la salud</p>
+      </div>
+
+      <button class="logout-btn" (click)="confirmarSalir()">Salir</button>
+    </div>
+
+  
+    <!-- SECCIÓN: ACTIVIDAD -->
+    <div class="section">
+      <label class="section-title">ACTIVIDAD</label>
+
+      <div class="section-item" (click)="irAMiPerfil()">
+        <ion-icon name="time-outline"></ion-icon>
+        <span>Mi Actividad</span>
+      </div>
+
+      <div class="section-item" (click)="irAMiPerfil()">
+        <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+        <span>Mensajes</span>
+      </div>
+    </div>
+
+
+    <!-- SECCIÓN: MI CUENTA -->
+    <div class="section">
+      <label class="section-title">MI CUENTA</label>
+
+      <div class="card-grid">
+
+        <div class="mini-card" (click)="irAMiPerfil()">
+          <ion-icon name="business-outline"></ion-icon>
+          <p>Consultorio</p>
+        </div>
+
+        <div class="mini-card" (click)="irAConfiguracion()">
+          <ion-icon name="settings-outline"></ion-icon>
+          <p>Configuración</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- BOTÓN FINAL -->
+    <div class="footer-btn">
+      <button (click)="irAMiPerfil()">Ir a mi perfil</button>
+    </div>
+
   </div>
 
-  <div *ngIf="notificacionesAbiertas" class="notificacion-menu" role="menu">
-    <div *ngFor="let noti of notificaciones.slice(0, 5)" class="noti-item">
-      <ion-icon name="information-circle-outline"></ion-icon>
-      <span>{{ noti }}</span>
+
+  <!-- NOTIFICACIONES ESTILO PANEL MODERNO -->
+  <div *ngIf="notificacionesAbiertas" class="notification-panel">
+
+    <div class="notif-header">
+      <h2>Notificaciones</h2>
+      <p>Tienes {{ activeList.length }} sin leer</p>
     </div>
-    <div class="ver-todas" (click)="verTodasNotificaciones()">
-      Ver todas las notificaciones
+
+    <!-- Tabs -->
+    <div class="notif-tabs">
+      <div class="tab" [class.active]="activeTab === 'messages'" (click)="changeTab('messages')">
+        Mensajes
+      </div>
+
+      <div class="tab" [class.active]="activeTab === 'events'" (click)="changeTab('events')">
+        Eventos
+      </div>
+
+      <div class="tab" [class.active]="activeTab === 'status'" (click)="changeTab('status')">
+        Estado
+      </div>
     </div>
+
+    <!-- Contenedor general -->
+    <div class="notif-list">
+      <div class="timeline-line"></div>
+
+      <div *ngFor="let item of activeList" class="notif-row">
+        <div class="dot"></div>
+
+        <div class="notif-content">
+          <p class="notif-text">{{ item.text }}</p>
+          <span class="notif-time">{{ item.fecha }}</span>
+        </div>
+
+        <button class="notif-read-btn">
+          ✓
+        </button>
+      </div>
+
+    </div>
+
+    <div class="notif-footer">
+      <button (click)="verTodasNotificaciones()">Todas las notificaciones</button>
+    </div>
+
   </div>
+
+
 
 </ion-header>
 
@@ -68,7 +166,7 @@
         [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
         <ion-icon slot="start" name="cash-outline"></ion-icon>
         <ion-label>Sesiones</ion-label>
-      </ion-item>      
+      </ion-item>
 
       <ion-item button routerLink="/dashboard/estadisticas" routerLinkActive="activo"
         [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
