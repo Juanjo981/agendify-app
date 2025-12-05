@@ -1,48 +1,131 @@
 <ion-content class="agenda-content">
 
-  <!-- Encabezado de bienvenida -->
+  <!-- Encabezado -->
   <div class="agenda-header">
-    <h2>¡Bienvenido, {{ nombreUsuario }}!</h2>
-    <p>Estas son tus citas para hoy:</p>
+    <h2>Hola, {{ nombreUsuario }}!</h2>
+    <p>Tu agenda del mes</p>
   </div>
 
-  <!-- Calendario -->
-  <div class="calendar-container">
-    <ion-datetime
-      presentation="date"
-      [value]="today"
-      (ionChange)="onDateChange(getDateValue($event.detail.value))"
-      class="custom-calendar">
-    </ion-datetime>
+  <!-- 🔷 MARCO COMPLETO DEL CALENDARIO -->
+  <div class="calendar-wrapper">
+
+    <!-- 🔹 NUEVO HEADER SIMÉTRICO -->
+    <div class="calendar-controls">
+
+      <!-- Fila 1: Navegación -->
+      <div class="nav-row">
+        <button class="nav-btn" (click)="prevMonth()">Anterior</button>
+        <button class="nav-btn" (click)="goToday()">Actual</button>
+        <button class="nav-btn" (click)="nextMonth()">Siguiente</button>
+      </div>
+
+      <!-- Mes centrado -->
+      <div class="calendar-month-label">
+        {{ monthName }} {{ currentYear }}
+      </div>
+
+      <!-- Fila 2: Vista -->
+      <div class="view-row">
+        <button class="view-btn"
+          [class.active]="currentView === 'month'"
+          (click)="setView('month')"
+        >
+          Mes
+        </button>
+
+        <button class="view-btn"
+          [class.active]="currentView === 'week'"
+          (click)="setView('week')"
+        >
+          Semana
+        </button>
+
+        <button class="view-btn"
+          [class.active]="currentView === 'day'"
+          (click)="setView('day')"
+        >
+          Día
+        </button>
+      </div>
+
+    </div>
+    <!-- FIN DEL NUEVO HEADER -->
+
+    <!-- 🔹 DÍAS DE LA SEMANA -->
+    <div class="weekdays">
+      <div *ngFor="let d of weekDays">{{ d }}</div>
+    </div>
+
+    <!-- 🔹 GRID DE DÍAS -->
+    <div class="calendar-grid">
+      <div class="day"
+        *ngFor="let day of calendarDays"
+        [class.inactive]="!day.inCurrentMonth"
+        [class.today]="day.isToday"
+        [class.selected]="selectedDay?.fullDate === day.fullDate"
+        (click)="selectDay(day)"
+      >
+        <span class="day-number">{{ day.number }}</span>
+
+        <!-- EVENTOS -->
+        <div class="event-dots" *ngIf="(day?.events?.length || 0) > 0">
+          <ng-container *ngFor="let e of day.events | slice:0:3">
+            <span class="dot" [style.background]="e.color"></span>
+          </ng-container>
+
+          <span class="more-events" *ngIf="day.events.length > 3">
+            +{{ day.events.length - 3 }}
+          </span>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Resumen diario -->
-  <div class="daily-summary">
-    <ion-card>
-      <ion-card-header>
-        <ion-card-title>Resumen del día</ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <p>Total de citas: {{ resumen.total }}</p>
-        <p>Citas confirmadas: {{ resumen.confirmadas }}</p>
-        <p>Citas pendientes: {{ resumen.pendientes }}</p>
-      </ion-card-content>
-    </ion-card>
-  </div>
+  <!-- 🔷 PANEL INFERIOR — EVENTOS DEL DÍA -->
+  <div class="events-panel" [class.open]="selectedDay">
+    <div class="panel-header">
+      <h3>Eventos del {{ selectedDay?.number }} {{ monthName }}</h3>
+      <ion-icon name="close-outline" (click)="selectedDay = null"></ion-icon>
+    </div>
 
-  <!-- Lista de citas -->
-  <div class="appointments-list">
-    <ion-list>
-      <ion-item *ngFor="let cita of citas">
-        <ion-icon slot="start" name="time-outline"></ion-icon>
+    <div *ngIf="(selectedDay?.events?.length || 0) === 0" class="no-events">
+      <p>No hay eventos este día.</p>
+    </div>
+
+    <!-- 🔥 AQUI VIENE EL BLOQUE NUEVO -->
+    <ion-list *ngIf="(selectedDay?.events?.length || 0) > 0">
+      <ion-item *ngFor="let ev of selectedDay?.events || []" class="event-item">
+
+        <ion-icon slot="start" name="ellipse" [style.color]="ev.color"></ion-icon>
+
+        <!-- IZQUIERDA: titulo y hora -->
         <ion-label>
-          <h3>{{ cita.hora }} - {{ cita.paciente }}</h3>
-          <p>{{ cita.motivo }}</p>
+          <h2>{{ ev.title }}</h2>
+          <p>{{ ev.time }}</p>
         </ion-label>
-        <ion-badge color="success" *ngIf="cita.estado === 'confirmada'">Confirmada</ion-badge>
-        <ion-badge color="warning" *ngIf="cita.estado === 'pendiente'">Pendiente</ion-badge>
+
+        <!-- DERECHA: estado + botón -->
+        <div class="right-section">
+
+          <div class="status" [class.confirmed]="ev.status === 'Confirmada'"
+               [class.pending]="ev.status === 'Pendiente'">
+            <ion-icon [name]="ev.status === 'Confirmada' ? 'checkmark-circle' : 'time-outline'"></ion-icon>
+            <span>
+              {{ ev.status === 'Confirmada' ? 'Confirmada' : 'Pendiente' }}
+            </span>
+          </div>
+
+          <button class="view-btn" (click)="verCita(ev)">
+            Ver cita
+          </button>
+
+        </div>
+
       </ion-item>
     </ion-list>
+    <!-- FIN DEL BLOQUE NUEVO -->
+
   </div>
 
 </ion-content>
