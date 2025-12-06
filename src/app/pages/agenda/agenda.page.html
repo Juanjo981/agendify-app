@@ -1,10 +1,18 @@
 <ion-content class="agenda-content">
 
-  <!-- Encabezado -->
+  <!-- Encabezado elegante -->
   <div class="agenda-header">
-    <h2>Hola, {{ nombreUsuario }}!</h2>
-    <p>Tu agenda del mes</p>
+    <div class="header-icon">
+      <ion-icon name="calendar-outline"></ion-icon>
+    </div>
+    <div class="header-text">
+      <h2>Hola, {{ nombreUsuario }}!</h2>
+      <p>Tu agenda del mes</p>
+      <p class="header-day-info">{{ dayName }}, {{ fullDate }} - {{ eventsToday }} citas hoy</p>
+    </div>
   </div>
+
+  <!-- ========================================================= -->
 
 
   <!-- 🔷 MARCO COMPLETO DEL CALENDARIO -->
@@ -28,7 +36,7 @@
 
       <!-- Lado derecho - 3 botones -->
       <div class="right-controls">
-        <button class="action-btn btn-primary" (click)="nuevaCita()">+ Nueva cita</button>
+        <button class="action-btn btn-custom" (click)="nuevaCita()">+ Nueva cita</button>
         <button class="action-btn btn-search">🔍 Buscar Paciente</button>
         <button class="action-btn btn-block" (click)="bloquearHorario()">🔒 Bloquear Horario</button>
       </div>

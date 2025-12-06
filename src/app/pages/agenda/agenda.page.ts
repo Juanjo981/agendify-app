@@ -44,6 +44,10 @@ export class AgendaPage {
   calendarDays: CalendarDay[] = [];
   selectedDay: CalendarDay | null = null;
 
+  dayName: string = '';
+  fullDate: string = '';
+  eventsToday: number = 0;
+
   monthName = '';
 
   // Eventos de prueba
@@ -56,6 +60,24 @@ export class AgendaPage {
 
   constructor() {
     this.generateCalendar();
+    this.updateHeaderInfo();
+  }
+
+  updateHeaderInfo() {
+    const today = new Date();
+    const weekNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    this.dayName = weekNames[today.getDay()];
+
+    // Fecha legible
+    const day = today.getDate();
+    const month = this.monthNames[today.getMonth()];
+    const year = today.getFullYear();
+    this.fullDate = `${day} de ${month} de ${year}`;
+
+    // Número de eventos hoy
+    const todayStr = this.formatDateLocal(today);
+    const todayCalendarDay = this.calendarDays.find(d => d.fullDate === todayStr);
+    this.eventsToday = todayCalendarDay?.events.length || 0;
   }
 
   // ----------------------------------------
