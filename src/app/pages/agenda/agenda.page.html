@@ -6,83 +6,78 @@
     <p>Tu agenda del mes</p>
   </div>
 
+
   <!-- 🔷 MARCO COMPLETO DEL CALENDARIO -->
   <div class="calendar-wrapper">
 
-    <!-- 🔹 NUEVO HEADER SIMÉTRICO -->
-    <div class="calendar-controls">
 
-      <!-- Fila 1: Navegación -->
-      <div class="nav-row">
-        <button class="nav-btn" (click)="prevMonth()">Anterior</button>
-        <button class="nav-btn" (click)="goToday()">Actual</button>
-        <button class="nav-btn" (click)="nextMonth()">Siguiente</button>
+
+    <!-- 🔹 CONTROLES DE NAVEGACIÓN -->
+    <div class="calendar-controls">
+      <!-- Lado izquierdo - 3 botones -->
+      <div class="left-controls">
+        <button class="nav-btn" (click)="prevMonth()">← Anterior</button>
+        <button class="nav-btn" (click)="goToday()">Hoy</button>
+        <button class="nav-btn" (click)="nextMonth()">Siguiente →</button>
       </div>
 
-      <!-- Mes centrado -->
+      <!-- Nombre del mes centrado -->
       <div class="calendar-month-label">
         {{ monthName }} {{ currentYear }}
       </div>
 
-      <!-- Fila 2: Vista -->
-      <div class="view-row">
-        <button class="view-btn"
-          [class.active]="currentView === 'month'"
-          (click)="setView('month')"
-        >
-          Mes
-        </button>
+      <!-- Lado derecho - 3 botones -->
+      <div class="right-controls">
+        <button class="action-btn btn-primary" (click)="nuevaCita()">+ Nueva cita</button>
+        <button class="action-btn btn-search">🔍 Buscar</button>
+        <button class="action-btn btn-block" (click)="bloquearHorario()">🔒 Bloquear</button>
+      </div>
+    </div>
 
-        <button class="view-btn"
-          [class.active]="currentView === 'week'"
-          (click)="setView('week')"
-        >
-          Semana
-        </button>
 
-        <button class="view-btn"
-          [class.active]="currentView === 'day'"
-          (click)="setView('day')"
-        >
-          Día
-        </button>
+
+    <!-- FIN DE CONTROLES -->
+
+    <!-- ========================================================= -->
+    <!-- 🔷 VISTA MENSUAL -->
+    <!-- ========================================================= -->
+    <div>
+
+      <!-- 🔹 DÍAS DE LA SEMANA -->
+      <div class="weekdays">
+        <div *ngFor="let d of weekDays">{{ d }}</div>
       </div>
 
-    </div>
-    <!-- FIN DEL NUEVO HEADER -->
+      <!-- 🔹 GRID DE DÍAS -->
+      <div class="calendar-grid">
+        <div class="day" *ngFor="let day of calendarDays" [class.inactive]="!day.inCurrentMonth"
+          [class.today]="day.isToday" [class.selected]="selectedDay?.fullDate === day.fullDate"
+          (click)="selectDay(day)">
 
-    <!-- 🔹 DÍAS DE LA SEMANA -->
-    <div class="weekdays">
-      <div *ngFor="let d of weekDays">{{ d }}</div>
-    </div>
+          <span class="day-number">{{ day.number }}</span>
 
-    <!-- 🔹 GRID DE DÍAS -->
-    <div class="calendar-grid">
-      <div class="day"
-        *ngFor="let day of calendarDays"
-        [class.inactive]="!day.inCurrentMonth"
-        [class.today]="day.isToday"
-        [class.selected]="selectedDay?.fullDate === day.fullDate"
-        (click)="selectDay(day)"
-      >
-        <span class="day-number">{{ day.number }}</span>
+          <!-- EVENTOS -->
+          <div class="event-dots" *ngIf="(day?.events?.length || 0) > 0">
+            <ng-container *ngFor="let e of day.events | slice:0:3">
+              <span class="dot" [style.background]="e.color"></span>
+            </ng-container>
 
-        <!-- EVENTOS -->
-        <div class="event-dots" *ngIf="(day?.events?.length || 0) > 0">
-          <ng-container *ngFor="let e of day.events | slice:0:3">
-            <span class="dot" [style.background]="e.color"></span>
-          </ng-container>
+            <span class="more-events" *ngIf="day.events.length > 3">
+              +{{ day.events.length - 3 }}
+            </span>
+          </div>
 
-          <span class="more-events" *ngIf="day.events.length > 3">
-            +{{ day.events.length - 3 }}
-          </span>
         </div>
       </div>
+
     </div>
+    <!-- FIN DE MENSUAL -->
 
   </div>
 
+  <!-- ========================================================= -->
   <!-- 🔷 PANEL INFERIOR — EVENTOS DEL DÍA -->
+  <!-- ========================================================= -->
   <div class="events-panel" [class.open]="selectedDay">
     <div class="panel-header">
       <h3>Eventos del {{ selectedDay?.number }} {{ monthName }}</h3>
@@ -93,24 +88,29 @@
       <p>No hay eventos este día.</p>
     </div>
 
-    <!-- 🔥 AQUI VIENE EL BLOQUE NUEVO -->
+    <!-- 🔥 LISTA DE EVENTOS -->
     <ion-list *ngIf="(selectedDay?.events?.length || 0) > 0">
       <ion-item *ngFor="let ev of selectedDay?.events || []" class="event-item">
 
         <ion-icon slot="start" name="ellipse" [style.color]="ev.color"></ion-icon>
 
-        <!-- IZQUIERDA: titulo y hora -->
+        <!-- IZQUIERDA -->
         <ion-label>
           <h2>{{ ev.title }}</h2>
           <p>{{ ev.time }}</p>
         </ion-label>
 
-        <!-- DERECHA: estado + botón -->
+        <!-- DERECHA -->
         <div class="right-section">
 
           <div class="status" [class.confirmed]="ev.status === 'Confirmada'"
-               [class.pending]="ev.status === 'Pendiente'">
-            <ion-icon [name]="ev.status === 'Confirmada' ? 'checkmark-circle' : 'time-outline'"></ion-icon>
+            [class.pending]="ev.status === 'Pendiente'">
+
+            <ion-icon [name]="ev.status === 'Confirmada'
+                ? 'checkmark-circle'
+                : 'time-outline'">
+            </ion-icon>
+
             <span>
               {{ ev.status === 'Confirmada' ? 'Confirmada' : 'Pendiente' }}
             </span>
@@ -124,7 +124,6 @@
 
       </ion-item>
     </ion-list>
-    <!-- FIN DEL BLOQUE NUEVO -->
 
   </div>
 

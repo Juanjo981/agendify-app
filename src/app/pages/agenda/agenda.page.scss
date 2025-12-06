@@ -18,75 +18,6 @@
     }
   }
 
-  .calendar-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    background: #ffffffdd;
-    /* blanco suave */
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 15px;
-    margin-bottom: 12px;
-    backdrop-filter: blur(6px);
-    gap: 8px;
-    flex-wrap: wrap;
-
-    grid-template-columns: 1fr auto 1fr;
-
-    h3 {
-      margin: 0;
-      font-weight: 600;
-      color: #1e293b;
-    }
-
-    ion-icon {
-      font-size: 24px;
-      color: #475569;
-      padding: 6px;
-      border-radius: 50%;
-      transition: 0.2s;
-    }
-
-    ion-icon:hover {
-      background: rgba(0, 0, 0, 0.06);
-    }
-  }
-
-  .calendar-nav,
-  .calendar-view-buttons {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-    min-width: 33%;
-  }
-
-  .calendar-month-label {
-    font-size: 1.3rem;
-    font-weight: 600;
-    text-transform: capitalize;
-    color: #1e293b;
-    flex: 1;
-    text-align: center;
-    white-space: nowrap;
-  }
-
-  .weekdays {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    text-align: center;
-    margin-top: 10px;
-    margin-bottom: 6px;
-    font-weight: 600;
-    color: #64748b;
-  }
-
-  .calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 6px;
-  }
-
   .day {
     height: 70px;
     padding: 6px;
@@ -128,17 +59,7 @@
     color: #1e293b;
   }
 
-  .event-dots {
-    display: flex;
-    gap: 3px;
-    margin-top: 4px;
 
-    .dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-    }
-  }
 
   .more-events {
     font-size: 11px;
@@ -153,7 +74,7 @@
     position: fixed;
     bottom: -380px;
     left: 0;
-    width: calc(100% - 51px);
+    width: calc(100% - 38px);
     /* 18px left + 18px right del padding real */
     margin-left: 18px;
     margin-right: 18px;
@@ -238,15 +159,7 @@
 /* ============================
    ENCABEZADO DEL MES
    ============================ */
-.month-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4px 8px;
-  font-weight: 600;
-  color: #1e293b;
-  font-size: 18px;
-}
+
 
 .month-header ion-icon {
   font-size: 22px;
@@ -334,11 +247,6 @@
     text-align: center;
   }
 
-  .left-controls,
-  .right-controls {
-    justify-content: center;
-    width: 100%;
-  }
 }
 
 /* ============================
@@ -365,11 +273,7 @@
     height: 4px;
   }
 
-  .calendar-controls {
-    grid-template-columns: 1fr;
-    text-align: center;
-    gap: 14px;
-  }
+
 
   /* Botones de ANTERIOR / ACTUAL / SIGUIENTE */
   .left-controls,
@@ -444,99 +348,120 @@
 
 .calendar-controls {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 10px;
+  align-items: center;
+  justify-content: space-between;
   width: 100%;
   padding: 0 10px;
+  gap: 15px;
 
-  .nav-row,
-  .view-row {
+  .left-controls {
     display: flex;
-    justify-content: center;
-    gap: 10px;
-
-    button {
-      font-size: 14px;
-      padding: 6px 14px;
-      border-radius: 14px;
-      border: 1px solid #d7d7d7;
-      background: white;
-      color: #333;
-      font-weight: 500;
-    }
-
-    button.active {
-      background: #5f26ff;
-      color: white;
-      border: none;
-    }
+    gap: 8px;
+    flex: 0 0 auto;
   }
-}
 
-/* En pantallas móviles, haremos que los botones queden más parejitos */
-@media (max-width: 450px) {
-  .calendar-controls {
-
-    .nav-row button,
-    .view-row button {
-      flex: 1;
-      /* todos del mismo ancho */
-      text-align: center;
-    }
-  }
-}
-
-/* 🔥 Ajustes para pantallas grandes (diseño ancho tipo escritorio) */
-@media (min-width: 768px) {
-
-  .calendar-controls {
+  .right-controls {
     display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    padding: 0 10px;
+    gap: 8px;
+    flex: 0 0 auto;
   }
 
-  /* Botones de navegación a la izquierda */
-  .nav-row {
-    order: 1;
-    justify-content: flex-start;
-
-    button {
-      font-size: 15px;
-      padding: 6px 14px;
-    }
-  }
-
-  /* Mes centrado */
   .calendar-month-label {
-    order: 2;
     flex: 1;
     text-align: center;
-    font-size: 1.7rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: #1e293b;
   }
 
-  /* Botones de vista a la derecha */
-  .view-row {
-    order: 3;
-    justify-content: flex-end;
+  /* Botones */
+  button {
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid #d7d7d7;
+    background: white;
+    color: #333;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.2s ease-in-out;
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+
+  .nav-btn {
+    background: white;
+    border: 1px solid #d7d7d7;
+
+    &:hover {
+      background: #f1f5f9;
+      transform: translateY(-2px);
+    }
+  }
+
+  .action-btn {
+    &:hover {
+      transform: scale(1.05);
+      opacity: 0.9;
+    }
+  }
+
+  .btn-primary {
+    background: #3b82f6;
+    color: white;
+    border: none;
+  }
+
+  .btn-search {
+    background: #e5e7eb;
+    color: #111;
+    border: none;
+  }
+
+  .btn-block {
+    background: #ef4444;
+    color: white;
+    border: none;
+  }
+}
+
+/* RESPONSIVE TABLET */
+@media (max-width: 768px) {
+  .calendar-controls {
+    gap: 10px;
 
     button {
-      font-size: 15px;
-      padding: 6px 14px;
+      font-size: 12px;
+      padding: 5px 10px;
+    }
+
+    .calendar-month-label {
+      font-size: 1.3rem;
     }
   }
 }
 
+/* RESPONSIVE MOBILE */
+@media (max-width: 480px) {
+  .calendar-controls {
+    gap: 8px;
+    padding: 0 5px;
 
+    button {
+      font-size: 11px;
+      padding: 4px 8px;
+    }
 
-.left-controls,
-.right-controls {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
+    .calendar-month-label {
+      font-size: 1.1rem;
+    }
+
+    .left-controls,
+    .right-controls {
+      gap: 4px;
+    }
+  }
 }
 
 .view-toggle-buttons button,
@@ -595,10 +520,13 @@ ion-content {
 
 .right-section {
   display: flex;
-  flex-direction: row;     /* ← Esto asegura que estén uno al lado del otro */
+  flex-direction: row;
+  /* ← Esto asegura que estén uno al lado del otro */
   align-items: center;
-  gap: 10px;               /* Separación elegante entre status y botón */
-  margin-left: auto;       /* Empuja todo hacia la derecha */
+  gap: 10px;
+  /* Separación elegante entre status y botón */
+  margin-left: auto;
+  /* Empuja todo hacia la derecha */
 }
 
 /* ---- STATUS ---- */
@@ -632,7 +560,8 @@ ion-content {
   border-radius: 10px;
   font-size: 0.85rem;
   font-weight: 600;
-  white-space: nowrap;        /* evita que se parta en dos líneas */
+  white-space: nowrap;
+  /* evita que se parta en dos líneas */
 }
 
 .view-btn:hover {
@@ -644,11 +573,88 @@ ion-content {
 @media (max-width: 480px) {
   .right-section {
     flex-direction: column;
-    align-items: flex-start; /* se ve más natural */
+    align-items: flex-start;
+    /* se ve más natural */
     gap: 6px;
   }
 
   .right-section .view-btn {
-    width: 100%; /* opcional si quieres que el botón abarque todo */
+    width: 100%;
+    /* opcional si quieres que el botón abarque todo */
+  }
+}
+
+/* Barra de acciones dentro del marco */
+/* ============================
+   BARRA DE ACCIONES (SIMÉTRICA A NAV-ROW)
+   ============================ */
+.action-bar {
+  display: flex;
+  justify-content: flex-end;
+  /* 👉 alineación a la derecha */
+  gap: 10px;
+  padding: 0 10px;
+  flex-wrap: wrap;
+
+  button {
+    font-size: 14px;
+    padding: 6px 14px;
+    border-radius: 14px;
+    border: 1px solid #d7d7d7;
+    background: white;
+    color: #333;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.2s ease-in-out;
+  }
+
+  /* Colores específicos */
+  .btn-primary {
+    background: #6366f1;
+    color: white;
+    border: none;
+  }
+
+  .btn-search {
+    background: #e2e8f0;
+    border: none;
+  }
+
+  .btn-block {
+    background: #f43f5e;
+    color: white;
+    border: none;
+  }
+
+  button:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+/* Variantes */
+.btn-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-search {
+  background: #e5e7eb;
+  color: #111;
+}
+
+.btn-block {
+  background: #ef4444;
+  color: white;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .action-bar {
+    flex-direction: column;
+  }
+
+  .action-btn {
+    width: 100%;
   }
 }

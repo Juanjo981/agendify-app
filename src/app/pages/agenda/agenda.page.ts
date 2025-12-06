@@ -30,30 +30,23 @@ export class AgendaPage {
 
   nombreUsuario = 'Juan José';
 
-  // 📌 Información del calendario
   currentDate = new Date();
   currentMonth = this.currentDate.getMonth();
   currentYear = this.currentDate.getFullYear();
 
-  // 🔤 Meses en español
+  weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
   monthNames = [
     "Enero", "Febrero", "Marzo", "Abril",
     "Mayo", "Junio", "Julio", "Agosto",
     "Septiembre", "Octubre", "Noviembre", "Diciembre"
   ];
 
-  // 👉 Vista actual: mes / semana / día
-  currentView: 'month' | 'week' | 'day' = 'month';
-
-  // Semana en español, desde lunes
-  weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-
   calendarDays: CalendarDay[] = [];
   selectedDay: CalendarDay | null = null;
 
   monthName = '';
 
-  // Eventos demo
+  // Eventos de prueba
   exampleEvents: CalendarEvent[] = [
     { title: 'Cita con Ana', time: '09:00 AM', color: '#ef4444', status: 'Confirmada' },
     { title: 'Terapia Luis', time: '11:00 AM', color: '#3b82f6', status: 'Confirmada' },
@@ -65,74 +58,65 @@ export class AgendaPage {
     this.generateCalendar();
   }
 
-  // -------------------------------------------------------
-  // 📅 GENERAR CALENDARIO
-  // -------------------------------------------------------
+  // ----------------------------------------
+  // GENERAR CALENDARIO MENSUAL
+  // ----------------------------------------
   generateCalendar() {
     this.monthName = this.monthNames[this.currentMonth];
-
     this.calendarDays = [];
 
     const firstOfMonth = new Date(this.currentYear, this.currentMonth, 1);
-    const rawStart = firstOfMonth.getDay(); // domingo = 0
-    const startIndex = (rawStart + 6) % 7; // lunes = 0
+    const rawStart = firstOfMonth.getDay();
+    const startIndex = (rawStart + 6) % 7;
 
     const daysInMonth = new Date(this.currentYear, this.currentMonth + 1, 0).getDate();
     const daysInPrevMonth = new Date(this.currentYear, this.currentMonth, 0).getDate();
 
-    // 🗓 Días del mes anterior
+    // Días del mes anterior (relleno)
     for (let i = startIndex - 1; i >= 0; i--) {
       const dayNum = daysInPrevMonth - i;
       const d = new Date(this.currentYear, this.currentMonth - 1, dayNum);
-      this.calendarDays.push({
-        date: d,
-        number: dayNum,
-        inCurrentMonth: false,
-        isToday: this.isToday(d),
-        fullDate: this.formatDateLocal(d),
-        events: [],
-      });
+      this.calendarDays.push(this.buildDay(d, false));
     }
 
-    // 🗓 Días del mes actual
+    // Días del mes actual
     for (let i = 1; i <= daysInMonth; i++) {
       const d = new Date(this.currentYear, this.currentMonth, i);
-      this.calendarDays.push({
-        date: d,
-        number: i,
-        inCurrentMonth: true,
-        isToday: this.isToday(d),
-        fullDate: this.formatDateLocal(d),
-        events: Math.random() > 0.7 ? this.exampleEvents : [],
-      });
+      this.calendarDays.push(
+        this.buildDay(d, true, Math.random() > 0.7 ? this.exampleEvents : [])
+      );
     }
 
-    // 🗓 Completar hasta 42 días
+    // Relleno hasta completar 42 días (6 filas)
     while (this.calendarDays.length < 42) {
       const last = this.calendarDays[this.calendarDays.length - 1].date;
       const next = new Date(last);
       next.setDate(next.getDate() + 1);
-      this.calendarDays.push({
-        date: next,
-        number: next.getDate(),
-        inCurrentMonth: false,
-        isToday: this.isToday(next),
-        fullDate: this.formatDateLocal(next),
-        events: [],
-      });
+      this.calendarDays.push(this.buildDay(next, false));
+    }
+
+    // Mantener seleccionado el mismo día si existe
+    if (this.selectedDay) {
+      const fd = this.selectedDay.fullDate;
+      this.selectedDay = this.calendarDays.find(d => d.fullDate === fd) || null;
     }
   }
 
-  // -------------------------------------------------------
-  // 🔄 VISTAS (Mes / Semana / Día)
-  // -------------------------------------------------------
-  setView(view: 'month' | 'week' | 'day') {
-    this.currentView = view;
+  // Crear objeto día
+  buildDay(date: Date, inMonth: boolean, events: CalendarEvent[] = []): CalendarDay {
+    return {
+      date,
+      number: date.getDate(),
+      inCurrentMonth: inMonth,
+      isToday: this.isToday(date),
+      fullDate: this.formatDateLocal(date),
+      events
+    };
   }
 
-  // -------------------------------------------------------
-  // ⬅️➡️ CAMBIO DE MESES
-  // -------------------------------------------------------
+  // ----------------------------------------
+  // NAVEGACIÓN ENTRE MESES
+  // ----------------------------------------
   prevMonth() {
     if (this.currentMonth === 0) {
       this.currentMonth = 11;
@@ -163,16 +147,16 @@ export class AgendaPage {
     this.generateCalendar();
   }
 
-  // -------------------------------------------------------
-  // ✔ SELECCIONAR DÍA
-  // -------------------------------------------------------
+  // ----------------------------------------
+  // SELECCIÓN DE DÍA
+  // ----------------------------------------
   selectDay(day: CalendarDay) {
     this.selectedDay = day;
   }
 
-  // -------------------------------------------------------
-  // 🟢 Funciones auxiliares
-  // -------------------------------------------------------
+  // ----------------------------------------
+  // UTILIDADES
+  // ----------------------------------------
   isToday(d: Date) {
     const today = new Date();
     return (
@@ -182,15 +166,29 @@ export class AgendaPage {
     );
   }
 
-  verCita(ev: CalendarEvent) {
-    console.log("Abrir detalle de la cita:", ev);
-    // Aquí luego abres un modal, o navegas a /cita/:id, etc
-  }
-
   formatDateLocal(d: Date): string {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
+  }
+
+  // ----------------------------------------
+  // ACCIONES (botones superiores)
+  // ----------------------------------------
+  nuevaCita() {
+    console.log("🟦 Crear nueva cita");
+  }
+
+  buscarPaciente() {
+    console.log("🔍 Buscar paciente");
+  }
+
+  bloquearHorario() {
+    console.log("⛔ Bloquear horario");
+  }
+
+  verCita(ev: CalendarEvent) {
+    console.log("📄 Ver detalle de cita:", ev);
   }
 }
