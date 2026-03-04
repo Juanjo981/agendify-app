@@ -1,6 +1,6 @@
 <ion-content class="agenda-content">
 
-  <!-- Encabezado elegante -->
+  <!-- 🔷 Encabezado elegante -->
   <div class="agenda-header">
     <div class="header-icon">
       <ion-icon name="calendar-outline"></ion-icon>
@@ -8,78 +8,63 @@
     <div class="header-text">
       <h2>Hola, {{ nombreUsuario }}!</h2>
       <p>Tu agenda del mes</p>
-      <p class="header-day-info">{{ dayName }}, {{ fullDate }} - {{ eventsToday }} citas hoy</p>
+      <p class="header-day-info">
+        {{ dayName }}, {{ fullDate }} - {{ eventsToday }} citas hoy
+      </p>
     </div>
   </div>
 
   <!-- ========================================================= -->
-
-
   <!-- 🔷 MARCO COMPLETO DEL CALENDARIO -->
+  <!-- ========================================================= -->
   <div class="calendar-wrapper">
-
-
 
     <!-- 🔹 CONTROLES DE NAVEGACIÓN -->
     <div class="calendar-controls">
-      <!-- Lado izquierdo - 3 botones -->
+
       <div class="left-controls">
         <button class="nav-btn" (click)="prevMonth()">Anterior</button>
         <button class="nav-btn" (click)="goToday()">Hoy</button>
         <button class="nav-btn" (click)="nextMonth()">Siguiente</button>
       </div>
 
-      <!-- Nombre del mes centrado -->
       <div class="calendar-month-label">
         {{ monthName }} {{ currentYear }}
       </div>
 
-      <!-- Lado derecho - 3 botones -->
       <div class="right-controls">
         <button class="action-btn btn-custom" (click)="nuevaCita()">+ Nueva cita</button>
         <button class="action-btn btn-search">🔍 Buscar Paciente</button>
         <button class="action-btn btn-block" (click)="bloquearHorario()">🔒 Bloquear Horario</button>
       </div>
+
     </div>
 
+    <!-- 🔹 DÍAS DE LA SEMANA -->
+    <div class="weekdays">
+      <div *ngFor="let d of weekDays">{{ d }}</div>
+    </div>
 
+    <!-- 🔹 GRID DE DÍAS -->
+    <div class="calendar-grid">
+      <div class="day" *ngFor="let day of calendarDays" [class.inactive]="!day.inCurrentMonth"
+        [class.today]="day.isToday" [class.selected]="selectedDay?.fullDate === day.fullDate" (click)="selectDay(day)"
+        [ngStyle]="{ 'background-color': day.colorCitas }">
 
-    <!-- FIN DE CONTROLES -->
+        <span class="day-number">{{ day.number }}</span>
 
-    <!-- ========================================================= -->
-    <!-- 🔷 VISTA MENSUAL -->
-    <!-- ========================================================= -->
-    <div>
+        <div class="event-dots" *ngIf="(day?.events?.length || 0) > 0">
+          <ng-container *ngFor="let e of day.events | slice:0:3">
+            <span class="dot" [style.background]="e.color"></span>
+          </ng-container>
 
-      <!-- 🔹 DÍAS DE LA SEMANA -->
-      <div class="weekdays">
-        <div *ngFor="let d of weekDays">{{ d }}</div>
-      </div>
-
-      <!-- 🔹 GRID DE DÍAS -->
-      <div class="calendar-grid">
-        <div class="day" *ngFor="let day of calendarDays" [class.inactive]="!day.inCurrentMonth"
-          [class.today]="day.isToday" [class.selected]="selectedDay?.fullDate === day.fullDate"
-          (click)="selectDay(day)">
-
-          <span class="day-number">{{ day.number }}</span>
-
-          <!-- EVENTOS -->
-          <div class="event-dots" *ngIf="(day?.events?.length || 0) > 0">
-            <ng-container *ngFor="let e of day.events | slice:0:3">
-              <span class="dot" [style.background]="e.color"></span>
-            </ng-container>
-
-            <span class="more-events" *ngIf="day.events.length > 3">
-              +{{ day.events.length - 3 }}
-            </span>
-          </div>
-
+          <span class="more-events" *ngIf="day.events.length > 3">
+            +{{ day.events.length - 3 }}
+          </span>
         </div>
-      </div>
 
+      </div>
     </div>
-    <!-- FIN DE MENSUAL -->
 
   </div>
 
@@ -96,28 +81,23 @@
       <p>No hay eventos este día.</p>
     </div>
 
-    <!-- 🔥 LISTA DE EVENTOS -->
     <ion-list *ngIf="(selectedDay?.events?.length || 0) > 0">
       <ion-item *ngFor="let ev of selectedDay?.events || []" class="event-item">
 
         <ion-icon slot="start" name="ellipse" [style.color]="ev.color"></ion-icon>
 
-        <!-- IZQUIERDA -->
         <ion-label>
           <h2>{{ ev.title }}</h2>
           <p>{{ ev.time }}</p>
         </ion-label>
 
-        <!-- DERECHA -->
         <div class="right-section">
-
           <div class="status" [class.confirmed]="ev.status === 'Confirmada'"
             [class.pending]="ev.status === 'Pendiente'">
 
             <ion-icon [name]="ev.status === 'Confirmada'
                 ? 'checkmark-circle'
-                : 'time-outline'">
-            </ion-icon>
+                : 'time-outline'"></ion-icon>
 
             <span>
               {{ ev.status === 'Confirmada' ? 'Confirmada' : 'Pendiente' }}
@@ -127,12 +107,208 @@
           <button class="view-btn" (click)="verCita(ev)">
             Ver cita
           </button>
-
         </div>
 
       </ion-item>
     </ion-list>
+  </div>
 
+  <!-- ========================================================= -->
+  <!-- 🔷 PANEL — NUEVA CITA (con gesto de deslizar en móvil) -->
+  <!-- ========================================================= -->
+
+  <div class="new-appointment-panel" [class.open]="showNewAppointmentPanel" (touchstart)="startDrag($event)"
+    (touchmove)="onDrag($event)" (touchend)="endDrag($event)">
+
+    <!-- Handle estilo iOS -->
+    <div class="drag-handle"></div>
+
+    <!-- HEADER PREMIUM -->
+    <div class="panel-header premium-header">
+      <h3>Nueva cita</h3>
+      <ion-icon name="close-outline" (click)="closeNewAppointmentPanel()"></ion-icon>
+    </div>
+
+
+
+    <!-- ========================================================= -->
+    <!-- PANEL BODY (scroll interno controlado para no desbordarse) -->
+    <!-- ========================================================= -->
+
+    <div class="panel-body">
+
+      <!-- SUBHEADER: FECHAS RECOMENDADAS -->
+      <div class="recommended-box">
+
+        <!-- Fecha recomendada -->
+        <div class="recommended-row">
+          <div class="text-group">
+            <p class="label">Fecha y hora recomendada:</p>
+            <p class="value">{{ recommendedDate | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+
+          <button type="button" class="select-btn" (click)="usarFechaRecomendada()">
+            Seleccionar
+          </button>
+        </div>
+
+        <!-- Próximo espacio -->
+        <div class="recommended-row">
+          <div class="text-group">
+            <p class="label">Próximo espacio disponible:</p>
+            <p class="value">{{ nextAvailableDate | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+
+          <button type="button" class="select-btn" (click)="usarSiguienteDisponible()">
+            Seleccionar
+          </button>
+        </div>
+
+      </div>
+
+      <form (ngSubmit)="saveAppointment()">
+
+        <!-- PACIENTE -->
+        <ion-item class="select-item" button detail="false" (click)="openPacienteModal()">
+          <ion-label position="stacked">Paciente</ion-label>
+          <ion-text>
+            {{ selectedPaciente?.nombre || 'Seleccionar paciente...' }}
+          </ion-text>
+        </ion-item>
+
+
+        <!-- FECHA INICIO -->
+        <ion-item class="input-item" button detail="false" (click)="openDatePicker('inicio')">
+          <ion-label>Fecha inicio</ion-label>
+          <ion-text>{{ newAppointment.fecha_inicio | date:'dd/MM/yyyy' }}</ion-text>
+        </ion-item>
+
+        <!-- HORA INICIO -->
+        <ion-item class="select-item hour-field" (click)="openHourModal('inicio')">
+          <ion-label position="stacked">Hora inicio</ion-label>
+          <div class="hour-display">
+            {{ newAppointment.hora_inicio || 'Seleccionar hora' }}
+          </div>
+        </ion-item>
+
+        <!-- HORA FIN -->
+        <ion-item class="select-item hour-field" (click)="openHourModal('fin')">
+          <ion-label position="stacked">Hora fin</ion-label>
+          <div class="hour-display">
+            {{ newAppointment.hora_fin || 'Seleccionar hora' }}
+          </div>
+        </ion-item>
+
+
+        <!-- NOTAS -->
+        <ion-item class="input-item">
+          <ion-label position="stacked">Notas</ion-label>
+          <ion-textarea [(ngModel)]="newAppointment.notas" name="notas" placeholder="Añade notas opcionales...">
+          </ion-textarea>
+        </ion-item>
+
+        <!-- BOTÓN -->
+        <div class="panel-footer">
+          <ion-button expand="block" type="submit" class="btn-primary">
+            Guardar cita
+          </ion-button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+
+
+  <!-- MODAL DE FECHA -->
+  <ion-modal cssClass="fecha-modal" [isOpen]="showDateModal" (didDismiss)="closeDateModal()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Seleccionar fecha</ion-title>
+          <ion-buttons slot="end">
+            <ion-button class="close-btn" fill="clear" (click)="closeDateModal()">
+              <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content>
+        <ion-datetime presentation="date" (ionChange)="selectDate($event)"></ion-datetime>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+  <!-- ========================================================= -->
+  <!-- MODAL DE PACIENTES – Lista + buscador con filtro en vivo -->
+  <!-- ========================================================= -->
+
+  <ion-modal cssClass="paciente-modal" [isOpen]="showPacienteModal" [enterAnimation]="modalEnterAnimation.bind(this)"
+    (didDismiss)="closePacienteModal()">
+
+    <ng-template>
+
+      <!-- WRAPPER OBLIGATORIO (EVITA QUE LA LISTA SE SUBA) -->
+      <div class="modal-wrapper">
+
+        <!-- HEADER -->
+        <ion-header class="modal-header">
+          <ion-toolbar>
+            <ion-title>Seleccionar paciente</ion-title>
+
+            <ion-buttons slot="end">
+              <ion-button class="close-btn" fill="clear" (click)="closePacienteModal()">
+                <ion-icon name="close-outline"></ion-icon>
+              </ion-button>
+            </ion-buttons>
+
+          </ion-toolbar>
+        </ion-header>
+
+        <!-- CONTENIDO SCROLLEABLE -->
+        <ion-content class="modal-scroll">
+
+          <!-- 🔍 Spotlight Searchbar -->
+          <div class="search-container spotlight">
+            <ion-searchbar placeholder="Buscar paciente..." [(ngModel)]="busquedaPaciente"
+              (ionInput)="filtrarPacientes()">
+            </ion-searchbar>
+          </div>
+
+          <!-- LISTA -->
+          <ion-list>
+            <ion-item *ngFor="let pa of pacientesFiltrados" (click)="selectPaciente(pa)" class="cliente-item">
+              <ion-label>
+                <h2>{{ pa.nombre }}</h2>
+              </ion-label>
+            </ion-item>
+          </ion-list>
+
+        </ion-content>
+      </div>
+
+    </ng-template>
+  </ion-modal>
+
+  <!-- MODAL ELEGANTE DE HORA -->
+  <div class="hour-modal" [class.open]="showHourModal">
+    <div class="hour-container">
+
+      <div class="modal-header">
+        <h2>Seleccionar hora</h2>
+        <button class="close-btn" (click)="closeHourModal()">×</button>
+      </div>
+
+      <div class="hours-grid">
+        <div class="hour-item" *ngFor="let h of horas" (click)="selectHour(h)">
+          {{ h }}
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-backdrop" (click)="closeHourModal()"></div>
   </div>
 
 </ion-content>

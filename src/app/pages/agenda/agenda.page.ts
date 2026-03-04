@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, createAnimation } from '@ionic/angular';
 
 interface CalendarEvent {
   title: string;
@@ -11,12 +11,14 @@ interface CalendarEvent {
 }
 
 interface CalendarDay {
-  date: Date;
-  number: number;
-  inCurrentMonth: boolean;
-  isToday: boolean;
-  fullDate: string;
-  events: CalendarEvent[];
+  date: Date,
+  number: number,
+  inCurrentMonth: boolean,
+  isToday: boolean,
+  fullDate: string,
+  events: CalendarEvent[],
+  citas: number,
+  colorCitas: string
 }
 
 @Component({
@@ -29,6 +31,7 @@ interface CalendarDay {
 export class AgendaPage {
 
   nombreUsuario = 'Juan José';
+  showNewAppointmentPanel = false;
 
   currentDate = new Date();
   currentMonth = this.currentDate.getMonth();
@@ -36,10 +39,57 @@ export class AgendaPage {
 
   weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
   monthNames = [
-    "Enero", "Febrero", "Marzo", "Abril",
-    "Mayo", "Junio", "Julio", "Agosto",
-    "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    'Enero', 'Febrero', 'Marzo', 'Abril',
+    'Mayo', 'Junio', 'Julio', 'Agosto',
+    'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
+
+  // Objeto de nueva cita
+  newAppointment: any = {
+    id_profesional: null,
+    id_paciente: null,
+    fecha_inicio: null,        // solo fecha (string ISO)
+    fecha_fin: null,           // solo fecha
+    hora_inicio: null,         // string: "11:00 AM"
+    hora_fin: null,            // string
+    tipo: null,
+    estado: null,
+    notas: ''
+  };
+
+  maxCitasPorDia = 8;
+
+
+  // Datos de ejemplo
+  profesionales = [{ id: 1, nombre: 'Dr. Pérez' }, { id: 2, nombre: 'Dra. López' }];
+  pacientes = [
+    { id: 1, nombre: 'Juan Pérez' },
+    { id: 2, nombre: 'Ana López' },
+    { id: 3, nombre: 'Carlos Medina' },
+    { id: 4, nombre: 'María Torres' },
+    { id: 5, nombre: 'Luis Hernández' },
+    { id: 6, nombre: 'Fernanda Ruiz' },
+    { id: 7, nombre: 'Jorge Sánchez' },
+    { id: 8, nombre: 'Daniela Romero' },
+    { id: 9, nombre: 'Miguel Castro' },
+    { id: 10, nombre: 'Sofía Navarro' },
+    { id: 11, nombre: 'Adrián Delgado' },
+    { id: 12, nombre: 'Gabriela Morales' },
+    { id: 13, nombre: 'Ricardo Vega' },
+    { id: 14, nombre: 'Paola Reyes' },
+    { id: 15, nombre: 'Héctor Silva' },
+    { id: 16, nombre: 'Claudia Flores' },
+    { id: 17, nombre: 'Roberto Aguilar' },
+    { id: 18, nombre: 'Elena Carrillo' },
+    { id: 19, nombre: 'Diego Ortiz' },
+    { id: 20, nombre: 'Valeria Campos' }
+  ];
+
+  tiposCita = [{ id: 1, nombre: 'Consulta' }, { id: 2, nombre: 'Terapia' }];
+  estadosCita = [{ id: 1, nombre: 'Pendiente' }, { id: 2, nombre: 'Confirmada' }];
+
+  recommendedDate: Date = new Date();
+  nextAvailableDate: Date = new Date(new Date().getTime() + 60 * 60 * 1000); // +1h
 
   calendarDays: CalendarDay[] = [];
   selectedDay: CalendarDay | null = null;
@@ -48,7 +98,27 @@ export class AgendaPage {
   fullDate: string = '';
   eventsToday: number = 0;
 
+  showDateModal = false;
+  activeDateField: 'inicio' | 'fin' | null = null;
+
   monthName = '';
+  showHourModal = false;
+
+  horas: string[] = [
+    '08:00 AM', '08:30 AM',
+    '09:00 AM', '09:30 AM',
+    '10:00 AM', '10:30 AM',
+    '11:00 AM', '11:30 AM',
+    '12:00 PM', '12:30 PM',
+    '01:00 PM', '01:30 PM',
+    '02:00 PM', '02:30 PM',
+    '03:00 PM', '03:30 PM',
+    '04:00 PM', '04:30 PM',
+    '05:00 PM', '05:30 PM',
+    '06:00 PM'
+  ];
+  selectedHour: string | null = null;
+  selectingHourFor: 'inicio' | 'fin' | null = null;
 
   // Eventos de prueba
   exampleEvents: CalendarEvent[] = [
@@ -56,25 +126,68 @@ export class AgendaPage {
     { title: 'Terapia Luis', time: '11:00 AM', color: '#3b82f6', status: 'Confirmada' },
     { title: 'Evaluación María', time: '02:00 PM', color: '#facc15', status: 'Pendiente' },
     { title: 'Seguimiento Carlos', time: '04:00 PM', color: '#22c55e', status: 'Confirmada' },
+
+
+
+
   ];
+
+  // ---- Drag para cerrar en móvil ----
+  private dragStartY = 0;
+  private dragCurrentY = 0;
+  private isDragging = false;
 
   constructor() {
     this.generateCalendar();
     this.updateHeaderInfo();
   }
 
+
+  showPacienteModal = false;
+  pacientesFiltrados = [...this.pacientes];
+  busquedaPaciente = '';
+
+  selectedPaciente: any = null;
+
+  getColorForDay(citas: number): string {
+    if (citas >= this.maxCitasPorDia) {
+      return '#ffe4e1'; // lleno
+    } else if (citas >= this.maxCitasPorDia / 2) {
+      return '#fcfcda'; // medio
+    } else {
+      return '#d8f8e1'; // bajo
+    }
+  }
+
+
+  openHourModal(field: 'inicio' | 'fin') {
+  this.selectingHourFor = field;
+  this.showHourModal = true;
+}
+
+
+  closeHourModal() {
+    this.showHourModal = false;
+  }
+
+  selectHour(h: string) {
+    this.selectedHour = h;
+    this.showHourModal = false;
+
+    console.log('Hora seleccionada:', h);
+  }
+
+  // Encabezado (Hoy ...)
   updateHeaderInfo() {
     const today = new Date();
     const weekNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     this.dayName = weekNames[today.getDay()];
 
-    // Fecha legible
     const day = today.getDate();
     const month = this.monthNames[today.getMonth()];
     const year = today.getFullYear();
     this.fullDate = `${day} de ${month} de ${year}`;
 
-    // Número de eventos hoy
     const todayStr = this.formatDateLocal(today);
     const todayCalendarDay = this.calendarDays.find(d => d.fullDate === todayStr);
     this.eventsToday = todayCalendarDay?.events.length || 0;
@@ -126,13 +239,18 @@ export class AgendaPage {
 
   // Crear objeto día
   buildDay(date: Date, inMonth: boolean, events: CalendarEvent[] = []): CalendarDay {
+
+    const citas = events.length || 0;
+
     return {
       date,
       number: date.getDate(),
       inCurrentMonth: inMonth,
       isToday: this.isToday(date),
       fullDate: this.formatDateLocal(date),
-      events
+      events,
+      citas,
+      colorCitas: this.getColorForDay(citas) // 👈 color dinámico
     };
   }
 
@@ -198,19 +316,261 @@ export class AgendaPage {
   // ----------------------------------------
   // ACCIONES (botones superiores)
   // ----------------------------------------
-  nuevaCita() {
-    console.log("🟦 Crear nueva cita");
-  }
-
   buscarPaciente() {
-    console.log("🔍 Buscar paciente");
+    console.log('🔍 Buscar paciente');
   }
 
   bloquearHorario() {
-    console.log("⛔ Bloquear horario");
+    console.log('⛔ Bloquear horario');
   }
 
   verCita(ev: CalendarEvent) {
-    console.log("📄 Ver detalle de cita:", ev);
+    console.log('📄 Ver detalle de cita:', ev);
   }
+
+  // ----------------------------------------
+  // ACCIONES (Nueva cita)
+  // ----------------------------------------
+  nuevaCita() {
+    const start = new Date();
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+
+    this.newAppointment.fecha_inicio = start.toISOString();
+    this.newAppointment.fecha_fin = end.toISOString();
+
+    this.recommendedDate = start;
+    this.nextAvailableDate = end;
+
+    this.showNewAppointmentPanel = true;
+  }
+
+  closeNewAppointmentPanel() {
+    this.showNewAppointmentPanel = false;
+    this.resetPanelTransform();
+    this.dragStartY = 0;
+    this.dragCurrentY = 0;
+    this.isDragging = false;
+  }
+
+  saveAppointment() {
+    console.log('Nueva cita:', this.newAppointment);
+    this.closeNewAppointmentPanel();
+  }
+
+  // ----------------------------------------
+  // DATE PICKER MODAL
+  // ----------------------------------------
+  openDatePicker(field: 'inicio' | 'fin') {
+    this.activeDateField = field;
+    this.showDateModal = true;
+
+    // Esperar a que el modal cree el ion-datetime
+    setTimeout(() => {
+      const datetime: any = document.querySelector('ion-datetime');
+      if (datetime) {
+        this.applyCalendarColors(datetime);
+      }
+    }, 150);
+  }
+
+
+  applyCalendarColors(datetimeEl: HTMLElement) {
+    const shadow = datetimeEl.shadowRoot;
+    if (!shadow) return;
+
+    this.calendarDays.forEach(day => {
+      if (!day.inCurrentMonth) return;
+
+      // Mes real para ion-datetime (1–12)
+      const realMonth = this.currentMonth + 1;
+
+      const selector = `button.calendar-day[data-day="${day.number}"][data-month="${realMonth}"][data-year="${this.currentYear}"]`;
+
+      const dayEl = shadow.querySelector(selector) as HTMLElement;
+
+      console.log("Pintando:", selector, "=>", dayEl);
+
+      if (dayEl) {
+        dayEl.style.setProperty('--day-bg-color', day.colorCitas);
+        dayEl.style.borderRadius = '50%';
+        dayEl.style.background = day.colorCitas;
+      }
+    });
+  }
+
+
+
+  assignColorsToDays() {
+    this.calendarDays.forEach(day => {
+      const count = (day.events?.length || 0);
+
+      if (count >= this.maxCitasPorDia) {
+        day.colorCitas = '#fcb7af';       // rojo suave
+      } else if (count >= this.maxCitasPorDia / 2) {
+        day.colorCitas = '#fdf9c4';       // amarillo
+      } else {
+        day.colorCitas = '#d8f8e1';       // verde (incluye cero citas)
+      }
+    });
+  }
+
+
+
+
+  closeDateModal() {
+    this.showDateModal = false;
+    this.activeDateField = null;
+  }
+
+  selectDate(event: any) {
+    const value = event.detail.value;
+
+    if (this.activeDateField === 'inicio') {
+      this.newAppointment.fecha_inicio = value;
+    }
+    if (this.activeDateField === 'fin') {
+      this.newAppointment.fecha_fin = value;
+    }
+
+    this.closeDateModal();
+  }
+
+  // ----------------------------------------
+  // DRAG PARA CERRAR EN MÓVIL
+  // ----------------------------------------
+  private isMobile(): boolean {
+    return window.innerWidth <= 600;
+  }
+
+  private getPanelElement(): HTMLElement | null {
+    return document.querySelector('.new-appointment-panel');
+  }
+
+  startDrag(event: TouchEvent) {
+    if (!this.isMobile() || !this.showNewAppointmentPanel) return;
+
+    this.dragStartY = event.touches[0].clientY;
+    this.dragCurrentY = this.dragStartY;
+    this.isDragging = true;
+  }
+
+  onDrag(event: TouchEvent) {
+    if (!this.isMobile() || !this.isDragging) return;
+
+    this.dragCurrentY = event.touches[0].clientY;
+    const diff = this.dragCurrentY - this.dragStartY;
+
+    // Solo permitimos arrastrar hacia abajo
+    if (diff <= 0) return;
+
+    const panel = this.getPanelElement();
+    if (panel) {
+      panel.style.transform = `translate(-50%, ${diff}px)`;
+    }
+  }
+
+  endDrag(_event: TouchEvent) {
+    if (!this.isMobile() || !this.isDragging) return;
+
+    const diff = this.dragCurrentY - this.dragStartY;
+    const panel = this.getPanelElement();
+
+    this.isDragging = false;
+
+    const threshold = 120; // px para cerrar
+
+    if (diff > threshold) {
+      // cerrar
+      this.closeNewAppointmentPanel();
+    } else {
+      // regresar a su posición original (CSS se encarga)
+      if (panel) {
+        panel.style.transform = '';
+      }
+    }
+
+    this.dragStartY = 0;
+    this.dragCurrentY = 0;
+  }
+
+  private resetPanelTransform() {
+    const panel = this.getPanelElement();
+    if (panel) {
+      panel.style.transform = '';
+    }
+  }
+
+  usarFechaRecomendada() {
+    const fecha = this.recommendedDate;
+
+    this.newAppointment.fecha_inicio = fecha;
+    this.newAppointment.hora_inicio = this.formatHour(fecha);
+  }
+
+  usarSiguienteDisponible() {
+    const fecha = this.nextAvailableDate;
+
+    this.newAppointment.fecha_fin = fecha;
+    this.newAppointment.hora_fin = this.formatHour(fecha);
+  }
+
+  formatHour(date: Date): string {
+    let h = date.getHours();
+    let m = date.getMinutes();
+
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+
+    const mm = m.toString().padStart(2, '0');
+
+    return `${h}:${mm} ${ampm}`;
+  }
+
+  openPacienteModal() {
+    this.pacientesFiltrados = [...this.pacientes];
+    this.busquedaPaciente = '';
+    this.showPacienteModal = true;
+  }
+
+  closePacienteModal() {
+    this.showPacienteModal = false;
+  }
+
+  filtrarPacientes() {
+    const term = this.busquedaPaciente.toLowerCase();
+
+    this.pacientesFiltrados = this.pacientes.filter(p =>
+      p.nombre.toLowerCase().includes(term)
+    );
+  }
+
+  selectPaciente(paciente: any) {
+    this.selectedPaciente = paciente;
+    this.newAppointment.id_paciente = paciente.id;
+    this.closePacienteModal();
+  }
+
+  modalEnterAnimation(baseEl: HTMLElement) {
+    const root = baseEl.shadowRoot || baseEl;
+
+    const backdropAnimation = createAnimation()
+      .addElement(root.querySelector('ion-backdrop')!)
+      .fromTo('opacity', '0', '0.45');
+
+    const wrapper = root.querySelector('.ion-overlay-wrapper')!;
+    const wrapperAnimation = createAnimation()
+      .addElement(wrapper)
+      .keyframes([
+        { offset: 0, opacity: '0', transform: 'scale(0.9)' },
+        { offset: 1, opacity: '1', transform: 'scale(1)' }
+      ])
+      .duration(200)
+      .easing('ease-out');
+
+    return createAnimation()
+      .addAnimation([backdropAnimation, wrapperAnimation]);
+  }
+
+
+
 }

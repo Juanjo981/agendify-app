@@ -213,7 +213,7 @@
 /* 👉 Día seleccionado — ahora se ve clarísimo */
 .day-cell.selected {
   background: #4f46e5 !important;
-  color: white !important;
+  color: #c5c6c8 !important;
   border-color: #4338ca !important;
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
@@ -840,7 +840,7 @@ ion-content {
     color: #ffffff; // blanco elegante
     margin: 0;
     line-height: 1.2;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
 
   p {
@@ -854,14 +854,1157 @@ ion-content {
 
   .header-day-info {
     font-size: 0.95rem;
-    color: #cccccc; 
+    color: #cccccc;
     font-weight: 400;
     margin-top: 2px;
     letter-spacing: 0.5px;
     align-items: center;
     gap: 6px;
 
-    
+
+  }
+}
+
+/* ============================================
+   PANEL NUEVA CITA – Premium iOS/Calendly Style
+   ============================================ */
+
+.new-appointment-panel {
+  position: fixed;
+  left: 50%;
+  bottom: -100%;
+  /* Comienza oculto */
+  transform: translate(-50%, 10%);
+  width: 60%;
+  max-width: 780px;
+  overflow: hidden;
+  max-height: 80vh;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  border-radius: 22px;
+
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.08),
+    0 20px 40px rgba(0, 0, 0, 0.12);
+
+  opacity: 0;
+  pointer-events: none;
+
+  transition:
+    bottom 0.35s ease,
+    opacity 0.35s ease,
+    transform 0.35s ease;
+
+  z-index: 9999;
+
+  /* ============================
+     PANEL ABIERTO – Desktop
+     ============================ */
+  &.open {
+    bottom: 6%;
+    /* ✔ un poco más arriba */
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -4%);
+    /* ✔ flotado elegante */
+  }
+
+  /* ============================
+     DRAG HANDLE (iOS style)
+     ============================ */
+  .drag-handle {
+    width: 45px;
+    height: 5px;
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 5px;
+    margin: 10px auto 6px auto;
+    display: none;
+    /* Solo móvil */
+  }
+
+  /* ============================
+     HEADER
+     ============================ */
+  .panel-header {
+    padding: 8px 20px 14px 20px;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    h3 {
+      margin: 0;
+      font-size: 1.25rem;
+      color: #222;
+    }
+
+    ion-icon {
+      font-size: 1.6rem;
+      cursor: pointer;
+      color: #555;
+      transition: 0.2s ease;
+    }
+
+    ion-icon:hover {
+      color: #000;
+      transform: scale(1.12);
+    }
+  }
+
+  /* ============================
+     CONTENIDO SCROLLEABLE
+     ============================ */
+  .panel-body {
+    padding: 20px;
+    overflow-y: auto;
+    max-height: calc(80vh - 95px);
+    scrollbar-width: thin;
+  }
+
+  ion-item {
+    --background: transparent;
+    --padding-start: 0;
+    margin-bottom: 12px;
+  }
+
+  .appointment-info p {
+    font-size: 0.9rem;
+    margin: 4px 0;
+    color: #444;
+  }
+
+  /* FOOTER */
+  .panel-footer {
+    padding: 12px 20px 18px 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
+}
+
+/* ============================================
+   RESPONSIVE – Tablet
+   ============================================ */
+@media (max-width: 900px) {
+  .new-appointment-panel {
+    width: 80%;
+    transform: translate(-50%, -5%);
+  }
+}
+
+/* ============================================
+   RESPONSIVE – Móvil (Bottom Sheet completo)
+   ============================================ */
+@media (max-width: 600px) {
+  .new-appointment-panel {
+    width: 100%;
+    padding-top: 60px;
+    padding-bottom: 20px;
+    max-width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+
+    bottom: 0 !important;
+    left: 50%;
+    transform: translate(-50%, 0) !important;
+
+    border-radius: 18px 18px 0 0;
+  }
+
+  /* Drag handle visible */
+  .new-appointment-panel .drag-handle {
+    display: block;
+    margin: 10px auto;
+    width: 48px;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.28);
+    border-radius: 4px;
+  }
+
+  /* Header más compacto */
+  .new-appointment-panel .panel-header {
+    padding-top: 6px;
+  }
+
+  /* Scroll ajustado */
+  .new-appointment-panel .panel-body {
+    max-height: calc(100vh - 140px);
+  }
+
+  /* SCROLL DEL CONTENIDO */
+  .new-appointment-panel .panel-body {
+    flex: 1 1 auto;
+    /* ocupa el espacio restante */
+    overflow-y: auto;
+    padding-bottom: 20px;
+  }
+
+  /* FOOTER FIJO */
+  .new-appointment-panel .panel-footer {
+    flex-shrink: 0;
+    padding: 14px 20px 24px 20px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
+}
+
+/* ============================================
+   FOOTER – Botón elegante y consistente
+============================================ */
+.new-appointment-panel .panel-footer {
+  padding: 16px 24px 28px 24px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(18px);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+
+  display: flex;
+  justify-content: center;
+}
+
+/* Botón premium */
+.new-appointment-panel .panel-footer ion-button {
+  --background: linear-gradient(90deg, #2563eb, #3b82f6);
+  /* Azul moderno */
+  --border-radius: 14px;
+  --padding-top: 14px;
+  --padding-bottom: 14px;
+  --padding-start: 24px;
+  --padding-end: 24px;
+  width: 100%;
+
+  /* Sombra suave */
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.new-appointment-panel .panel-footer ion-button:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.25);
+}
+
+
+/* ============================================
+   SCROLLBAR LIMPIO (no feo, no gris)
+============================================ */
+.new-appointment-panel .panel-body {
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.new-appointment-panel .panel-body::-webkit-scrollbar {
+  width: 0;
+  /* Chrome, Safari – oculta */
+}
+
+/* ============================================
+   NUEVA CITA – ESTILO PREMIUM (PRO LOOK)
+============================================ */
+
+/* Títulos principales */
+.new-appointment-panel .panel-header h3 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #111827;
+  /* Gris profundo */
+  letter-spacing: -0.3px;
+}
+
+/* Textos de recomendación */
+.new-appointment-panel .appointment-info p {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.new-appointment-panel .appointment-info strong {
+  color: #111;
+}
+
+/* =====================================================
+   CAMPOS (ion-item) – estilo minimal elegante
+===================================================== */
+
+.new-appointment-panel ion-item {
+  --background: transparent;
+  --border-color: rgba(0, 0, 0, 0.06);
+  --inner-border-width: 0 0 1px 0;
+  --padding-start: 0;
+  --min-height: 56px;
+
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+/* Etiquetas (stacked labels) */
+.new-appointment-panel ion-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+/* Textos dentro del item */
+.new-appointment-panel ion-text {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+/* Select moderno */
+.new-appointment-panel ion-select {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #111827;
+
+  --placeholder-color: #6b7280;
+  --highlight-color-focused: #2563eb;
+}
+
+/* Dropdown arrow (ion-select) */
+.new-appointment-panel ion-select::part(icon) {
+  color: #6b7280;
+  font-size: 1.2rem;
+}
+
+/* Textarea */
+.new-appointment-panel ion-textarea {
+  --background: rgba(0, 0, 0, 0.02);
+  border-radius: 12px;
+  padding: 10px !important;
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+
+/* =====================================================
+   SEPARADORES SUAVES ENTRE SECCIONES
+===================================================== */
+.new-appointment-panel .section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 20px 0 6px 2px;
+}
+
+.new-appointment-panel .divider {
+  height: 1px;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.06);
+  margin: 14px 0;
+  border-radius: 999px;
+}
+
+/* =====================================================
+   Animación de enfoque en inputs
+===================================================== */
+.new-appointment-panel ion-item:focus-within {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+  border-radius: 12px;
+  transition: 0.15s ease;
+}
+
+/* =====================================================
+   Ajustes en MÓVIL – espacios y tipografías
+===================================================== */
+@media (max-width: 600px) {
+
+  .new-appointment-panel ion-item {
+    --min-height: 54px;
+  }
+
+  .new-appointment-panel ion-label {
+    font-size: 0.9rem;
+  }
+
+  .new-appointment-panel ion-text {
+    font-size: 0.95rem;
+  }
+}
+
+/* ============================================================
+   SELECTS PREMIUM – Minimal + Neo-iOS
+   ============================================================ */
+
+/* Contenedor del ion-select dentro del ion-item */
+.new-appointment-panel ion-item.select-item {
+  --background: rgba(255, 255, 255, 0.65);
+  --inner-padding-end: 12px;
+  --min-height: 60px;
+
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  padding: 8px 12px;
+
+  backdrop-filter: blur(6px);
+  transition: all 0.20s ease;
+}
+
+/* Efecto focus elegante */
+.new-appointment-panel ion-item.select-item:focus-within {
+  border-color: #2563eb !important;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.20);
+}
+
+/* Label */
+.new-appointment-panel ion-item.select-item ion-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 4px;
+}
+
+/* Texto seleccionado */
+.new-appointment-panel ion-item.select-item ion-select {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+
+  --placeholder-color: #9ca3af;
+  --highlight-color-focused: #2563eb;
+  --padding-start: 0;
+
+  margin-top: 4px;
+}
+
+/* Flecha moderna */
+.new-appointment-panel ion-item.select-item ion-select::part(icon) {
+  font-size: 1.25rem;
+  color: #6b7280;
+  transition: transform 0.25s ease, color 0.25s ease;
+}
+
+/* Flecha animada al abrir */
+.new-appointment-panel ion-item.select-item ion-select[aria-expanded="true"]::part(icon) {
+  transform: rotate(180deg);
+  color: #2563eb;
+}
+
+/* ============================================================
+   MENÚ DEL SELECT – Popover Premium (blur suave estilo iOS)
+   ============================================================ */
+
+ion-popover .popover-viewport,
+ion-popover ion-content {
+  --background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Elementos dentro del menú */
+ion-select-popover ion-item {
+  --background: transparent !important;
+  --inner-padding-end: 8px;
+  font-size: 0.95rem;
+  border-radius: 10px;
+}
+
+/* Efecto hover */
+ion-select-popover ion-item:hover {
+  background: rgba(37, 99, 235, 0.08);
+}
+
+/* Item seleccionado */
+ion-select-popover ion-item[selected="true"] {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+  font-weight: 700;
+}
+
+/* ============================================================
+   INPUTS Y TEXTAREAS PREMIUM – Minimal + iOS Style
+   ============================================================ */
+
+.new-appointment-panel ion-item.input-item {
+  --background: rgba(255, 255, 255, 0.65);
+  --inner-padding-end: 12px;
+  --min-height: 62px;
+
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  padding: 8px 12px;
+  margin-bottom: 14px;
+
+  backdrop-filter: blur(6px);
+  transition: all 0.20s ease;
+}
+
+/* Active focus */
+.new-appointment-panel ion-item.input-item:focus-within {
+  border-color: #2563eb !important;
+  background: rgba(255, 255, 255, 0.80);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+/* Label */
+.new-appointment-panel ion-item.input-item ion-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 4px;
+}
+
+/* Placeholder e input */
+.new-appointment-panel ion-item.input-item ion-input::part(native),
+.new-appointment-panel ion-item.input-item ion-textarea::part(native) {
+  --placeholder-color: #9ca3af;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+/* Inputs internos */
+.new-appointment-panel ion-input,
+.new-appointment-panel ion-textarea {
+  margin-top: 4px;
+  --padding-start: 0;
+}
+
+/* Textarea premium */
+.new-appointment-panel ion-textarea {
+  min-height: 90px;
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 6px;
+}
+
+/* Texto del textarea */
+.new-appointment-panel ion-textarea::part(textarea) {
+  color: #111827;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* ============================================================
+   HEADER PREMIUM CON SOMBRA SUAVE Y BORDE INFERIOR ELEGANTE
+   ============================================================ */
+.premium-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+
+  border-radius: 22px 22px 0 0;
+
+  h3 {
+    font-size: 1.45rem;
+    margin: 0;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.5px;
+  }
+
+  ion-icon {
+    font-size: 1.7rem;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    transition: 0.2s ease;
+    color: #475569;
+  }
+
+  ion-icon:hover {
+    background: rgba(0, 0, 0, 0.08);
+  }
+}
+
+/* ============================================================
+   CAJA DE RECOMENDACIONES – Minimal + premium glass
+   ============================================================ */
+.recommended-box {
+  padding: 16px 22px;
+  padding-bottom: 6px;
+
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.recommended-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 14px;
+}
+
+.text-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.text-group .label {
+  font-size: 0.90rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.text-group .value {
+  font-size: 0.93rem;
+  color: #334155;
+  margin: 2px 0 0 0;
+}
+
+/* ============================================================
+   BOTÓN "SELECCIONAR" – Premium iOS/macOS style
+   ============================================================ */
+
+.select-btn {
+  border: none;
+  background: #2563eb;
+  color: white;
+
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  padding: 6px 14px;
+  border-radius: 10px;
+
+  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.25);
+
+  transition: all 0.18s ease;
+}
+
+.select-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+}
+
+.select-btn:active {
+  transform: scale(0.96);
+}
+
+/* ========================================== */
+/*             MODAL PREMIUM AGENDIFY         */
+/* ========================================== */
+
+/* --- Contenedor principal del modal (parte visible) --- */
+.paciente-modal::part(content) {
+  border-radius: 22px;
+  max-width: 650px;
+  width: 60%;
+  overflow: hidden;
+  /* ► NECESARIO PARA que header+buscador no sean cubiertos */
+
+  /* Desplazamiento hacia la derecha en escritorio */
+  margin-left: calc(50% - 210px);
+  margin-right: auto !important;
+
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(18px);
+  box-shadow:
+    0 20px 35px rgba(0, 0, 0, 0.12),
+    0 40px 60px rgba(0, 0, 0, 0.18);
+}
+
+/* ============================= */
+/*   Móvil — Modal centrado      */
+/* ============================= */
+@media (max-width: 768px) {
+  .paciente-modal::part(content) {
+    width: 90% !important;
+    max-width: 90% !important;
+
+    margin-left: auto !important;
+    margin-right: auto !important;
+    max-height: 90% !important;
+
+    border-radius: 20px !important;
+  }
+}
+
+/* Teléfonos pequeños */
+@media (max-width: 480px) {
+  .paciente-modal::part(content) {
+    width: 95% !important;
+    max-width: 95% !important;
+    border-radius: 18px !important;
+  }
+}
+
+/* ========================================== */
+/*        FIX CRÍTICO: CONTENEDOR INTERNO     */
+/*      (Evita que la lista tape el buscador) */
+/* ========================================== */
+
+.paciente-modal .modal-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  /* ► Clave */
+}
+
+/* Scroll solo para el contenido, NO para header */
+.paciente-modal .modal-scroll {
+  flex: 1;
+  overflow-y: auto !important;
+  padding: 0;
+  position: relative;
+}
+
+/* Detecta cuando hay scroll y genera sombra bajo el searchbar */
+.paciente-modal .modal-scroll.scrolling .search-container {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+/* ========================================== */
+/*                 HEADER PREMIUM             */
+/* ========================================== */
+
+.paciente-modal ion-toolbar {
+  --background: rgba(255, 255, 255, 0.85);
+  --border-width: 0;
+  padding: 4px 14px;
+
+  backdrop-filter: blur(12px);
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.paciente-modal ion-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* ======================================= */
+/*     🔍 SPOTLIGHT SEARCHBAR PREMIUM      */
+/* ======================================= */
+
+.search-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+
+  padding: 16px;
+  padding-top: 14px;
+
+  position: sticky;
+  top: 0;
+  z-index: 20;
+
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+
+  /* Animación */
+  animation: spotlightFade 0.35s ease-out forwards;
+  opacity: 0;
+  transform: translateY(-6px);
+
+  transition: box-shadow 0.25s ease;
+}
+
+@keyframes spotlightFade {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mantener searchbar en ancho completo */
+.paciente-modal ion-searchbar {
+  margin: 0;
+  width: 100%;
+}
+
+/* Caja interna del Spotlight Searchbar */
+.paciente-modal ion-searchbar::part(container) {
+  border-radius: 16px;
+  height: 48px;
+
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px) saturate(180%);
+
+  border: 1px solid rgba(255, 255, 255, 0.6);
+
+  padding-left: 14px;
+  padding-right: 14px;
+
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.08),
+    inset 0 0 4px rgba(255, 255, 255, 0.6);
+
+  transition: all 0.25s ease;
+}
+
+/* Enfoque estilo macOS Spotlight */
+.paciente-modal ion-searchbar::part(container):focus-within {
+  background: rgba(255, 255, 255, 0.92);
+  transform: scale(1.02);
+
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.12),
+    inset 0 0 4px rgba(255, 255, 255, 0.75);
+}
+
+/* Input */
+.paciente-modal ion-searchbar::part(input) {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1e293b;
+  --placeholder-color: #9ca3af;
+}
+
+/* Iconos */
+.paciente-modal ion-searchbar::part(search-icon),
+.paciente-modal ion-searchbar::part(clear-button) {
+  font-size: 20px;
+  color: #6b7280;
+}
+
+/* ========================================== */
+/*                LISTA DE PACIENTES          */
+/* ========================================== */
+
+.paciente-modal ion-item {
+  margin: 8px 20px;
+  border-radius: 14px;
+
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(10px);
+
+  transition: all 0.18s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.paciente-modal ion-item:hover {
+  background: rgba(59, 130, 246, 0.12);
+  transform: translateX(6px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.paciente-modal h2 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* ========================================== */
+/*          Botón cierre estilo iOS           */
+/* ========================================== */
+
+.close-btn {
+  --padding-start: 6px;
+  --padding-end: 6px;
+  --padding-top: 6px;
+  --padding-bottom: 6px;
+
+  border-radius: 50%;
+  transition: 0.2s ease;
+}
+
+.close-btn ion-icon {
+  font-size: 24px;
+  color: #475569;
+}
+
+.close-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  transform: scale(1.08);
+}
+
+.close-btn:active {
+  background: rgba(0, 0, 0, 0.12);
+  transform: scale(0.92);
+}
+
+/* ========================================================= */
+/*   OCULTAR SCROLLBAR EN MODAL DE PACIENTES (Ionic)        */
+/* ========================================================= */
+
+/* Chrome, Edge, Safari */
+.paciente-modal ion-content::part(scroll)::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Firefox */
+.paciente-modal ion-content::part(scroll) {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+/* Asegura que ion-content use el scroll correcto */
+.paciente-modal ion-content {
+  --overflow: auto;
+}
+
+/* ========================================================= */
+/*           MODAL PREMIUM – SELECTOR DE FECHA               */
+/* ========================================================= */
+
+/* 🖥️ DESKTOP — Desplazado hacia la derecha, como lo querías */
+.fecha-modal::part(content) {
+  border-radius: 22px;
+
+  /* Modal más pequeño y elegante */
+  max-width: 380px !important;
+  width: 380px !important;
+
+  /* Desplazamiento hacia la derecha en desktop */
+  margin-left: calc(50% - 70px) !important;
+  margin-right: auto !important;
+
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(18px);
+
+  box-shadow:
+    0 20px 35px rgba(0, 0, 0, 0.12),
+    0 40px 60px rgba(0, 0, 0, 0.18);
+
+  /* Sin scroll */
+  overflow: hidden !important;
+
+  /* Altura compacta */
+  height: 420px !important;
+  max-height: 420px !important;
+}
+
+/* 📱 MÓVIL — El modal se centra y se hace proporcional */
+@media (max-width: 768px) {
+  .fecha-modal::part(content) {
+    width: 90% !important;
+    max-width: 90% !important;
+
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .fecha-modal::part(content) {
+    width: 92% !important;
+    max-width: 92% !important;
+    height: 420px !important;
+  }
+}
+
+/* ========================================================= */
+/*                   HEADER DEL MODAL                        */
+/* ========================================================= */
+
+.fecha-modal ion-toolbar {
+  --background: rgba(255, 255, 255, 0.85);
+  --border-width: 0 0 1px 0;
+  --border-color: rgba(0, 0, 0, 0.08);
+
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+
+  padding: 4px 14px;
+}
+
+.fecha-modal ion-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.fecha-modal ion-button {
+  --color: #475569;
+}
+
+/* ========================================================= */
+/*           ELIMINAR SCROLL DE ION-CONTENT                  */
+/* ========================================================= */
+
+.fecha-modal ion-content {
+  --padding-top: 0;
+  --padding-bottom: 0;
+  overflow: hidden !important;
+}
+
+/* ========================================================= */
+/*             CALENDARIO PREMIUM – AJUSTADO                 */
+/* ========================================================= */
+
+.fecha-modal ion-datetime {
+  --background: transparent;
+
+  margin: 0 auto;
+  padding: 0;
+
+  width: 100%;
+  height: 340px !important;
+  max-height: 340px !important;
+
+  display: flex;
+  justify-content: center;
+
+  overflow: hidden !important;
+}
+
+/* 🔷 Mes y año (December 2025) */
+.fecha-modal ion-datetime::part(month-year-button) {
+  font-weight: 600;
+  font-size: 17px;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+/* 🔷 Flechas */
+.fecha-modal ion-datetime::part(previous-month),
+.fecha-modal ion-datetime::part(next-month) {
+  font-size: 18px;
+  opacity: 0.75;
+  transition: 0.2s ease;
+}
+
+.fecha-modal ion-datetime::part(previous-month):hover,
+.fecha-modal ion-datetime::part(next-month):hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+/* 🔷 Encabezados de semana (S M T W ...) */
+.fecha-modal ion-datetime::part(calendar-day-of-week) {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+/* 🔷 Día regular */
+/* 🎨 Fondo dinámico del día (desde TS con --day-bg-color) */
+.fecha-modal ion-datetime::part(calendar-day) {
+  background: var(--day-bg-color, transparent);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s ease;
+}
+
+
+/* Hover */
+.fecha-modal ion-datetime::part(calendar-day):hover {
+  filter: brightness(0.95);
+  transform: scale(1.08);
+}
+
+/* 🔷 Día seleccionado — domina sobre el color */
+.fecha-modal ion-datetime::part(calendar-day-active) {
+  background: #3b82f6 !important;
+  color: white !important;
+  box-shadow: 0 3px 10px rgba(59,130,246,0.4);
+}
+
+/* 🔷 Hoy — sigue funcionando */
+.fecha-modal ion-datetime::part(calendar-day-today) {
+  border: 2px solid #3b82f6 !important;
+  color: #3b82f6 !important;
+}
+
+/* 🔷 Seleccionar Hora */
+.hour-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .3s ease;
+  z-index: 9999;
+
+  &.open {
+    pointer-events: all;
+    opacity: 1;
+  }
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(4px);
+}
+
+.hour-container {
+  position: relative;
+  width: 90%;
+  max-width: 380px;
+  max-height: 70vh;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: 0 10px 25px rgba(0,0,0,.12);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: scaleIn .25s ease;
+}
+
+@keyframes scaleIn {
+  from { transform: scale(.92); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  opacity: .7;
+  transition: .2s;
+}
+.close-btn:hover { opacity: 1; }
+
+.hours-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.hour-item {
+  padding: 12px 14px;
+  background: white;
+  border-radius: 14px;
+  text-align: center;
+  font-size: 1rem;
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  transition: .2s;
+
+  &:hover {
+    background: #eef2ff;
+    border-color: #6366f1;
+    transform: translateY(-2px);
   }
 }
 
