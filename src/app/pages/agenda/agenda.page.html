@@ -291,24 +291,27 @@
     </ng-template>
   </ion-modal>
 
-  <!-- MODAL ELEGANTE DE HORA -->
-  <div class="hour-modal" [class.open]="showHourModal">
-    <div class="hour-container">
+</ion-content>
 
-      <div class="modal-header">
-        <h2>Seleccionar hora</h2>
-        <button class="close-btn" (click)="closeHourModal()">×</button>
-      </div>
+<!-- MODAL ELEGANTE DE HORA — fuera de ion-content para escapar su stacking context -->
+<div class="hour-modal" [class.open]="showHourModal">
 
-      <div class="hours-grid">
-        <div class="hour-item" *ngFor="let h of horas" (click)="selectHour(h)">
-          {{ h }}
-        </div>
-      </div>
+  <!-- backdrop PRIMERO: queda debajo del contenedor -->
+  <div class="modal-backdrop" (click)="closeHourModal()"></div>
 
+  <div class="hour-container">
+
+    <div class="modal-header">
+      <h2>Seleccionar hora</h2>
+      <button class="close-btn" (click)="closeHourModal()">×</button>
     </div>
 
-    <div class="modal-backdrop" (click)="closeHourModal()"></div>
+    <div class="hours-grid">
+      <div class="hour-item" *ngFor="let h of horas" (click)="selectHour(h)">
+        {{ h }}
+      </div>
+    </div>
+
   </div>
 
-</ion-content>
+</div>

@@ -171,10 +171,13 @@ export class AgendaPage {
   }
 
   selectHour(h: string) {
-    this.selectedHour = h;
+    if (this.selectingHourFor === 'inicio') {
+      this.newAppointment.hora_inicio = h;
+    } else if (this.selectingHourFor === 'fin') {
+      this.newAppointment.hora_fin = h;
+    }
+    this.selectingHourFor = null;
     this.showHourModal = false;
-
-    console.log('Hora seleccionada:', h);
   }
 
   // Encabezado (Hoy ...)
