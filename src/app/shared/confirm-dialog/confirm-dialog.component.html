@@ -1,0 +1,40 @@
+<ng-container *ngIf="config">
+
+  <!-- Backdrop -->
+  <div class="cfd-backdrop" (click)="cancelled.emit()"></div>
+
+  <!-- Dialog card -->
+  <div class="cfd-dialog" role="alertdialog" aria-modal="true" [attr.aria-label]="config.title">
+
+    <!-- Icon -->
+    <div class="cfd-icon-wrap"
+         [class.cfd-icon-wrap--primary]="config.variant !== 'danger'"
+         [class.cfd-icon-wrap--danger]="config.variant === 'danger'">
+      <ion-icon [name]="resolvedIcon"></ion-icon>
+    </div>
+
+    <!-- Title -->
+    <h2 class="cfd-title">{{ config.title }}</h2>
+
+    <!-- Message + optional bold subject -->
+    <p class="cfd-message">
+      {{ config.message }}
+      <strong *ngIf="config.subject" class="cfd-subject">{{ config.subject }}</strong>
+    </p>
+
+    <!-- Actions -->
+    <div class="cfd-actions">
+      <button class="cfd-btn cfd-btn--cancel" (click)="cancelled.emit()">
+        {{ config.cancelLabel || 'Cancelar' }}
+      </button>
+      <button class="cfd-btn"
+              [class.cfd-btn--primary]="config.variant !== 'danger'"
+              [class.cfd-btn--danger]="config.variant === 'danger'"
+              (click)="confirmed.emit()">
+        {{ config.confirmLabel }}
+      </button>
+    </div>
+
+  </div>
+
+</ng-container>

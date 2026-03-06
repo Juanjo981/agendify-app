@@ -212,31 +212,11 @@
   </div>
 
 
-  <!-- ══════════════════════ MODAL CONFIRMAR ELIMINAR ══════════════════════════ -->
-  <div *ngIf="showDeleteModal" class="pac-modal-backdrop" (click)="cancelarEliminar()"></div>
-  <div *ngIf="showDeleteModal" class="pac-modal pac-modal--small" role="alertdialog">
-    <div class="pac-modal__header">
-      <h2>Eliminar paciente</h2>
-      <button class="pac-modal__close" (click)="cancelarEliminar()" aria-label="Cerrar">
-        <ion-icon name="close-outline"></ion-icon>
-      </button>
-    </div>
-
-    <div class="pac-modal__body pac-delete-body">
-      <div class="pac-delete-icon">
-        <ion-icon name="person-remove-outline"></ion-icon>
-      </div>
-      <p>¿Estás seguro de que deseas eliminar a <strong>{{ pacienteAEliminar?.nombre }} {{ pacienteAEliminar?.apellido }}</strong>?</p>
-      <p class="pac-delete-note">Esta acción no se puede deshacer.</p>
-    </div>
-
-    <div class="pac-modal__footer">
-      <button class="pac-btn-ghost" (click)="cancelarEliminar()">Cancelar</button>
-      <button class="pac-btn-danger" (click)="eliminarPaciente()">
-        <ion-icon name="trash-outline"></ion-icon>
-        Eliminar
-      </button>
-    </div>
-  </div>
+  <!-- ══════════════════════ CONFIRM DIALOG ═══════════════════════════════════ -->
+  <app-confirm-dialog
+    [config]="confirmConfig"
+    (confirmed)="onConfirmDialogConfirmed()"
+    (cancelled)="onConfirmDialogCancelled()">
+  </app-confirm-dialog>
 
 </ion-content>

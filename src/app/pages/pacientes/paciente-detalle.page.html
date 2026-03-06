@@ -214,11 +214,29 @@
                 <ion-icon name="time-outline"></ion-icon>
                 {{ formatFecha(nota.fecha) }}
               </span>
-              <button class="det-nota-delete-btn" (click)="eliminarNota(nota)" title="Eliminar nota">
-                <ion-icon name="trash-outline"></ion-icon>
-              </button>
+              <div class="det-nota-item__actions">
+                <button class="det-nota-edit-btn" (click)="abrirNotaModal(nota)" title="Editar nota">
+                  <ion-icon name="pencil-outline"></ion-icon>
+                </button>
+                <button class="det-nota-delete-btn" (click)="eliminarNota(nota)" title="Eliminar nota">
+                  <ion-icon name="trash-outline"></ion-icon>
+                </button>
+              </div>
             </div>
-            <p class="det-nota-item__text">{{ nota.contenido }}</p>
+            <p class="det-nota-item__text" *ngIf="nota.contenido">{{ nota.contenido }}</p>
+            <p class="det-nota-item__text det-nota-empty-text" *ngIf="!nota.contenido">(Sin texto)</p>
+
+            <!-- Adjunto chip -->
+            <div *ngIf="nota.adjunto" class="det-nota-adjunto">
+              <div class="det-adjunto-chip">
+                <ion-icon [name]="getFileIcon(nota.adjunto.type)" class="det-adjunto-chip__icon"></ion-icon>
+                <span class="det-adjunto-chip__name">{{ nota.adjunto.name }}</span>
+                <span class="det-adjunto-chip__size">{{ formatFileSize(nota.adjunto.size) }}</span>
+                <button class="det-adjunto-chip__btn" (click)="verAdjunto(nota.adjunto)" title="Ver adjunto">
+                  <ion-icon name="eye-outline"></ion-icon>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -285,29 +303,92 @@
   </div>
 
 
-  <!-- ══════════════ MODAL AGREGAR NOTA ════════════════════════════════════ -->
+  <!-- ══════════════ MODAL AGREGAR / EDITAR NOTA ════════════════════════════ -->
   <div *ngIf="showNotaModal" class="pac-modal-backdrop" (click)="cerrarNotaModal()"></div>
   <div *ngIf="showNotaModal" class="pac-modal pac-modal--small" role="dialog">
     <div class="pac-modal__header">
-      <h2>Nueva nota clínica</h2>
+      <h2>{{ notaEditandoId !== null ? 'Editar nota clínica' : 'Nueva nota clínica' }}</h2>
       <button class="pac-modal__close" (click)="cerrarNotaModal()" aria-label="Cerrar">
         <ion-icon name="close-outline"></ion-icon>
       </button>
     </div>
     <div class="pac-modal__body">
-      <div class="pac-field" [class.has-error]="notaError">
+
+      <!-- Textarea -->
+      <div class="pac-field">
         <label>Contenido</label>
-        <textarea [(ngModel)]="nuevaNotaTexto" rows="5" placeholder="Escribe aquí la nota clínica…"></textarea>
-        <span class="pac-field__error" *ngIf="notaError">{{ notaError }}</span>
+        <textarea [(ngModel)]="nuevaNotaTexto" rows="4" placeholder="Escribe aquí la nota clínica…"></textarea>
       </div>
+
+      <!-- File picker section -->
+      <div class="det-adjunto-section">
+        <p class="det-adjunto-label">Archivo adjunto <span>(opcional)</span></p>
+
+        <!-- Input oculto -->
+        <input
+          #fileInput
+          type="file"
+          class="det-adjunto-input"
+          [accept]="ALLOWED_EXT.join(',')"
+          (change)="onFileSelected($event)"
+          aria-hidden="true"
+        />
+
+        <!-- Zona / botón cuando NO hay archivo -->
+        <div *ngIf="!notaAdjunto" class="det-adjunto-zone" (click)="triggerFilePicker()">
+          <ion-icon name="cloud-upload-outline" class="det-adjunto-zone__icon"></ion-icon>
+          <span class="det-adjunto-zone__text">Adjuntar archivo</span>
+          <span class="det-adjunto-zone__hint">{{ ALLOWED_EXT.join(' · ') }}</span>
+        </div>
+
+        <!-- Card preview cuando hay archivo -->
+        <div *ngIf="notaAdjunto" class="det-adjunto-preview-card">
+
+          <!-- Mini imagen -->
+          <img
+            *ngIf="notaAdjunto.previewUrl"
+            [src]="notaAdjunto.previewUrl"
+            class="det-adjunto-preview-img"
+            alt="Preview"
+          />
+
+          <div class="det-adjunto-preview-info">
+            <ion-icon [name]="getFileIcon(notaAdjunto.type)" class="det-adjunto-preview-icon"></ion-icon>
+            <div class="det-adjunto-preview-meta">
+              <span class="det-adjunto-preview-name">{{ notaAdjunto.name }}</span>
+              <span class="det-adjunto-preview-size">{{ formatFileSize(notaAdjunto.size) }}</span>
+            </div>
+          </div>
+
+          <div class="det-adjunto-preview-actions">
+            <button class="det-adjunto-replace-btn" (click)="triggerFilePicker()" title="Reemplazar">
+              <ion-icon name="swap-horizontal-outline"></ion-icon>
+            </button>
+            <button class="det-adjunto-remove-btn" (click)="quitarAdjunto()" title="Quitar adjunto">
+              <ion-icon name="close-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <span class="pac-field__error" *ngIf="notaError">{{ notaError }}</span>
     </div>
     <div class="pac-modal__footer">
       <button class="pac-btn-ghost" (click)="cerrarNotaModal()">Cancelar</button>
       <button class="det-btn-primary" (click)="guardarNota()">
         <ion-icon name="checkmark-outline"></ion-icon>
-        Guardar nota
+        {{ notaEditandoId !== null ? 'Guardar cambios' : 'Guardar nota' }}
       </button>
     </div>
   </div>
+
+
+  <!-- ══════════════ CONFIRM DIALOG ════════════════════════════════════════ -->
+  <app-confirm-dialog
+    [config]="confirmConfig"
+    (confirmed)="onConfirmDialogConfirmed()"
+    (cancelled)="onConfirmDialogCancelled()">
+  </app-confirm-dialog>
 
 </ion-content>

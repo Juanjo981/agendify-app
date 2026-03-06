@@ -1,19 +1,21 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PacientesMockService } from './pacientes.service.mock';
-import { PacienteDto, CitaDto, NotaDto } from './pacientes.mock';
+import { PacienteDto, CitaDto, NotaDto, AdjuntoMeta } from './pacientes.mock';
+import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../shared/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-paciente-detalle',
   templateUrl: './paciente-detalle.page.html',
   styleUrls: ['./paciente-detalle.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule],
+  imports: [IonicModule, CommonModule, FormsModule, ConfirmDialogComponent],
 })
 export class PacienteDetallePage implements OnInit {
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   paciente: PacienteDto | null = null;
 
   // ─── Tabs ──────────────────────────────────────────────────────────────────
@@ -27,10 +29,25 @@ export class PacienteDetallePage implements OnInit {
   formPaciente: any = {};
   formErrores: Record<string, string> = {};
 
+  // ─── Confirm dialog ────────────────────────────────────────────────────────
+  confirmConfig: ConfirmDialogConfig | null = null;
+  private confirmCallback: (() => void) | null = null;
+
   // ─── Add nota modal ────────────────────────────────────────────────────────
   showNotaModal = false;
   nuevaNotaTexto = '';
   notaError = '';
+  notaAdjunto: AdjuntoMeta | null = null;
+  private notaFile: File | null = null;
+  notaEditandoId: number | null = null;
+
+  readonly ALLOWED_MIME = new Set([
+    'text/plain',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'image/jpeg', 'image/png', 'image/webp',
+  ]);
+  readonly ALLOWED_EXT = ['.txt', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.webp'];
 
   constructor(
     private route: ActivatedRoute,
@@ -101,7 +118,27 @@ export class PacienteDetallePage implements OnInit {
   }
 
   cerrarEditarModal() {
+    if (this.editFormHasChanges()) {
+      this.openConfirm(
+        {
+          title: 'Descartar cambios',
+          message: 'Tienes cambios sin guardar. ¿Deseas salir sin guardar?',
+          confirmLabel: 'Salir sin guardar',
+          cancelLabel: 'Seguir editando',
+          variant: 'danger',
+          icon: 'alert-circle-outline',
+        },
+        () => { this.showEditarModal = false; }
+      );
+      return;
+    }
     this.showEditarModal = false;
+  }
+
+  private editFormHasChanges(): boolean {
+    if (!this.paciente) return false;
+    const fields = ['nombre', 'apellido', 'email', 'telefono', 'fecha_nacimiento', 'notas_generales', 'activo'] as const;
+    return fields.some(k => this.formPaciente[k] !== (this.paciente as any)[k]);
   }
 
   validarForm(): boolean {
@@ -118,36 +155,156 @@ export class PacienteDetallePage implements OnInit {
 
   guardarEdicion() {
     if (!this.validarForm() || !this.paciente) return;
-    this.svc.update({ ...this.paciente, ...this.formPaciente });
-    this.paciente = this.svc.getById(this.paciente.id_paciente) ?? null;
-    this.showEditarModal = false;
+    this.openConfirm(
+      {
+        title: 'Guardar cambios',
+        message: '¿Deseas guardar los cambios realizados en este paciente?',
+        confirmLabel: 'Guardar cambios',
+        icon: 'checkmark-circle-outline',
+        variant: 'primary',
+      },
+      () => {
+        this.svc.update({ ...this.paciente!, ...this.formPaciente });
+        this.paciente = this.svc.getById(this.paciente!.id_paciente) ?? null;
+        this.showEditarModal = false;
+      }
+    );
   }
 
   // ─── Notas ─────────────────────────────────────────────────────────────────
-  abrirNotaModal() {
-    this.nuevaNotaTexto = '';
+  abrirNotaModal(nota?: NotaDto) {
+    this.nuevaNotaTexto = nota?.contenido ?? '';
     this.notaError = '';
+    this.notaAdjunto = nota?.adjunto ? { ...nota.adjunto } : null;
+    this.notaFile = null;
+    this.notaEditandoId = nota?.id_nota ?? null;
     this.showNotaModal = true;
   }
 
   cerrarNotaModal() {
+    if (this.nuevaNotaTexto.trim() || this.notaFile) {
+      this.openConfirm(
+        {
+          title: 'Descartar nota',
+          message: 'Tienes cambios sin guardar. ¿Deseas salir sin guardar?',
+          confirmLabel: 'Salir sin guardar',
+          cancelLabel: 'Seguir editando',
+          variant: 'danger',
+          icon: 'alert-circle-outline',
+        },
+        () => this.resetNotaModal()
+      );
+      return;
+    }
+    this.resetNotaModal();
+  }
+
+  private resetNotaModal() {
+    if (this.notaAdjunto?.previewUrl && this.notaFile) {
+      URL.revokeObjectURL(this.notaAdjunto.previewUrl);
+    }
     this.showNotaModal = false;
+    this.nuevaNotaTexto = '';
+    this.notaError = '';
+    this.notaAdjunto = null;
+    this.notaFile = null;
+    this.notaEditandoId = null;
+  }
+
+  // ─── File handling ───────────────────────────────────────────────────────
+  triggerFilePicker() {
+    this.fileInput?.nativeElement.click();
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!this.ALLOWED_MIME.has(file.type) && !this.ALLOWED_EXT.includes(ext)) {
+      this.notaError = `Formato no permitido. Usa: ${this.ALLOWED_EXT.join(', ')}`;
+      input.value = '';
+      return;
+    }
+    this.notaError = '';
+
+    // Revoke previous preview to avoid memory leak
+    if (this.notaAdjunto?.previewUrl && this.notaFile) {
+      URL.revokeObjectURL(this.notaAdjunto.previewUrl);
+    }
+
+    const isImage = file.type.startsWith('image/');
+    this.notaFile = file;
+    this.notaAdjunto = {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      previewUrl: isImage ? URL.createObjectURL(file) : undefined,
+    };
+    input.value = '';
+  }
+
+  quitarAdjunto() {
+    if (this.notaAdjunto?.previewUrl && this.notaFile) {
+      URL.revokeObjectURL(this.notaAdjunto.previewUrl);
+    }
+    this.notaAdjunto = null;
+    this.notaFile = null;
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  getFileIcon(type: string): string {
+    if (type.startsWith('image/')) return 'image-outline';
+    if (type === 'text/plain') return 'document-text-outline';
+    return 'document-outline';
+  }
+
+  verAdjunto(adjunto: AdjuntoMeta) {
+    if (adjunto.previewUrl) {
+      window.open(adjunto.previewUrl, '_blank');
+    } else {
+      console.log('[Agendify] Adjunto (mock):', adjunto);
+    }
+  }
+
+  get notaModalHasContent(): boolean {
+    return !!(this.nuevaNotaTexto.trim() || this.notaFile);
   }
 
   guardarNota() {
-    if (!this.nuevaNotaTexto.trim()) {
-      this.notaError = 'La nota no puede estar vacía';
+    const texto = this.nuevaNotaTexto.trim();
+    if (!texto && !this.notaAdjunto) {
+      this.notaError = 'Escribe algo o adjunta un archivo.';
       return;
     }
     if (!this.paciente) return;
+
     const nota: NotaDto = {
-      id_nota: Date.now(),
+      id_nota: this.notaEditandoId ?? Date.now(),
       fecha: new Date().toISOString().split('T')[0],
-      contenido: this.nuevaNotaTexto.trim(),
+      contenido: texto,
+      ...(this.notaAdjunto ? { adjunto: { ...this.notaAdjunto } } : {}),
     };
-    this.svc.addNota(this.paciente.id_paciente, nota);
+
+    if (this.notaEditandoId !== null) {
+      this.svc.updateNota(this.paciente.id_paciente, nota);
+    } else {
+      this.svc.addNota(this.paciente.id_paciente, nota);
+    }
     this.paciente = this.svc.getById(this.paciente.id_paciente) ?? null;
+    // Don't revoke previewUrl — it lives in the nota object now
+    this.notaFile = null;
     this.showNotaModal = false;
+    this.nuevaNotaTexto = '';
+    this.notaError = '';
+    this.notaAdjunto = null;
+    this.notaEditandoId = null;
   }
 
   eliminarNota(nota: NotaDto) {
@@ -158,5 +315,22 @@ export class PacienteDetallePage implements OnInit {
 
   irANuevaCita() {
     this.router.navigate(['/dashboard/agenda']);
+  }
+
+  // ─── Confirm dialog handlers ───────────────────────────────────────────────
+  private openConfirm(config: ConfirmDialogConfig, onConfirm: () => void) {
+    this.confirmConfig = config;
+    this.confirmCallback = onConfirm;
+  }
+
+  onConfirmDialogConfirmed() {
+    this.confirmCallback?.();
+    this.confirmConfig = null;
+    this.confirmCallback = null;
+  }
+
+  onConfirmDialogCancelled() {
+    this.confirmConfig = null;
+    this.confirmCallback = null;
   }
 }

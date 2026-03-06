@@ -355,7 +355,7 @@
   <ion-modal cssClass="buscar-paciente-modal"
     [isOpen]="showBuscarPacienteModal"
     [enterAnimation]="modalEnterAnimation.bind(this)"
-    (didDismiss)="closeBuscarPacienteModal()">
+    (didDismiss)="onBuscarPacienteModalDismissed()">
 
     <ng-template>
       <div class="bpm-wrapper">

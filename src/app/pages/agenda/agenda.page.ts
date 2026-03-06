@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule, createAnimation } from '@ionic/angular';
+import { Router } from '@angular/router';
+import { PacientesMockService } from '../pacientes/pacientes.service.mock';
 
 interface CalendarEvent {
   title: string;
@@ -62,28 +64,7 @@ export class AgendaPage {
 
   // Datos de ejemplo
   profesionales = [{ id: 1, nombre: 'Dr. Pérez' }, { id: 2, nombre: 'Dra. López' }];
-  pacientes = [
-    { id: 1, nombre: 'Juan Pérez' },
-    { id: 2, nombre: 'Ana López' },
-    { id: 3, nombre: 'Carlos Medina' },
-    { id: 4, nombre: 'María Torres' },
-    { id: 5, nombre: 'Luis Hernández' },
-    { id: 6, nombre: 'Fernanda Ruiz' },
-    { id: 7, nombre: 'Jorge Sánchez' },
-    { id: 8, nombre: 'Daniela Romero' },
-    { id: 9, nombre: 'Miguel Castro' },
-    { id: 10, nombre: 'Sofía Navarro' },
-    { id: 11, nombre: 'Adrián Delgado' },
-    { id: 12, nombre: 'Gabriela Morales' },
-    { id: 13, nombre: 'Ricardo Vega' },
-    { id: 14, nombre: 'Paola Reyes' },
-    { id: 15, nombre: 'Héctor Silva' },
-    { id: 16, nombre: 'Claudia Flores' },
-    { id: 17, nombre: 'Roberto Aguilar' },
-    { id: 18, nombre: 'Elena Carrillo' },
-    { id: 19, nombre: 'Diego Ortiz' },
-    { id: 20, nombre: 'Valeria Campos' }
-  ];
+  pacientes: { id: number; nombre: string }[] = [];
 
   tiposCita = [{ id: 1, nombre: 'Consulta' }, { id: 2, nombre: 'Terapia' }];
   estadosCita = [{ id: 1, nombre: 'Pendiente' }, { id: 2, nombre: 'Confirmada' }];
@@ -137,7 +118,11 @@ export class AgendaPage {
   private dragCurrentY = 0;
   private isDragging = false;
 
-  constructor() {
+  constructor(private pacientesSvc: PacientesMockService, private router: Router) {
+    this.pacientes = this.pacientesSvc.getAll().map(p => ({
+      id: p.id_paciente,
+      nombre: `${p.nombre} ${p.apellido}`,
+    }));
     this.generateCalendar();
     this.updateHeaderInfo();
   }
@@ -724,9 +709,24 @@ export class AgendaPage {
       : [...this.pacientes];
   }
 
+  private pendingNavUrl: string | null = null;
+
   verPaciente(p: any) {
-    console.log('Ver paciente', p);
-    // TODO: navegar a PacienteDetallePage
+    this.verPacienteDesdeAgenda(p);
+  }
+
+  verPacienteDesdeAgenda(paciente: { id: number; nombre: string }) {
+    this.pendingNavUrl = `/dashboard/pacientes/${paciente.id}`;
+    this.closeBuscarPacienteModal();
+  }
+
+  onBuscarPacienteModalDismissed() {
+    this.closeBuscarPacienteModal();
+    if (this.pendingNavUrl) {
+      const url = this.pendingNavUrl;
+      this.pendingNavUrl = null;
+      this.router.navigateByUrl(url);
+    }
   }
 
   seleccionarPacienteDesdeBusqueda(p: any) {

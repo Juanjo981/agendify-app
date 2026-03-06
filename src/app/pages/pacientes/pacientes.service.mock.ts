@@ -31,6 +31,13 @@ export class PacientesMockService {
     if (p) p.notas.unshift(nota);
   }
 
+  updateNota(pacienteId: number, nota: NotaDto): void {
+    const p = this.getById(pacienteId);
+    if (!p) return;
+    const idx = p.notas.findIndex(n => n.id_nota === nota.id_nota);
+    if (idx !== -1) p.notas[idx] = nota;
+  }
+
   deleteNota(pacienteId: number, notaId: number): void {
     const p = this.getById(pacienteId);
     if (p) p.notas = p.notas.filter(n => n.id_nota !== notaId);

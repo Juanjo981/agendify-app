@@ -5,13 +5,14 @@ import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { PacientesMockService } from './pacientes.service.mock';
 import { PacienteDto } from './pacientes.mock';
+import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../shared/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-pacientes',
   templateUrl: './pacientes.page.html',
   styleUrls: ['./pacientes.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule],
+  imports: [IonicModule, CommonModule, FormsModule, ConfirmDialogComponent],
 })
 export class PacientesPage implements OnInit {
   // ─── Data & filters ────────────────────────────────────────────────────────
@@ -27,9 +28,10 @@ export class PacientesPage implements OnInit {
   formPaciente = this.emptyForm();
   formErrores: Record<string, string> = {};
 
-  // ─── Delete modal ──────────────────────────────────────────────────────────
-  showDeleteModal = false;
-  pacienteAEliminar: PacienteDto | null = null;
+  // ─── Confirm dialog ────────────────────────────────────────────────────────
+  confirmConfig: ConfirmDialogConfig | null = null;
+  private confirmCallback: (() => void) | null = null;
+  private pacienteAEliminar: PacienteDto | null = null;
 
   constructor(private router: Router, private svc: PacientesMockService) {}
 
@@ -126,8 +128,35 @@ export class PacientesPage implements OnInit {
   }
 
   cerrarFormModal() {
+    if (this.formHasChanges()) {
+      this.openConfirm(
+        {
+          title: 'Descartar cambios',
+          message: 'Tienes cambios sin guardar. ¿Deseas salir sin guardar?',
+          confirmLabel: 'Salir sin guardar',
+          cancelLabel: 'Seguir editando',
+          variant: 'danger',
+          icon: 'alert-circle-outline',
+        },
+        () => {
+          this.showFormModal = false;
+          this.pacienteEditando = null;
+        }
+      );
+      return;
+    }
     this.showFormModal = false;
     this.pacienteEditando = null;
+  }
+
+  private formHasChanges(): boolean {
+    if (this.modoModal === 'crear') {
+      const empty = this.emptyForm();
+      return Object.keys(empty).some(k => (this.formPaciente as any)[k] !== (empty as any)[k]);
+    }
+    if (!this.pacienteEditando) return false;
+    const fields = ['nombre', 'apellido', 'email', 'telefono', 'fecha_nacimiento', 'notas_generales', 'activo'] as const;
+    return fields.some(k => this.formPaciente[k] !== (this.pacienteEditando as any)[k]);
   }
 
   validarForm(): boolean {
@@ -144,6 +173,22 @@ export class PacientesPage implements OnInit {
 
   guardarPaciente() {
     if (!this.validarForm()) return;
+    const esCrear = this.modoModal === 'crear';
+    this.openConfirm(
+      {
+        title: esCrear ? 'Guardar paciente' : 'Guardar cambios',
+        message: esCrear
+          ? '¿Deseas guardar este nuevo paciente?'
+          : '¿Deseas guardar los cambios realizados en este paciente?',
+        confirmLabel: esCrear ? 'Sí, guardar' : 'Guardar cambios',
+        icon: 'checkmark-circle-outline',
+        variant: 'primary',
+      },
+      () => this.ejecutarGuardar()
+    );
+  }
+
+  private ejecutarGuardar() {
     if (this.modoModal === 'crear') {
       this.svc.create({ id_paciente: Date.now(), ...this.formPaciente, citas: [], notas: [] });
     } else if (this.pacienteEditando) {
@@ -151,28 +196,48 @@ export class PacientesPage implements OnInit {
     }
     this.filtrar();
     this.showFormModal = false;
+    this.pacienteEditando = null;
   }
 
   confirmarEliminar(p: PacienteDto, ev?: Event) {
     ev?.stopPropagation();
     this.pacienteAEliminar = p;
-    this.showDeleteModal = true;
-  }
-
-  cancelarEliminar() {
-    this.showDeleteModal = false;
-    this.pacienteAEliminar = null;
-  }
-
-  eliminarPaciente() {
-    if (!this.pacienteAEliminar) return;
-    this.svc.delete(this.pacienteAEliminar.id_paciente);
-    this.filtrar();
-    this.showDeleteModal = false;
-    this.pacienteAEliminar = null;
+    this.openConfirm(
+      {
+        title: 'Eliminar paciente',
+        message: 'Esta acción no se puede deshacer. ¿Deseas eliminar a ',
+        subject: `${p.nombre} ${p.apellido}?`,
+        confirmLabel: 'Sí, eliminar',
+        variant: 'danger',
+        icon: 'person-remove-outline',
+      },
+      () => {
+        if (!this.pacienteAEliminar) return;
+        this.svc.delete(this.pacienteAEliminar.id_paciente);
+        this.filtrar();
+        this.pacienteAEliminar = null;
+      }
+    );
   }
 
   verPaciente(p: PacienteDto) {
     this.router.navigate(['/dashboard/pacientes', p.id_paciente]);
+  }
+
+  // ─── Confirm dialog handlers ───────────────────────────────────────────────
+  private openConfirm(config: ConfirmDialogConfig, onConfirm: () => void) {
+    this.confirmConfig = config;
+    this.confirmCallback = onConfirm;
+  }
+
+  onConfirmDialogConfirmed() {
+    this.confirmCallback?.();
+    this.confirmConfig = null;
+    this.confirmCallback = null;
+  }
+
+  onConfirmDialogCancelled() {
+    this.confirmConfig = null;
+    this.confirmCallback = null;
   }
 }

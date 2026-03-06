@@ -1,9 +1,17 @@
 // ─── Interfaces ──────────────────────────────────────────────────────────────
 
+export interface AdjuntoMeta {
+  name: string;
+  type: string;       // MIME type
+  size: number;       // bytes
+  previewUrl?: string; // object URL (images only)
+}
+
 export interface NotaDto {
   id_nota: number;
   fecha: string; // ISO date 'YYYY-MM-DD'
   contenido: string;
+  adjunto?: AdjuntoMeta;
 }
 
 export interface CitaDto {
