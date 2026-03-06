@@ -147,6 +147,12 @@ export class AgendaPage {
   pacientesFiltrados = [...this.pacientes];
   busquedaPaciente = '';
 
+  // --- Buscar Paciente (modal desde toolbar) ---
+  showBuscarPacienteModal = false;
+  buscarModo: 'seleccionar' | 'toolbar' = 'toolbar';
+  buscarBusqueda = '';
+  buscarFiltrados: { id: number; nombre: string }[] = [];
+
   selectedPaciente: any = null;
 
   getColorForDay(citas: number): string {
@@ -171,6 +177,22 @@ export class AgendaPage {
   }
 
   selectHour(h: string) {
+    // Block modal hour fields
+    if (this.selectingHourForBlock === 'block-inicio') {
+      this.blockForm.horaInicio = h;
+      this.blockErrors.rango = undefined;
+      this.selectingHourForBlock = null;
+      this.showHourModal = false;
+      return;
+    }
+    if (this.selectingHourForBlock === 'block-fin') {
+      this.blockForm.horaFin = h;
+      this.blockErrors.rango = undefined;
+      this.selectingHourForBlock = null;
+      this.showHourModal = false;
+      return;
+    }
+    // Nueva cita hour fields
     if (this.selectingHourFor === 'inicio') {
       this.newAppointment.hora_inicio = h;
     } else if (this.selectingHourFor === 'fin') {
@@ -324,7 +346,127 @@ export class AgendaPage {
   }
 
   bloquearHorario() {
-    console.log('⛔ Bloquear horario');
+    this.openBlockModal();
+  }
+
+  // ----------------------------------------
+  // BLOQUEAR HORARIO
+  // ----------------------------------------
+  showBlockModal = false;
+
+  blockForm: {
+    fecha: string | null;
+    allDay: boolean;
+    horaInicio: string | null;
+    horaFin: string | null;
+    motivo: string;
+    repeat: 'none' | 'daily' | 'weekly' | 'monthly';
+    createdAt: string | null;
+  } = {
+    fecha: null,
+    allDay: true,
+    horaInicio: null,
+    horaFin: null,
+    motivo: '',
+    repeat: 'none',
+    createdAt: null,
+  };
+
+  blockErrors: { fecha?: string; rango?: string } = {};
+
+  // Selector de hora para bloqueo reutiliza the existing hour modal
+  // We extend selectingHourFor to accept block-specific fields
+  selectingHourForBlock: 'block-inicio' | 'block-fin' | null = null;
+
+  readonly blockChips = [
+    'Comida', 'Vacaciones', 'Reunión', 'Urgencia', 'Capacitación', 'Personal'
+  ];
+
+  readonly repeatOptions: { value: 'none' | 'daily' | 'weekly' | 'monthly'; label: string }[] = [
+    { value: 'none',    label: 'No repetir'  },
+    { value: 'daily',   label: 'Diario'      },
+    { value: 'weekly',  label: 'Semanal'     },
+    { value: 'monthly', label: 'Mensual'     },
+  ];
+
+  openBlockModal() {
+    const today = this.formatDateLocal(new Date());
+    this.blockForm = {
+      fecha: today,
+      allDay: true,
+      horaInicio: null,
+      horaFin: null,
+      motivo: '',
+      repeat: 'none',
+      createdAt: null,
+    };
+    this.blockErrors = {};
+    this.showBlockModal = true;
+  }
+
+  closeBlockModal() {
+    this.showBlockModal = false;
+    this.selectingHourForBlock = null;
+  }
+
+  openBlockDatePicker() {
+    this.activeDateField = 'inicio'; // reuse modal, we intercept via blockDateMode
+    this.blockDateMode = true;
+    this.showDateModal = true;
+  }
+
+  blockDateMode = false;
+
+  openBlockHourModal(field: 'block-inicio' | 'block-fin') {
+    this.selectingHourForBlock = field;
+    this.selectingHourFor = null; // ensure regular modal doesn’t interfere
+    this.showHourModal = true;
+  }
+
+  applyBlockChip(chip: string) {
+    this.blockForm.motivo = chip;
+  }
+
+  get blockSummary(): string {
+    if (!this.blockForm.fecha) return '—';
+
+    const [y, m, d] = this.blockForm.fecha.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    const weekNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const dow = weekNames[dateObj.getDay()];
+    const label = `${dow} ${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`;
+
+    const timeLabel = this.blockForm.allDay
+      ? 'Todo el día'
+      : `${this.blockForm.horaInicio ?? '?'} – ${this.blockForm.horaFin ?? '?'}`;
+
+    const motivo = this.blockForm.motivo ? ` — ${this.blockForm.motivo}` : '';
+    return `${label} · ${timeLabel}${motivo}`;
+  }
+
+  validateBlock(): boolean {
+    this.blockErrors = {};
+    if (!this.blockForm.fecha) {
+      this.blockErrors.fecha = 'Elige una fecha para el bloqueo.';
+    }
+    if (!this.blockForm.allDay) {
+      if (!this.blockForm.horaInicio || !this.blockForm.horaFin) {
+        this.blockErrors.rango = 'Indica la hora de inicio y fin.';
+      } else if (this.blockForm.horaInicio >= this.blockForm.horaFin) {
+        this.blockErrors.rango = '“Hasta” debe ser posterior a “Desde”.';
+      }
+    }
+    return Object.keys(this.blockErrors).length === 0;
+  }
+
+  saveBlock() {
+    if (!this.validateBlock()) return;
+    const bloqueo = {
+      ...this.blockForm,
+      createdAt: new Date().toISOString(),
+    };
+    console.log('Bloqueo creado', bloqueo);
+    this.closeBlockModal();
   }
 
   verCita(ev: CalendarEvent) {
@@ -427,6 +569,14 @@ export class AgendaPage {
 
   selectDate(event: any) {
     const value = event.detail.value;
+
+    if (this.blockDateMode) {
+      this.blockForm.fecha = value?.split('T')[0] ?? value;
+      this.blockErrors.fecha = undefined;
+      this.blockDateMode = false;
+      this.closeDateModal();
+      return;
+    }
 
     if (this.activeDateField === 'inicio') {
       this.newAppointment.fecha_inicio = value;
@@ -551,6 +701,45 @@ export class AgendaPage {
     this.selectedPaciente = paciente;
     this.newAppointment.id_paciente = paciente.id;
     this.closePacienteModal();
+  }
+
+  // ----------------------------------------
+  // BUSCAR PACIENTE (modal toolbar)
+  // ----------------------------------------
+  openBuscarPacienteModal(modo: 'seleccionar' | 'toolbar' = 'toolbar') {
+    this.buscarModo = modo;
+    this.buscarBusqueda = '';
+    this.buscarFiltrados = [...this.pacientes];
+    this.showBuscarPacienteModal = true;
+  }
+
+  closeBuscarPacienteModal() {
+    this.showBuscarPacienteModal = false;
+  }
+
+  filtrarBusqueda() {
+    const q = this.buscarBusqueda.toLowerCase().trim();
+    this.buscarFiltrados = q
+      ? this.pacientes.filter(p => p.nombre.toLowerCase().includes(q))
+      : [...this.pacientes];
+  }
+
+  verPaciente(p: any) {
+    console.log('Ver paciente', p);
+    // TODO: navegar a PacienteDetallePage
+  }
+
+  seleccionarPacienteDesdeBusqueda(p: any) {
+    this.selectedPaciente = p;
+    this.newAppointment.id_paciente = p.id;
+    this.closeBuscarPacienteModal();
+  }
+
+  nuevaCitaConPaciente(p: any) {
+    this.closeBuscarPacienteModal();
+    this.selectedPaciente = p;
+    this.newAppointment.id_paciente = p.id;
+    this.nuevaCita();
   }
 
   modalEnterAnimation(baseEl: HTMLElement) {

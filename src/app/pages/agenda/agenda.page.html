@@ -34,7 +34,7 @@
 
       <div class="right-controls">
         <button class="action-btn btn-custom" (click)="nuevaCita()">+ Nueva cita</button>
-        <button class="action-btn btn-search">🔍 Buscar Paciente</button>
+        <button class="action-btn btn-search" (click)="openBuscarPacienteModal('toolbar')">🔍 Buscar Paciente</button>
         <button class="action-btn btn-block" (click)="bloquearHorario()">🔒 Bloquear Horario</button>
       </div>
 
@@ -169,7 +169,7 @@
       <form (ngSubmit)="saveAppointment()">
 
         <!-- PACIENTE -->
-        <ion-item class="select-item" button detail="false" (click)="openPacienteModal()">
+        <ion-item class="select-item" button detail="false" (click)="openBuscarPacienteModal('seleccionar')">
           <ion-label position="stacked">Paciente</ion-label>
           <ion-text>
             {{ selectedPaciente?.nombre || 'Seleccionar paciente...' }}
@@ -220,6 +220,220 @@
 
 
 
+  <!-- ========================================================= -->
+  <!-- MODAL PREMIUM — BLOQUEAR HORARIO                          -->
+  <!-- ========================================================= -->
+
+  <ion-modal cssClass="block-modal"
+    [isOpen]="showBlockModal"
+    [enterAnimation]="modalEnterAnimation.bind(this)"
+    (didDismiss)="closeBlockModal()">
+
+    <ng-template>
+      <div class="blk-wrapper">
+
+        <!-- HEADER STICKY -->
+        <div class="blk-header">
+          <div class="blk-header-inner">
+            <div class="blk-title-group">
+              <ion-icon name="lock-closed-outline" class="blk-title-icon"></ion-icon>
+              <h2 class="blk-title">Bloquear horario</h2>
+            </div>
+            <button class="blk-close-btn" (click)="closeBlockModal()" aria-label="Cerrar">
+              <ion-icon name="close-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- BODY SCROLLEABLE -->
+        <div class="blk-body">
+
+          <!-- SECCIÓN: FECHA -->
+          <div class="blk-section">
+            <p class="blk-section-label">Fecha</p>
+            <button class="blk-field-btn" (click)="openBlockDatePicker()">
+              <ion-icon name="calendar-outline"></ion-icon>
+              <span>{{ blockForm.fecha ?? 'Seleccionar fecha...' }}</span>
+              <ion-icon name="chevron-forward-outline" class="blk-field-chevron"></ion-icon>
+            </button>
+            <p class="blk-error" *ngIf="blockErrors.fecha">{{ blockErrors.fecha }}</p>
+          </div>
+
+          <!-- SECCIÓN: TIPO (todo el día / rango) -->
+          <div class="blk-section">
+            <p class="blk-section-label">Tipo de bloqueo</p>
+            <div class="blk-segment">
+              <button class="blk-seg-btn" [class.active]="blockForm.allDay" (click)="blockForm.allDay = true">
+                <ion-icon name="sunny-outline"></ion-icon> Todo el día
+              </button>
+              <button class="blk-seg-btn" [class.active]="!blockForm.allDay" (click)="blockForm.allDay = false">
+                <ion-icon name="time-outline"></ion-icon> Rango de horas
+              </button>
+            </div>
+          </div>
+
+          <!-- SECCIÓN: RANGO DE HORAS (condicional) -->
+          <div class="blk-section blk-range" *ngIf="!blockForm.allDay">
+            <p class="blk-section-label">Horario</p>
+            <div class="blk-range-row">
+              <div class="blk-range-field">
+                <span class="blk-range-label">Desde</span>
+                <button class="blk-field-btn blk-hour-btn" (click)="openBlockHourModal('block-inicio')">
+                  <ion-icon name="time-outline"></ion-icon>
+                  <span>{{ blockForm.horaInicio ?? 'Hora inicio' }}</span>
+                </button>
+              </div>
+              <ion-icon name="arrow-forward-outline" class="blk-range-arrow"></ion-icon>
+              <div class="blk-range-field">
+                <span class="blk-range-label">Hasta</span>
+                <button class="blk-field-btn blk-hour-btn" (click)="openBlockHourModal('block-fin')">
+                  <ion-icon name="time-outline"></ion-icon>
+                  <span>{{ blockForm.horaFin ?? 'Hora fin' }}</span>
+                </button>
+              </div>
+            </div>
+            <p class="blk-error" *ngIf="blockErrors.rango">{{ blockErrors.rango }}</p>
+          </div>
+
+          <!-- SECCIÓN: CHIPS DE MOTIVO -->
+          <div class="blk-section">
+            <p class="blk-section-label">Motivo <span class="blk-optional">(opcional)</span></p>
+            <div class="blk-chips">
+              <button class="blk-chip"
+                *ngFor="let c of blockChips"
+                [class.active]="blockForm.motivo === c"
+                (click)="applyBlockChip(c)">
+                {{ c }}
+              </button>
+            </div>
+            <textarea class="blk-textarea" rows="2"
+              placeholder="O escribe un motivo personalizado..."
+              [(ngModel)]="blockForm.motivo"
+              name="blockMotivo">
+            </textarea>
+          </div>
+
+          <!-- SECCIÓN: REPETICIÓN -->
+          <div class="blk-section">
+            <p class="blk-section-label">Repetición</p>
+            <div class="blk-repeat-grid">
+              <button class="blk-repeat-btn"
+                *ngFor="let r of repeatOptions"
+                [class.active]="blockForm.repeat === r.value"
+                (click)="blockForm.repeat = r.value">
+                {{ r.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- RESUMEN -->
+          <div class="blk-summary">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            <span>{{ blockSummary }}</span>
+          </div>
+
+        </div>
+
+        <!-- FOOTER STICKY -->
+        <div class="blk-footer">
+          <button class="blk-btn blk-btn--ghost" (click)="closeBlockModal()">Cancelar</button>
+          <button class="blk-btn blk-btn--solid" (click)="saveBlock()">
+            <ion-icon name="lock-closed-outline"></ion-icon>
+            Guardar bloqueo
+          </button>
+        </div>
+
+      </div>
+    </ng-template>
+
+  </ion-modal>
+
+  <!-- ========================================================= -->
+  <!-- MODAL PREMIUM — BUSCAR PACIENTE (toolbar btn-search)    -->
+  <!-- ========================================================= -->
+
+  <ion-modal cssClass="buscar-paciente-modal"
+    [isOpen]="showBuscarPacienteModal"
+    [enterAnimation]="modalEnterAnimation.bind(this)"
+    (didDismiss)="closeBuscarPacienteModal()">
+
+    <ng-template>
+      <div class="bpm-wrapper">
+
+        <!-- HEADER STICKY -->
+        <div class="bpm-header">
+          <div class="bpm-header-inner">
+            <div class="bpm-title-group">
+              <ion-icon name="people-outline" class="bpm-title-icon"></ion-icon>
+              <h2 class="bpm-title">Buscar paciente</h2>
+            </div>
+            <button class="bpm-close-btn" (click)="closeBuscarPacienteModal()" aria-label="Cerrar">
+              <ion-icon name="close-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- SPOTLIGHT SEARCH -->
+        <div class="bpm-search">
+          <ion-searchbar
+            class="bpm-searchbar"
+            placeholder="Nombre del paciente..."
+            [(ngModel)]="buscarBusqueda"
+            (ionInput)="filtrarBusqueda()"
+            [debounce]="80"
+            autocomplete="off"
+            enterkeyhint="search">
+          </ion-searchbar>
+        </div>
+
+        <!-- LISTA SCROLLEABLE -->
+        <div class="bpm-body">
+
+          <div class="bpm-patient-row" *ngFor="let pa of buscarFiltrados">
+            <div class="bpm-avatar">
+              {{ pa.nombre.split(' ')[0]?.charAt(0) || '' }}{{ pa.nombre.split(' ')[1]?.charAt(0) || '' }}
+            </div>
+            <div class="bpm-patient-info">
+              <span class="bpm-patient-name">{{ pa.nombre }}</span>
+            </div>
+            <div class="bpm-actions">
+
+              <!-- Modo: desde campo Paciente en Nueva Cita -->
+              <ng-container *ngIf="buscarModo === 'seleccionar'">
+                <button class="bpm-btn bpm-btn--solid" (click)="seleccionarPacienteDesdeBusqueda(pa)">Seleccionar</button>
+              </ng-container>
+
+              <!-- Modo: desde toolbar Buscar Paciente -->
+              <ng-container *ngIf="buscarModo === 'toolbar'">
+                <button class="bpm-btn bpm-btn--outline" (click)="verPaciente(pa)">Ver</button>
+                <button class="bpm-btn bpm-btn--solid" (click)="nuevaCitaConPaciente(pa)">Nueva cita</button>
+              </ng-container>
+
+            </div>
+          </div>
+
+          <!-- Estado vacío -->
+          <div class="bpm-empty" *ngIf="buscarFiltrados.length === 0">
+            <ion-icon name="search-outline"></ion-icon>
+            <p>Sin resultados para &ldquo;{{ buscarBusqueda }}&rdquo;</p>
+          </div>
+
+        </div>
+
+        <!-- FOOTER STICKY -->
+        <div class="bpm-footer">
+          <span class="bpm-count">
+            {{ buscarFiltrados.length }}
+            {{ buscarFiltrados.length === 1 ? 'resultado' : 'resultados' }}
+          </span>
+          <button class="bpm-btn bpm-btn--ghost" (click)="closeBuscarPacienteModal()">Cerrar</button>
+        </div>
+
+      </div>
+    </ng-template>
+
+  </ion-modal>
+
   <!-- MODAL DE FECHA -->
   <ion-modal cssClass="fecha-modal" [isOpen]="showDateModal" (didDismiss)="closeDateModal()">
     <ng-template>
@@ -240,56 +454,6 @@
     </ng-template>
   </ion-modal>
 
-  <!-- ========================================================= -->
-  <!-- MODAL DE PACIENTES – Lista + buscador con filtro en vivo -->
-  <!-- ========================================================= -->
-
-  <ion-modal cssClass="paciente-modal" [isOpen]="showPacienteModal" [enterAnimation]="modalEnterAnimation.bind(this)"
-    (didDismiss)="closePacienteModal()">
-
-    <ng-template>
-
-      <!-- WRAPPER OBLIGATORIO (EVITA QUE LA LISTA SE SUBA) -->
-      <div class="modal-wrapper">
-
-        <!-- HEADER -->
-        <ion-header class="modal-header">
-          <ion-toolbar>
-            <ion-title>Seleccionar paciente</ion-title>
-
-            <ion-buttons slot="end">
-              <ion-button class="close-btn" fill="clear" (click)="closePacienteModal()">
-                <ion-icon name="close-outline"></ion-icon>
-              </ion-button>
-            </ion-buttons>
-
-          </ion-toolbar>
-        </ion-header>
-
-        <!-- CONTENIDO SCROLLEABLE -->
-        <ion-content class="modal-scroll">
-
-          <!-- 🔍 Spotlight Searchbar -->
-          <div class="search-container spotlight">
-            <ion-searchbar placeholder="Buscar paciente..." [(ngModel)]="busquedaPaciente"
-              (ionInput)="filtrarPacientes()">
-            </ion-searchbar>
-          </div>
-
-          <!-- LISTA -->
-          <ion-list>
-            <ion-item *ngFor="let pa of pacientesFiltrados" (click)="selectPaciente(pa)" class="cliente-item">
-              <ion-label>
-                <h2>{{ pa.nombre }}</h2>
-              </ion-label>
-            </ion-item>
-          </ion-list>
-
-        </ion-content>
-      </div>
-
-    </ng-template>
-  </ion-modal>
 
 </ion-content>
 
