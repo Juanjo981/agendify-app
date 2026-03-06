@@ -1,0 +1,313 @@
+<ion-content class="det-content">
+
+  <!-- ══════════════ NOT FOUND ══════════════ -->
+  <div *ngIf="!paciente" class="det-not-found">
+    <ion-icon name="person-outline"></ion-icon>
+    <p>Paciente no encontrado</p>
+    <button class="det-btn-ghost" (click)="volver()">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+      Volver a Pacientes
+    </button>
+  </div>
+
+  <!-- ══════════════ MAIN ══════════════════ -->
+  <div *ngIf="paciente" class="det-wrapper">
+
+    <!-- ─── HERO ─────────────────────────────────────────────────────────── -->
+    <div class="det-hero">
+      <button class="det-back-btn" (click)="volver()">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+        <span>Pacientes</span>
+      </button>
+
+      <div class="det-hero__body">
+        <div class="det-avatar" [style.background]="getAvatarColor()">
+          {{ getIniciales() }}
+        </div>
+
+        <div class="det-hero__info">
+          <h1>{{ paciente.nombre }} {{ paciente.apellido }}</h1>
+          <div class="det-chips">
+            <span class="det-chip" [class.det-chip--green]="paciente.activo" [class.det-chip--gray]="!paciente.activo">
+              <ion-icon [name]="paciente.activo ? 'checkmark-circle-outline' : 'close-circle-outline'"></ion-icon>
+              {{ paciente.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+            <span class="det-chip det-chip--blue" *ngIf="paciente.citas.length > 0">
+              <ion-icon name="calendar-outline"></ion-icon>
+              {{ paciente.citas.length }} cita{{ paciente.citas.length !== 1 ? 's' : '' }}
+            </span>
+            <span class="det-chip det-chip--gray" *ngIf="paciente.citas.length === 0">
+              Sin citas
+            </span>
+            <span class="det-chip det-chip--purple" *ngIf="paciente.fecha_nacimiento">
+              <ion-icon name="hourglass-outline"></ion-icon>
+              {{ calcularEdad(paciente.fecha_nacimiento) }} años
+            </span>
+          </div>
+        </div>
+
+        <div class="det-hero__actions">
+          <button class="det-btn-outline" (click)="abrirEditarModal()">
+            <ion-icon name="pencil-outline"></ion-icon>
+            Editar
+          </button>
+          <button class="det-btn-primary" (click)="irANuevaCita()">
+            <ion-icon name="calendar-outline"></ion-icon>
+            Nueva cita
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── TABS ──────────────────────────────────────────────────────────── -->
+    <div class="det-tabs">
+      <button class="det-tab" [class.active]="tabActiva === 'datos'" (click)="setTab('datos')">
+        <ion-icon name="person-outline"></ion-icon>
+        Datos
+      </button>
+      <button class="det-tab" [class.active]="tabActiva === 'citas'" (click)="setTab('citas')">
+        <ion-icon name="calendar-outline"></ion-icon>
+        Historial de citas
+        <span class="det-tab__badge" *ngIf="paciente.citas.length">{{ paciente.citas.length }}</span>
+      </button>
+      <button class="det-tab" [class.active]="tabActiva === 'notas'" (click)="setTab('notas')">
+        <ion-icon name="document-text-outline"></ion-icon>
+        Notas
+        <span class="det-tab__badge" *ngIf="paciente.notas.length">{{ paciente.notas.length }}</span>
+      </button>
+    </div>
+
+    <!-- ─── TAB CONTENT ───────────────────────────────────────────────────── -->
+    <div class="det-tab-content">
+
+      <!-- ════ TAB: DATOS ════ -->
+      <div *ngIf="tabActiva === 'datos'" class="det-datos">
+        <div class="det-data-grid">
+
+          <div class="det-data-card">
+            <div class="det-data-card__icon" style="background: rgba(99,102,241,0.10); color: #6366f1;">
+              <ion-icon name="mail-outline"></ion-icon>
+            </div>
+            <div class="det-data-card__body">
+              <span class="det-data-label">Email</span>
+              <a class="det-data-value det-link" href="mailto:{{ paciente.email }}">{{ paciente.email }}</a>
+            </div>
+          </div>
+
+          <div class="det-data-card">
+            <div class="det-data-card__icon" style="background: rgba(16,185,129,0.10); color: #10b981;">
+              <ion-icon name="call-outline"></ion-icon>
+            </div>
+            <div class="det-data-card__body">
+              <span class="det-data-label">Teléfono</span>
+              <span class="det-data-value">{{ paciente.telefono || '—' }}</span>
+            </div>
+          </div>
+
+          <div class="det-data-card">
+            <div class="det-data-card__icon" style="background: rgba(245,158,11,0.10); color: #f59e0b;">
+              <ion-icon name="gift-outline"></ion-icon>
+            </div>
+            <div class="det-data-card__body">
+              <span class="det-data-label">Fecha de nacimiento</span>
+              <span class="det-data-value">{{ formatFecha(paciente.fecha_nacimiento) }}</span>
+            </div>
+          </div>
+
+          <div class="det-data-card">
+            <div class="det-data-card__icon" style="background: rgba(139,92,246,0.10); color: #8b5cf6;">
+              <ion-icon name="hourglass-outline"></ion-icon>
+            </div>
+            <div class="det-data-card__body">
+              <span class="det-data-label">Edad</span>
+              <span class="det-data-value">{{ paciente.fecha_nacimiento ? calcularEdad(paciente.fecha_nacimiento) + ' años' : '—' }}</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Notas generales -->
+        <div class="det-notas-card">
+          <div class="det-notas-card__header">
+            <ion-icon name="clipboard-outline"></ion-icon>
+            <span>Notas generales</span>
+          </div>
+          <p class="det-notas-card__body" *ngIf="paciente.notas_generales">{{ paciente.notas_generales }}</p>
+          <p class="det-notas-card__body det-empty-text" *ngIf="!paciente.notas_generales">Sin notas generales registradas.</p>
+        </div>
+      </div>
+
+      <!-- ════ TAB: CITAS ════ -->
+      <div *ngIf="tabActiva === 'citas'" class="det-citas">
+
+        <!-- Summary chips -->
+        <div class="det-summary-row">
+          <div class="det-summary-chip det-summary-chip--green">
+            <strong>{{ estadoCount.confirmadas }}</strong>
+            <span>Confirmadas</span>
+          </div>
+          <div class="det-summary-chip det-summary-chip--yellow">
+            <strong>{{ estadoCount.pendientes }}</strong>
+            <span>Pendientes</span>
+          </div>
+          <div class="det-summary-chip det-summary-chip--red">
+            <strong>{{ estadoCount.canceladas }}</strong>
+            <span>Canceladas</span>
+          </div>
+        </div>
+
+        <!-- Filter chips -->
+        <div class="det-filter-chips">
+          <button class="det-filter-chip" [class.active]="filtroCitas === 'todos'" (click)="filtroCitas = 'todos'">Todas</button>
+          <button class="det-filter-chip det-filter-chip--green" [class.active]="filtroCitas === 'Confirmada'" (click)="filtroCitas = 'Confirmada'">Confirmadas</button>
+          <button class="det-filter-chip det-filter-chip--yellow" [class.active]="filtroCitas === 'Pendiente'" (click)="filtroCitas = 'Pendiente'">Pendientes</button>
+          <button class="det-filter-chip det-filter-chip--red" [class.active]="filtroCitas === 'Cancelada'" (click)="filtroCitas = 'Cancelada'">Canceladas</button>
+        </div>
+
+        <!-- Empty -->
+        <div *ngIf="citasFiltradas.length === 0" class="det-empty">
+          <ion-icon name="calendar-outline"></ion-icon>
+          <p>No hay citas {{ filtroCitas !== 'todos' ? 'con este estado' : 'registradas' }}</p>
+        </div>
+
+        <!-- Timeline -->
+        <div class="det-timeline" *ngIf="citasFiltradas.length > 0">
+          <div *ngFor="let cita of citasFiltradas" class="det-timeline-item">
+            <div class="det-timeline-dot" [class]="'det-dot--' + cita.estado.toLowerCase()"></div>
+            <div class="det-timeline-card">
+              <div class="det-timeline-card__head">
+                <div class="det-timeline-meta">
+                  <span class="det-timeline-date">{{ formatFecha(cita.fecha) }}</span>
+                  <span class="det-timeline-hour">{{ cita.hora }}</span>
+                </div>
+                <span class="det-cita-badge" [class]="'det-cita-badge--' + cita.estado.toLowerCase()">
+                  {{ cita.estado }}
+                </span>
+              </div>
+              <p class="det-timeline-tipo">{{ cita.tipo }}</p>
+              <p class="det-timeline-notas" *ngIf="cita.notas">{{ cita.notas }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ TAB: NOTAS ════ -->
+      <div *ngIf="tabActiva === 'notas'" class="det-notas">
+        <div class="det-notas-topbar">
+          <p class="det-notas-count">{{ paciente.notas.length }} nota{{ paciente.notas.length !== 1 ? 's' : '' }} registrada{{ paciente.notas.length !== 1 ? 's' : '' }}</p>
+          <button class="det-btn-primary" (click)="abrirNotaModal()">
+            <ion-icon name="add-outline"></ion-icon>
+            Agregar nota
+          </button>
+        </div>
+
+        <div *ngIf="paciente.notas.length === 0" class="det-empty">
+          <ion-icon name="document-text-outline"></ion-icon>
+          <p>Sin notas clínicas</p>
+          <span>Usa el botón superior para crear la primera nota</span>
+        </div>
+
+        <div class="det-nota-list" *ngIf="paciente.notas.length > 0">
+          <div *ngFor="let nota of paciente.notas" class="det-nota-item">
+            <div class="det-nota-item__header">
+              <span class="det-nota-item__fecha">
+                <ion-icon name="time-outline"></ion-icon>
+                {{ formatFecha(nota.fecha) }}
+              </span>
+              <button class="det-nota-delete-btn" (click)="eliminarNota(nota)" title="Eliminar nota">
+                <ion-icon name="trash-outline"></ion-icon>
+              </button>
+            </div>
+            <p class="det-nota-item__text">{{ nota.contenido }}</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- .det-tab-content -->
+  </div><!-- *ngIf="paciente" -->
+
+
+  <!-- ══════════════ MODAL EDITAR PACIENTE ══════════════════════════════════ -->
+  <div *ngIf="showEditarModal" class="pac-modal-backdrop" (click)="cerrarEditarModal()"></div>
+  <div *ngIf="showEditarModal" class="pac-modal" role="dialog">
+    <div class="pac-modal__header">
+      <h2>Editar paciente</h2>
+      <button class="pac-modal__close" (click)="cerrarEditarModal()" aria-label="Cerrar">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+    <div class="pac-modal__body">
+      <div class="pac-form-row">
+        <div class="pac-field" [class.has-error]="formErrores['nombre']">
+          <label>Nombre *</label>
+          <input type="text" [(ngModel)]="formPaciente.nombre" />
+          <span class="pac-field__error" *ngIf="formErrores['nombre']">{{ formErrores['nombre'] }}</span>
+        </div>
+        <div class="pac-field" [class.has-error]="formErrores['apellido']">
+          <label>Apellido *</label>
+          <input type="text" [(ngModel)]="formPaciente.apellido" />
+          <span class="pac-field__error" *ngIf="formErrores['apellido']">{{ formErrores['apellido'] }}</span>
+        </div>
+      </div>
+      <div class="pac-field" [class.has-error]="formErrores['email']">
+        <label>Email *</label>
+        <input type="email" [(ngModel)]="formPaciente.email" />
+        <span class="pac-field__error" *ngIf="formErrores['email']">{{ formErrores['email'] }}</span>
+      </div>
+      <div class="pac-form-row">
+        <div class="pac-field">
+          <label>Teléfono</label>
+          <input type="tel" [(ngModel)]="formPaciente.telefono" />
+        </div>
+        <div class="pac-field">
+          <label>Fecha de nacimiento</label>
+          <input type="date" [(ngModel)]="formPaciente.fecha_nacimiento" />
+        </div>
+      </div>
+      <div class="pac-field">
+        <label>Notas generales</label>
+        <textarea [(ngModel)]="formPaciente.notas_generales" rows="3"></textarea>
+      </div>
+      <div class="pac-field pac-field--toggle">
+        <label>Paciente activo</label>
+        <button class="pac-toggle" [class.on]="formPaciente.activo" (click)="formPaciente.activo = !formPaciente.activo" type="button">
+          <span class="pac-toggle__knob"></span>
+        </button>
+      </div>
+    </div>
+    <div class="pac-modal__footer">
+      <button class="pac-btn-ghost" (click)="cerrarEditarModal()">Cancelar</button>
+      <button class="det-btn-primary" (click)="guardarEdicion()">
+        <ion-icon name="checkmark-outline"></ion-icon>
+        Guardar cambios
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ══════════════ MODAL AGREGAR NOTA ════════════════════════════════════ -->
+  <div *ngIf="showNotaModal" class="pac-modal-backdrop" (click)="cerrarNotaModal()"></div>
+  <div *ngIf="showNotaModal" class="pac-modal pac-modal--small" role="dialog">
+    <div class="pac-modal__header">
+      <h2>Nueva nota clínica</h2>
+      <button class="pac-modal__close" (click)="cerrarNotaModal()" aria-label="Cerrar">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+    <div class="pac-modal__body">
+      <div class="pac-field" [class.has-error]="notaError">
+        <label>Contenido</label>
+        <textarea [(ngModel)]="nuevaNotaTexto" rows="5" placeholder="Escribe aquí la nota clínica…"></textarea>
+        <span class="pac-field__error" *ngIf="notaError">{{ notaError }}</span>
+      </div>
+    </div>
+    <div class="pac-modal__footer">
+      <button class="pac-btn-ghost" (click)="cerrarNotaModal()">Cancelar</button>
+      <button class="det-btn-primary" (click)="guardarNota()">
+        <ion-icon name="checkmark-outline"></ion-icon>
+        Guardar nota
+      </button>
+    </div>
+  </div>
+
+</ion-content>

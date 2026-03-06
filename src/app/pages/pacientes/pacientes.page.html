@@ -1,0 +1,242 @@
+<ion-content class="pac-content">
+  <div class="pac-wrapper">
+
+    <!-- ══════════════════════════════ PAGE HEADER ══════════════════════════════ -->
+    <div class="pac-page-header">
+      <div class="pac-page-header__text">
+        <h1 class="pac-title">Pacientes</h1>
+        <p class="pac-subtitle">Gestiona tu cartera de pacientes</p>
+      </div>
+      <button class="pac-btn-primary" (click)="abrirCrearModal()">
+        <ion-icon name="person-add-outline"></ion-icon>
+        <span>Nuevo paciente</span>
+      </button>
+    </div>
+
+    <!-- ══════════════════════════════ FILTER BAR ═══════════════════════════════ -->
+    <div class="pac-filters">
+      <div class="pac-search">
+        <ion-icon name="search-outline" class="pac-search__icon"></ion-icon>
+        <input
+          class="pac-search__input"
+          type="text"
+          placeholder="Buscar por nombre, email o teléfono…"
+          [(ngModel)]="busqueda"
+          (ngModelChange)="filtrar()"
+        />
+        <button *ngIf="busqueda" class="pac-search__clear" (click)="clearBusqueda()">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+
+      <div class="pac-filter-row">
+        <div class="pac-chip-group">
+          <button class="pac-chip" [class.active]="filtroCitas === 'todos'" (click)="setFiltroCitas('todos')">Todos</button>
+          <button class="pac-chip" [class.active]="filtroCitas === 'con-citas'" (click)="setFiltroCitas('con-citas')">Con citas</button>
+          <button class="pac-chip" [class.active]="filtroCitas === 'sin-citas'" (click)="setFiltroCitas('sin-citas')">Sin citas</button>
+        </div>
+
+        <div class="pac-select-wrap">
+          <ion-icon name="swap-vertical-outline"></ion-icon>
+          <select class="pac-select" [(ngModel)]="ordenamiento" (ngModelChange)="filtrar()">
+            <option value="az">Apellido A → Z</option>
+            <option value="za">Apellido Z → A</option>
+            <option value="recientes">Más jóvenes</option>
+            <option value="antiguos">Más mayores</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════ COUNTER ══════════════════════════════════ -->
+    <p class="pac-counter">
+      Mostrando <strong>{{ pacientesFiltrados.length }}</strong> de <strong>{{ totalPacientes }}</strong> pacientes
+    </p>
+
+    <!-- ══════════════════════════════ TABLE ════════════════════════════════════ -->
+    <div class="pac-table-wrapper">
+
+      <!-- Table head (desktop only) -->
+      <div class="pac-table-head">
+        <div class="pac-col pac-col--paciente">Paciente</div>
+        <div class="pac-col pac-col--email">Email</div>
+        <div class="pac-col pac-col--telefono">Teléfono</div>
+        <div class="pac-col pac-col--edad">Edad</div>
+        <div class="pac-col pac-col--ultima">Última cita</div>
+        <div class="pac-col pac-col--estado">Estado</div>
+        <div class="pac-col pac-col--acciones">Acciones</div>
+      </div>
+
+      <!-- Empty state -->
+      <div *ngIf="pacientesFiltrados.length === 0" class="pac-empty">
+        <ion-icon name="people-outline"></ion-icon>
+        <p>No se encontraron pacientes</p>
+        <span>Prueba con otros filtros o crea un nuevo paciente</span>
+      </div>
+
+      <!-- Rows -->
+      <div
+        *ngFor="let p of pacientesFiltrados"
+        class="pac-row"
+        (click)="verPaciente(p)"
+        role="row"
+      >
+        <!-- Paciente -->
+        <div class="pac-col pac-col--paciente">
+          <span class="pac-data-label">Paciente</span>
+          <div class="pac-patient">
+            <div class="pac-avatar" [style.background]="getAvatarColor(p.nombre)">
+              {{ getIniciales(p.nombre, p.apellido) }}
+            </div>
+            <div class="pac-patient__info">
+              <span class="pac-patient__name">{{ p.apellido }}, {{ p.nombre }}</span>
+              <span class="pac-patient__meta">{{ p.citas.length }} cita{{ p.citas.length !== 1 ? 's' : '' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="pac-col pac-col--email" (click)="$event.stopPropagation()">
+          <span class="pac-data-label">Email</span>
+          <a class="pac-link" href="mailto:{{ p.email }}">{{ p.email }}</a>
+        </div>
+
+        <!-- Teléfono -->
+        <div class="pac-col pac-col--telefono">
+          <span class="pac-data-label">Teléfono</span>
+          <span>{{ p.telefono || '—' }}</span>
+        </div>
+
+        <!-- Edad -->
+        <div class="pac-col pac-col--edad">
+          <span class="pac-data-label">Edad</span>
+          <span>{{ p.fecha_nacimiento ? calcularEdad(p.fecha_nacimiento) + ' años' : '—' }}</span>
+        </div>
+
+        <!-- Última cita -->
+        <div class="pac-col pac-col--ultima">
+          <span class="pac-data-label">Última cita</span>
+          <span>{{ formatFecha(ultimaCita(p)) }}</span>
+        </div>
+
+        <!-- Estado -->
+        <div class="pac-col pac-col--estado">
+          <span class="pac-data-label">Estado</span>
+          <span class="pac-badge" [class.pac-badge--active]="p.activo" [class.pac-badge--inactive]="!p.activo">
+            {{ p.activo ? 'Activo' : 'Inactivo' }}
+          </span>
+        </div>
+
+        <!-- Acciones -->
+        <div class="pac-col pac-col--acciones" (click)="$event.stopPropagation()">
+          <span class="pac-data-label">Acciones</span>
+          <div class="pac-actions">
+            <button class="pac-action-btn pac-action-btn--view" (click)="verPaciente(p)" title="Ver perfil">
+              <ion-icon name="eye-outline"></ion-icon>
+            </button>
+            <button class="pac-action-btn pac-action-btn--edit" (click)="abrirEditarModal(p, $event)" title="Editar">
+              <ion-icon name="pencil-outline"></ion-icon>
+            </button>
+            <button class="pac-action-btn pac-action-btn--delete" (click)="confirmarEliminar(p, $event)" title="Eliminar">
+              <ion-icon name="trash-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- .pac-table-wrapper -->
+  </div><!-- .pac-wrapper -->
+
+
+  <!-- ══════════════════ MODAL CREAR / EDITAR PACIENTE ═════════════════════════ -->
+  <div *ngIf="showFormModal" class="pac-modal-backdrop" (click)="cerrarFormModal()"></div>
+  <div *ngIf="showFormModal" class="pac-modal" role="dialog">
+    <div class="pac-modal__header">
+      <h2>{{ modoModal === 'crear' ? 'Nuevo paciente' : 'Editar paciente' }}</h2>
+      <button class="pac-modal__close" (click)="cerrarFormModal()" aria-label="Cerrar">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+
+    <div class="pac-modal__body">
+      <div class="pac-form-row">
+        <div class="pac-field" [class.has-error]="formErrores['nombre']">
+          <label>Nombre *</label>
+          <input type="text" [(ngModel)]="formPaciente.nombre" placeholder="Ej. María" autocomplete="given-name" />
+          <span class="pac-field__error" *ngIf="formErrores['nombre']">{{ formErrores['nombre'] }}</span>
+        </div>
+        <div class="pac-field" [class.has-error]="formErrores['apellido']">
+          <label>Apellido *</label>
+          <input type="text" [(ngModel)]="formPaciente.apellido" placeholder="Ej. García" autocomplete="family-name" />
+          <span class="pac-field__error" *ngIf="formErrores['apellido']">{{ formErrores['apellido'] }}</span>
+        </div>
+      </div>
+
+      <div class="pac-field" [class.has-error]="formErrores['email']">
+        <label>Email *</label>
+        <input type="email" [(ngModel)]="formPaciente.email" placeholder="correo@ejemplo.com" autocomplete="email" />
+        <span class="pac-field__error" *ngIf="formErrores['email']">{{ formErrores['email'] }}</span>
+      </div>
+
+      <div class="pac-form-row">
+        <div class="pac-field">
+          <label>Teléfono</label>
+          <input type="tel" [(ngModel)]="formPaciente.telefono" placeholder="+34 600 000 000" autocomplete="tel" />
+        </div>
+        <div class="pac-field">
+          <label>Fecha de nacimiento</label>
+          <input type="date" [(ngModel)]="formPaciente.fecha_nacimiento" />
+        </div>
+      </div>
+
+      <div class="pac-field">
+        <label>Notas generales</label>
+        <textarea [(ngModel)]="formPaciente.notas_generales" rows="3" placeholder="Alergias, antecedentes, observaciones…"></textarea>
+      </div>
+
+      <div class="pac-field pac-field--toggle">
+        <label>Paciente activo</label>
+        <button class="pac-toggle" [class.on]="formPaciente.activo" (click)="formPaciente.activo = !formPaciente.activo" type="button" [attr.aria-pressed]="formPaciente.activo">
+          <span class="pac-toggle__knob"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="pac-modal__footer">
+      <button class="pac-btn-ghost" (click)="cerrarFormModal()">Cancelar</button>
+      <button class="pac-btn-primary" (click)="guardarPaciente()">
+        <ion-icon name="checkmark-outline"></ion-icon>
+        {{ modoModal === 'crear' ? 'Crear paciente' : 'Guardar cambios' }}
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════ MODAL CONFIRMAR ELIMINAR ══════════════════════════ -->
+  <div *ngIf="showDeleteModal" class="pac-modal-backdrop" (click)="cancelarEliminar()"></div>
+  <div *ngIf="showDeleteModal" class="pac-modal pac-modal--small" role="alertdialog">
+    <div class="pac-modal__header">
+      <h2>Eliminar paciente</h2>
+      <button class="pac-modal__close" (click)="cancelarEliminar()" aria-label="Cerrar">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+
+    <div class="pac-modal__body pac-delete-body">
+      <div class="pac-delete-icon">
+        <ion-icon name="person-remove-outline"></ion-icon>
+      </div>
+      <p>¿Estás seguro de que deseas eliminar a <strong>{{ pacienteAEliminar?.nombre }} {{ pacienteAEliminar?.apellido }}</strong>?</p>
+      <p class="pac-delete-note">Esta acción no se puede deshacer.</p>
+    </div>
+
+    <div class="pac-modal__footer">
+      <button class="pac-btn-ghost" (click)="cancelarEliminar()">Cancelar</button>
+      <button class="pac-btn-danger" (click)="eliminarPaciente()">
+        <ion-icon name="trash-outline"></ion-icon>
+        Eliminar
+      </button>
+    </div>
+  </div>
+
+</ion-content>

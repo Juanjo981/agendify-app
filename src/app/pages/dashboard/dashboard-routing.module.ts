@@ -20,6 +20,14 @@ const routes: Routes = [
   {
     path: 'configuracion',
     loadComponent: () => import('../configuracion/configuracion.page').then(m => m.ConfiguracionPage)
+  },
+  {
+    path: 'pacientes',
+    loadComponent: () => import('../pacientes/pacientes.page').then(m => m.PacientesPage)
+  },
+  {
+    path: 'pacientes/:id',
+    loadComponent: () => import('../pacientes/paciente-detalle.page').then(m => m.PacienteDetallePage)
   }
 ];
 
