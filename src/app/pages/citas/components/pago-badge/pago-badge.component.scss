@@ -1,0 +1,15 @@
+.pb {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  line-height: 1.6;
+
+  &--pending { background: rgba(245,158,11,0.1);  color: #b45309; border: 1px solid rgba(245,158,11,0.22); }
+  &--partial  { background: rgba(14,165,233,0.1);  color: #0369a1; border: 1px solid rgba(14,165,233,0.22); }
+  &--paid    { background: rgba(16,185,129,0.1);  color: #047857; border: 1px solid rgba(16,185,129,0.22); }
+}

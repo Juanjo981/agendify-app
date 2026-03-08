@@ -162,6 +162,12 @@
         <ion-label>Pacientes</ion-label>
       </ion-item>
 
+      <ion-item button routerLink="/dashboard/citas" routerLinkActive="activo"
+        [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
+        <ion-icon slot="start" name="cash-outline"></ion-icon>
+        <ion-label>Citas</ion-label>
+      </ion-item>
+
       <ion-item button routerLink="/dashboard/sesiones" routerLinkActive="activo"
         [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
         <ion-icon slot="start" name="cash-outline"></ion-icon>
@@ -213,6 +219,10 @@
     <ion-item button routerLink="/dashboard/pacientes" lines="none">
       <ion-icon name="people-outline" slot="start"></ion-icon>
       <ion-label>Pacientes</ion-label>
+    </ion-item>
+    <ion-item button routerLink="/dashboard/citas" lines="none">
+      <ion-icon slot="start" name="cash-outline"></ion-icon>
+      <ion-label>Citas</ion-label>
     </ion-item>
     <ion-item button routerLink="/dashboard/sesiones" lines="none">
       <ion-icon slot="start" name="cash-outline"></ion-icon>

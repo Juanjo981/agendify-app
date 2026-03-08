@@ -1,0 +1,34 @@
+<div class="hs-container">
+
+  <div *ngIf="sesiones.length === 0" class="hs-empty">
+    <ion-icon name="document-text-outline"></ion-icon>
+    <p>Sin sesiones registradas</p>
+    <span>Las sesiones aparecerán aquí cuando se creen desde una cita completada</span>
+  </div>
+
+  <div
+    *ngFor="let s of sesiones"
+    class="hs-item"
+    (click)="verSesion(s)"
+    role="button"
+    tabindex="0"
+  >
+    <div class="hs-item__icon">
+      <ion-icon name="document-text-outline"></ion-icon>
+    </div>
+    <div class="hs-item__body">
+      <div class="hs-item__header">
+        <span class="hs-item__fecha">Cita: {{ formatFecha(s.fecha_cita) }}</span>
+        <span class="hs-item__creacion">Creada el {{ formatCreacion(s.fecha_creacion) }}</span>
+      </div>
+      <p class="hs-item__notas">{{ resumenNotas(s) }}</p>
+      <div class="hs-item__footer">
+        <span class="hs-item__adjunto" *ngIf="s.adjunto">
+          <ion-icon name="attach-outline"></ion-icon> {{ s.adjunto.name }}
+        </span>
+        <span class="hs-item__ver">Ver sesión <ion-icon name="arrow-forward-outline"></ion-icon></span>
+      </div>
+    </div>
+  </div>
+
+</div>

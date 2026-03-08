@@ -1,0 +1,43 @@
+<!-- File already attached -->
+<div *ngIf="adjunto" class="aa-file">
+  <div class="aa-file__icon">
+    <ion-icon [name]="getIcon(adjunto.type)"></ion-icon>
+  </div>
+  <div class="aa-file__info">
+    <span class="aa-file__name">{{ adjunto.name }}</span>
+    <span class="aa-file__size">{{ formatSize(adjunto.size) }}</span>
+  </div>
+  <div class="aa-file__actions">
+    <button class="aa-file__action aa-file__action--view" *ngIf="adjunto.previewUrl" (click)="verAdjunto()" title="Ver">
+      <ion-icon name="eye-outline"></ion-icon>
+    </button>
+    <button class="aa-file__action aa-file__action--remove" (click)="eliminar()" title="Eliminar adjunto">
+      <ion-icon name="trash-outline"></ion-icon>
+    </button>
+  </div>
+</div>
+
+<!-- Drop zone (no file) -->
+<div
+  *ngIf="!adjunto"
+  class="aa-zone"
+  [class.aa-zone--drag]="isDragOver"
+  (click)="triggerPicker()"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave()"
+  (drop)="onDrop($event)"
+>
+  <ion-icon name="cloud-upload-outline" class="aa-zone__icon"></ion-icon>
+  <p class="aa-zone__text">Arrastra un archivo aquí o <span class="aa-zone__link">selecciona uno</span></p>
+  <p class="aa-zone__hint">PDF, Word, imágenes · Máx. recomendado 10 MB</p>
+</div>
+
+<p *ngIf="error" class="aa-error">{{ error }}</p>
+
+<input
+  #fileInput
+  type="file"
+  [accept]="'.txt,.doc,.docx,.pdf,.jpg,.jpeg,.png,.webp'"
+  hidden
+  (change)="onFileSelected($event)"
+/>

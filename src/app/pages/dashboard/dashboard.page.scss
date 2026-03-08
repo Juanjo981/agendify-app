@@ -360,7 +360,9 @@
   }
 }
 
+/* Base: sempre oculto — los media queries lo muestran cuando corresponde */
 .bottom-menu {
+  display: none;
   position: fixed;
   bottom: 0;
   left: 0;
@@ -455,11 +457,16 @@
 /* 📱 Cuando la pantalla es pequeña, el layout pasa a columna */
 @media (max-width: 1024px) {
 
+  /*
+   * FIX #1 — dar altura explícita al contenedor.
+   * Con height: auto, main-content { height: 100% } resuelve a 0,
+   * colapsando todo el contenido (ion-pages son position:absolute).
+   */
   .dashboard-layout {
-    display: flex;
+    display: flex !important;
     flex-direction: column !important;
     width: 100%;
-    height: auto;
+    height: calc(100vh - 64px); /* 64px = altura del header */
   }
 
   /* La sidebar ya NO estará al lado → se oculta o se hace menú inferior */
@@ -471,17 +478,30 @@
     display: none !important;
   }
 
-  /* El contenido ocupa todo el ancho */
+  /*
+   * FIX #2 — main-content debe crecer para llenar dashboard-layout.
+   * flex: 1 + height: 0 es el patrón correcto dentro de un flex-column.
+   * overflow: hidden se mantiene porque ion-router-outlet lo necesita.
+   */
   .main-content {
     width: 100% !important;
-    flex: 1;
-    display: block;
+    flex: 1 !important;
+    height: 0 !important;       /* flex-trick: flex:1 determina la altura real */
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
   }
 
+  /*
+   * FIX #3 — contain: strict incluye "size", lo que hace que el outlet
+   * resuelva su propio tamaño ignorando al padre → caja de 0px.
+   * Se relaja a contain: layout style para mantener stacking context.
+   */
   .dashboard-content {
-    display: block;
     width: 100%;
-    min-height: calc(100vh - 60px);
+    height: 100%;
+    contain: layout style !important;
+    min-height: unset !important;
   }
 
   /* Menú inferior visible SOLO en móviles */
@@ -500,12 +520,14 @@
     --padding-start: 0;
     --padding-end: 0;
     --padding-top: 0;
-    --padding-bottom: 80px; /* bottom-menu */
+    --padding-bottom: 50px; /* espacio para bottom-menu (45px handle) */
   }
 }
 
-// Solo visible en móviles
-@media (min-width: 769px) {
+/* bottom-menu: oculto en desktop (≥ 1025px) — ya manejado por la regla base display:none
+   y por el !important del bloque max-width:1024px de arriba. No se necesita
+   una regla min-width que entre en conflicto con ese bloque. */
+@media (min-width: 1025px) {
   .bottom-menu {
     display: none !important;
   }
@@ -571,6 +593,8 @@
     display: none !important;
   }
 
+  /* El grid-template-columns ya no aplica porque el @media 1024px
+     convierte .dashboard-layout a flex. Esta regla queda como fallback. */
   .dashboard-layout {
     grid-template-columns: 0 1fr !important;
   }

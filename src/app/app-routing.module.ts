@@ -42,6 +42,22 @@ const routes: Routes = [
       {
         path: 'configuracion',
         loadComponent: () => import('./pages/configuracion/configuracion.page').then(m => m.ConfiguracionPage)
+      },
+      {
+        path: 'citas',
+        loadComponent: () => import('./pages/citas/citas.page').then(m => m.CitasPage)
+      },
+      {
+        path: 'citas/:id',
+        loadComponent: () => import('./pages/citas/detalle-cita/detalle-cita.page').then(m => m.DetalleCitaPage)
+      },
+      {
+        path: 'sesiones',
+        loadComponent: () => import('./pages/sesiones/sesiones.page').then(m => m.SesionesPage)
+      },
+      {
+        path: 'sesiones/:id',
+        loadComponent: () => import('./pages/sesiones/detalle-sesion/detalle-sesion.page').then(m => m.DetalleSesionPage)
       }
     ]
   },

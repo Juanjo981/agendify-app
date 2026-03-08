@@ -1,121 +1,383 @@
-<ion-content class="perfil-content">
-  <div class="perfil-container glass animate__animated animate__fadeIn">
+<ion-content class="prf-content">
+  <div class="prf-wrapper">
 
-    <h2>👤 Mi perfil</h2>
-
-    <!-- Información personal -->
-    <section class="perfil-section">
-      <div class="perfil-header">
-        <h3>Información personal</h3>
-        <a (click)="toggleEditar('personal')" class="editar-link">
-          {{ editarPersonal ? 'CANCELAR' : 'EDITAR' }}
-        </a>
+    <!-- ═══════════════════════════════════════════════════════
+         HERO — Avatar + nombre + especialidad
+    ════════════════════════════════════════════════════════ -->
+    <div class="prf-hero">
+      <div class="prf-avatar-wrap">
+        <div class="prf-avatar">
+          <img *ngIf="avatarUrl" [src]="avatarUrl" alt="Foto de perfil" class="prf-avatar-img">
+          <ion-icon *ngIf="!avatarUrl" name="person" class="prf-avatar-icon"></ion-icon>
+        </div>
+        <button class="prf-avatar-btn" (click)="triggerAvatarPicker()" title="Cambiar foto">
+          <ion-icon name="camera-outline"></ion-icon>
+        </button>
+        <input #avatarInput type="file" accept="image/jpeg,image/png,image/webp"
+               style="display:none" (change)="onAvatarSelected($event)">
       </div>
-
-      <ion-item [class.readonly]="!editarPersonal">
-        <ion-label position="stacked">Nombre completo</ion-label>
-        <ion-input [(ngModel)]="perfil.nombre" [readonly]="!editarPersonal"></ion-input>
-      </ion-item>
-
-      <ion-item [class.readonly]="!editarPersonal">
-        <ion-label position="stacked">Correo electrónico</ion-label>
-        <ion-input [(ngModel)]="perfil.email" type="email" [readonly]="!editarPersonal"></ion-input>
-      </ion-item>
-
-      <ion-item [class.readonly]="!editarPersonal">
-        <ion-label position="stacked">Usuario</ion-label>
-        <ion-input [(ngModel)]="perfil.usuario" [readonly]="!editarPersonal"></ion-input>
-      </ion-item>
-
-      <ion-item [class.readonly]="!editarPersonal">
-        <ion-label position="stacked">Teléfono</ion-label>
-        <ion-input [(ngModel)]="perfil.telefono" type="tel" [readonly]="!editarPersonal"></ion-input>
-      </ion-item>
-
-      <ion-item [class.readonly]="!editarPersonal">
-        <ion-label position="stacked">Domicilio</ion-label>
-        <ion-input [(ngModel)]="perfil.domicilio" [readonly]="!editarPersonal"></ion-input>
-      </ion-item>
-
-      <ion-item [class.readonly]="!editarPersonal">
-        <ion-label position="stacked">Especialidad</ion-label>
-        <ion-input [(ngModel)]="perfil.especialidad" [readonly]="!editarPersonal"></ion-input>
-      </ion-item>
-    </section>
-
-    <!-- Preferencias -->
-    <section class="perfil-section">
-      <div class="perfil-header">
-        <h3>Preferencias</h3>
-        <a (click)="toggleEditar('preferencias')" class="editar-link">
-          {{ editarPreferencias ? 'CANCELAR' : 'EDITAR' }}
-        </a>
+      <div class="prf-hero-info">
+        <h1 class="prf-hero-name">{{ perfil.nombre }}</h1>
+        <p class="prf-hero-specialty">{{ perfil.especialidad }}</p>
+        <span class="prf-hero-badge">Pro</span>
       </div>
-
-      <ion-item [class.readonly]="!editarPreferencias">
-        <ion-label>Idioma</ion-label>
-        <ion-select [(ngModel)]="perfil.idioma" [disabled]="!editarPreferencias">
-          <ion-select-option value="es">Español</ion-select-option>
-          <ion-select-option value="en">Inglés</ion-select-option>
-        </ion-select>
-      </ion-item>
-
-      <ion-item [class.readonly]="!editarPreferencias">
-        <ion-label>Zona horaria</ion-label>
-        <ion-select [(ngModel)]="perfil.zonaHoraria" [disabled]="!editarPreferencias">
-          <ion-select-option value="GMT-6">GMT-6 (CDMX)</ion-select-option>
-          <ion-select-option value="GMT-5">GMT-5</ion-select-option>
-        </ion-select>
-      </ion-item>
-    </section>
-
-    <!-- Seguridad -->
-    <section class="perfil-section">
-      <div class="perfil-header">
-        <h3>Seguridad</h3>
-        <a (click)="toggleEditar('seguridad')" class="editar-link">
-          {{ editarSeguridad ? 'CANCELAR' : 'EDITAR' }}
-        </a>
-      </div>
-
-      <ion-item [class.readonly]="!editarSeguridad">
-        <ion-label position="stacked">Contraseña actual</ion-label>
-        <ion-input type="password" [(ngModel)]="passwordActual" [readonly]="!editarSeguridad"></ion-input>
-      </ion-item>
-
-      <ion-item [class.readonly]="!editarSeguridad">
-        <ion-label position="stacked">Nueva contraseña</ion-label>
-        <ion-input type="password" [(ngModel)]="nuevaPassword" [readonly]="!editarSeguridad"></ion-input>
-      </ion-item>
-
-      <ion-item [class.readonly]="!editarSeguridad">
-        <ion-label position="stacked">Confirmar nueva contraseña</ion-label>
-        <ion-input type="password" [(ngModel)]="confirmarPassword" [readonly]="!editarSeguridad"></ion-input>
-      </ion-item>
-    </section>
-
-    <!-- Notificaciones -->
-    <section class="perfil-section">
-      <div class="perfil-header">
-        <h3>Notificaciones</h3>
-        <a (click)="toggleEditar('notificaciones')" class="editar-link">
-          {{ editarNotificaciones ? 'CANCELAR' : 'EDITAR' }}
-        </a>
-      </div>
-
-      <ion-item lines="none">
-        <ion-label>Correo electrónico</ion-label>
-        <ion-toggle [(ngModel)]="perfil.notificacionEmail" [disabled]="!editarNotificaciones"></ion-toggle>
-      </ion-item>
-
-      <ion-item lines="none">
-        <ion-label>SMS</ion-label>
-        <ion-toggle [(ngModel)]="perfil.notificacionSMS" [disabled]="!editarNotificaciones"></ion-toggle>
-      </ion-item>
-    </section>
-
-    <div class="perfil-actions">
-      <ion-button expand="block" color="primary" (click)="guardarCambios()">Guardar cambios</ion-button>
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         ESTADÍSTICAS RÁPIDAS
+    ════════════════════════════════════════════════════════ -->
+    <div class="prf-stats-row">
+      <div class="prf-stat-card">
+        <div class="prf-stat-icon prf-stat-icon--blue">
+          <ion-icon name="people-outline"></ion-icon>
+        </div>
+        <span class="prf-stat-value">{{ stats.totalPacientes }}</span>
+        <span class="prf-stat-label">Pacientes</span>
+      </div>
+      <div class="prf-stat-card">
+        <div class="prf-stat-icon prf-stat-icon--purple">
+          <ion-icon name="calendar-outline"></ion-icon>
+        </div>
+        <span class="prf-stat-value">{{ stats.citasMes }}</span>
+        <span class="prf-stat-label">Citas este mes</span>
+      </div>
+      <div class="prf-stat-card">
+        <div class="prf-stat-icon prf-stat-icon--green">
+          <ion-icon name="today-outline"></ion-icon>
+        </div>
+        <span class="prf-stat-value">{{ stats.citasHoy }}</span>
+        <span class="prf-stat-label">Citas hoy</span>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         INFORMACIÓN PERSONAL
+    ════════════════════════════════════════════════════════ -->
+    <div class="prf-card" [class.prf-card--editing]="editarPersonal">
+      <div class="prf-card-header">
+        <div class="prf-card-title">
+          <div class="prf-card-icon-wrap prf-card-icon--blue">
+            <ion-icon name="person-outline"></ion-icon>
+          </div>
+          <h3>Información personal</h3>
+        </div>
+        <button class="prf-edit-btn" [class.prf-edit-btn--cancel]="editarPersonal"
+                (click)="toggleEditar('personal')">
+          <ion-icon [name]="editarPersonal ? 'close-outline' : 'create-outline'"></ion-icon>
+          {{ editarPersonal ? 'Cancelar' : 'Editar' }}
+        </button>
+      </div>
+
+      <div class="prf-fields">
+        <div class="prf-field">
+          <label class="prf-field-label">Nombre completo</label>
+          <span *ngIf="!editarPersonal" class="prf-field-value">{{ perfil.nombre }}</span>
+          <ion-input *ngIf="editarPersonal" class="prf-field-input"
+                     [(ngModel)]="perfil.nombre" placeholder="Nombre completo"></ion-input>
+        </div>
+        <div class="prf-field">
+          <label class="prf-field-label">Correo electrónico</label>
+          <span *ngIf="!editarPersonal" class="prf-field-value">{{ perfil.email }}</span>
+          <ion-input *ngIf="editarPersonal" class="prf-field-input"
+                     [(ngModel)]="perfil.email" type="email" placeholder="correo@ejemplo.com"></ion-input>
+        </div>
+        <div class="prf-field">
+          <label class="prf-field-label">Usuario</label>
+          <span *ngIf="!editarPersonal" class="prf-field-value">{{ perfil.usuario }}</span>
+          <ion-input *ngIf="editarPersonal" class="prf-field-input"
+                     [(ngModel)]="perfil.usuario" placeholder="usuario"></ion-input>
+        </div>
+        <div class="prf-field">
+          <label class="prf-field-label">Teléfono</label>
+          <span *ngIf="!editarPersonal" class="prf-field-value">{{ perfil.telefono }}</span>
+          <ion-input *ngIf="editarPersonal" class="prf-field-input"
+                     [(ngModel)]="perfil.telefono" type="tel" placeholder="000-000-0000"></ion-input>
+        </div>
+        <div class="prf-field">
+          <label class="prf-field-label">Domicilio</label>
+          <span *ngIf="!editarPersonal" class="prf-field-value">{{ perfil.domicilio }}</span>
+          <ion-input *ngIf="editarPersonal" class="prf-field-input"
+                     [(ngModel)]="perfil.domicilio" placeholder="Calle, número, ciudad"></ion-input>
+        </div>
+        <div class="prf-field">
+          <label class="prf-field-label">Especialidad</label>
+          <span *ngIf="!editarPersonal" class="prf-field-value">{{ perfil.especialidad }}</span>
+          <ion-input *ngIf="editarPersonal" class="prf-field-input"
+                     [(ngModel)]="perfil.especialidad" placeholder="Especialidad"></ion-input>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         PERFIL PROFESIONAL
+    ════════════════════════════════════════════════════════ -->
+    <div class="prf-card" [class.prf-card--editing]="editarProfesional">
+      <div class="prf-card-header">
+        <div class="prf-card-title">
+          <div class="prf-card-icon-wrap prf-card-icon--indigo">
+            <ion-icon name="business-outline"></ion-icon>
+          </div>
+          <h3>Perfil profesional</h3>
+        </div>
+        <button class="prf-edit-btn" [class.prf-edit-btn--cancel]="editarProfesional"
+                (click)="toggleEditar('profesional')">
+          <ion-icon [name]="editarProfesional ? 'close-outline' : 'create-outline'"></ion-icon>
+          {{ editarProfesional ? 'Cancelar' : 'Editar' }}
+        </button>
+      </div>
+
+      <div class="prf-fields">
+        <div class="prf-field">
+          <label class="prf-field-label">Nombre del consultorio</label>
+          <span *ngIf="!editarProfesional" class="prf-field-value">{{ perfilProfesional.consultorio }}</span>
+          <ion-input *ngIf="editarProfesional" class="prf-field-input"
+                     [(ngModel)]="perfilProfesional.consultorio" placeholder="Consultorio / Clínica"></ion-input>
+        </div>
+        <div class="prf-field">
+          <label class="prf-field-label">Teléfono del consultorio</label>
+          <span *ngIf="!editarProfesional" class="prf-field-value">{{ perfilProfesional.telefono }}</span>
+          <ion-input *ngIf="editarProfesional" class="prf-field-input"
+                     [(ngModel)]="perfilProfesional.telefono" type="tel" placeholder="000-000-0000"></ion-input>
+        </div>
+        <div class="prf-field prf-field--full">
+          <label class="prf-field-label">Dirección del consultorio</label>
+          <span *ngIf="!editarProfesional" class="prf-field-value">{{ perfilProfesional.direccion }}</span>
+          <ion-input *ngIf="editarProfesional" class="prf-field-input"
+                     [(ngModel)]="perfilProfesional.direccion" placeholder="Calle, número, ciudad"></ion-input>
+        </div>
+        <div class="prf-field prf-field--full">
+          <label class="prf-field-label">Descripción corta</label>
+          <span *ngIf="!editarProfesional" class="prf-field-value prf-field-value--muted">{{ perfilProfesional.descripcion }}</span>
+          <textarea *ngIf="editarProfesional" class="prf-field-textarea"
+                    [(ngModel)]="perfilProfesional.descripcion" rows="3"
+                    placeholder="Descripción breve que los pacientes verán en sus recordatorios..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         HORARIOS PREDETERMINADOS
+    ════════════════════════════════════════════════════════ -->
+    <div class="prf-card" [class.prf-card--editing]="editarHorarios">
+      <div class="prf-card-header">
+        <div class="prf-card-title">
+          <div class="prf-card-icon-wrap prf-card-icon--teal">
+            <ion-icon name="time-outline"></ion-icon>
+          </div>
+          <h3>Horarios predeterminados</h3>
+        </div>
+        <button class="prf-edit-btn" [class.prf-edit-btn--cancel]="editarHorarios"
+                (click)="toggleEditar('horarios')">
+          <ion-icon [name]="editarHorarios ? 'close-outline' : 'create-outline'"></ion-icon>
+          {{ editarHorarios ? 'Cancelar' : 'Editar' }}
+        </button>
+      </div>
+
+      <div class="prf-fields">
+        <div class="prf-field">
+          <label class="prf-field-label">Duración de cita</label>
+          <span *ngIf="!editarHorarios" class="prf-field-value">{{ horarios.duracionCita }} min</span>
+          <ion-select *ngIf="editarHorarios" class="prf-field-select"
+                      [(ngModel)]="horarios.duracionCita" interface="popover">
+            <ion-select-option [value]="15">15 min</ion-select-option>
+            <ion-select-option [value]="30">30 min</ion-select-option>
+            <ion-select-option [value]="45">45 min</ion-select-option>
+            <ion-select-option [value]="50">50 min</ion-select-option>
+            <ion-select-option [value]="60">60 min</ion-select-option>
+            <ion-select-option [value]="90">90 min</ion-select-option>
+          </ion-select>
+        </div>
+        <div class="prf-field">
+          <label class="prf-field-label">Buffer entre citas</label>
+          <span *ngIf="!editarHorarios" class="prf-field-value">{{ horarios.buffer }} min</span>
+          <ion-select *ngIf="editarHorarios" class="prf-field-select"
+                      [(ngModel)]="horarios.buffer" interface="popover">
+            <ion-select-option [value]="0">Sin buffer</ion-select-option>
+            <ion-select-option [value]="5">5 min</ion-select-option>
+            <ion-select-option [value]="10">10 min</ion-select-option>
+            <ion-select-option [value]="15">15 min</ion-select-option>
+          </ion-select>
+        </div>
+        <div class="prf-field">
+          <label class="prf-field-label">Horario de inicio</label>
+          <span *ngIf="!editarHorarios" class="prf-field-value">{{ horarios.inicio }}</span>
+          <ion-input *ngIf="editarHorarios" class="prf-field-input"
+                     [(ngModel)]="horarios.inicio" type="time"></ion-input>
+        </div>
+        <div class="prf-field">
+          <label class="prf-field-label">Horario de cierre</label>
+          <span *ngIf="!editarHorarios" class="prf-field-value">{{ horarios.fin }}</span>
+          <ion-input *ngIf="editarHorarios" class="prf-field-input"
+                     [(ngModel)]="horarios.fin" type="time"></ion-input>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         PREFERENCIAS
+    ════════════════════════════════════════════════════════ -->
+    <div class="prf-card" [class.prf-card--editing]="editarPreferencias">
+      <div class="prf-card-header">
+        <div class="prf-card-title">
+          <div class="prf-card-icon-wrap prf-card-icon--orange">
+            <ion-icon name="settings-outline"></ion-icon>
+          </div>
+          <h3>Preferencias</h3>
+        </div>
+        <button class="prf-edit-btn" [class.prf-edit-btn--cancel]="editarPreferencias"
+                (click)="toggleEditar('preferencias')">
+          <ion-icon [name]="editarPreferencias ? 'close-outline' : 'create-outline'"></ion-icon>
+          {{ editarPreferencias ? 'Cancelar' : 'Editar' }}
+        </button>
+      </div>
+
+      <div class="prf-fields">
+        <div class="prf-field">
+          <label class="prf-field-label">Idioma</label>
+          <span *ngIf="!editarPreferencias" class="prf-field-value">
+            {{ perfil.idioma === 'es' ? 'Español' : 'Inglés' }}
+          </span>
+          <ion-select *ngIf="editarPreferencias" class="prf-field-select"
+                      [(ngModel)]="perfil.idioma" interface="popover">
+            <ion-select-option value="es">Español</ion-select-option>
+            <ion-select-option value="en">Inglés</ion-select-option>
+          </ion-select>
+        </div>
+        <div class="prf-field">
+          <label class="prf-field-label">Zona horaria</label>
+          <span *ngIf="!editarPreferencias" class="prf-field-value">{{ perfil.zonaHoraria }}</span>
+          <ion-select *ngIf="editarPreferencias" class="prf-field-select"
+                      [(ngModel)]="perfil.zonaHoraria" interface="popover">
+            <ion-select-option value="GMT-6">GMT-6 (CDMX)</ion-select-option>
+            <ion-select-option value="GMT-5">GMT-5</ion-select-option>
+          </ion-select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SEGURIDAD
+    ════════════════════════════════════════════════════════ -->
+    <div class="prf-card" [class.prf-card--editing]="editarSeguridad">
+      <div class="prf-card-header">
+        <div class="prf-card-title">
+          <div class="prf-card-icon-wrap prf-card-icon--red">
+            <ion-icon name="shield-checkmark-outline"></ion-icon>
+          </div>
+          <h3>Seguridad</h3>
+        </div>
+        <button class="prf-edit-btn" [class.prf-edit-btn--cancel]="editarSeguridad"
+                (click)="toggleEditar('seguridad')">
+          <ion-icon [name]="editarSeguridad ? 'close-outline' : 'create-outline'"></ion-icon>
+          {{ editarSeguridad ? 'Cancelar' : 'Editar' }}
+        </button>
+      </div>
+
+      <div class="prf-fields">
+        <ng-container *ngIf="editarSeguridad">
+          <div class="prf-field">
+            <label class="prf-field-label">Contraseña actual</label>
+            <ion-input class="prf-field-input" type="password"
+                       [(ngModel)]="passwordActual" placeholder="••••••••"></ion-input>
+          </div>
+          <div class="prf-field">
+            <label class="prf-field-label">Nueva contraseña</label>
+            <ion-input class="prf-field-input" type="password"
+                       [(ngModel)]="nuevaPassword" placeholder="••••••••"></ion-input>
+          </div>
+          <div class="prf-field">
+            <label class="prf-field-label">Confirmar contraseña</label>
+            <ion-input class="prf-field-input" type="password"
+                       [(ngModel)]="confirmarPassword" placeholder="••••••••"></ion-input>
+          </div>
+        </ng-container>
+        <div *ngIf="!editarSeguridad" class="prf-security-hint">
+          <ion-icon name="lock-closed-outline"></ion-icon>
+          Tu contraseña está protegida. Haz clic en Editar para cambiarla.
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         NOTIFICACIONES
+    ════════════════════════════════════════════════════════ -->
+    <div class="prf-card" [class.prf-card--editing]="editarNotificaciones">
+      <div class="prf-card-header">
+        <div class="prf-card-title">
+          <div class="prf-card-icon-wrap prf-card-icon--purple">
+            <ion-icon name="notifications-outline"></ion-icon>
+          </div>
+          <h3>Notificaciones</h3>
+        </div>
+        <button class="prf-edit-btn" [class.prf-edit-btn--cancel]="editarNotificaciones"
+                (click)="toggleEditar('notificaciones')">
+          <ion-icon [name]="editarNotificaciones ? 'close-outline' : 'create-outline'"></ion-icon>
+          {{ editarNotificaciones ? 'Cancelar' : 'Editar' }}
+        </button>
+      </div>
+
+      <div class="prf-toggle-list">
+        <div class="prf-toggle-row">
+          <div class="prf-toggle-info">
+            <ion-icon name="mail-outline" class="prf-toggle-icon"></ion-icon>
+            <div>
+              <p class="prf-toggle-label">Correo electrónico</p>
+              <p class="prf-toggle-sub">Recibe recordatorios y alertas por email</p>
+            </div>
+          </div>
+          <ion-toggle [(ngModel)]="perfil.notificacionEmail"
+                      [disabled]="!editarNotificaciones" class="prf-toggle"></ion-toggle>
+        </div>
+        <div class="prf-toggle-row">
+          <div class="prf-toggle-info">
+            <ion-icon name="chatbubble-outline" class="prf-toggle-icon"></ion-icon>
+            <div>
+              <p class="prf-toggle-label">SMS</p>
+              <p class="prf-toggle-sub">Recibe notificaciones por mensaje de texto</p>
+            </div>
+          </div>
+          <ion-toggle [(ngModel)]="perfil.notificacionSMS"
+                      [disabled]="!editarNotificaciones" class="prf-toggle"></ion-toggle>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         INTEGRACIONES FUTURAS
+    ════════════════════════════════════════════════════════ -->
+    <div class="prf-card">
+      <div class="prf-card-header">
+        <div class="prf-card-title">
+          <div class="prf-card-icon-wrap prf-card-icon--gray">
+            <ion-icon name="grid-outline"></ion-icon>
+          </div>
+          <h3>Integraciones</h3>
+        </div>
+      </div>
+
+      <div class="prf-integrations">
+        <div class="prf-integration-item" *ngFor="let int of integraciones">
+          <div class="prf-integration-icon" [style.background]="int.color">
+            <ion-icon [name]="int.icon"></ion-icon>
+          </div>
+          <div class="prf-integration-info">
+            <p class="prf-integration-name">{{ int.nombre }}</p>
+            <p class="prf-integration-desc">{{ int.desc }}</p>
+          </div>
+          <span class="prf-badge-soon">Próximamente</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         STICKY SAVE BAR
+    ════════════════════════════════════════════════════════ -->
+    <div class="prf-save-bar">
+      <button class="prf-save-btn" (click)="guardarCambios()">
+        <ion-icon name="checkmark-circle-outline"></ion-icon>
+        Guardar cambios
+      </button>
+    </div>
+
   </div>
 </ion-content>

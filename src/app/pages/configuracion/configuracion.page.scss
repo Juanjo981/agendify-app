@@ -1,164 +1,673 @@
-.configuracion-content {
+// ─── Design tokens (shared :root from dashboard) ─────────────────────────────
+// --radius-xl: 22px | --radius-lg: 16px | --radius-md: 12px | --radius-pill: 999px
+// --shadow-soft | --shadow-elevated
+// --glass-bg | --glass-border | --glass-blur | --border-subtle
+// --primary: #3b3f92 | --primary-mid: #6366f1 | --primary-soft | --danger: #dc2626
+// --text-strong: #0f172a | --text-muted: #64748b
+
+// ─── Page shell ──────────────────────────────────────────────────────────────
+.cfg-content {
   --background: transparent;
-
-  /* ❗ FIX: Asegurar que el ion-content ocupe toda la pantalla */
-  height: 100%;
-  min-height: 100%;
-  display: block; /* <-- Este era el problema */
+  --padding-top: 0;
+  --padding-bottom: 0;
 }
 
-.configuracion-container {
-  max-width: 800px;
-  width: 100%;
-  margin: 20px auto;
-  padding: 2rem;
-  border-radius: 20px;
-
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-
-  /* Márgenes para pantallas pequeñas */
-  @media (max-width: 480px) {
-    padding: 1.2rem;
-    margin: 10px;
-  }
+.cfg-wrapper {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 28px 20px 100px;
+  position: relative;
 }
 
-h2 {
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
+// ─── Animations ──────────────────────────────────────────────────────────────
+@keyframes cfgFadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cfgToastIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes cfgSpring {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+// ─── Page header ─────────────────────────────────────────────────────────────
+.cfg-page-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: #333;
-
-  @media (max-width: 480px) {
-    font-size: 1.4rem;
-  }
+  gap: 20px;
+  margin-bottom: 20px;
+  animation: cfgFadeUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-.config-section {
-  margin-bottom: 2rem;
-
-  @media (max-width: 480px) {
-    margin-bottom: 1.4rem;
-  }
-}
-
-.config-header {
+.cfg-header-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg, 16px);
+  background: linear-gradient(135deg, var(--primary, #3b3f92), var(--primary-mid, #6366f1));
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
+  justify-content: center;
+  font-size: 26px;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.32);
 }
 
-.config-header h3 {
-  font-size: 1.2rem;
-  color: #444;
+.cfg-page-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-strong, #0f172a);
+  margin: 0 0 4px;
+  letter-spacing: -0.4px;
+}
+
+.cfg-page-subtitle {
+  font-size: 14px;
+  color: var(--text-muted, #64748b);
   margin: 0;
+}
 
-  @media (max-width: 480px) {
-    font-size: 1.05rem;
+// ─── Card shell ──────────────────────────────────────────────────────────────
+.cfg-card {
+  background: var(--glass-bg, rgba(247, 249, 252, 0.82));
+  backdrop-filter: var(--glass-blur, blur(18px) saturate(150%));
+  -webkit-backdrop-filter: var(--glass-blur, blur(18px) saturate(150%));
+  border: 1px solid rgba(209, 213, 219, 0.45);
+  border-radius: var(--radius-xl, 22px);
+  padding: 24px 28px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-soft, 0 2px 12px rgba(15, 23, 42, 0.07));
+  animation: cfgFadeUp 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) 0.06s both;
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.10);
   }
 }
 
-ion-item {
-  --highlight-background: transparent;
-  --background: #ffffff;
-  --border-color: #e0e0e0;
-  border-radius: 8px;
-  margin-bottom: 0.75rem;
+// ─── Card header ─────────────────────────────────────────────────────────────
+.cfg-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
 
-  @media (max-width: 480px) {
-    --background: rgba(255,255,255,0.7);
+.cfg-card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md, 12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #fff;
+  flex-shrink: 0;
+
+  &.cfg-icon--blue   { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+  &.cfg-icon--indigo { background: linear-gradient(135deg, var(--primary-mid, #6366f1), var(--primary, #3b3f92)); }
+  &.cfg-icon--teal   { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+  &.cfg-icon--purple { background: linear-gradient(135deg, #a855f7, #9333ea); }
+  &.cfg-icon--orange { background: linear-gradient(135deg, #f97316, #ea580c); }
+  &.cfg-icon--green  { background: linear-gradient(135deg, #10b981, #059669); }
+  &.cfg-icon--red    { background: linear-gradient(135deg, #ef4444, var(--danger, #dc2626)); }
+  &.cfg-icon--gray   { background: linear-gradient(135deg, #94a3b8, #64748b); }
+  &.cfg-icon--slate  { background: linear-gradient(135deg, #475569, #334155); }
+}
+
+.cfg-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-strong, #0f172a);
+  margin: 0 0 2px;
+  letter-spacing: -0.2px;
+}
+
+.cfg-card-desc {
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+  margin: 0;
+}
+
+// ─── Divider ─────────────────────────────────────────────────────────────────
+.cfg-divider {
+  height: 1px;
+  background: rgba(209, 213, 219, 0.4);
+  margin: 18px 0;
+}
+
+// ─── Toggle list ─────────────────────────────────────────────────────────────
+.cfg-toggle-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.cfg-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(209, 213, 219, 0.25);
+
+  &:last-child { border-bottom: none; padding-bottom: 0; }
+  &:first-child { padding-top: 0; }
+}
+
+.cfg-toggle-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cfg-toggle-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-strong, #0f172a);
+  margin: 0 0 3px;
+}
+
+.cfg-toggle-sub {
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.cfg-toggle {
+  --track-background: rgba(209, 213, 219, 0.6);
+  --track-background-checked: var(--primary-mid, #6366f1);
+  flex-shrink: 0;
+
+  &.cfg-toggle--warning {
+    --track-background-checked: #f97316;
   }
 }
 
-ion-label {
-  font-size: 0.95rem;
-  color: #333;
+// ─── Fields grid ─────────────────────────────────────────────────────────────
+.cfg-fields {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 4px;
 
-  @media (max-width: 480px) {
-    font-size: 0.85rem;
+  &.cfg-fields--compact { margin-top: 12px; }
+
+  &.cfg-fields--disabled {
+    opacity: 0.45;
+    pointer-events: none;
   }
 }
 
-ion-button {
-  margin-top: 0.5rem;
+.cfg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
 
-  @media (max-width: 480px) {
-    font-size: 0.85rem;
+.cfg-field-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.cfg-select {
+  --background: rgba(255, 255, 255, 0.65);
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+  --color: var(--text-strong, #0f172a);
+  border: 1.5px solid rgba(209, 213, 219, 0.65);
+  border-radius: var(--radius-md, 12px);
+  font-size: 14px;
+  width: 100%;
+}
+
+.cfg-input-time {
+  width: 100%;
+  font-size: 14px;
+  color: var(--text-strong, #0f172a);
+  background: rgba(255, 255, 255, 0.65);
+  border: 1.5px solid rgba(209, 213, 219, 0.65);
+  border-radius: var(--radius-md, 12px);
+  padding: 10px 12px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    border-color: var(--primary-mid, #6366f1);
+    background: rgba(255, 255, 255, 0.9);
   }
 }
 
-/* 📱 RESPONSIVE CONFIGURACIÓN */
-@media (max-width: 1024px) {
-  .configuracion-container {
-    max-width: 100%;
-    margin: 10px;
-    padding: 1.5rem;
+// ─── Theme / size selector ────────────────────────────────────────────────────
+.cfg-theme-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.cfg-theme-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 12px 8px;
+  border: 1.5px solid rgba(209, 213, 219, 0.6);
+  border-radius: var(--radius-md, 12px);
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  color: var(--text-muted, #64748b);
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  position: relative;
+
+  ion-icon { font-size: 20px; }
+
+  &:hover {
+    border-color: var(--primary-mid, #6366f1);
+    color: var(--primary-mid, #6366f1);
+    background: rgba(99, 102, 241, 0.05);
   }
 
-  h2 {
-    font-size: 1.6rem;
-  }
-
-  .config-section {
-    margin-bottom: 1.5rem;
-  }
-
-  .config-header h3 {
-    font-size: 1.1rem;
+  &.cfg-theme-btn--active {
+    border-color: var(--primary-mid, #6366f1);
+    background: var(--primary-soft, rgba(99, 102, 241, 0.10));
+    color: var(--primary-mid, #6366f1);
+    font-weight: 700;
   }
 }
 
-@media (max-width: 768px) {
-  .configuracion-container {
-    padding: 1.2rem;
-  }
+// ─── Integrations ────────────────────────────────────────────────────────────
+.cfg-integrations {
+  display: flex;
+  flex-direction: column;
+}
 
-  ion-item {
-    --min-height: 48px;
-  }
+.cfg-integration-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(209, 213, 219, 0.25);
 
-  ion-label {
-    font-size: 0.9rem;
-  }
+  &:last-child { border-bottom: none; padding-bottom: 0; }
+  &:first-child { padding-top: 0; }
+}
 
-  ion-button {
-    font-size: 0.9rem;
+.cfg-integration-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md, 12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.cfg-integration-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cfg-integration-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-strong, #0f172a);
+  margin: 0 0 2px;
+}
+
+.cfg-integration-desc {
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cfg-badge-soon {
+  padding: 4px 11px;
+  background: rgba(99, 102, 241, 0.10);
+  color: var(--primary-mid, #6366f1);
+  border-radius: var(--radius-pill, 999px);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+// ─── Action list (advanced) ──────────────────────────────────────────────────
+.cfg-action-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.cfg-action-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(209, 213, 219, 0.25);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s ease;
+  border-radius: var(--radius-md, 12px);
+
+  &:last-child { border-bottom: none; padding-bottom: 0; }
+  &:first-child { padding-top: 0; }
+
+  &:hover {
+    background: rgba(99, 102, 241, 0.05);
+    padding-left: 8px;
+    padding-right: 8px;
+    margin: 0 -8px;
+    width: calc(100% + 16px);
   }
 }
 
-@media (max-width: 480px) {
-  .configuracion-container {
-    padding: 1rem;
-    margin: 8px;
-    border-radius: 15px;
+.cfg-action-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md, 12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+
+  &.cfg-action-icon--blue   { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
+  &.cfg-action-icon--indigo { background: rgba(99, 102, 241, 0.12); color: var(--primary-mid, #6366f1); }
+  &.cfg-action-icon--teal   { background: rgba(20, 184, 166, 0.12); color: #14b8a6; }
+  &.cfg-action-icon--purple { background: rgba(168, 85, 247, 0.12); color: #a855f7; }
+}
+
+.cfg-action-info { flex: 1; min-width: 0; }
+
+.cfg-action-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-strong, #0f172a);
+  margin: 0 0 2px;
+}
+
+.cfg-action-sub {
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+  margin: 0;
+}
+
+.cfg-action-arrow {
+  font-size: 16px;
+  color: var(--text-muted, #64748b);
+  flex-shrink: 0;
+}
+
+// ─── Meta info row ───────────────────────────────────────────────────────────
+.cfg-meta-row {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.cfg-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cfg-meta-label {
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+  font-weight: 500;
+}
+
+.cfg-meta-value {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-strong, #0f172a);
+  font-variant-numeric: tabular-nums;
+}
+
+.cfg-meta-badge {
+  padding: 3px 10px;
+  border-radius: var(--radius-pill, 999px);
+  font-size: 11px;
+  font-weight: 700;
+
+  &.cfg-meta-badge--dev {
+    background: rgba(245, 158, 11, 0.12);
+    color: #b45309;
+  }
+}
+
+// ─── Save bar ─────────────────────────────────────────────────────────────────
+.cfg-save-bar {
+  position: sticky;
+  bottom: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  pointer-events: none;
+  padding: 0 4px;
+}
+
+.cfg-save-btn,
+.cfg-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 26px;
+  border-radius: var(--radius-pill, 999px);
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  pointer-events: all;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.25s ease;
+
+  ion-icon { font-size: 18px; }
+}
+
+.cfg-save-btn {
+  background: linear-gradient(135deg, var(--primary, #3b3f92), var(--primary-mid, #6366f1));
+  color: #fff;
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.38);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 32px rgba(99, 102, 241, 0.50);
+  }
+}
+
+.cfg-reset-btn {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-muted, #64748b);
+  border: 1.5px solid rgba(209, 213, 219, 0.6);
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.07);
+
+  &:hover {
+    transform: translateY(-2px);
+    color: var(--text-strong, #0f172a);
+    border-color: rgba(100, 116, 139, 0.5);
+  }
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+.cfg-toast {
+  position: fixed;
+  bottom: 80px;
+  right: 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: #0f172a;
+  color: #fff;
+  border-radius: var(--radius-pill, 999px);
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 900;
+  transition: opacity 0.3s ease;
+
+  ion-icon { font-size: 18px; color: #4ade80; }
+
+  &.cfg-toast--visible {
+    opacity: 1;
+    animation: cfgToastIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+}
+
+// ─── Reset confirm dialog ─────────────────────────────────────────────────────
+.cfg-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.38);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 950;
+}
+
+.cfg-confirm-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, calc(100vw - 40px));
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 24px;
+  padding: 32px 28px 28px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.20);
+  z-index: 951;
+  text-align: center;
+  animation: cfgSpring 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.cfg-confirm-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+
+  ion-icon {
+    font-size: 32px;
+    color: #d97706;
+  }
+}
+
+.cfg-confirm-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-strong, #0f172a);
+  margin: 0 0 10px;
+}
+
+.cfg-confirm-msg {
+  font-size: 14px;
+  color: var(--text-muted, #64748b);
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+
+.cfg-confirm-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.cfg-confirm-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: var(--radius-pill, 999px);
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &--cancel {
+    background: rgba(209, 213, 219, 0.4);
+    color: var(--text-muted, #64748b);
+
+    &:hover { background: rgba(209, 213, 219, 0.65); }
   }
 
-  h2 {
-    font-size: 1.4rem;
-    margin-bottom: 1rem;
+  &--confirm {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.35);
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(249, 115, 22, 0.45);
+    }
+  }
+}
+
+// ─── Responsive ───────────────────────────────────────────────────────────────
+@media (max-width: 640px) {
+  .cfg-wrapper {
+    padding: 14px 12px 100px;
   }
 
-  .config-header h3 {
-    font-size: 1rem;
+  .cfg-card {
+    padding: 20px 16px;
   }
 
-  ion-item {
-    --background: rgba(255, 255, 255, 0.7);
-    margin-bottom: 0.5rem;
+  .cfg-fields {
+    grid-template-columns: 1fr;
   }
 
-  ion-label {
-    font-size: 0.85rem;
+  .cfg-theme-selector {
+    flex-wrap: wrap;
   }
 
-  ion-button {
-    font-size: 0.85rem;
-    margin-top: 0.4rem;
+  .cfg-save-bar {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .cfg-save-btn,
+  .cfg-reset-btn {
+    justify-content: center;
+    border-radius: var(--radius-lg, 16px);
+  }
+
+  .cfg-toast {
+    right: 12px;
+    left: 12px;
+    bottom: 90px;
+    justify-content: center;
+    border-radius: var(--radius-lg, 16px);
   }
 }

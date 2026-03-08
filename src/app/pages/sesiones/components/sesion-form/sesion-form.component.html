@@ -1,0 +1,58 @@
+<div class="sf-overlay" (click)="cancelado.emit()">
+  <div class="sf-modal" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="sf-header">
+      <div class="sf-header__icon">
+        <ion-icon name="document-text-outline"></ion-icon>
+      </div>
+      <div class="sf-header__text">
+        <h3 class="sf-header__title">Registrar sesión</h3>
+        <p class="sf-header__sub">Completa las notas de la atención</p>
+      </div>
+      <button class="sf-close" (click)="cancelado.emit()">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="sf-body">
+
+      <!-- Notas -->
+      <div class="sf-field">
+        <label class="sf-label">Notas de la sesión</label>
+        <textarea
+          class="sf-textarea"
+          rows="6"
+          placeholder="Escribe las notas clínicas, observaciones y evolución del paciente…"
+          [(ngModel)]="notas"
+          (ngModelChange)="notasError = ''"
+          [class.sf-textarea--error]="notasError"
+        ></textarea>
+        <span *ngIf="notasError" class="sf-error">{{ notasError }}</span>
+        <span class="sf-hint">{{ notas.length }} caracteres</span>
+      </div>
+
+      <!-- Archivo adjunto -->
+      <div class="sf-field">
+        <label class="sf-label">Archivo adjunto <span class="sf-optional">(opcional)</span></label>
+        <app-archivo-adjunto
+          [adjunto]="adjunto"
+          (archivoSeleccionado)="onArchivoSeleccionado($event)"
+          (archivoEliminado)="onArchivoEliminado()"
+        ></app-archivo-adjunto>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="sf-footer">
+      <button class="sf-btn sf-btn--cancel" (click)="cancelado.emit()">Cancelar</button>
+      <button class="sf-btn sf-btn--save" (click)="guardar()">
+        <ion-icon name="checkmark-circle-outline"></ion-icon>
+        Guardar sesión
+      </button>
+    </div>
+
+  </div>
+</div>

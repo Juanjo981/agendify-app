@@ -1,0 +1,65 @@
+<div class="bpm-overlay" (click)="cerrado.emit()">
+  <div class="bpm-panel" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="bpm-header">
+      <div class="bpm-header__icon">
+        <ion-icon name="people-outline"></ion-icon>
+      </div>
+      <div class="bpm-header__text">
+        <h3 class="bpm-header__title">Seleccionar paciente</h3>
+        <p class="bpm-header__sub">Busca y elige el paciente para la cita</p>
+      </div>
+      <button class="bpm-close" (click)="cerrado.emit()">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+
+    <!-- Buscador -->
+    <div class="bpm-search-wrap">
+      <ion-icon name="search-outline" class="bpm-search-wrap__ico"></ion-icon>
+      <input
+        class="bpm-search"
+        type="text"
+        placeholder="Buscar por nombre, apellido o email…"
+        [(ngModel)]="busqueda"
+        (ngModelChange)="filtrar()"
+        autofocus
+      />
+      <button *ngIf="busqueda" class="bpm-search-wrap__clear" (click)="busqueda = ''; filtrar()">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+
+    <!-- Lista -->
+    <div class="bpm-list">
+
+      <div *ngIf="filtrados.length === 0" class="bpm-empty">
+        <ion-icon name="person-outline"></ion-icon>
+        <p>No se encontraron pacientes</p>
+      </div>
+
+      <button
+        *ngFor="let p of filtrados"
+        class="bpm-item"
+        (click)="elegir(p)"
+      >
+        <div class="bpm-item__avatar" [style.background]="getAvatarColor(p.nombre)">
+          {{ iniciales(p) }}
+        </div>
+        <div class="bpm-item__info">
+          <span class="bpm-item__nombre">{{ p.apellido }}, {{ p.nombre }}</span>
+          <span class="bpm-item__email">{{ p.email }}</span>
+        </div>
+        <ion-icon name="chevron-forward-outline" class="bpm-item__arrow"></ion-icon>
+      </button>
+
+    </div>
+
+    <!-- Footer count -->
+    <div class="bpm-footer">
+      <span>{{ filtrados.length }} paciente{{ filtrados.length !== 1 ? 's' : '' }}</span>
+    </div>
+
+  </div>
+</div>

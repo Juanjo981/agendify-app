@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { IonicModule, NavController, AlertController, Platform } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { AuthService } from 'src/app/services/auth';
@@ -11,10 +11,11 @@ import { RouterModule } from '@angular/router';
   templateUrl: './dashboard.page.html',
   styleUrls: ['./dashboard.page.scss'],
 })
-export class DashboardPage implements OnInit {
+export class DashboardPage implements OnInit, OnDestroy {
   nombreUsuario = '';
   menuAbierto: boolean = false;
   mostrarBotonMenu: boolean = false;
+  isMobile: boolean = false;          // true when viewport < 1025px
   sidebarWidth = 220;
   private resizing = false;
   private minSidebarWidth = 160;
@@ -104,6 +105,17 @@ export class DashboardPage implements OnInit {
     console.log('Ver todas las notificaciones');
   }
 
+  // ─── Responsive: actualiza isMobile al redimensionar el viewport ────────
+  @HostListener('window:resize')
+  onWindowResize() {
+    this.isMobile = window.innerWidth < 1025;
+    this.mostrarBotonMenu = this.isMobile;
+    // Cierra el menú inferior si el usuario amplía la ventana a desktop
+    if (!this.isMobile) {
+      this.menuInferiorAbierto = false;
+    }
+  }
+
   toggleSidebar() {
     this.sidebarContraido = !this.sidebarContraido;
 
@@ -124,10 +136,15 @@ export class DashboardPage implements OnInit {
 
     this.nombreUsuario = this.authService.getNombre();
 
-    // Mostrar botón menú si el ancho es menor a 768px (móvil)
-    this.mostrarBotonMenu = this.platform.width() < 768;
+    // Estado inicial basado en el ancho actual
+    this.isMobile = window.innerWidth < 1025;
+    this.mostrarBotonMenu = this.isMobile;
 
     this.updateActiveList();
+  }
+
+  ngOnDestroy() {
+    // HostListener se limpia automáticamente por Angular, nada extra necesario
   }
 
   toggleMenu() {

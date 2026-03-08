@@ -1,0 +1,69 @@
+<div class="rp-overlay" (click)="cancelado.emit()">
+  <div class="rp-modal" (click)="$event.stopPropagation()">
+
+    <div class="rp-modal__header">
+      <div class="rp-modal__icon">
+        <ion-icon name="refresh-circle-outline"></ion-icon>
+      </div>
+      <div>
+        <h3 class="rp-modal__title">Reprogramar cita</h3>
+        <p class="rp-modal__sub">{{ cita.apellido_paciente }}, {{ cita.nombre_paciente }}</p>
+      </div>
+      <button class="rp-modal__close" (click)="cancelado.emit()">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+
+    <div class="rp-modal__body">
+
+      <div class="rp-field">
+        <label class="rp-label">Nueva fecha *</label>
+        <input
+          class="rp-input"
+          type="date"
+          [(ngModel)]="fecha"
+          [class.rp-input--error]="errores['fecha']"
+        />
+        <span *ngIf="errores['fecha']" class="rp-error">{{ errores['fecha'] }}</span>
+      </div>
+
+      <div class="rp-row">
+        <div class="rp-field">
+          <label class="rp-label">Hora inicio *</label>
+          <input
+            class="rp-input"
+            type="time"
+            [(ngModel)]="hora_inicio"
+            [class.rp-input--error]="errores['hora_inicio']"
+          />
+          <span *ngIf="errores['hora_inicio']" class="rp-error">{{ errores['hora_inicio'] }}</span>
+        </div>
+        <div class="rp-field">
+          <label class="rp-label">Hora fin *</label>
+          <input
+            class="rp-input"
+            type="time"
+            [(ngModel)]="hora_fin"
+            [class.rp-input--error]="errores['hora_fin']"
+          />
+          <span *ngIf="errores['hora_fin']" class="rp-error">{{ errores['hora_fin'] }}</span>
+        </div>
+      </div>
+
+      <p class="rp-hint" *ngIf="duracionPreview > 0">
+        <ion-icon name="hourglass-outline"></ion-icon>
+        Duración: <strong>{{ duracionPreview }} min</strong>
+      </p>
+
+    </div>
+
+    <div class="rp-modal__footer">
+      <button class="rp-btn rp-btn--cancel" (click)="cancelado.emit()">Cancelar</button>
+      <button class="rp-btn rp-btn--confirm" (click)="confirmar()">
+        <ion-icon name="refresh-outline"></ion-icon>
+        Reprogramar
+      </button>
+    </div>
+
+  </div>
+</div>

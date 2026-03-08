@@ -1,0 +1,467 @@
+// ─── Shell ───────────────────────────────────────────────────────────────────
+.ses-content {
+  --background: transparent;
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+.ses-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+
+// ─── Page header ─────────────────────────────────────────────────────────────
+.ses-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.ses-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-strong, #0f172a);
+  margin: 0 0 4px;
+  letter-spacing: -0.3px;
+}
+
+.ses-subtitle {
+  font-size: 14px;
+  color: var(--text-muted, #64748b);
+  margin: 0;
+}
+
+// ─── Filter bar (same as .cf-bar) ────────────────────────────────────────────
+.sf-bar {
+  background: var(--glass-bg, rgba(247,249,252,0.82));
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid var(--border-subtle, rgba(209,213,219,0.45));
+  border-radius: var(--radius-lg, 16px);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sf-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  &__icon {
+    position: absolute;
+    left: 12px;
+    font-size: 16px;
+    color: var(--text-muted, #64748b);
+    pointer-events: none;
+  }
+
+  &__input {
+    width: 100%;
+    padding: 9px 36px;
+    border-radius: var(--radius-md, 10px);
+    border: 1px solid var(--border-subtle, rgba(209,213,219,0.55));
+    background: rgba(255,255,255,0.6);
+    font-size: 14px;
+    color: var(--text-strong, #0f172a);
+    outline: none;
+    transition: border-color 0.15s;
+
+    &:focus { border-color: var(--primary, #6366f1); }
+    &::placeholder { color: var(--text-muted, #64748b); }
+  }
+
+  &__clear {
+    position: absolute;
+    right: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted, #64748b);
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    border-radius: 6px;
+    transition: color 0.15s;
+    &:hover { color: var(--text-strong, #0f172a); }
+    ion-icon { font-size: 16px; }
+  }
+}
+
+.sf-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.sf-select-wrap,
+.sf-date-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid var(--border-subtle, rgba(209,213,219,0.55));
+  border-radius: var(--radius-md, 10px);
+  padding: 6px 10px;
+  flex: 1;
+  min-width: 140px;
+  max-width: 210px;
+  transition: border-color 0.15s;
+
+  &:focus-within { border-color: var(--primary, #6366f1); }
+
+  ion-icon { color: var(--text-muted, #64748b); font-size: 14px; flex-shrink: 0; }
+}
+
+.sf-select,
+.sf-date {
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: var(--text-strong, #0f172a);
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+}
+
+.sf-clear {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 1px solid var(--border-subtle, rgba(209,213,219,0.55));
+  border-radius: var(--radius-md, 10px);
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--text-muted, #64748b);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+
+  &:hover { color: var(--primary, #6366f1); border-color: var(--primary, #6366f1); }
+  ion-icon { font-size: 14px; }
+}
+
+// ─── Counter ─────────────────────────────────────────────────────────────────
+.ses-counter {
+  font-size: 13px;
+  color: var(--text-muted, #64748b);
+  margin: 12px 0;
+  strong { color: var(--text-strong, #0f172a); }
+}
+
+// ─── Desktop table ───────────────────────────────────────────────────────────
+//
+// Columnas: Paciente | Fecha | Notas | Adjunto | Registrada | Acciones
+// FIX clave: minmax(0, Xfr) en columnas flexibles fuerza a los tracks a poder
+// encogerse por debajo del contenido → habilita text-overflow en hijos.
+// min-width: 0 en .ses-col (flex dentro de grid) tiene el mismo efecto.
+// ─────────────────────────────────────────────────────────────────────────────
+$ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
+
+.ses-table-wrapper {
+  background: var(--glass-bg, rgba(247,249,252,0.82));
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid var(--border-subtle, rgba(209,213,219,0.45));
+  border-radius: var(--radius-lg, 16px);
+  overflow: hidden;
+}
+
+.ses-table-head {
+  display: grid;
+  grid-template-columns: $ses-col-tpl;
+  align-items: center;
+  padding: 0 20px;
+  height: 40px;
+  border-bottom: 1px solid var(--border-subtle, rgba(209,213,219,0.4));
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted, #64748b);
+}
+
+.ses-row {
+  display: grid;
+  grid-template-columns: $ses-col-tpl;
+  align-items: center;
+  padding: 0 20px;
+  min-height: 56px;
+  border-bottom: 1px solid var(--border-subtle, rgba(209,213,219,0.3));
+  cursor: pointer;
+  transition: background 0.15s;
+  font-size: 14px;
+  color: var(--text-strong, #0f172a);
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: rgba(5, 150, 105, 0.04); }
+}
+
+.ses-data-label { display: none; }
+
+// Celda base: min-width:0 es crítico para que text-overflow funcione
+// dentro de un grid track flex.
+.ses-col {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;       // ← sin esto el track no puede encogerse
+  overflow: hidden;   // ← contiene el desbordamiento
+  padding: 10px 12px 10px 0;
+
+  // La columna de notas se alinea arriba para texto multi-línea
+  &--notas { align-items: flex-start; padding-top: 12px; padding-bottom: 12px; }
+
+  // Acciones a la derecha, sin padding-right extra
+  &--acciones { justify-content: flex-end; overflow: visible; padding-right: 0; }
+}
+
+// ── Celda: Paciente ──────────────────────────────────────────────────────────
+.ses-patient {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;     // permite que el nombre se trunque
+  overflow: hidden;
+}
+
+.ses-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;   // nunca se aplasta
+
+  &--md { width: 40px; height: 40px; font-size: 13px; }
+}
+
+.ses-patient__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ses-patient__name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// ── Celda: texto genérico (fecha, creada) ─────────────────────────────────────
+.ses-cell-text {
+  font-size: 13px;
+  color: var(--text-muted, #64748b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// ── Celda: Notas ─────────────────────────────────────────────────────────────
+// Usa line-clamp en lugar de nowrap+ellipsis para mostrar 2 líneas
+.ses-notas-cell {
+  margin: 0;
+  min-width: 0;
+  width: 100%;
+  font-size: 13px;
+  color: var(--text-muted, #64748b);
+  line-height: 1.5;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+// ── Celda: Adjunto ───────────────────────────────────────────────────────────
+.ses-adj-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  min-width: 0;      // permite encogerse
+  max-width: 100%;   // no desborda la celda
+
+  &--con {
+    background: rgba(5, 150, 105, 0.1);
+    color: #059669;
+    ion-icon { font-size: 13px; flex-shrink: 0; }
+  }
+}
+
+// El nombre del archivo va en un span hijo para que text-overflow funcione
+// (inline-flex en el padre no trunca por sí solo)
+.ses-adj-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.ses-adj-no {
+  font-size: 13px;
+  color: var(--text-muted, #64748b);
+}
+
+// ── Acciones ─────────────────────────────────────────────────────────────────
+.ses-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.ses-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  color: var(--text-muted, #64748b);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+  ion-icon { font-size: 16px; }
+
+  &--view:hover { background: rgba(5, 150, 105, 0.08); color: #059669; }
+}
+
+// Empty
+.ses-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 56px 24px;
+  color: var(--text-muted, #64748b);
+  ion-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+  p { font-size: 16px; font-weight: 600; margin: 0 0 6px; }
+  span { font-size: 13px; }
+}
+
+// ─── Mobile cards grid ───────────────────────────────────────────────────────
+.ses-cards-grid {
+  display: none;
+  gap: 12px;
+  flex-direction: column;
+}
+
+.ses-empty-mobile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 24px;
+  color: var(--text-muted, #64748b);
+  ion-icon { font-size: 40px; margin-bottom: 10px; opacity: 0.4; }
+  p { font-size: 15px; font-weight: 600; margin: 0; }
+}
+
+.ses-card {
+  background: var(--glass-bg, rgba(247,249,252,0.82));
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid var(--border-subtle, rgba(209,213,219,0.45));
+  border-radius: var(--radius-lg, 16px);
+  padding: 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(5, 150, 105, 0.04); }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  &__info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__nombre {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-strong, #0f172a);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__fecha {
+    font-size: 12px;
+    color: var(--text-muted, #64748b);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    ion-icon { font-size: 12px; }
+  }
+
+  &__adj-dot {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: rgba(5, 150, 105, 0.1);
+    color: #059669;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    ion-icon { font-size: 14px; }
+  }
+
+  &__notas {
+    font-size: 13px;
+    color: var(--text-muted, #64748b);
+    margin: 0 0 12px;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+
+  &__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-subtle, rgba(209,213,219,0.3));
+  }
+
+  &__meta {
+    font-size: 12px;
+    color: var(--text-muted, #64748b);
+  }
+}
+
+// ─── Responsive ──────────────────────────────────────────────────────────────
+@media (max-width: 900px) {
+  .ses-table-wrapper { display: none; }
+  .ses-cards-grid { display: flex; }
+}
+
+@media (max-width: 540px) {
+  .ses-wrapper { padding: 20px 12px 80px; }
+  .ses-page-header { flex-direction: column; align-items: flex-start; }
+  .sf-select-wrap, .sf-date-wrap { max-width: none; }
+}

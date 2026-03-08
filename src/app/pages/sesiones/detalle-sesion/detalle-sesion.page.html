@@ -1,0 +1,110 @@
+<ion-content class="dse-content">
+  <div class="dse-wrapper">
+
+    <!-- Volver -->
+    <button class="dse-back" (click)="volver()">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+      <span>Volver a citas</span>
+    </button>
+
+    <!-- Not found -->
+    <div *ngIf="!sesion" class="dse-not-found">
+      <ion-icon name="document-text-outline"></ion-icon>
+      <p>Sesión no encontrada</p>
+    </div>
+
+    <ng-container *ngIf="sesion">
+
+      <!-- ════════════ HERO ════════════ -->
+      <div class="dse-hero">
+        <div class="dse-hero__left">
+          <div class="dse-avatar">{{ iniciales }}</div>
+          <div class="dse-hero__info">
+            <span class="dse-hero__label">Sesión clínica</span>
+            <h1 class="dse-hero__name">{{ sesion.apellido_paciente }}, {{ sesion.nombre_paciente }}</h1>
+            <div class="dse-hero__meta">
+              <span class="dse-meta-item">
+                <ion-icon name="calendar-outline"></ion-icon>
+                Cita: {{ formatFecha(sesion.fecha_cita) }}
+              </span>
+              <span class="dse-meta-item">
+                <ion-icon name="time-outline"></ion-icon>
+                Creada el {{ formatCreacion(sesion.fecha_creacion) }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <button class="dse-btn-edit" (click)="showEditarModal = true">
+          <ion-icon name="pencil-outline"></ion-icon>
+          <span>Editar</span>
+        </button>
+      </div>
+
+      <!-- ════════════ NOTAS ════════════ -->
+      <div class="dse-card">
+        <p class="dse-card__title">Notas de la sesión</p>
+        <div class="dse-notas" *ngIf="sesion.notas; else sinNotas">
+          {{ sesion.notas }}
+        </div>
+        <ng-template #sinNotas>
+          <p class="dse-empty-text">Sin notas registradas.</p>
+        </ng-template>
+      </div>
+
+      <!-- ════════════ ADJUNTO ════════════ -->
+      <div class="dse-card">
+        <div class="dse-card__header">
+          <p class="dse-card__title">Archivo adjunto</p>
+          <button
+            *ngIf="sesion.adjunto"
+            class="dse-card__action dse-card__action--danger"
+            (click)="eliminarAdjunto()"
+          >
+            <ion-icon name="trash-outline"></ion-icon>
+            Eliminar
+          </button>
+        </div>
+
+        <!-- Adjunto existente -->
+        <div *ngIf="sesion.adjunto; else sinAdjunto" class="dse-adjunto">
+          <div class="dse-adjunto__icon">
+            <ion-icon [name]="sesion.adjunto.type.startsWith('image/') ? 'image-outline' : 'document-outline'"></ion-icon>
+          </div>
+          <div class="dse-adjunto__info">
+            <span class="dse-adjunto__name">{{ sesion.adjunto.name }}</span>
+            <span class="dse-adjunto__size">{{ formatFileSize(sesion.adjunto.size) }}</span>
+          </div>
+          <button
+            class="dse-adjunto__view"
+            *ngIf="sesion.adjunto.previewUrl"
+            (click)="$any(null)"
+          >
+            <ion-icon name="eye-outline"></ion-icon>
+          </button>
+        </div>
+
+        <ng-template #sinAdjunto>
+          <p class="dse-empty-text">No hay archivo adjunto.</p>
+        </ng-template>
+      </div>
+
+    </ng-container>
+  </div>
+</ion-content>
+
+<!-- Editar sesión -->
+<app-sesion-form
+  *ngIf="showEditarModal && sesion"
+  [notasIniciales]="sesion.notas"
+  [adjuntoInicial]="sesion.adjunto"
+  (guardado)="onSesionEditada($event)"
+  (cancelado)="showEditarModal = false"
+></app-sesion-form>
+
+<!-- Confirm dialog -->
+<app-confirm-dialog
+  *ngIf="confirmConfig"
+  [config]="confirmConfig"
+  (confirmed)="onConfirmConfirmed()"
+  (cancelled)="onConfirmCancelled()"
+></app-confirm-dialog>

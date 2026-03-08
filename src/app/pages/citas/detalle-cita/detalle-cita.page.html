@@ -1,0 +1,264 @@
+<ion-content class="dct-content">
+  <div class="dct-wrapper">
+
+    <!-- Volver -->
+    <button class="dct-back" (click)="volver()">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+      <span>Volver a citas</span>
+    </button>
+
+    <!-- Not found -->
+    <div *ngIf="!cita" class="dct-not-found">
+      <ion-icon name="calendar-outline"></ion-icon>
+      <p>Cita no encontrada</p>
+      <button class="dct-back-btn" (click)="volver()">Volver</button>
+    </div>
+
+    <ng-container *ngIf="cita">
+
+      <!-- ════════════════ HERO ════════════════ -->
+      <div class="dct-hero">
+        <div class="dct-hero__left">
+          <div class="dct-avatar">{{ iniciales }}</div>
+          <div class="dct-hero__info">
+            <h1 class="dct-hero__name">{{ cita.apellido_paciente }}, {{ cita.nombre_paciente }}</h1>
+            <p class="dct-hero__motivo">{{ cita.motivo }}</p>
+            <div class="dct-hero__badges">
+              <app-estado-badge [estado]="cita.estado"></app-estado-badge>
+              <app-pago-badge [estado]="cita.estado_pago"></app-pago-badge>
+              <span class="dct-sesion-tag" *ngIf="cita.tiene_sesion">
+                <ion-icon name="document-text-outline"></ion-icon> Con sesión
+              </span>
+            </div>
+          </div>
+        </div>
+        <button class="dct-btn-edit" (click)="showEditarModal = true">
+          <ion-icon name="pencil-outline"></ion-icon>
+          <span>Editar</span>
+        </button>
+      </div>
+
+      <!-- ════════════════ DETALLE GRID ════════════════ -->
+      <div class="dct-grid">
+
+        <!-- Columna info -->
+        <div class="dct-card">
+          <p class="dct-card__title">Información de la cita</p>
+
+          <dl class="dct-dl">
+            <dt><ion-icon name="calendar-outline"></ion-icon> Fecha</dt>
+            <dd>{{ formatFecha(cita.fecha) }}</dd>
+
+            <dt><ion-icon name="time-outline"></ion-icon> Hora inicio</dt>
+            <dd>{{ cita.hora_inicio }}</dd>
+
+            <dt><ion-icon name="time-outline"></ion-icon> Hora fin</dt>
+            <dd>{{ cita.hora_fin }}</dd>
+
+            <dt><ion-icon name="hourglass-outline"></ion-icon> Duración</dt>
+            <dd>{{ duracionLabel }}</dd>
+
+            <dt><ion-icon name="clipboard-outline"></ion-icon> Motivo</dt>
+            <dd>{{ cita.motivo }}</dd>
+
+            <dt><ion-icon name="document-text-outline"></ion-icon> Notas rápidas</dt>
+            <dd>{{ cita.notas_rapidas || '—' }}</dd>
+          </dl>
+        </div>
+
+        <!-- Columna pago -->
+        <div class="dct-card">
+          <div class="dct-card__header">
+            <p class="dct-card__title">Información de pago</p>
+            <button class="dct-card__action" (click)="abrirPagoForm()" title="Registrar pago">
+              <ion-icon name="cash-outline"></ion-icon>
+              Registrar pago
+            </button>
+          </div>
+
+          <dl class="dct-dl">
+            <dt><ion-icon name="wallet-outline"></ion-icon> Estado pago</dt>
+            <dd><app-pago-badge [estado]="cita.estado_pago"></app-pago-badge></dd>
+
+            <dt><ion-icon name="card-outline"></ion-icon> Método</dt>
+            <dd>{{ cita.metodo_pago || '—' }}</dd>
+
+            <dt><ion-icon name="cash-outline"></ion-icon> Monto total</dt>
+            <dd class="dct-dl__strong">{{ formatMonto(cita.monto) }}</dd>
+
+            <dt><ion-icon name="checkmark-circle-outline"></ion-icon> Monto pagado</dt>
+            <dd>{{ formatMonto(cita.monto_pagado) }}</dd>
+
+            <dt><ion-icon name="remove-circle-outline"></ion-icon> Pendiente</dt>
+            <dd [class.dct-dl__warn]="cita.monto - cita.monto_pagado > 0">
+              {{ formatMonto(cita.monto - cita.monto_pagado) }}
+            </dd>
+          </dl>
+        </div>
+
+      </div>
+
+      <!-- ════════════════ FORM PAGO (inline) ════════════════ -->
+      <div *ngIf="showPagoForm" class="dct-pago-form">
+        <div class="dct-pago-form__header">
+          <ion-icon name="cash-outline"></ion-icon>
+          <span>Registrar pago</span>
+          <button class="dct-pago-form__close" (click)="showPagoForm = false">
+            <ion-icon name="close-outline"></ion-icon>
+          </button>
+        </div>
+        <div class="dct-pago-form__body">
+          <div class="dct-pf-row">
+            <div class="dct-pf-field">
+              <label class="dct-pf-label">Estado pago</label>
+              <select class="dct-pf-input" [(ngModel)]="pagoForm.estado_pago">
+                <option value="Pendiente">Pendiente</option>
+                <option value="Parcial">Parcial</option>
+                <option value="Pagado">Pagado</option>
+              </select>
+            </div>
+            <div class="dct-pf-field">
+              <label class="dct-pf-label">Monto pagado (€)</label>
+              <input class="dct-pf-input" type="number" min="0" step="0.01" [(ngModel)]="pagoForm.monto_pagado" />
+            </div>
+            <div class="dct-pf-field">
+              <label class="dct-pf-label">Método de pago</label>
+              <select class="dct-pf-input" [(ngModel)]="pagoForm.metodo_pago">
+                <option value="">— Sin especificar —</option>
+                <option *ngFor="let m of metodoPagoOpts" [value]="m">{{ m }}</option>
+              </select>
+            </div>
+          </div>
+          <p *ngIf="pagoError" class="dct-pago-error">{{ pagoError }}</p>
+        </div>
+        <div class="dct-pago-form__footer">
+          <button class="dct-pf-btn dct-pf-btn--cancel" (click)="showPagoForm = false">Cancelar</button>
+          <button class="dct-pf-btn dct-pf-btn--save" (click)="guardarPago()">
+            <ion-icon name="checkmark-outline"></ion-icon> Guardar pago
+          </button>
+        </div>
+      </div>
+
+      <!-- ════════════════ ACCIONES ════════════════ -->
+      <div class="dct-actions-section">
+        <p class="dct-actions-section__title">Acciones</p>
+        <div class="dct-actions-grid">
+
+          <button
+            class="dct-action-btn dct-action-btn--confirm"
+            *ngIf="cita.estado === 'Pendiente'"
+            (click)="cambiarEstado('Confirmada', 'Confirmar cita')"
+          >
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            Confirmar
+          </button>
+
+          <button
+            class="dct-action-btn dct-action-btn--complete"
+            *ngIf="cita.estado === 'Confirmada'"
+            (click)="cambiarEstado('Completada', 'Completar cita')"
+          >
+            <ion-icon name="trophy-outline"></ion-icon>
+            Completar
+          </button>
+
+          <button
+            class="dct-action-btn dct-action-btn--cancel"
+            *ngIf="cita.estado !== 'Cancelada' && cita.estado !== 'Completada'"
+            (click)="cambiarEstado('Cancelada', 'Cancelar cita')"
+          >
+            <ion-icon name="close-circle-outline"></ion-icon>
+            Cancelar
+          </button>
+
+          <button
+            class="dct-action-btn dct-action-btn--postpone"
+            *ngIf="cita.estado !== 'Cancelada' && cita.estado !== 'Completada'"
+            (click)="showReprogramarModal = true"
+          >
+            <ion-icon name="refresh-outline"></ion-icon>
+            Posponer
+          </button>
+
+          <button
+            class="dct-action-btn dct-action-btn--absent"
+            *ngIf="cita.estado === 'Confirmada' || cita.estado === 'Pendiente'"
+            (click)="cambiarEstado('No asistió', 'Marcar no asistió')"
+          >
+            <ion-icon name="person-remove-outline"></ion-icon>
+            No asistió
+          </button>
+
+          <button
+            class="dct-action-btn dct-action-btn--pago"
+            (click)="abrirPagoForm()"
+          >
+            <ion-icon name="cash-outline"></ion-icon>
+            Registrar pago
+          </button>
+
+          <!-- Crear sesión -->
+          <button
+            class="dct-action-btn dct-action-btn--sesion"
+            *ngIf="puedeCrearSesion"
+            (click)="showSesionForm = true"
+          >
+            <ion-icon name="document-text-outline"></ion-icon>
+            Crear sesión
+          </button>
+
+          <!-- Ver sesión si ya existe -->
+          <button
+            class="dct-action-btn dct-action-btn--ver-sesion"
+            *ngIf="cita.tiene_sesion && sesionExistente"
+            (click)="verSesion()"
+          >
+            <ion-icon name="eye-outline"></ion-icon>
+            Ver sesión
+          </button>
+
+        </div>
+
+        <!-- Hint sesión -->
+        <p class="dct-sesion-hint" *ngIf="!puedeCrearSesion && !cita.tiene_sesion">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          Solo se puede crear una sesión cuando la cita está en estado
+          <strong>Completada</strong>.
+        </p>
+      </div>
+
+    </ng-container>
+  </div>
+</ion-content>
+
+<!-- Editar modal -->
+<app-cita-form
+  *ngIf="showEditarModal"
+  [cita]="cita"
+  (guardado)="onCitaEditada($event)"
+  (cancelado)="showEditarModal = false"
+></app-cita-form>
+
+<!-- Reprogramar modal -->
+<app-reprogramar-modal
+  *ngIf="showReprogramarModal && cita"
+  [cita]="cita"
+  (confirmado)="onReprogramado($event)"
+  (cancelado)="showReprogramarModal = false"
+></app-reprogramar-modal>
+
+<!-- Crear sesión -->
+<app-sesion-form
+  *ngIf="showSesionForm && cita"
+  [citaId]="cita.id_cita"
+  (guardado)="onSesionGuardada($event)"
+  (cancelado)="showSesionForm = false"
+></app-sesion-form>
+
+<!-- Confirm dialog -->
+<app-confirm-dialog
+  *ngIf="confirmConfig"
+  [config]="confirmConfig"
+  (confirmed)="onConfirmConfirmed()"
+  (cancelled)="onConfirmCancelled()"
+></app-confirm-dialog>

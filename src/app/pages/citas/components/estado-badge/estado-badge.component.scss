@@ -1,0 +1,18 @@
+.eb {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  line-height: 1.6;
+
+  &--pending   { background: rgba(245,158,11,0.12); color: #d97706; border: 1px solid rgba(245,158,11,0.28); }
+  &--confirmed { background: rgba(99,102,241,0.12); color: #4f46e5; border: 1px solid rgba(99,102,241,0.28); }
+  &--completed { background: rgba(16,185,129,0.12); color: #059669; border: 1px solid rgba(16,185,129,0.28); }
+  &--cancelled { background: rgba(239,68,68,0.12);  color: #dc2626; border: 1px solid rgba(239,68,68,0.28);  }
+  &--absent    { background: rgba(100,116,139,0.12); color: #475569; border: 1px solid rgba(100,116,139,0.28); }
+  &--postponed { background: rgba(168,85,247,0.12); color: #7c3aed; border: 1px solid rgba(168,85,247,0.28); }
+}

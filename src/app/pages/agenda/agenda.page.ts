@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule, createAnimation } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { PacientesMockService } from '../pacientes/pacientes.service.mock';
+import { CitasMockService } from '../citas/citas.service.mock';
 
 interface CalendarEvent {
   title: string;
@@ -118,7 +119,7 @@ export class AgendaPage {
   private dragCurrentY = 0;
   private isDragging = false;
 
-  constructor(private pacientesSvc: PacientesMockService, private router: Router) {
+  constructor(private pacientesSvc: PacientesMockService, private router: Router, private citasSvc: CitasMockService) {
     this.pacientes = this.pacientesSvc.getAll().map(p => ({
       id: p.id_paciente,
       nombre: `${p.nombre} ${p.apellido}`,
@@ -139,6 +140,134 @@ export class AgendaPage {
   buscarFiltrados: { id: number; nombre: string }[] = [];
 
   selectedPaciente: any = null;
+
+  // ─── Nueva cita form (contexto Agenda) ───────────────────────────────────────
+  newAppt: {
+    fecha: string;
+    hora_inicio: string;
+    hora_fin: string;
+    duracion: number;
+    id_paciente: number | null;
+    motivo: string;
+    notas_rapidas: string;
+    estado: string;
+  } = { fecha: '', hora_inicio: '', hora_fin: '', duracion: 60, id_paciente: null, motivo: '', notas_rapidas: '', estado: 'Pendiente' };
+
+  apptErrors: Record<string, string> = {};
+  apptSlotSugerido: { hora_inicio: string; hora_fin: string } | null = null;
+  apptHayConflicto = false;
+  apptConContexto = false;
+
+  readonly apptEstadoOpts = ['Pendiente', 'Confirmada', 'Completada', 'Cancelada', 'No asistió', 'Pospuesta'];
+
+  get apptMostrarSugerencia(): boolean {
+    if (!this.newAppt.fecha) return false;
+    return !this.newAppt.hora_inicio || !this.newAppt.hora_fin || this.apptHayConflicto;
+  }
+
+  get newFormContexto(): string | null {
+    if (!this.apptConContexto || !this.newAppt.fecha) return null;
+    const [y, m, d] = this.newAppt.fecha.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    const weekNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    return `${weekNames[dateObj.getDay()]} ${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`;
+  }
+
+  apptIniciales(nombre: string): string {
+    const parts = nombre.trim().split(' ');
+    return parts.length > 1
+      ? (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase()
+      : parts[0].slice(0, 2).toUpperCase();
+  }
+
+  apptAvatarColor(nombre: string): string {
+    const colors = ['#6366f1', '#8b5cf6', '#3b82f6', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444'];
+    return colors[nombre.charCodeAt(0) % colors.length];
+  }
+
+  apptOnFechaChange() {
+    this.apptCalcSlot();
+    if (this.newAppt.hora_inicio && this.newAppt.hora_fin) { this.apptDetectConflicto(); }
+    delete this.apptErrors['fecha'];
+  }
+
+  apptOnHoraChange() {
+    this.apptActDuracion();
+    if (this.newAppt.fecha && this.newAppt.hora_inicio && this.newAppt.hora_fin) { this.apptDetectConflicto(); }
+  }
+
+  private apptActDuracion() {
+    if (!this.newAppt.hora_inicio || !this.newAppt.hora_fin) return;
+    const [h1, m1] = this.newAppt.hora_inicio.split(':').map(Number);
+    const [h2, m2] = this.newAppt.hora_fin.split(':').map(Number);
+    const diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+    if (diff > 0) this.newAppt.duracion = diff;
+  }
+
+  private apptToMin(t: string): number {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  private apptToTime(min: number): string {
+    return `${String(Math.floor(min / 60)).padStart(2,'0')}:${String(min % 60).padStart(2,'0')}`;
+  }
+
+  apptCalcSlot() {
+    this.apptSlotSugerido = null;
+    if (!this.newAppt.fecha) return;
+    const citasDelDia = this.citasSvc.getCitas()
+      .filter(c => c.fecha === this.newAppt.fecha && c.estado !== 'Cancelada');
+    const duracion = this.newAppt.duracion > 0 ? this.newAppt.duracion : 60;
+    const ocupados = citasDelDia
+      .map(c => ({ inicio: this.apptToMin(c.hora_inicio), fin: this.apptToMin(c.hora_fin) }))
+      .sort((a, b) => a.inicio - b.inicio);
+    let cursor = 8 * 60;
+    for (const bloque of ocupados) {
+      if (cursor + duracion <= bloque.inicio) {
+        this.apptSlotSugerido = { hora_inicio: this.apptToTime(cursor), hora_fin: this.apptToTime(cursor + duracion) };
+        return;
+      }
+      if (bloque.fin > cursor) cursor = bloque.fin;
+    }
+    if (cursor + duracion <= 20 * 60) {
+      this.apptSlotSugerido = { hora_inicio: this.apptToTime(cursor), hora_fin: this.apptToTime(cursor + duracion) };
+    }
+  }
+
+  apptDetectConflicto() {
+    this.apptHayConflicto = false;
+    if (!this.newAppt.fecha || !this.newAppt.hora_inicio || !this.newAppt.hora_fin) return;
+    const nuevoInicio = this.apptToMin(this.newAppt.hora_inicio);
+    const nuevoFin = this.apptToMin(this.newAppt.hora_fin);
+    this.apptHayConflicto = this.citasSvc.getCitas()
+      .filter(c => c.fecha === this.newAppt.fecha && c.estado !== 'Cancelada')
+      .some(c => nuevoInicio < this.apptToMin(c.hora_fin) && nuevoFin > this.apptToMin(c.hora_inicio));
+  }
+
+  apptUsarSugerencia() {
+    if (!this.apptSlotSugerido) return;
+    this.newAppt.hora_inicio = this.apptSlotSugerido.hora_inicio;
+    this.newAppt.hora_fin = this.apptSlotSugerido.hora_fin;
+    this.apptHayConflicto = false;
+    this.apptActDuracion();
+    delete this.apptErrors['hora_inicio'];
+    delete this.apptErrors['hora_fin'];
+  }
+
+  private validateAppt(): boolean {
+    this.apptErrors = {};
+    if (!this.selectedPaciente) { this.apptErrors['paciente'] = 'Selecciona un paciente'; }
+    if (!this.newAppt.fecha) this.apptErrors['fecha'] = 'Fecha requerida';
+    if (!this.newAppt.hora_inicio) this.apptErrors['hora_inicio'] = 'Hora inicio requerida';
+    if (!this.newAppt.hora_fin) this.apptErrors['hora_fin'] = 'Hora fin requerida';
+    if (this.newAppt.hora_inicio && this.newAppt.hora_fin && this.newAppt.hora_fin <= this.newAppt.hora_inicio) {
+      this.apptErrors['hora_fin'] = 'Debe ser posterior a la hora inicio';
+    }
+    if (!this.newAppt.motivo.trim()) this.apptErrors['motivo'] = 'Motivo requerido';
+    return Object.keys(this.apptErrors).length === 0;
+  }
+  // ─────────────────────────────────────────────────────────────────────────────
 
   getColorForDay(citas: number): string {
     if (citas >= this.maxCitasPorDia) {
@@ -462,20 +591,22 @@ export class AgendaPage {
   // ACCIONES (Nueva cita)
   // ----------------------------------------
   nuevaCita() {
-    const start = new Date();
-    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    const fecha = this.selectedDay
+      ? this.selectedDay.fullDate
+      : this.formatDateLocal(new Date());
 
-    this.newAppointment.fecha_inicio = start.toISOString();
-    this.newAppointment.fecha_fin = end.toISOString();
-
-    this.recommendedDate = start;
-    this.nextAvailableDate = end;
-
+    this.newAppt = { fecha, hora_inicio: '', hora_fin: '', duracion: 60, id_paciente: null, motivo: '', notas_rapidas: '', estado: 'Pendiente' };
+    this.apptConContexto = !!this.selectedDay;
+    this.apptErrors = {};
+    this.apptSlotSugerido = null;
+    this.apptHayConflicto = false;
+    if (fecha) { this.apptCalcSlot(); }
     this.showNewAppointmentPanel = true;
   }
 
   closeNewAppointmentPanel() {
     this.showNewAppointmentPanel = false;
+    this.selectedPaciente = null;
     this.resetPanelTransform();
     this.dragStartY = 0;
     this.dragCurrentY = 0;
@@ -483,7 +614,8 @@ export class AgendaPage {
   }
 
   saveAppointment() {
-    console.log('Nueva cita:', this.newAppointment);
+    if (!this.validateAppt()) return;
+    console.log('Nueva cita desde Agenda:', { ...this.newAppt, nombre_paciente: this.selectedPaciente?.nombre });
     this.closeNewAppointmentPanel();
   }
 
@@ -731,7 +863,7 @@ export class AgendaPage {
 
   seleccionarPacienteDesdeBusqueda(p: any) {
     this.selectedPaciente = p;
-    this.newAppointment.id_paciente = p.id;
+    this.newAppt.id_paciente = p.id;
     this.closeBuscarPacienteModal();
   }
 

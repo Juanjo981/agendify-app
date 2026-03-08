@@ -1,0 +1,61 @@
+<div class="cf-bar">
+
+  <!-- Search -->
+  <div class="cf-search">
+    <ion-icon name="search-outline" class="cf-search__icon"></ion-icon>
+    <input
+      class="cf-search__input"
+      type="text"
+      placeholder="Buscar por paciente o motivo…"
+      [(ngModel)]="filtros.busqueda"
+      (ngModelChange)="emitir()"
+    />
+    <button *ngIf="filtros.busqueda" class="cf-search__clear" (click)="filtros.busqueda = ''; emitir()">
+      <ion-icon name="close-outline"></ion-icon>
+    </button>
+  </div>
+
+  <!-- Controls row -->
+  <div class="cf-row">
+
+    <div class="cf-select-wrap">
+      <ion-icon name="ellipse-outline"></ion-icon>
+      <select class="cf-select" [(ngModel)]="filtros.estado" (ngModelChange)="emitir()">
+        <option *ngFor="let o of estadoOpts" [value]="o.value">{{ o.label }}</option>
+      </select>
+    </div>
+
+    <div class="cf-select-wrap">
+      <ion-icon name="cash-outline"></ion-icon>
+      <select class="cf-select" [(ngModel)]="filtros.estado_pago" (ngModelChange)="emitir()">
+        <option *ngFor="let o of pagoOpts" [value]="o.value">{{ o.label }}</option>
+      </select>
+    </div>
+
+    <div class="cf-date-wrap">
+      <ion-icon name="calendar-outline"></ion-icon>
+      <input
+        class="cf-date"
+        type="date"
+        [(ngModel)]="filtros.fecha_desde"
+        (ngModelChange)="emitir()"
+      />
+    </div>
+
+    <div class="cf-date-wrap">
+      <ion-icon name="calendar-outline"></ion-icon>
+      <input
+        class="cf-date"
+        type="date"
+        [(ngModel)]="filtros.fecha_hasta"
+        (ngModelChange)="emitir()"
+      />
+    </div>
+
+    <button *ngIf="tieneActivos" class="cf-clear" (click)="limpiar()">
+      <ion-icon name="refresh-outline"></ion-icon>
+      <span>Limpiar</span>
+    </button>
+
+  </div>
+</div>

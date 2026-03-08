@@ -1,0 +1,189 @@
+<div class="czf-overlay" (click)="cancelado.emit()">
+  <div class="czf-modal" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="czf-header">
+      <div class="czf-header__icon">
+        <ion-icon name="calendar-outline"></ion-icon>
+      </div>
+      <div class="czf-header__text">
+        <h3 class="czf-header__title">{{ titulo }}</h3>
+        <p class="czf-header__sub">Completa los datos de la cita</p>
+      </div>
+      <button class="czf-close" (click)="cancelado.emit()">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="czf-body">
+
+      <!-- ── Paciente ─────────────────────────────────────────────── -->
+      <p class="czf-section">Paciente</p>
+
+      <!-- Modo edición: solo info, no se puede cambiar paciente -->
+      <div *ngIf="modo === 'editar'" class="czf-pac-card czf-pac-card--static">
+        <div class="czf-pac-card__avatar"
+             [style.background]="getAvatarColor(form.nombre_paciente)">
+          {{ form.apellido_paciente.charAt(0) }}{{ form.nombre_paciente.charAt(0) }}
+        </div>
+        <div class="czf-pac-card__info">
+          <span class="czf-pac-card__nombre">{{ form.apellido_paciente }}, {{ form.nombre_paciente }}</span>
+          <span class="czf-pac-card__hint">Paciente de la cita</span>
+        </div>
+      </div>
+
+      <!-- Modo creación: selector de paciente -->
+      <ng-container *ngIf="modo === 'crear'">
+
+        <!-- Sin paciente seleccionado -->
+        <button
+          *ngIf="!pacienteSeleccionado"
+          class="czf-pac-empty"
+          [class.czf-pac-empty--error]="errores['paciente']"
+          (click)="mostrarBuscador = true"
+          type="button"
+        >
+          <div class="czf-pac-empty__icon">
+            <ion-icon name="person-add-outline"></ion-icon>
+          </div>
+          <div class="czf-pac-empty__text">
+            <span class="czf-pac-empty__label">Buscar paciente</span>
+            <span class="czf-pac-empty__hint">Toca para seleccionar un paciente</span>
+          </div>
+          <ion-icon name="chevron-forward-outline" class="czf-pac-empty__arrow"></ion-icon>
+        </button>
+        <span *ngIf="errores['paciente'] && !pacienteSeleccionado" class="czf-error">{{ errores['paciente'] }}</span>
+
+        <!-- Con paciente seleccionado -->
+        <div *ngIf="pacienteSeleccionado" class="czf-pac-card">
+          <div class="czf-pac-card__avatar"
+               [style.background]="getAvatarColor(pacienteSeleccionado.nombre)">
+            {{ iniciales(pacienteSeleccionado) }}
+          </div>
+          <div class="czf-pac-card__info">
+            <span class="czf-pac-card__nombre">{{ pacienteSeleccionado.apellido }}, {{ pacienteSeleccionado.nombre }}</span>
+            <span class="czf-pac-card__hint">{{ pacienteSeleccionado.email }}</span>
+          </div>
+          <button class="czf-pac-card__change" (click)="mostrarBuscador = true" type="button">
+            <ion-icon name="swap-horizontal-outline"></ion-icon>
+            Cambiar
+          </button>
+        </div>
+
+      </ng-container>
+
+      <!-- ── Fecha y hora ─────────────────────────────────────────── -->
+      <p class="czf-section">Fecha y hora</p>
+      <div class="czf-row czf-row--3">
+        <div class="czf-field">
+          <label class="czf-label">Fecha *</label>
+          <input
+            class="czf-input"
+            type="date"
+            [(ngModel)]="form.fecha"
+            (ngModelChange)="onFechaChange()"
+            [class.czf-input--error]="errores['fecha']"
+          />
+          <span *ngIf="errores['fecha']" class="czf-error">{{ errores['fecha'] }}</span>
+        </div>
+        <div class="czf-field">
+          <label class="czf-label">Hora inicio *</label>
+          <input
+            class="czf-input"
+            type="time"
+            [(ngModel)]="form.hora_inicio"
+            (ngModelChange)="onHoraChange()"
+            [class.czf-input--error]="errores['hora_inicio']"
+          />
+          <span *ngIf="errores['hora_inicio']" class="czf-error">{{ errores['hora_inicio'] }}</span>
+        </div>
+        <div class="czf-field">
+          <label class="czf-label">Hora fin *</label>
+          <input
+            class="czf-input"
+            type="time"
+            [(ngModel)]="form.hora_fin"
+            (ngModelChange)="onHoraChange()"
+            [class.czf-input--error]="errores['hora_fin']"
+          />
+          <span *ngIf="errores['hora_fin']" class="czf-error">{{ errores['hora_fin'] }}</span>
+        </div>
+      </div>
+
+      <!-- Smart schedule suggestion -->
+      <div class="czf-slot-hint" *ngIf="mostrarSugerencia" [class.czf-slot-hint--conflict]="hayConflicto">
+        <div class="czf-slot-hint__icon" [class.czf-slot-hint__icon--conflict]="hayConflicto">
+          <ion-icon [name]="hayConflicto ? 'warning-outline' : 'flash-outline'"></ion-icon>
+        </div>
+        <div class="czf-slot-hint__body">
+          <span class="czf-slot-hint__title">
+            {{ hayConflicto ? 'Conflicto de horario detectado' : 'Siguiente horario disponible' }}
+          </span>
+          <span class="czf-slot-hint__detail" *ngIf="slotSugerido">
+            {{ slotSugerido.hora_inicio }} – {{ slotSugerido.hora_fin }}&nbsp;&middot;&nbsp;{{ form.duracion || 60 }} min
+          </span>
+          <span class="czf-slot-hint__detail czf-slot-hint__detail--empty" *ngIf="!slotSugerido">
+            Sin disponibilidad en este día
+          </span>
+        </div>
+        <button class="czf-slot-hint__btn" *ngIf="slotSugerido" (click)="usarSugerencia()" type="button">
+          Usar horario
+        </button>
+      </div>
+
+      <div class="czf-duration-chip" *ngIf="form.duracion > 0 && form.hora_inicio && form.hora_fin && !hayConflicto">
+        <ion-icon name="timer-outline"></ion-icon>
+        {{ form.duracion }} min
+      </div>
+
+      <!-- ── Detalles ─────────────────────────────────────────────── -->
+      <p class="czf-section">Detalles</p>
+      <div class="czf-field">
+        <label class="czf-label">Motivo de consulta *</label>
+        <input
+          class="czf-input"
+          type="text"
+          placeholder="Ej: Revisión general"
+          [(ngModel)]="form.motivo"
+          [class.czf-input--error]="errores['motivo']"
+        />
+        <span *ngIf="errores['motivo']" class="czf-error">{{ errores['motivo'] }}</span>
+      </div>
+      <div class="czf-field">
+        <label class="czf-label">Notas rápidas</label>
+        <textarea
+          class="czf-textarea"
+          rows="2"
+          placeholder="Instrucciones previas, observaciones…"
+          [(ngModel)]="form.notas_rapidas"
+        ></textarea>
+      </div>
+      <div class="czf-field czf-field--half">
+        <label class="czf-label">Estado de la cita</label>
+        <select class="czf-select" [(ngModel)]="form.estado">
+          <option *ngFor="let e of estadoOpts" [value]="e">{{ e }}</option>
+        </select>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="czf-footer">
+      <button class="czf-btn czf-btn--cancel" (click)="cancelado.emit()">Cancelar</button>
+      <button class="czf-btn czf-btn--save" (click)="guardar()">
+        <ion-icon [name]="modo === 'crear' ? 'add-circle-outline' : 'checkmark-circle-outline'"></ion-icon>
+        {{ modo === 'crear' ? 'Crear cita' : 'Guardar cambios' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal buscador de paciente (montado encima del modal padre) -->
+<app-buscar-paciente-modal
+  *ngIf="mostrarBuscador"
+  (seleccionado)="onPacienteSeleccionado($event)"
+  (cerrado)="mostrarBuscador = false"
+></app-buscar-paciente-modal>
+
