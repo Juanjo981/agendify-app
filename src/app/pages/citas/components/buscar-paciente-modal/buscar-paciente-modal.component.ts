@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Output, EventEmitter, OnInit, OnDestroy, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
@@ -12,7 +12,7 @@ import { PacienteDto } from '../../../pacientes/pacientes.mock';
   standalone: true,
   imports: [CommonModule, FormsModule, IonicModule],
 })
-export class BuscarPacienteModalComponent implements OnInit {
+export class BuscarPacienteModalComponent implements OnInit, OnDestroy {
   @Output() seleccionado = new EventEmitter<PacienteDto>();
   @Output() cerrado = new EventEmitter<void>();
 
@@ -20,11 +20,26 @@ export class BuscarPacienteModalComponent implements OnInit {
   todos: PacienteDto[] = [];
   filtrados: PacienteDto[] = [];
 
-  constructor(private pacientesSvc: PacientesMockService) {}
+  constructor(
+    private pacientesSvc: PacientesMockService,
+    private el: ElementRef<HTMLElement>,
+  ) {}
 
   ngOnInit() {
     this.todos = this.pacientesSvc.getAll().filter(p => p.activo);
     this.filtrados = [...this.todos];
+
+    // Portal to <body> so position:fixed escapes any ancestor stacking context
+    // (e.g. backdrop-filter / transform on .new-appointment-panel in Agenda).
+    // Angular change detection and event bindings are unaffected by this move.
+    document.body.appendChild(this.el.nativeElement);
+  }
+
+  ngOnDestroy() {
+    const node = this.el.nativeElement;
+    if (node.parentNode) {
+      node.parentNode.removeChild(node);
+    }
   }
 
   filtrar() {

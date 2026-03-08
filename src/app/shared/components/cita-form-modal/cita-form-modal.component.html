@@ -1,0 +1,227 @@
+<!--
+  SHARED CITA FORM MODAL
+  ─────────────────────────────────────────────────────────────────────────────
+  context = 'citas'  → renders a full-screen overlay backdrop (centered modal)
+  context = 'agenda' → renders inner content only; parent supplies the container
+-->
+
+<!-- ── Overlay backdrop (citas context only) ────────────────────────────── -->
+<div
+  *ngIf="context === 'citas'"
+  class="cfm-overlay"
+  (click)="cancelled.emit()"
+>
+  <div class="cfm-card" (click)="$event.stopPropagation()">
+    <ng-container *ngTemplateOutlet="formContent"></ng-container>
+  </div>
+</div>
+
+<!-- ── Inner-only content (agenda context) ──────────────────────────────── -->
+<ng-container *ngIf="context === 'agenda'">
+  <ng-container *ngTemplateOutlet="formContent"></ng-container>
+</ng-container>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SHARED FORM TEMPLATE                                                   -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<ng-template #formContent>
+
+  <!-- ── Header ───────────────────────────────────────────────────────── -->
+  <div class="cfm-header">
+    <div class="cfm-header__icon">
+      <ion-icon name="calendar-outline"></ion-icon>
+    </div>
+    <div class="cfm-header__text">
+      <h3 class="cfm-header__title">{{ titulo }}</h3>
+      <p class="cfm-header__sub">{{ subtitleText }}</p>
+    </div>
+    <button class="cfm-header__close" (click)="cancelled.emit()" type="button">
+      <ion-icon name="close-outline"></ion-icon>
+    </button>
+  </div>
+
+  <!-- ── Context banner (agenda only, when opened from a calendar day) ── -->
+  <div class="cfm-ctx-banner" *ngIf="showContextBanner && contextDateLabel">
+    <ion-icon name="calendar-number-outline"></ion-icon>
+    <span class="cfm-ctx-banner__label">Desde calendario</span>
+    <span class="cfm-ctx-banner__value">&nbsp;· {{ contextDateLabel }}</span>
+  </div>
+
+  <!-- ── Body ─────────────────────────────────────────────────────────── -->
+  <div class="cfm-body">
+
+    <!-- ── Sección paciente ────────────────────────────────────────────── -->
+    <p class="cfm-section">Paciente</p>
+
+    <!-- Modo edición: solo info fija -->
+    <div *ngIf="modo === 'editar'" class="cfm-pac-card cfm-pac-card--static">
+      <div class="cfm-pac-card__avatar"
+           [style.background]="avatarColor(form.nombre_paciente)">
+        {{ form.apellido_paciente.charAt(0) }}{{ form.nombre_paciente.charAt(0) }}
+      </div>
+      <div class="cfm-pac-card__info">
+        <span class="cfm-pac-card__nombre">{{ form.apellido_paciente }}, {{ form.nombre_paciente }}</span>
+        <span class="cfm-pac-card__hint">Paciente de la cita</span>
+      </div>
+    </div>
+
+    <!-- Modo creación -->
+    <ng-container *ngIf="modo === 'crear'">
+      <!-- Sin paciente -->
+      <button
+        *ngIf="!pacienteSeleccionado"
+        class="cfm-pac-empty"
+        [class.cfm-pac-empty--error]="errores['paciente']"
+        (click)="mostrarBuscador = true"
+        type="button">
+        <div class="cfm-pac-empty__icon">
+          <ion-icon name="person-add-outline"></ion-icon>
+        </div>
+        <div class="cfm-pac-empty__text">
+          <span class="cfm-pac-empty__label">Buscar paciente</span>
+          <span class="cfm-pac-empty__hint">Toca para seleccionar un paciente</span>
+        </div>
+        <ion-icon name="chevron-forward-outline" class="cfm-pac-empty__arrow"></ion-icon>
+      </button>
+      <span *ngIf="errores['paciente'] && !pacienteSeleccionado" class="cfm-error">
+        {{ errores['paciente'] }}
+      </span>
+
+      <!-- Con paciente seleccionado -->
+      <div *ngIf="pacienteSeleccionado" class="cfm-pac-card">
+        <div class="cfm-pac-card__avatar"
+             [style.background]="avatarColor(pacienteSeleccionado.nombre)">
+          {{ iniciales(pacienteSeleccionado) }}
+        </div>
+        <div class="cfm-pac-card__info">
+          <span class="cfm-pac-card__nombre">
+            {{ pacienteSeleccionado.apellido }}, {{ pacienteSeleccionado.nombre }}
+          </span>
+          <span class="cfm-pac-card__hint">{{ pacienteSeleccionado.email }}</span>
+        </div>
+        <button class="cfm-pac-card__change" (click)="mostrarBuscador = true" type="button">
+          <ion-icon name="swap-horizontal-outline"></ion-icon>
+          Cambiar
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- ── Sección fecha y hora ────────────────────────────────────────── -->
+    <p class="cfm-section">Fecha y hora</p>
+
+    <!-- Fecha + Hora inicio + Hora fin — single 3-col row on desktop -->
+    <div class="cfm-row cfm-row--3">
+      <div class="cfm-field">
+        <app-date-picker-field
+          label="Fecha *"
+          [value]="form.fecha"
+          (valueChange)="form.fecha = $event; onFechaChange()"
+          [hasError]="!!errores['fecha']"
+          [errorMsg]="errores['fecha'] || ''"
+        ></app-date-picker-field>
+      </div>
+      <div class="cfm-field">
+        <label class="cfm-label">Hora inicio *</label>
+        <input
+          class="cfm-input"
+          type="time"
+          [(ngModel)]="form.hora_inicio"
+          (ngModelChange)="onHoraChange()"
+          [class.cfm-input--error]="errores['hora_inicio']"
+        />
+        <span *ngIf="errores['hora_inicio']" class="cfm-error">{{ errores['hora_inicio'] }}</span>
+      </div>
+      <div class="cfm-field">
+        <label class="cfm-label">Hora fin *</label>
+        <input
+          class="cfm-input"
+          type="time"
+          [(ngModel)]="form.hora_fin"
+          (ngModelChange)="onHoraChange()"
+          [class.cfm-input--error]="errores['hora_fin']"
+        />
+        <span *ngIf="errores['hora_fin']" class="cfm-error">{{ errores['hora_fin'] }}</span>
+      </div>
+    </div>
+
+    <!-- Smart slot hint -->
+    <div class="cfm-slot-hint"
+         *ngIf="mostrarSugerencia"
+         [class.cfm-slot-hint--conflict]="hayConflicto">
+      <div class="cfm-slot-hint__icon" [class.cfm-slot-hint__icon--conflict]="hayConflicto">
+        <ion-icon [name]="hayConflicto ? 'warning-outline' : 'flash-outline'"></ion-icon>
+      </div>
+      <div class="cfm-slot-hint__body">
+        <span class="cfm-slot-hint__title">
+          {{ hayConflicto ? 'Conflicto de horario detectado' : 'Siguiente horario disponible' }}
+        </span>
+        <span class="cfm-slot-hint__detail" *ngIf="slotSugerido">
+          {{ slotSugerido.hora_inicio }} &ndash; {{ slotSugerido.hora_fin }}&nbsp;&middot;&nbsp;{{ form.duracion || 60 }} min
+        </span>
+        <span class="cfm-slot-hint__detail cfm-slot-hint__detail--empty" *ngIf="!slotSugerido">
+          Sin disponibilidad este día
+        </span>
+      </div>
+      <button class="cfm-slot-hint__btn" *ngIf="slotSugerido" (click)="usarSugerencia()" type="button">
+        Usar horario
+      </button>
+    </div>
+
+    <!-- Duration chip -->
+    <div class="cfm-duration-chip"
+         *ngIf="form.duracion > 0 && form.hora_inicio && form.hora_fin && !hayConflicto">
+      <ion-icon name="timer-outline"></ion-icon>
+      {{ form.duracion }} min
+    </div>
+
+    <!-- ── Sección detalles ────────────────────────────────────────────── -->
+    <p class="cfm-section">Detalles</p>
+    <div class="cfm-field">
+      <label class="cfm-label">Motivo de consulta *</label>
+      <input
+        class="cfm-input"
+        type="text"
+        placeholder="Ej: Revisión general"
+        [(ngModel)]="form.motivo"
+        [class.cfm-input--error]="errores['motivo']"
+      />
+      <span *ngIf="errores['motivo']" class="cfm-error">{{ errores['motivo'] }}</span>
+    </div>
+    <div class="cfm-field">
+      <label class="cfm-label">Notas rápidas</label>
+      <textarea
+        class="cfm-textarea"
+        rows="2"
+        placeholder="Instrucciones previas, observaciones…"
+        [(ngModel)]="form.notas_rapidas"
+      ></textarea>
+    </div>
+    <div class="cfm-field cfm-field--half">
+      <label class="cfm-label">Estado de la cita</label>
+      <select class="cfm-select" [(ngModel)]="form.estado">
+        <option *ngFor="let e of estadoOpts" [value]="e">{{ e }}</option>
+      </select>
+    </div>
+
+  </div>
+
+  <!-- ── Footer ───────────────────────────────────────────────────────── -->
+  <div class="cfm-footer">
+    <button class="cfm-btn cfm-btn--cancel" (click)="cancelled.emit()" type="button">
+      Cancelar
+    </button>
+    <button class="cfm-btn cfm-btn--save" (click)="guardar()" type="button">
+      <ion-icon [name]="modo === 'crear' ? 'add-circle-outline' : 'checkmark-circle-outline'">
+      </ion-icon>
+      {{ modo === 'crear' ? 'Crear cita' : 'Guardar cambios' }}
+    </button>
+  </div>
+
+</ng-template>
+
+<!-- ── Patient search modal (rendered above everything) ─────────────────── -->
+<app-buscar-paciente-modal
+  *ngIf="mostrarBuscador"
+  (seleccionado)="onPacienteSeleccionado($event)"
+  (cerrado)="mostrarBuscador = false"
+></app-buscar-paciente-modal>

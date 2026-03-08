@@ -232,12 +232,13 @@
 </ion-content>
 
 <!-- Editar modal -->
-<app-cita-form
+<app-cita-form-modal
+  context="citas"
   *ngIf="showEditarModal"
   [cita]="cita"
-  (guardado)="onCitaEditada($event)"
-  (cancelado)="showEditarModal = false"
-></app-cita-form>
+  (saved)="onCitaEditada($event)"
+  (cancelled)="showEditarModal = false"
+></app-cita-form-modal>
 
 <!-- Reprogramar modal -->
 <app-reprogramar-modal

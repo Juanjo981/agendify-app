@@ -1,0 +1,27 @@
+<div class="dpf">
+  <label class="dpf-label" *ngIf="label">{{ label }}</label>
+
+  <button
+    #trigger
+    type="button"
+    class="dpf-trigger"
+    [class.dpf-trigger--open]="isOpen"
+    [class.dpf-trigger--filled]="value"
+    [class.dpf-trigger--error]="hasError"
+    (click)="toggle($event)"
+  >
+    <ion-icon name="calendar-outline" class="dpf-trigger__cal"></ion-icon>
+
+    <span class="dpf-trigger__text">
+      {{ displayLabel || placeholder }}
+    </span>
+
+    <ion-icon
+      name="chevron-down-outline"
+      class="dpf-trigger__arrow"
+      [class.dpf-trigger__arrow--open]="isOpen"
+    ></ion-icon>
+  </button>
+
+  <span *ngIf="hasError && errorMsg" class="dpf-error">{{ errorMsg }}</span>
+</div>

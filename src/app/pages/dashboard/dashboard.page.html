@@ -164,13 +164,13 @@
 
       <ion-item button routerLink="/dashboard/citas" routerLinkActive="activo"
         [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
-        <ion-icon slot="start" name="cash-outline"></ion-icon>
+        <ion-icon slot="start" name="clipboard-outline"></ion-icon>
         <ion-label>Citas</ion-label>
       </ion-item>
 
       <ion-item button routerLink="/dashboard/sesiones" routerLinkActive="activo"
         [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
-        <ion-icon slot="start" name="cash-outline"></ion-icon>
+        <ion-icon slot="start" name="pulse-outline"></ion-icon>
         <ion-label>Sesiones</ion-label>
       </ion-item>
 
@@ -212,27 +212,27 @@
 
   <!-- Contenido del menú expandido -->
   <div class="bottom-content">
-    <ion-item button routerLink="/dashboard/agenda" lines="none">
+    <ion-item button routerLink="/dashboard/agenda" lines="none" (click)="menuInferiorAbierto = false">
       <ion-icon name="calendar-outline" slot="start"></ion-icon>
       <ion-label>Agenda</ion-label>
     </ion-item>
-    <ion-item button routerLink="/dashboard/pacientes" lines="none">
+    <ion-item button routerLink="/dashboard/pacientes" lines="none" (click)="menuInferiorAbierto = false">
       <ion-icon name="people-outline" slot="start"></ion-icon>
       <ion-label>Pacientes</ion-label>
     </ion-item>
-    <ion-item button routerLink="/dashboard/citas" lines="none">
-      <ion-icon slot="start" name="cash-outline"></ion-icon>
+    <ion-item button routerLink="/dashboard/citas" lines="none" (click)="menuInferiorAbierto = false">
+      <ion-icon slot="start" name="clipboard-outline"></ion-icon>
       <ion-label>Citas</ion-label>
     </ion-item>
-    <ion-item button routerLink="/dashboard/sesiones" lines="none">
-      <ion-icon slot="start" name="cash-outline"></ion-icon>
+    <ion-item button routerLink="/dashboard/sesiones" lines="none" (click)="menuInferiorAbierto = false">
+      <ion-icon slot="start" name="pulse-outline"></ion-icon>
       <ion-label>Sesiones</ion-label>
     </ion-item>
-    <ion-item button routerLink="/dashboard/estadisticas" lines="none">
+    <ion-item button routerLink="/dashboard/estadisticas" lines="none" (click)="menuInferiorAbierto = false">
       <ion-icon name="bar-chart-outline" slot="start"></ion-icon>
       <ion-label>Estadísticas</ion-label>
     </ion-item>
-    <ion-item button routerLink="/dashboard/configuracion" lines="none">
+    <ion-item button routerLink="/dashboard/configuracion" lines="none" (click)="menuInferiorAbierto = false">
       <ion-icon name="settings-outline" slot="start"></ion-icon>
       <ion-label>Configuración</ion-label>
     </ion-item>

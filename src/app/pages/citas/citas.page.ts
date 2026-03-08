@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
@@ -7,7 +7,7 @@ import { CitasMockService } from './citas.service.mock';
 import { CitaDto, FiltroCitas } from './models/cita.model';
 import { CitaCardComponent } from './components/cita-card/cita-card.component';
 import { CitaFiltrosComponent } from './components/cita-filtros/cita-filtros.component';
-import { CitaFormComponent, CitaFormData } from './components/cita-form/cita-form.component';
+import { CitaFormModalComponent, CitaFormData } from '../../shared/components/cita-form-modal/cita-form-modal.component';
 import { EstadoBadgeComponent } from './components/estado-badge/estado-badge.component';
 import { PagoBadgeComponent } from './components/pago-badge/pago-badge.component';
 
@@ -18,11 +18,11 @@ import { PagoBadgeComponent } from './components/pago-badge/pago-badge.component
   standalone: true,
   imports: [
     IonicModule, CommonModule, FormsModule,
-    CitaCardComponent, CitaFiltrosComponent, CitaFormComponent,
+    CitaCardComponent, CitaFiltrosComponent, CitaFormModalComponent,
     EstadoBadgeComponent, PagoBadgeComponent,
   ],
 })
-export class CitasPage implements OnInit {
+export class CitasPage implements OnInit, OnDestroy {
   citasFiltradas: CitaDto[] = [];
   showFormModal = false;
   citaEditando: CitaDto | null = null;
@@ -59,11 +59,18 @@ export class CitasPage implements OnInit {
   abrirCrear() {
     this.citaEditando = null;
     this.showFormModal = true;
+    document.body.classList.add('modal-open');
   }
 
   abrirEditar(cita: CitaDto) {
     this.citaEditando = cita;
     this.showFormModal = true;
+    document.body.classList.add('modal-open');
+  }
+
+  cerrarModal() {
+    this.showFormModal = false;
+    document.body.classList.remove('modal-open');
   }
 
   onGuardado(data: CitaFormData) {
@@ -72,7 +79,7 @@ export class CitasPage implements OnInit {
     } else {
       this.svc.createCita({ ...data, tiene_sesion: false });
     }
-    this.showFormModal = false;
+    this.cerrarModal();
     this.aplicarFiltros({ busqueda: '', estado: 'todos', estado_pago: 'todos', fecha_desde: '', fecha_hasta: '' });
   }
 
@@ -80,6 +87,10 @@ export class CitasPage implements OnInit {
     if (!iso) return '—';
     const [y, m, d] = iso.split('-');
     return `${d}/${m}/${y}`;
+  }
+
+  ngOnDestroy() {
+    document.body.classList.remove('modal-open');
   }
 
   formatMonto(n: number): string {

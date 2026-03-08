@@ -8,7 +8,7 @@ import { SesionesMockService } from '../../sesiones/sesiones.service.mock';
 import { CitaDto, EstadoCita, EstadoPago, MetodoPago } from '../models/cita.model';
 import { EstadoBadgeComponent } from '../components/estado-badge/estado-badge.component';
 import { PagoBadgeComponent } from '../components/pago-badge/pago-badge.component';
-import { CitaFormComponent, CitaFormData } from '../components/cita-form/cita-form.component';
+import { CitaFormModalComponent, CitaFormData } from '../../../shared/components/cita-form-modal/cita-form-modal.component';
 import { ReprogramarModalComponent, ReprogramarData } from '../components/reprogramar-modal/reprogramar-modal.component';
 import { SesionFormComponent } from '../../sesiones/components/sesion-form/sesion-form.component';
 import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../../shared/confirm-dialog/confirm-dialog.component';
@@ -21,7 +21,7 @@ import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../../shared/con
   imports: [
     IonicModule, CommonModule, FormsModule,
     EstadoBadgeComponent, PagoBadgeComponent,
-    CitaFormComponent, ReprogramarModalComponent,
+    CitaFormModalComponent, ReprogramarModalComponent,
     SesionFormComponent, ConfirmDialogComponent,
   ],
 })

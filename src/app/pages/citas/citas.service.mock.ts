@@ -82,6 +82,47 @@ const MOCK: CitaDto[] = [
     estado: 'Pospuesta', estado_pago: 'Pendiente', metodo_pago: '',
     monto: 80, monto_pagado: 0, tiene_sesion: false,
   },
+  // Extra citas to produce medium (amber) and full (red) days in the calendar heatmap
+  {
+    id_cita: 11, id_paciente: 4,
+    nombre_paciente: 'Roberto', apellido_paciente: 'Sanz',
+    fecha: '2026-03-12', hora_inicio: '12:00', hora_fin: '13:00', duracion: 60,
+    motivo: 'Revisión laboratorio', notas_rapidas: '',
+    estado: 'Confirmada', estado_pago: 'Pendiente', metodo_pago: '',
+    monto: 70, monto_pagado: 0, tiene_sesion: false,
+  },
+  {
+    id_cita: 12, id_paciente: 5,
+    nombre_paciente: 'Ana', apellido_paciente: 'López',
+    fecha: '2026-03-12', hora_inicio: '14:00', hora_fin: '15:00', duracion: 60,
+    motivo: 'Segunda consulta', notas_rapidas: '',
+    estado: 'Confirmada', estado_pago: 'Pendiente', metodo_pago: '',
+    monto: 80, monto_pagado: 0, tiene_sesion: false,
+  },
+  {
+    id_cita: 13, id_paciente: 6,
+    nombre_paciente: 'Pedro', apellido_paciente: 'Martín',
+    fecha: '2026-03-18', hora_inicio: '11:00', hora_fin: '12:00', duracion: 60,
+    motivo: 'Seguimiento', notas_rapidas: '',
+    estado: 'Pendiente', estado_pago: 'Pendiente', metodo_pago: '',
+    monto: 100, monto_pagado: 0, tiene_sesion: false,
+  },
+  {
+    id_cita: 14, id_paciente: 7,
+    nombre_paciente: 'Sofía', apellido_paciente: 'Fernández',
+    fecha: '2026-03-18', hora_inicio: '12:30', hora_fin: '13:30', duracion: 60,
+    motivo: 'Control', notas_rapidas: '',
+    estado: 'Confirmada', estado_pago: 'Pagado', metodo_pago: 'Efectivo',
+    monto: 60, monto_pagado: 60, tiene_sesion: false,
+  },
+  {
+    id_cita: 15, id_paciente: 2,
+    nombre_paciente: 'Carlos', apellido_paciente: 'Ruiz',
+    fecha: '2026-03-18', hora_inicio: '16:00', hora_fin: '17:00', duracion: 60,
+    motivo: 'Revisión anual', notas_rapidas: '',
+    estado: 'Confirmada', estado_pago: 'Pendiente', metodo_pago: '',
+    monto: 60, monto_pagado: 0, tiene_sesion: false,
+  },
 ];
 
 @Injectable({ providedIn: 'root' })

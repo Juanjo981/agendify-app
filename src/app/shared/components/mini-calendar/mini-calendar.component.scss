@@ -1,0 +1,180 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// MINI CALENDAR — mcd-* prefix
+// Inline date-picker with availability heatmap for the cita-form-modal.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Tokens (local, no conflicts) ─────────────────────────────────────────────
+$low-bg:    rgba(34, 197, 94,  0.15);
+$low-fg:    #16a34a;
+$med-bg:    rgba(234, 179,  8,  0.18);
+$med-fg:    #b45309;
+$full-bg:   rgba(239,  68, 68,  0.18);
+$full-fg:   #dc2626;
+$sel-bg:    var(--primary, #6366f1);
+$today-ring: var(--primary, #6366f1);
+
+// ── Container ─────────────────────────────────────────────────────────────────
+.mcd {
+  border: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.5));
+  border-radius: var(--radius-lg, 14px);
+  background: #ffffff;
+  overflow: hidden;
+  user-select: none;
+}
+
+// ── Navigation bar ────────────────────────────────────────────────────────────
+.mcd-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 9px;
+  border-bottom: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.4));
+
+  &__label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-strong, #0f172a);
+    letter-spacing: 0.15px;
+  }
+
+  &__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-muted, #64748b);
+    transition: background 0.12s, color 0.12s;
+
+    &:hover {
+      background: rgba(99, 102, 241, 0.08);
+      color: var(--primary, #6366f1);
+    }
+
+    ion-icon { font-size: 16px; }
+  }
+}
+
+// ── Week-day headers ──────────────────────────────────────────────────────────
+.mcd-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 7px 10px 3px;
+}
+
+.mcd-weekday {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted, #64748b);
+}
+
+// ── Day grid ──────────────────────────────────────────────────────────────────
+.mcd-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  padding: 4px 10px 8px;
+}
+
+// ── Single day cell ───────────────────────────────────────────────────────────
+.mcd-day {
+  // Layout
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+
+  // Typography
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-strong, #0f172a);
+  line-height: 1;
+
+  // Reset button
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.12s, color 0.12s, transform 0.08s;
+
+  &:hover:not(:disabled):not(.mcd-day--selected) {
+    background: rgba(99, 102, 241, 0.08);
+    color: var(--primary, #6366f1);
+    transform: scale(1.06);
+  }
+
+  // ── States ────────────────────────────────────────────────────────────────
+
+  &--other-month {
+    color: var(--text-muted, #64748b);
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  &--past:not(.mcd-day--today) {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  // Today gets a subtle ring — no fill so occupancy color still shows
+  &--today {
+    font-weight: 700;
+    box-shadow: inset 0 0 0 1.5px $today-ring;
+  }
+
+  // Selected day — primary fill, white text, always on top of other states
+  &--selected {
+    background: $sel-bg !important;
+    color: #fff !important;
+    font-weight: 700;
+    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.32);
+    transform: none !important;
+  }
+
+  // ── Availability heatmap ─────────────────────────────────────────────────
+  // Applied only to future in-month days that aren't selected
+
+  &--low    { background: $low-bg;  }
+  &--medium { background: $med-bg;  }
+  &--full   { background: $full-bg; }
+}
+
+// ── Legend ────────────────────────────────────────────────────────────────────
+.mcd-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 6px 10px 9px;
+  border-top: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.35));
+}
+
+.mcd-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted, #64748b);
+  letter-spacing: 0.2px;
+}
+
+.mcd-legend__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.mcd-legend__item--low    .mcd-legend__dot { background: $low-bg;  border: 1px solid rgba(34,197,94,0.3);  }
+.mcd-legend__item--medium .mcd-legend__dot { background: $med-bg;  border: 1px solid rgba(251,191,36,0.3); }
+.mcd-legend__item--full   .mcd-legend__dot { background: $full-bg; border: 1px solid rgba(239,68,68,0.3);  }

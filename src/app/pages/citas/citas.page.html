@@ -125,9 +125,10 @@
 </ion-content>
 
 <!-- Form modal -->
-<app-cita-form
+<app-cita-form-modal
+  context="citas"
   *ngIf="showFormModal"
   [cita]="citaEditando"
-  (guardado)="onGuardado($event)"
-  (cancelado)="showFormModal = false"
-></app-cita-form>
+  (saved)="onGuardado($event)"
+  (cancelled)="cerrarModal()"
+></app-cita-form-modal>

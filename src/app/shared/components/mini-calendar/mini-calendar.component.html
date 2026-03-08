@@ -1,0 +1,53 @@
+<div class="mcd">
+
+  <!-- ── Navigation ─────────────────────────────────────────────────── -->
+  <div class="mcd-nav">
+    <button class="mcd-nav__btn" (click)="prevMonth()" type="button" aria-label="Mes anterior">
+      <ion-icon name="chevron-back-outline"></ion-icon>
+    </button>
+    <span class="mcd-nav__label">{{ monthLabel }}</span>
+    <button class="mcd-nav__btn" (click)="nextMonth()" type="button" aria-label="Mes siguiente">
+      <ion-icon name="chevron-forward-outline"></ion-icon>
+    </button>
+  </div>
+
+  <!-- ── Week-day headers ────────────────────────────────────────────── -->
+  <div class="mcd-weekdays">
+    <span *ngFor="let wd of weekDays" class="mcd-weekday">{{ wd }}</span>
+  </div>
+
+  <!-- ── Day grid ────────────────────────────────────────────────────── -->
+  <div class="mcd-grid">
+    <ng-container *ngFor="let week of weeks">
+      <button
+        *ngFor="let d of week"
+        type="button"
+        class="mcd-day"
+        [class.mcd-day--other-month]="!d.inMonth"
+        [class.mcd-day--today]="d.isToday"
+        [class.mcd-day--past]="d.isPast && !d.isToday"
+        [class.mcd-day--selected]="d.iso === value"
+        [class.mcd-day--low]="d.inMonth && !d.isPast && d.occupancy === 'low' && d.iso !== value"
+        [class.mcd-day--medium]="d.inMonth && !d.isPast && d.occupancy === 'medium' && d.iso !== value"
+        [class.mcd-day--full]="d.inMonth && !d.isPast && d.occupancy === 'full' && d.iso !== value"
+        [disabled]="!d.inMonth || d.isPast"
+        [title]="d.tooltip"
+        (click)="selectDay(d)"
+      >{{ d.day }}</button>
+    </ng-container>
+  </div>
+
+  <!-- ── Legend ──────────────────────────────────────────────────────── -->
+  <div class="mcd-legend">
+    <span class="mcd-legend__item mcd-legend__item--low">
+      <span class="mcd-legend__dot"></span>Disponible
+    </span>
+    <span class="mcd-legend__item mcd-legend__item--medium">
+      <span class="mcd-legend__dot"></span>Parcial
+    </span>
+    <span class="mcd-legend__item mcd-legend__item--full">
+      <span class="mcd-legend__dot"></span>Ocupado
+    </span>
+  </div>
+
+</div>

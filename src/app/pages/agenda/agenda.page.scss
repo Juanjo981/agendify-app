@@ -956,6 +956,17 @@ ion-content {
   flex-direction: column;
   overflow: hidden;
 
+  /* ── app-cita-form-modal host must be a proper flex child.
+     Without display:flex here, cfm-body's flex:1/overflow-y:auto
+     have no layout context and the scroll never triggers. ── */
+  app-cita-form-modal {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   /* ── Glassmorphism container ─────────────── */
   background: var(--nap-bg);
   backdrop-filter: blur(28px) saturate(160%);
