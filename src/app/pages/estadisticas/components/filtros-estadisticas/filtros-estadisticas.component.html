@@ -1,0 +1,65 @@
+<div class="fe-card">
+
+  <!-- ── Quick range chips ── -->
+  <div class="fe-row fe-row--ranges">
+    <button
+      *ngFor="let r of rangos"
+      class="fe-chip"
+      [class.fe-chip--active]="filtros.rango === r.value"
+      (click)="seleccionarRango(r.value)">
+      {{ r.label }}
+    </button>
+  </div>
+
+  <!-- ── Custom date range (only when rango === 'personalizado') ── -->
+  <div class="fe-row fe-row--dates" *ngIf="filtros.rango === 'personalizado'">
+    <div class="fe-field">
+      <label class="fe-label">Desde</label>
+      <input
+        class="fe-input"
+        type="date"
+        [(ngModel)]="filtros.fechaDesde"
+        (change)="emitir()" />
+    </div>
+    <div class="fe-field">
+      <label class="fe-label">Hasta</label>
+      <input
+        class="fe-input"
+        type="date"
+        [(ngModel)]="filtros.fechaHasta"
+        (change)="emitir()" />
+    </div>
+  </div>
+
+  <!-- ── Selects row ── -->
+  <div class="fe-row fe-row--selects">
+    <div class="fe-field">
+      <label class="fe-label">Profesional</label>
+      <select class="fe-select" [(ngModel)]="filtros.profesional" (change)="emitir()">
+        <option *ngFor="let p of profesionales" [value]="p.id">{{ p.nombre }}</option>
+      </select>
+    </div>
+
+    <div class="fe-field">
+      <label class="fe-label">Estado de cita</label>
+      <select class="fe-select" [(ngModel)]="filtros.estadoCita" (change)="emitir()">
+        <option *ngFor="let e of estadoOpts" [value]="e.value">{{ e.label }}</option>
+      </select>
+    </div>
+
+    <div class="fe-field">
+      <label class="fe-label">Método de pago</label>
+      <select class="fe-select" [(ngModel)]="filtros.metodoPago" (change)="emitir()">
+        <option *ngFor="let p of pagoOpts" [value]="p.value">{{ p.label }}</option>
+      </select>
+    </div>
+
+    <div class="fe-field fe-field--actions">
+      <button class="fe-btn-clear" *ngIf="tieneActivos" (click)="limpiar()">
+        <ion-icon name="close-outline"></ion-icon>
+        Limpiar
+      </button>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,76 @@
+<div class="rcd-card">
+
+  <!-- ── Header ──────────────────────────────────────────────────── -->
+  <div class="rcd-header">
+    <div class="rcd-header__left">
+      <h3 class="rcd-title">Caja Diaria</h3>
+      <p class="rcd-subtitle">Resumen de cobros del día</p>
+    </div>
+    <div class="rcd-date-badge">
+      <ion-icon name="calendar-outline"></ion-icon>
+      <span>{{ fechaDisplay }}</span>
+    </div>
+  </div>
+
+  <!-- ── Hero: Total cobrado ─────────────────────────────────────── -->
+  <div class="rcd-hero">
+    <div class="rcd-hero__icon">
+      <ion-icon name="trending-up-outline"></ion-icon>
+    </div>
+    <div class="rcd-hero__body">
+      <span class="rcd-hero__label">Total cobrado</span>
+      <span class="rcd-hero__value">€{{ data.totalCobrado }}</span>
+    </div>
+    <div class="rcd-hero__citas-badge">
+      <ion-icon name="checkmark-done-outline"></ion-icon>
+      <span>{{ data.citasCobradas }} citas</span>
+    </div>
+  </div>
+
+  <!-- ── Métodos de pago ─────────────────────────────────────────── -->
+  <div class="rcd-methods-grid">
+    <div
+      *ngFor="let m of metodoItems; trackBy: trackByLabel"
+      class="rcd-method"
+      [ngClass]="m.colorClass">
+      <div class="rcd-method__icon-wrap">
+        <ion-icon [name]="m.icon"></ion-icon>
+      </div>
+      <span class="rcd-method__val">€{{ m.valor }}</span>
+      <span class="rcd-method__lbl">{{ m.label }}</span>
+    </div>
+  </div>
+
+  <!-- ── Divider ─────────────────────────────────────────────────── -->
+  <div class="rcd-divider"></div>
+
+  <!-- ── Métricas secundarias ────────────────────────────────────── -->
+  <div class="rcd-bottom-row">
+
+    <div class="rcd-chip rcd-chip--neutral">
+      <ion-icon name="shield-checkmark-outline"></ion-icon>
+      <div class="rcd-chip__body">
+        <span class="rcd-chip__val">€{{ data.pagosExentos }}</span>
+        <span class="rcd-chip__lbl">Exentos</span>
+      </div>
+    </div>
+
+    <div class="rcd-chip rcd-chip--warning">
+      <ion-icon name="hourglass-outline"></ion-icon>
+      <div class="rcd-chip__body">
+        <span class="rcd-chip__val">€{{ data.pagosPendientes }}</span>
+        <span class="rcd-chip__lbl">Pendientes</span>
+      </div>
+    </div>
+
+    <div class="rcd-chip rcd-chip--success">
+      <ion-icon name="receipt-outline"></ion-icon>
+      <div class="rcd-chip__body">
+        <span class="rcd-chip__val">{{ data.citasCobradas }}</span>
+        <span class="rcd-chip__lbl">Citas cobradas</span>
+      </div>
+    </div>
+
+  </div>
+
+</div>

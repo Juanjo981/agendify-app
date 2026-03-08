@@ -1,0 +1,144 @@
+<!-- ── Backdrop ──────────────────────────────────────────────────── -->
+<div class="erm-backdrop" (click)="onCerrar()"></div>
+
+<!-- ── Modal panel ──────────────────────────────────────────────── -->
+<div class="erm-panel" role="dialog" aria-modal="true">
+
+  <!-- ── Header ────────────────────────────────────────────────── -->
+  <div class="erm-header">
+    <div class="erm-header__left">
+      <div class="erm-icon-wrap" [style.background]="reporte.colorIcono + '18'">
+        <ion-icon [name]="reporte.icono" [style.color]="reporte.colorIcono"></ion-icon>
+      </div>
+      <div class="erm-header__titles">
+        <h3 class="erm-title">Exportar reporte</h3>
+        <p class="erm-subtitle">{{ reporte.titulo }}</p>
+      </div>
+    </div>
+    <button class="erm-close-btn" (click)="onCerrar()" aria-label="Cerrar">
+      <ion-icon name="close-outline"></ion-icon>
+    </button>
+  </div>
+
+  <!-- ── Body ──────────────────────────────────────────────────── -->
+  <div class="erm-body">
+
+    <!-- Formato -->
+    <div class="erm-field">
+      <label class="erm-label">Formato de exportación</label>
+      <div class="erm-format-row">
+        <button
+          class="erm-format-btn"
+          [class.erm-format-btn--active]="formato === 'pdf'"
+          (click)="setFormato('pdf')">
+          <ion-icon name="document-outline"></ion-icon>
+          <div class="erm-format-btn__body">
+            <span class="erm-format-btn__name">PDF</span>
+            <span class="erm-format-btn__desc">Ideal para imprimir</span>
+          </div>
+        </button>
+        <button
+          class="erm-format-btn"
+          [class.erm-format-btn--active]="formato === 'excel'"
+          (click)="setFormato('excel')">
+          <ion-icon name="grid-outline"></ion-icon>
+          <div class="erm-format-btn__body">
+            <span class="erm-format-btn__name">Excel</span>
+            <span class="erm-format-btn__desc">Ideal para análisis</span>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Rango de fechas -->
+    <div class="erm-row-2">
+      <div class="erm-field">
+        <label class="erm-label" for="fecha-desde">Desde</label>
+        <input
+          id="fecha-desde"
+          class="erm-input"
+          type="date"
+          [(ngModel)]="fechaDesde"
+          [max]="fechaHasta" />
+      </div>
+      <div class="erm-field">
+        <label class="erm-label" for="fecha-hasta">Hasta</label>
+        <input
+          id="fecha-hasta"
+          class="erm-input"
+          type="date"
+          [(ngModel)]="fechaHasta"
+          [min]="fechaDesde" />
+      </div>
+    </div>
+
+    <!-- Profesional (optional) -->
+    <div class="erm-field">
+      <label class="erm-label" for="profesional">Profesional <span class="erm-optional">opcional</span></label>
+      <input
+        id="profesional"
+        class="erm-input"
+        type="text"
+        placeholder="Todos los profesionales"
+        [(ngModel)]="profesional" />
+    </div>
+
+    <!-- Opciones de contenido -->
+    <div class="erm-field">
+      <label class="erm-label">Contenido</label>
+      <div class="erm-checks">
+        <label class="erm-check">
+          <input type="checkbox" [(ngModel)]="incluirResumen" />
+          <span class="erm-check__box"></span>
+          <span class="erm-check__lbl">Incluir resumen ejecutivo</span>
+        </label>
+        <label class="erm-check">
+          <input type="checkbox" [(ngModel)]="incluirDetalle" />
+          <span class="erm-check__box"></span>
+          <span class="erm-check__lbl">Incluir tabla de detalle</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Nombre del archivo -->
+    <div class="erm-field">
+      <label class="erm-label" for="nombre-archivo">Nombre del archivo</label>
+      <div class="erm-input-suffix-wrap">
+        <input
+          id="nombre-archivo"
+          class="erm-input"
+          type="text"
+          [(ngModel)]="nombreArchivo" />
+        <span class="erm-input-suffix">.{{ formato === 'pdf' ? 'pdf' : 'xlsx' }}</span>
+      </div>
+    </div>
+
+    <!-- Resultado / feedback -->
+    <div class="erm-result" *ngIf="resultado">
+      <ion-icon
+        [name]="resultado.ok ? 'checkmark-circle-outline' : 'alert-circle-outline'"
+        [class.erm-result__icon--ok]="resultado.ok"
+        [class.erm-result__icon--err]="!resultado.ok">
+      </ion-icon>
+      <span class="erm-result__msg">{{ resultado.mensaje }}</span>
+    </div>
+
+  </div>
+
+  <!-- ── Footer ────────────────────────────────────────────────── -->
+  <div class="erm-footer">
+    <button class="erm-btn erm-btn--ghost" (click)="onCerrar()">
+      Cancelar
+    </button>
+    <button
+      class="erm-btn erm-btn--primary"
+      [class.erm-btn--loading]="exportando"
+      [disabled]="exportando"
+      (click)="exportar()">
+      <ion-icon *ngIf="!exportando" [name]="formato === 'pdf' ? 'document-outline' : 'grid-outline'"></ion-icon>
+      <ion-icon *ngIf="exportando" name="sync-outline" class="erm-spin"></ion-icon>
+      {{ exportando ? 'Generando…' : 'Exportar ' + (formato === 'pdf' ? 'PDF' : 'Excel') }}
+    </button>
+  </div>
+
+</div>

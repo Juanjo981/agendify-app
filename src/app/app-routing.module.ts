@@ -58,6 +58,10 @@ const routes: Routes = [
       {
         path: 'sesiones/:id',
         loadComponent: () => import('./pages/sesiones/detalle-sesion/detalle-sesion.page').then(m => m.DetalleSesionPage)
+      },
+      {
+        path: 'estadisticas',
+        loadComponent: () => import('./pages/estadisticas/estadisticas.page').then(m => m.EstadisticasPage)
       }
     ]
   },

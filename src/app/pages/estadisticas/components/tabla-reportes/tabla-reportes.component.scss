@@ -1,0 +1,304 @@
+// ─── Wrapper ──────────────────────────────────────────────────────────────────
+.tr-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+// ─── Label row ────────────────────────────────────────────────────────────────
+.tr-label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tr-label-icon {
+  font-size: 15px;
+  color: var(--primary, #6366f1);
+  opacity: 0.8;
+}
+
+.tr-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.tr-badge {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary, #6366f1);
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+
+// ─── List ─────────────────────────────────────────────────────────────────────
+.tr-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+// ─── Item card ────────────────────────────────────────────────────────────────
+.tr-item {
+  background: var(--glass-bg, rgba(247, 249, 252, 0.92));
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.45));
+  border-radius: var(--radius-lg, 16px);
+  overflow: hidden;
+  transition: border-color 0.18s, box-shadow 0.18s;
+
+  &:hover {
+    border-color: rgba(99, 102, 241, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  }
+
+  &.tr-item--expanded {
+    border-color: rgba(99, 102, 241, 0.25);
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.07);
+  }
+}
+
+// ─── Main row ─────────────────────────────────────────────────────────────────
+.tr-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+
+  @media (max-width: 640px) {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+
+// ─── Type icon ────────────────────────────────────────────────────────────────
+.tr-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  ion-icon { font-size: 22px; }
+}
+
+// ─── Info block ───────────────────────────────────────────────────────────────
+.tr-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.tr-info__top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tr-titulo {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-strong, #0f172a);
+}
+
+.tr-periodo {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary, #6366f1);
+  background: rgba(99, 102, 241, 0.08);
+  border-radius: 20px;
+  padding: 2px 8px;
+}
+
+.tr-desc {
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.tr-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.tr-meta__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-strong, #0f172a);
+
+  ion-icon { font-size: 12px; color: var(--text-muted, #64748b); }
+
+  &.tr-meta__item--muted {
+    font-weight: 400;
+    color: var(--text-muted, #64748b);
+  }
+}
+
+.tr-meta__sep {
+  font-size: 11px;
+  color: rgba(209, 213, 219, 0.8);
+}
+
+// ─── Action buttons ───────────────────────────────────────────────────────────
+.tr-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  align-items: center;
+
+  @media (max-width: 640px) {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+.tr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 7px 12px;
+  height: 34px;
+  white-space: nowrap;
+  transition: all 0.18s;
+
+  ion-icon { font-size: 14px; }
+
+  span {
+    @media (max-width: 480px) { display: none; }
+  }
+}
+
+.tr-btn--ghost {
+  background: rgba(226, 232, 240, 0.5);
+  color: var(--text-muted, #64748b);
+  border: 1px solid rgba(209, 213, 219, 0.5);
+
+  &:hover {
+    background: rgba(226, 232, 240, 0.85);
+    color: var(--text-strong, #0f172a);
+  }
+}
+
+.tr-btn--excel {
+  background: rgba(5, 150, 105, 0.08);
+  color: #059669;
+  border: 1px solid rgba(5, 150, 105, 0.2);
+
+  &:hover {
+    background: rgba(5, 150, 105, 0.15);
+  }
+}
+
+.tr-btn--pdf {
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.15);
+  }
+}
+
+// ─── Detail preview ───────────────────────────────────────────────────────────
+.tr-detail {
+  border-top: 1px solid rgba(209, 213, 219, 0.35);
+  background: rgba(248, 250, 252, 0.7);
+}
+
+.tr-detail__inner {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tr-detail__hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+  margin: 0;
+
+  ion-icon { font-size: 14px; flex-shrink: 0; color: #6366f1; }
+}
+
+// ─── Preview table ────────────────────────────────────────────────────────────
+.tr-table-scroll {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(209, 213, 219, 0.4);
+}
+
+.tr-table {
+  width: 100%;
+  min-width: 480px;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  thead {
+    background: rgba(241, 245, 249, 0.9);
+  }
+
+  th {
+    padding: 9px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--text-muted, #64748b);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    border-bottom: 1px solid rgba(209, 213, 219, 0.4);
+  }
+
+  td {
+    padding: 9px 14px;
+    color: var(--text-strong, #0f172a);
+    border-bottom: 1px solid rgba(209, 213, 219, 0.2);
+    white-space: nowrap;
+
+    &:last-child { border-bottom: none; }
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+
+  tbody tr:hover td {
+    background: rgba(99, 102, 241, 0.03);
+  }
+}
+
+// Estado badges inline
+.tr-td--estado {
+  &[data-estado="Cobrado"]    { color: #059669; font-weight: 600; }
+  &[data-estado="Pendiente"]  { color: #f59e0b; font-weight: 600; }
+  &[data-estado="Confirmada"] { color: #6366f1; font-weight: 600; }
+  &[data-estado="Completada"] { color: #10b981; font-weight: 600; }
+  &[data-estado="Cancelada"]  { color: #ef4444; font-weight: 600; }
+  &[data-estado="Sin aviso"]  { color: #ef4444; font-weight: 600; }
+}

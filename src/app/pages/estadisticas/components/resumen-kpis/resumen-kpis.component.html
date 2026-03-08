@@ -1,0 +1,30 @@
+<div class="kpi-grid">
+  <div
+    *ngFor="let kpi of kpis"
+    class="kpi-card"
+    [ngClass]="'kpi-card--' + kpi.color">
+
+    <div class="kpi-icon-wrap">
+      <ion-icon [name]="kpi.icono"></ion-icon>
+    </div>
+
+    <div class="kpi-body">
+      <p class="kpi-label">{{ kpi.label }}</p>
+      <p class="kpi-value">{{ formatValor(kpi) }}</p>
+
+      <div class="kpi-tendencia" *ngIf="kpi.tendencia">
+        <ion-icon
+          [name]="kpi.tendencia.direccion === 'up' ? 'trending-up-outline' : 'trending-down-outline'"
+          [class.t-positivo]="kpi.tendencia.positivo"
+          [class.t-negativo]="!kpi.tendencia.positivo">
+        </ion-icon>
+        <span
+          [class.t-positivo]="kpi.tendencia.positivo"
+          [class.t-negativo]="!kpi.tendencia.positivo">
+          {{ tendenciaLabel(kpi) }}
+        </span>
+      </div>
+    </div>
+
+  </div>
+</div>

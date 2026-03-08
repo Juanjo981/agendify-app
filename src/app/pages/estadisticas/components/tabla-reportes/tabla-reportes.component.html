@@ -1,0 +1,113 @@
+<div class="tr-wrap">
+
+  <!-- ── Section label ────────────────────────────────────────────── -->
+  <div class="tr-label-row">
+    <ion-icon name="document-text-outline" class="tr-label-icon"></ion-icon>
+    <span class="tr-label">Reportes y Exportación</span>
+    <span class="tr-badge">{{ reportes.length }} reportes disponibles</span>
+  </div>
+
+  <!-- ── Lista de reportes ─────────────────────────────────────────── -->
+  <div class="tr-list">
+
+    <div
+      *ngFor="let r of reportes; trackBy: trackById"
+      class="tr-item"
+      [class.tr-item--expanded]="reporteExpandido === r.id">
+
+      <!-- ── Fila principal ──────────────────────────────────────── -->
+      <div class="tr-row">
+
+        <!-- Icono del tipo -->
+        <div class="tr-icon-wrap" [style.background]="r.colorIcono + '18'">
+          <ion-icon [name]="r.icono" [style.color]="r.colorIcono"></ion-icon>
+        </div>
+
+        <!-- Info -->
+        <div class="tr-info">
+          <div class="tr-info__top">
+            <span class="tr-titulo">{{ r.titulo }}</span>
+            <span class="tr-periodo">{{ r.periodoLabel }}</span>
+          </div>
+          <p class="tr-desc">{{ r.descripcion }}</p>
+          <div class="tr-meta">
+            <span class="tr-meta__item">
+              <ion-icon name="layers-outline"></ion-icon>
+              {{ r.totalRegistros }} registros
+            </span>
+            <span class="tr-meta__sep">·</span>
+            <span class="tr-meta__item tr-meta__item--muted">{{ r.resumenTexto }}</span>
+          </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="tr-actions">
+
+          <button
+            class="tr-btn tr-btn--ghost"
+            title="Ver detalle"
+            (click)="toggleDetalle(r.id)">
+            <ion-icon [name]="reporteExpandido === r.id ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
+            <span>Detalle</span>
+          </button>
+
+          <button
+            class="tr-btn tr-btn--excel"
+            title="Exportar Excel"
+            (click)="onExportar(r)">
+            <ion-icon name="grid-outline"></ion-icon>
+            <span>Excel</span>
+          </button>
+
+          <button
+            class="tr-btn tr-btn--pdf"
+            title="Exportar PDF"
+            (click)="onExportar(r)">
+            <ion-icon name="document-outline"></ion-icon>
+            <span>PDF</span>
+          </button>
+
+        </div>
+
+      </div>
+
+      <!-- ── Preview de detalle (expandible) ───────────────────── -->
+      <div class="tr-detail" *ngIf="reporteExpandido === r.id">
+        <div class="tr-detail__inner">
+
+          <p class="tr-detail__hint">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            Previsualización de los últimos {{ r.filas.length }} registros.
+            Exporta para ver el reporte completo.
+          </p>
+
+          <div class="tr-table-scroll">
+            <table class="tr-table">
+              <thead>
+                <tr>
+                  <th
+                    *ngFor="let col of columnasPorReporte[r.id]; trackBy: trackByKey">
+                    {{ formatKey(col) }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let fila of r.filas; trackBy: trackByIndex">
+                  <td
+                    *ngFor="let col of columnasPorReporte[r.id]; trackBy: trackByKey"
+                    [class.tr-td--estado]="col === 'estado'"
+                    [attr.data-estado]="col === 'estado' ? fila[col] : null">
+                    {{ formatVal(col, fila[col]) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>

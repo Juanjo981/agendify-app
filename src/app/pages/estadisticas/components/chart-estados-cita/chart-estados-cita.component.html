@@ -1,0 +1,61 @@
+<div class="ces-card">
+
+  <!-- ── Header ──────────────────────────────────────────────────── -->
+  <div class="ces-header">
+    <h3 class="ces-title">Estados de cita</h3>
+    <p class="ces-subtitle">Distribución de citas en el período</p>
+  </div>
+
+  <!-- ── Content: donut + list ───────────────────────────────────── -->
+  <div class="ces-content">
+
+    <!-- SVG Donut chart -->
+    <div class="ces-donut-wrap">
+      <svg class="ces-donut-svg" viewBox="0 0 200 200">
+        <!-- Background ring -->
+        <circle
+          cx="100" cy="100" [attr.r]="RADIUS"
+          fill="none"
+          stroke="rgba(209,213,219,0.22)"
+          stroke-width="24" />
+        <!-- Data segments -->
+        <circle
+          *ngFor="let seg of donutSegments; trackBy: trackByIndex; let i = index"
+          cx="100" cy="100"
+          [attr.r]="RADIUS"
+          fill="none"
+          [attr.stroke]="seg.color"
+          stroke-width="24"
+          stroke-linecap="butt"
+          [attr.stroke-dasharray]="seg.dasharray"
+          [attr.stroke-dashoffset]="seg.dashoffset" />
+      </svg>
+      <!-- Center label -->
+      <div class="ces-donut-center">
+        <span class="ces-donut-total">{{ total }}</span>
+        <span class="ces-donut-label">citas</span>
+      </div>
+    </div>
+
+    <!-- Legend + horizontal bars -->
+    <div class="ces-list">
+      <div
+        *ngFor="let e of estados; trackBy: trackByEstado"
+        class="ces-item">
+        <div class="ces-item__dot" [style.background]="e.color"></div>
+        <span class="ces-item__estado">{{ e.estado }}</span>
+        <div class="ces-item__bar-wrap">
+          <div
+            class="ces-item__bar"
+            [style.width]="e.porcentaje + '%'"
+            [style.background]="e.color"></div>
+        </div>
+        <div class="ces-item__right">
+          <span class="ces-item__count">{{ e.total }}</span>
+          <span class="ces-item__pct">{{ e.porcentaje }}%</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

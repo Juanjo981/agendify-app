@@ -1,0 +1,99 @@
+// ─── KPI Grid ─────────────────────────────────────────────────────────────────
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+
+  @media (max-width: 1100px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 480px)  { grid-template-columns: 1fr; }
+}
+
+// ─── Card base ────────────────────────────────────────────────────────────────
+.kpi-card {
+  background: var(--glass-bg, rgba(247, 249, 252, 0.92));
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.45));
+  border-radius: var(--radius-lg, 16px);
+  padding: 18px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  transition: box-shadow 0.2s, transform 0.15s;
+
+  &:hover {
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+  }
+}
+
+// ─── Colored left accent border ───────────────────────────────────────────────
+.kpi-card--primary  { border-left: 3px solid #6366f1; }
+.kpi-card--info     { border-left: 3px solid #0ea5e9; }
+.kpi-card--success  { border-left: 3px solid #10b981; }
+.kpi-card--warning  { border-left: 3px solid #f59e0b; }
+.kpi-card--danger   { border-left: 3px solid #ef4444; }
+.kpi-card--purple   { border-left: 3px solid #8b5cf6; }
+
+// ─── Icon wrap ────────────────────────────────────────────────────────────────
+.kpi-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  ion-icon {
+    font-size: 22px;
+    color: #fff;
+  }
+}
+
+.kpi-card--primary  .kpi-icon-wrap { background: linear-gradient(135deg, #6366f1, #818cf8); }
+.kpi-card--info     .kpi-icon-wrap { background: linear-gradient(135deg, #0ea5e9, #38bdf8); }
+.kpi-card--success  .kpi-icon-wrap { background: linear-gradient(135deg, #10b981, #34d399); }
+.kpi-card--warning  .kpi-icon-wrap { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+.kpi-card--danger   .kpi-icon-wrap { background: linear-gradient(135deg, #ef4444, #f87171); }
+.kpi-card--purple   .kpi-icon-wrap { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+
+// ─── Text body ────────────────────────────────────────────────────────────────
+.kpi-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin: 0;
+}
+
+.kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-strong, #0f172a);
+  line-height: 1.1;
+  margin: 3px 0 5px;
+  letter-spacing: -0.5px;
+}
+
+// ─── Trend indicator ──────────────────────────────────────────────────────────
+.kpi-tendencia {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 500;
+
+  ion-icon { font-size: 13px; }
+}
+
+.t-positivo { color: #10b981; }
+.t-negativo { color: #ef4444; }

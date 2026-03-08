@@ -2,7 +2,9 @@ import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { IonicModule, NavController, AlertController, Platform } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { AuthService } from 'src/app/services/auth';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule, NavigationEnd } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-dashboard',
@@ -53,7 +55,8 @@ export class DashboardPage implements OnInit, OnDestroy {
     private navCtrl: NavController,
     private authService: AuthService,
     private alertCtrl: AlertController,
-    private platform: Platform
+    private platform: Platform,
+    private router: Router,
   ) { }
 
   startResizing(event: MouseEvent) {
@@ -123,8 +126,19 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.sidebarWidth = this.sidebarContraido ? 72 : 220;
   }
 
+  private routerSub?: Subscription;
+
   toggleMenuInferior() {
     this.menuInferiorAbierto = !this.menuInferiorAbierto;
+  }
+
+  cerrarMenuInferior() {
+    this.menuInferiorAbierto = false;
+  }
+
+  irA(ruta: string) {
+    this.router.navigate([ruta]);
+    this.cerrarMenuInferior();
   }
 
   ngOnInit() {
@@ -144,6 +158,7 @@ export class DashboardPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.routerSub?.unsubscribe();
     // HostListener se limpia automáticamente por Angular, nada extra necesario
   }
 

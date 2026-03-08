@@ -1,0 +1,204 @@
+// ─── Card ─────────────────────────────────────────────────────────────────────
+.ccp-card {
+  background: var(--glass-bg, rgba(247, 249, 252, 0.92));
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.45));
+  border-radius: var(--radius-lg, 16px);
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+// ─── Header ───────────────────────────────────────────────────────────────────
+.ccp-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ccp-header__left { display: flex; flex-direction: column; gap: 2px; }
+
+.ccp-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-strong, #0f172a);
+  margin: 0;
+}
+
+.ccp-subtitle {
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+  margin: 0;
+}
+
+// ─── Period tabs ──────────────────────────────────────────────────────────────
+.ccp-tabs {
+  display: flex;
+  gap: 3px;
+  background: rgba(226, 232, 240, 0.55);
+  border-radius: 10px;
+  padding: 3px;
+  flex-shrink: 0;
+}
+
+.ccp-tab {
+  padding: 5px 13px;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-muted, #64748b);
+  transition: all 0.18s;
+  white-space: nowrap;
+
+  &.ccp-tab--active {
+    background: #fff;
+    color: var(--primary, #6366f1);
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  &:not(.ccp-tab--active):hover {
+    color: var(--text-strong, #0f172a);
+  }
+}
+
+// ─── Chart ────────────────────────────────────────────────────────────────────
+.ccp-chart-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ccp-chart-area {
+  height: 168px;
+  border-bottom: 1.5px solid rgba(209, 213, 219, 0.45);
+  position: relative;
+
+  // Midline grid reference
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    border-top: 1px dashed rgba(209, 213, 219, 0.35);
+    pointer-events: none;
+  }
+}
+
+.ccp-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 100%;
+  padding: 16px 0 0;
+  position: relative;
+  z-index: 1;
+}
+
+.ccp-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  min-width: 0;
+  gap: 3px;
+}
+
+.ccp-col__val {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+  line-height: 1;
+}
+
+.ccp-col__bar {
+  width: 75%;
+  max-width: 34px;
+  background: linear-gradient(to top, #6366f1 0%, #818cf8 100%);
+  border-radius: 5px 5px 0 0;
+  min-height: 3px;
+  transition: height 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ccp-axis-labels {
+  display: flex;
+  gap: 4px;
+
+  .ccp-axis-label {
+    flex: 1;
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-muted, #94a3b8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+}
+
+// ─── Footer stats ─────────────────────────────────────────────────────────────
+.ccp-footer-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(209, 213, 219, 0.3);
+
+  @media (max-width: 640px) { grid-template-columns: repeat(2, 1fr); }
+}
+
+.ccp-stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ccp-stat__icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  ion-icon { font-size: 18px; color: #fff; }
+}
+
+.ccp-stat__icon-wrap--primary  { background: linear-gradient(135deg, #6366f1, #818cf8); }
+.ccp-stat__icon-wrap--success  { background: linear-gradient(135deg, #10b981, #34d399); }
+.ccp-stat__icon-wrap--info     { background: linear-gradient(135deg, #0ea5e9, #38bdf8); }
+.ccp-stat__icon-wrap--purple   { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+
+.ccp-stat__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.ccp-stat__value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-strong, #0f172a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ccp-stat__label {
+  font-size: 10px;
+  color: var(--text-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}

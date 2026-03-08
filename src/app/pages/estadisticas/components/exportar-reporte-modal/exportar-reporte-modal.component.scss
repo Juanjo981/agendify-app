@@ -1,0 +1,398 @@
+// ─── Backdrop ─────────────────────────────────────────────────────────────────
+.erm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1000;
+  animation: erm-fade-in 0.2s ease;
+}
+
+// ─── Panel ────────────────────────────────────────────────────────────────────
+.erm-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001;
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  background: rgba(252, 253, 255, 0.98);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(209, 213, 219, 0.5);
+  border-radius: 22px;
+  box-shadow: 0 32px 80px rgba(15, 23, 42, 0.18), 0 8px 24px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  animation: erm-slide-up 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+// ─── Header ───────────────────────────────────────────────────────────────────
+.erm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid rgba(209, 213, 219, 0.3);
+}
+
+.erm-header__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.erm-icon-wrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  ion-icon { font-size: 22px; }
+}
+
+.erm-header__titles { display: flex; flex-direction: column; gap: 2px; }
+
+.erm-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-strong, #0f172a);
+  margin: 0;
+}
+
+.erm-subtitle {
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+  margin: 0;
+}
+
+.erm-close-btn {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(209, 213, 219, 0.5);
+  border-radius: 10px;
+  background: rgba(241, 245, 249, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+
+  ion-icon { font-size: 18px; color: var(--text-muted, #64748b); }
+
+  &:hover {
+    background: rgba(241, 245, 249, 1);
+    border-color: rgba(209, 213, 219, 0.8);
+  }
+}
+
+// ─── Body ─────────────────────────────────────────────────────────────────────
+.erm-body {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+// ─── Field layout ─────────────────────────────────────────────────────────────
+.erm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.erm-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-strong, #0f172a);
+}
+
+.erm-optional {
+  font-weight: 400;
+  color: var(--text-muted, #64748b);
+  margin-left: 4px;
+}
+
+.erm-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+// ─── Inputs ───────────────────────────────────────────────────────────────────
+.erm-input {
+  height: 38px;
+  padding: 0 12px;
+  border: 1.5px solid rgba(209, 213, 219, 0.6);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  color: var(--text-strong, #0f172a);
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:focus {
+    border-color: var(--primary, #6366f1);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+
+  &::placeholder { color: var(--text-muted, #94a3b8); }
+}
+
+.erm-input-suffix-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1.5px solid rgba(209, 213, 219, 0.6);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.8);
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:focus-within {
+    border-color: var(--primary, #6366f1);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+
+  .erm-input {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    flex: 1;
+
+    &:focus { box-shadow: none; }
+  }
+}
+
+.erm-input-suffix {
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+  background: rgba(241, 245, 249, 0.8);
+  border-left: 1.5px solid rgba(209, 213, 219, 0.45);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  min-height: 36px;
+}
+
+// ─── Format buttons ───────────────────────────────────────────────────────────
+.erm-format-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.erm-format-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid rgba(209, 213, 219, 0.5);
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.7);
+  cursor: pointer;
+  transition: all 0.18s;
+  text-align: left;
+
+  ion-icon {
+    font-size: 22px;
+    color: var(--text-muted, #64748b);
+    flex-shrink: 0;
+    transition: color 0.18s;
+  }
+
+  &.erm-format-btn--active {
+    border-color: var(--primary, #6366f1);
+    background: rgba(99, 102, 241, 0.06);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+
+    ion-icon { color: var(--primary, #6366f1); }
+    .erm-format-btn__name { color: var(--primary, #6366f1); }
+  }
+
+  &:not(.erm-format-btn--active):hover {
+    border-color: rgba(99, 102, 241, 0.25);
+    background: rgba(248, 250, 252, 1);
+  }
+}
+
+.erm-format-btn__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.erm-format-btn__name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-strong, #0f172a);
+}
+
+.erm-format-btn__desc {
+  font-size: 11px;
+  color: var(--text-muted, #64748b);
+}
+
+// ─── Checkboxes ───────────────────────────────────────────────────────────────
+.erm-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.erm-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+
+  input[type="checkbox"] { display: none; }
+
+  &:hover .erm-check__box {
+    border-color: var(--primary, #6366f1);
+  }
+
+  input:checked ~ .erm-check__box {
+    background: var(--primary, #6366f1);
+    border-color: var(--primary, #6366f1);
+
+    &::after {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+.erm-check__box {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid rgba(209, 213, 219, 0.7);
+  border-radius: 5px;
+  background: #fff;
+  position: relative;
+  flex-shrink: 0;
+  transition: all 0.15s;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 5px;
+    width: 5px; height: 9px;
+    border: 2px solid #fff;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg) scale(0.75);
+    opacity: 0;
+    transition: all 0.15s;
+  }
+}
+
+.erm-check__lbl {
+  font-size: 13px;
+  color: var(--text-strong, #0f172a);
+}
+
+// ─── Result feedback ──────────────────────────────────────────────────────────
+.erm-result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.07);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+
+  ion-icon { font-size: 18px; flex-shrink: 0; }
+}
+
+.erm-result__icon--ok  { color: #10b981; }
+.erm-result__icon--err { color: #ef4444; }
+
+.erm-result__msg {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-strong, #0f172a);
+}
+
+// ─── Footer ───────────────────────────────────────────────────────────────────
+.erm-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 22px 20px;
+  border-top: 1px solid rgba(209, 213, 219, 0.3);
+}
+
+.erm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 18px;
+  height: 40px;
+  white-space: nowrap;
+  transition: all 0.18s;
+  border: 1.5px solid transparent;
+
+  ion-icon { font-size: 16px; }
+
+  &[disabled] { opacity: 0.6; cursor: not-allowed; }
+}
+
+.erm-btn--ghost {
+  background: transparent;
+  border-color: rgba(209, 213, 219, 0.6);
+  color: var(--text-muted, #64748b);
+
+  &:hover { background: rgba(241, 245, 249, 0.8); }
+}
+
+.erm-btn--primary {
+  background: linear-gradient(135deg, #6366f1, #818cf8);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+
+  &:hover:not([disabled]) {
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    transform: translateY(-1px);
+  }
+}
+
+// ─── Loading spin ──────────────────────────────────────────────────────────────
+.erm-spin {
+  animation: erm-spin 0.8s linear infinite;
+}
+
+// ─── Animations ───────────────────────────────────────────────────────────────
+@keyframes erm-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes erm-slide-up {
+  from { opacity: 0; transform: translate(-50%, calc(-50% + 16px)); }
+  to   { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+@keyframes erm-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

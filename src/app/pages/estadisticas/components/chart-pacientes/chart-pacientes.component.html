@@ -1,0 +1,168 @@
+<div class="cp-card">
+
+  <!-- ── Header ──────────────────────────────────────────────────── -->
+  <div class="cp-header">
+    <div class="cp-header__left">
+      <h3 class="cp-title">Estadísticas de Pacientes</h3>
+      <p class="cp-subtitle">Nuevos, recurrentes y actividad del período</p>
+    </div>
+  </div>
+
+  <!-- ── Body: chart + ranking ───────────────────────────────────── -->
+  <div class="cp-body">
+
+    <!-- ── Izquierda: resumen + gráfica ───────────────────────── -->
+    <div class="cp-left-col">
+
+      <!-- Mini KPIs de resumen -->
+      <div class="cp-summary-row">
+        <div class="cp-summary-chip cp-summary-chip--primary">
+          <ion-icon name="people-outline"></ion-icon>
+          <div class="cp-summary-chip__body">
+            <span class="cp-summary-chip__val">{{ resumen.totalActivos }}</span>
+            <span class="cp-summary-chip__lbl">Activos</span>
+          </div>
+        </div>
+        <div class="cp-summary-chip cp-summary-chip--success">
+          <ion-icon name="person-add-outline"></ion-icon>
+          <div class="cp-summary-chip__body">
+            <span class="cp-summary-chip__val">{{ resumen.nuevosEsteMes }}</span>
+            <span class="cp-summary-chip__lbl">Nuevos</span>
+          </div>
+        </div>
+        <div class="cp-summary-chip cp-summary-chip--info">
+          <ion-icon name="repeat-outline"></ion-icon>
+          <div class="cp-summary-chip__body">
+            <span class="cp-summary-chip__val">{{ resumen.recurrentesEsteMes }}</span>
+            <span class="cp-summary-chip__lbl">Recurrentes</span>
+          </div>
+        </div>
+        <div class="cp-summary-chip cp-summary-chip--purple">
+          <ion-icon name="trending-up-outline"></ion-icon>
+          <div class="cp-summary-chip__body">
+            <span class="cp-summary-chip__val">{{ resumen.tasaRetencion }}%</span>
+            <span class="cp-summary-chip__lbl">Retención</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráfica: Nuevos vs Recurrentes -->
+      <div class="cp-chart-section">
+        <p class="cp-section-label">Nuevos vs Recurrentes (últimos 6 meses)</p>
+        <div class="cp-grouped-bars">
+          <div
+            *ngFor="let p of puntos; trackBy: trackByLabel"
+            class="cp-group">
+            <div class="cp-group__bars">
+              <div class="cp-bar-wrap cp-bar-wrap--new">
+                <div
+                  class="cp-bar cp-bar--new"
+                  [style.height]="getPctNuevos(p.nuevos) + '%'">
+                </div>
+                <span class="cp-bar__tip">{{ p.nuevos }}</span>
+              </div>
+              <div class="cp-bar-wrap cp-bar-wrap--rec">
+                <div
+                  class="cp-bar cp-bar--rec"
+                  [style.height]="getPctRecurrentes(p.recurrentes) + '%'">
+                </div>
+                <span class="cp-bar__tip">{{ p.recurrentes }}</span>
+              </div>
+            </div>
+            <span class="cp-group__label">{{ p.label }}</span>
+          </div>
+        </div>
+
+        <!-- Leyenda -->
+        <div class="cp-legend">
+          <span class="cp-legend-item">
+            <span class="cp-legend-dot cp-legend-dot--new"></span>
+            Nuevos
+          </span>
+          <span class="cp-legend-item">
+            <span class="cp-legend-dot cp-legend-dot--rec"></span>
+            Recurrentes
+          </span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Divisor vertical ───────────────────────────────────── -->
+    <div class="cp-v-divider" aria-hidden="true"></div>
+
+    <!-- ── Derecha: rankings ──────────────────────────────────── -->
+    <div class="cp-right-col">
+      <div class="cp-ranking-header">
+        <p class="cp-section-label">Ranking de pacientes</p>
+        <div class="cp-ranking-tabs">
+          <button
+            class="cp-rtab"
+            [class.cp-rtab--active]="rankingTab === 'citas'"
+            (click)="rankingTab = 'citas'">
+            Más citas
+          </button>
+          <button
+            class="cp-rtab"
+            [class.cp-rtab--active]="rankingTab === 'no-asistencias'"
+            (click)="rankingTab = 'no-asistencias'">
+            No asistió
+          </button>
+        </div>
+      </div>
+
+      <!-- Lista ranking -->
+      <div class="cp-ranking-list">
+        <div
+          *ngFor="let r of rankingActivo; trackBy: trackByPosicion"
+          class="cp-rank-item">
+
+          <span class="cp-rank-pos"
+            [class.cp-rank-pos--gold]="r.posicion === 1"
+            [class.cp-rank-pos--silver]="r.posicion === 2"
+            [class.cp-rank-pos--bronze]="r.posicion === 3">
+            {{ r.posicion }}
+          </span>
+
+          <div class="cp-rank-avatar" [style.background]="r.colorAvatar">
+            {{ r.avatarInicial }}
+          </div>
+
+          <div class="cp-rank-info">
+            <span class="cp-rank-nombre">{{ r.nombre }} {{ r.apellido }}</span>
+            <div class="cp-rank-bar-wrap">
+              <div
+                class="cp-rank-bar"
+                [style.width]="(r.valor / maxRanking * 100) + '%'"
+                [style.background]="rankingTab === 'citas' ? '#6366f1' : '#ef4444'">
+              </div>
+            </div>
+          </div>
+
+          <div class="cp-rank-val-wrap">
+            <span
+              class="cp-rank-val"
+              [class.cp-rank-val--danger]="rankingTab === 'no-asistencias'">
+              {{ r.valor }}
+            </span>
+            <span class="cp-rank-lbl">
+              {{ rankingTab === 'citas' ? 'citas' : 'faltas' }}
+            </span>
+          </div>
+
+        </div>
+
+        <!-- Estado vacío para no-asistencias si lista es corta -->
+        <p
+          *ngIf="rankingActivo.length === 0"
+          class="cp-ranking-empty">
+          <ion-icon name="checkmark-circle-outline"></ion-icon>
+          Sin no asistencias registradas
+        </p>
+
+      </div>
+    </div>
+
+  </div>
+
+</div>

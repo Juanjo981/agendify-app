@@ -1,0 +1,82 @@
+<div class="ccp-card">
+
+  <!-- ── Header ──────────────────────────────────────────────────── -->
+  <div class="ccp-header">
+    <div class="ccp-header__left">
+      <h3 class="ccp-title">Citas por período</h3>
+      <p class="ccp-subtitle">Evolución temporal de la actividad</p>
+    </div>
+    <div class="ccp-tabs">
+      <button
+        *ngFor="let t of periodoTabs"
+        class="ccp-tab"
+        [class.ccp-tab--active]="periodoActivo === t.value"
+        (click)="cambiarPeriodo(t.value)">
+        {{ t.label }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Bar chart ───────────────────────────────────────────────── -->
+  <div class="ccp-chart-wrap">
+    <div class="ccp-chart-area">
+      <div class="ccp-bars">
+        <div
+          *ngFor="let b of barras; trackBy: trackByFecha"
+          class="ccp-col">
+          <span class="ccp-col__val" *ngIf="b.total > 0">{{ b.total }}</span>
+          <div class="ccp-col__bar" [style.height]="getPct(b.total) + '%'"></div>
+        </div>
+      </div>
+    </div>
+    <div class="ccp-axis-labels">
+      <span *ngFor="let b of barras; trackBy: trackByFecha" class="ccp-axis-label">
+        {{ b.label }}
+      </span>
+    </div>
+  </div>
+
+  <!-- ── Complementary stats ─────────────────────────────────────── -->
+  <div class="ccp-footer-stats">
+    <div class="ccp-stat">
+      <div class="ccp-stat__icon-wrap ccp-stat__icon-wrap--primary">
+        <ion-icon name="calendar-outline"></ion-icon>
+      </div>
+      <div class="ccp-stat__body">
+        <span class="ccp-stat__value">{{ resumen.totalPeriodo }}</span>
+        <span class="ccp-stat__label">Total período</span>
+      </div>
+    </div>
+
+    <div class="ccp-stat">
+      <div class="ccp-stat__icon-wrap ccp-stat__icon-wrap--success">
+        <ion-icon name="ribbon-outline"></ion-icon>
+      </div>
+      <div class="ccp-stat__body">
+        <span class="ccp-stat__value">{{ resumen.estadoPredominante }}</span>
+        <span class="ccp-stat__label">Estado predominante</span>
+      </div>
+    </div>
+
+    <div class="ccp-stat">
+      <div class="ccp-stat__icon-wrap ccp-stat__icon-wrap--info">
+        <ion-icon name="time-outline"></ion-icon>
+      </div>
+      <div class="ccp-stat__body">
+        <span class="ccp-stat__value">{{ resumen.horasMasOcupadas[0]?.hora || '—' }}</span>
+        <span class="ccp-stat__label">Hora más ocupada</span>
+      </div>
+    </div>
+
+    <div class="ccp-stat">
+      <div class="ccp-stat__icon-wrap ccp-stat__icon-wrap--purple">
+        <ion-icon name="today-outline"></ion-icon>
+      </div>
+      <div class="ccp-stat__body">
+        <span class="ccp-stat__value">{{ resumen.diasMasOcupados[0]?.dia || '—' }}</span>
+        <span class="ccp-stat__label">Día más ocupado</span>
+      </div>
+    </div>
+  </div>
+
+</div>

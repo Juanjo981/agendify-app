@@ -1,0 +1,148 @@
+<div class="ci-card">
+
+  <!-- ── Header ──────────────────────────────────────────────────── -->
+  <div class="ci-header">
+    <div class="ci-header__left">
+      <h3 class="ci-title">Estadísticas de Ingresos</h3>
+      <p class="ci-subtitle">Evolución y distribución por método de pago</p>
+    </div>
+    <div class="ci-tabs">
+      <button
+        *ngFor="let t of periodoTabs"
+        class="ci-tab"
+        [class.ci-tab--active]="periodoActivo === t.value"
+        (click)="cambiarPeriodo(t.value)">
+        {{ t.label }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Body: bar chart + donut ─────────────────────────────────── -->
+  <div class="ci-body">
+
+    <!-- ── Ingresos por período ────────────────────────────────── -->
+    <div class="ci-chart-section">
+      <p class="ci-section-label">Ingresos por período</p>
+      <div class="ci-chart-area">
+        <div class="ci-bars">
+          <div
+            *ngFor="let b of barras; trackBy: trackByFecha"
+            class="ci-col">
+            <span class="ci-col__val" *ngIf="b.total > 0">{{ formatCurrency(b.total) }}</span>
+            <div class="ci-col__bar" [style.height]="getPct(b.total) + '%'"></div>
+          </div>
+        </div>
+      </div>
+      <div class="ci-axis-labels">
+        <span
+          *ngFor="let b of barras; trackBy: trackByFecha"
+          class="ci-axis-label">
+          {{ b.label }}
+        </span>
+      </div>
+    </div>
+
+    <!-- ── Vertical divider (desktop) ─────────────────────────── -->
+    <div class="ci-v-divider" aria-hidden="true"></div>
+
+    <!-- ── Ingresos por método de pago ────────────────────────── -->
+    <div class="ci-donut-section">
+      <p class="ci-section-label">Por método de pago</p>
+      <div class="ci-donut-layout">
+
+        <!-- SVG Donut -->
+        <div class="ci-donut-wrap">
+          <svg class="ci-donut-svg" viewBox="0 0 200 200">
+            <circle
+              cx="100" cy="100" [attr.r]="RADIUS"
+              fill="none"
+              stroke="rgba(209,213,219,0.22)"
+              stroke-width="28" />
+            <circle
+              *ngFor="let seg of donutSegments; trackBy: trackByIndex"
+              cx="100" cy="100"
+              [attr.r]="RADIUS"
+              fill="none"
+              [attr.stroke]="seg.color"
+              stroke-width="28"
+              stroke-linecap="butt"
+              [attr.stroke-dasharray]="seg.dasharray"
+              [attr.stroke-dashoffset]="seg.dashoffset" />
+          </svg>
+          <div class="ci-donut-center">
+            <span class="ci-donut-total">{{ formatCurrency(totalMetodos) }}</span>
+            <span class="ci-donut-label">total</span>
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="ci-legend">
+          <div
+            *ngFor="let m of metodos; trackBy: trackByMetodo"
+            class="ci-legend-item">
+            <div class="ci-legend-dot" [style.background]="m.color"></div>
+            <span class="ci-legend-name">{{ m.metodo }}</span>
+            <div class="ci-legend-bar-wrap">
+              <div
+                class="ci-legend-bar"
+                [style.width]="m.porcentaje + '%'"
+                [style.background]="m.color">
+              </div>
+            </div>
+            <span class="ci-legend-pct">{{ m.porcentaje }}%</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Footer: métricas complementarias ───────────────────────── -->
+  <div class="ci-footer">
+
+    <div class="ci-metric">
+      <div class="ci-metric__icon ci-metric__icon--success">
+        <ion-icon name="trending-up-outline"></ion-icon>
+      </div>
+      <div class="ci-metric__body">
+        <span class="ci-metric__val">{{ formatCurrency(resumen.totalPeriodo) }}</span>
+        <span class="ci-metric__lbl">Total período</span>
+      </div>
+    </div>
+
+    <div class="ci-metric">
+      <div class="ci-metric__icon ci-metric__icon--warning">
+        <ion-icon name="hourglass-outline"></ion-icon>
+      </div>
+      <div class="ci-metric__body">
+        <span class="ci-metric__val">{{ formatCurrency(resumen.montoPendiente) }}</span>
+        <span class="ci-metric__lbl">Pendiente por cobrar</span>
+      </div>
+    </div>
+
+    <div class="ci-metric">
+      <div class="ci-metric__icon ci-metric__icon--primary">
+        <ion-icon name="checkmark-circle-outline"></ion-icon>
+      </div>
+      <div class="ci-metric__body">
+        <span class="ci-metric__val">
+          {{ resumen.citasPagadas }}<small> / {{ resumen.citasPagadas + resumen.citasPendientes }}</small>
+        </span>
+        <span class="ci-metric__lbl">Citas pagadas</span>
+      </div>
+    </div>
+
+    <div class="ci-metric">
+      <div class="ci-metric__icon ci-metric__icon--info">
+        <ion-icon name="card-outline"></ion-icon>
+      </div>
+      <div class="ci-metric__body">
+        <span class="ci-metric__val">{{ resumen.metodoPrincipal }}</span>
+        <span class="ci-metric__lbl">Método principal</span>
+      </div>
+    </div>
+
+  </div>
+
+</div>

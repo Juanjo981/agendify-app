@@ -1,0 +1,29 @@
+<div class="ins-wrap">
+
+  <!-- ── Section label ───────────────────────────────────────────── -->
+  <div class="ins-label-row">
+    <ion-icon name="sparkles-outline" class="ins-label-icon"></ion-icon>
+    <span class="ins-label">Insights del período</span>
+  </div>
+
+  <!-- ── Insights grid ───────────────────────────────────────────── -->
+  <div class="ins-grid">
+    <div
+      *ngFor="let ins of insights; trackBy: trackById"
+      class="ins-card"
+      [ngClass]="'ins-card--' + ins.tipo">
+
+      <div class="ins-card__icon-wrap">
+        <ion-icon [name]="ins.icono"></ion-icon>
+      </div>
+
+      <div class="ins-card__body">
+        <span class="ins-card__titulo">{{ ins.titulo }}</span>
+        <span class="ins-card__valor">{{ ins.valor }}</span>
+        <span class="ins-card__desc">{{ ins.descripcion }}</span>
+      </div>
+
+    </div>
+  </div>
+
+</div>

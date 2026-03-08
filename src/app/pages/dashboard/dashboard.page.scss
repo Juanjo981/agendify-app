@@ -361,6 +361,21 @@
 }
 
 /* Base: sempre oculto — los media queries lo muestran cuando corresponde */
+.bottom-menu-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.18);
+  z-index: 9998; // just below .bottom-menu (9999)
+  backdrop-filter: none;
+}
+
+@media (max-width: 1024px) {
+  .bottom-menu-backdrop {
+    display: block;
+  }
+}
+
 .bottom-menu {
   display: none;
   position: fixed;

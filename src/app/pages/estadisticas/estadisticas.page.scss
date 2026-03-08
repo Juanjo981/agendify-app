@@ -1,0 +1,226 @@
+:host {
+  display: block;
+  height: 100%;
+  overflow-y: auto;
+  background: linear-gradient(160deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+// ─── Page container ───────────────────────────────────────────────────────────
+.est-page {
+  padding: 28px 32px 48px;
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+
+  @media (max-width: 768px) { padding: 16px 16px 40px; gap: 20px; }
+  @media (max-width: 480px) { padding: 12px 12px 36px; gap: 16px; }
+}
+
+// ─── Header ───────────────────────────────────────────────────────────────────
+.est-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.est-header__left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.est-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-strong, #0f172a);
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.est-subtitle {
+  font-size: 14px;
+  color: var(--text-muted, #64748b);
+  margin: 0;
+}
+
+.est-header__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+// ─── Buttons ──────────────────────────────────────────────────────────────────
+.est-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+  padding: 0 16px;
+  height: 38px;
+  white-space: nowrap;
+
+  ion-icon { font-size: 16px; }
+}
+
+.est-btn--ghost {
+  border: 1.5px solid var(--border-subtle, rgba(209, 213, 219, 0.6));
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--text-muted, #64748b);
+
+  &:not([disabled]):hover {
+    border-color: var(--primary, #6366f1);
+    color: var(--primary, #6366f1);
+    background: rgba(99, 102, 241, 0.06);
+  }
+
+  &[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// ─── Sections ─────────────────────────────────────────────────────────────────
+.est-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.est-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin: 0;
+}
+
+// ─── Placeholder grid ─────────────────────────────────────────────────────────
+.est-placeholder-grid {
+  display: grid;
+  gap: 16px;
+
+  &.est-placeholder-grid--2 {
+    grid-template-columns: 1fr 1fr;
+
+    @media (max-width: 680px) { grid-template-columns: 1fr; }
+  }
+}
+
+// ─── Placeholder card ─────────────────────────────────────────────────────────
+.est-placeholder-card {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1.5px dashed var(--border-subtle, rgba(209, 213, 219, 0.7));
+  border-radius: var(--radius-lg, 16px);
+  padding: 24px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 150px;
+  justify-content: center;
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.75);
+  }
+
+  // Wide/row variant used for the Reportes placeholder
+  &.est-placeholder-card--row {
+    flex-direction: row;
+    align-items: center;
+    min-height: auto;
+    padding: 18px 22px;
+    gap: 16px;
+
+    .est-placeholder-body { flex: 1; }
+    .est-badge { flex-shrink: 0; }
+  }
+}
+
+.est-placeholder-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(99, 102, 241, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  ion-icon {
+    font-size: 24px;
+    color: var(--primary, #6366f1);
+    opacity: 0.65;
+  }
+}
+
+.est-placeholder-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.est-placeholder-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-strong, #0f172a);
+  margin: 0;
+}
+
+.est-placeholder-desc {
+  font-size: 13px;
+  color: var(--text-muted, #64748b);
+  margin: 0;
+  line-height: 1.55;
+  max-width: 340px;
+}
+
+// ─── Badge ────────────────────────────────────────────────────────────────────
+.est-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.est-badge--soon {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary, #6366f1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+// ─── Chart layout ────────────────────────────────────────────────────────────
+// Chart row: bar chart (wider) beside states donut
+.est-charts-row {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 16px;
+
+  @media (max-width: 960px) { grid-template-columns: 1fr; }
+}
+
+// Section title icon support (future use)
+.est-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  ion-icon {
+    font-size: 16px;
+    opacity: 0.7;
+  }
+}
