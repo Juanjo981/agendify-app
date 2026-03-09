@@ -1,0 +1,22 @@
+<div class="esm-wrap">
+
+  <!-- Desktop label -->
+  <div class="esm-wrap__label" aria-hidden="true">
+    <ion-icon name="bar-chart-outline" class="esm-wrap__icon"></ion-icon>
+    <span>Vista</span>
+  </div>
+
+  <!-- Nav track -->
+  <nav class="esm-nav" role="navigation" aria-label="Secciones de estadísticas">
+    <a
+      *ngFor="let item of items"
+      [routerLink]="item.path"
+      routerLinkActive="esm-item--active"
+      [routerLinkActiveOptions]="{ exact: false }"
+      class="esm-item">
+      <ion-icon [name]="item.icon" class="esm-item__icon" aria-hidden="true"></ion-icon>
+      <span class="esm-item__label">{{ item.label }}</span>
+    </a>
+  </nav>
+
+</div>

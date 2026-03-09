@@ -1,0 +1,29 @@
+<div class="est-subpage">
+
+  <!-- ── Filtros globales ─────────────────────────────────────────────── -->
+  <section class="est-section">
+    <app-filtros-estadisticas
+      (filtrosCambiados)="onFiltrosCambiados($event)">
+    </app-filtros-estadisticas>
+  </section>
+
+  <!-- ── KPIs ─────────────────────────────────────────────────────────── -->
+  <section class="est-section">
+    <app-resumen-kpis [kpis]="kpis"></app-resumen-kpis>
+  </section>
+
+  <!-- ── Resumen Citas + Ingresos ─────────────────────────────────── -->
+  <section class="est-section">
+    <h2 class="est-section-title">Resumen del periodo</h2>
+    <div class="est-charts-row">
+      <app-chart-citas-por-periodo></app-chart-citas-por-periodo>
+      <app-chart-ingresos></app-chart-ingresos>
+    </div>
+  </section>
+
+  <!-- ── Insights rápidos ─────────────────────────────────────────────── -->
+  <section class="est-section">
+    <app-insights-estadisticas></app-insights-estadisticas>
+  </section>
+
+</div>

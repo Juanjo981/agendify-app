@@ -1,0 +1,123 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Paciente Submenu — iOS-style segmented control, glassmorphism wrapper
+// Prefix: psm-
+// ─────────────────────────────────────────────────────────────────────────────
+
+:host { display: block; }
+
+.psm-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: rgba(247, 249, 252, 0.88);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(209, 213, 219, 0.45);
+  border-radius: 16px;
+  padding: 6px 8px;
+  box-shadow:
+    0 2px 12px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  margin-bottom: 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+// Left label — desktop only
+.psm-wrap__label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 14px 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted, #64748b);
+  flex-shrink: 0;
+
+  ion-icon { font-size: 15px; }
+}
+
+.psm-divider {
+  width: 1px;
+  height: 22px;
+  background: rgba(209, 213, 219, 0.6);
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+// Segmented nav track
+.psm-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(241, 245, 249, 0.9);
+  border-radius: 11px;
+  padding: 3px;
+  flex: 1;
+}
+
+// Each item
+.psm-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border-radius: 9px;
+  border: none;
+  background: none;
+  color: var(--text-muted, #64748b);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex: 1;
+  justify-content: center;
+
+  &:hover:not(.psm-item--active) {
+    background: rgba(255, 255, 255, 0.6);
+    color: var(--text-strong, #0f172a);
+    transform: translateY(-0.5px);
+  }
+
+  &--active {
+    background: #fff;
+    color: var(--primary-mid, #6366f1);
+    font-weight: 600;
+    box-shadow: 0 1px 6px rgba(15, 23, 42, 0.1), 0 0 0 0.5px rgba(209, 213, 219, 0.5);
+    transform: translateY(-0.5px);
+
+    .psm-item__icon-wrap {
+      background: rgba(99, 102, 241, 0.1);
+    }
+  }
+}
+
+.psm-item__icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  transition: background 0.2s;
+
+  ion-icon { font-size: 14px; }
+}
+
+// ─── Responsive ──────────────────────────────────────────────────────────────
+@media (max-width: 640px) {
+  .psm-wrap__label,
+  .psm-divider { display: none; }
+
+  .psm-item { padding: 7px 10px; font-size: 13px; }
+}
+
+@media (max-width: 420px) {
+  .psm-item__label { display: none; }
+  .psm-item { padding: 7px 11px; flex: none; }
+  .psm-item__icon-wrap { width: 28px; height: 28px; border-radius: 8px; ion-icon { font-size: 16px; } }
+}

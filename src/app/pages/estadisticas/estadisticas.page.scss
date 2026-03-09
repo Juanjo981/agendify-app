@@ -13,10 +13,10 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 20px;
 
-  @media (max-width: 768px) { padding: 16px 16px 40px; gap: 20px; }
-  @media (max-width: 480px) { padding: 12px 12px 36px; gap: 16px; }
+  @media (max-width: 768px) { padding: 16px 16px 40px; gap: 16px; }
+  @media (max-width: 480px) { padding: 12px 12px 36px; gap: 12px; }
 }
 
 // ─── Header ───────────────────────────────────────────────────────────────────

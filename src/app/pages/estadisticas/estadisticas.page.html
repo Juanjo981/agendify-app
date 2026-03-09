@@ -6,70 +6,12 @@
       <h1 class="est-title">Estadísticas</h1>
       <p class="est-subtitle">Métricas y resumen del consultorio</p>
     </div>
-    <div class="est-header__actions">
-      <button class="est-btn est-btn--ghost" disabled title="Exportación disponible próximamente">
-        <ion-icon name="download-outline"></ion-icon>
-        Exportar
-      </button>
-    </div>
   </div>
 
-  <!-- ── Filtros globales ─────────────────────────────────────────────── -->
-  <section class="est-section">
-    <app-filtros-estadisticas
-      (filtrosCambiados)="onFiltrosCambiados($event)">
-    </app-filtros-estadisticas>
-  </section>
+  <!-- ── Submenu interno ─────────────────────────────────────────────── -->
+  <app-estadisticas-submenu></app-estadisticas-submenu>
 
-  <!-- ── KPIs ─────────────────────────────────────────────────────────── -->
-  <section class="est-section">
-    <app-resumen-kpis [kpis]="kpis"></app-resumen-kpis>
-  </section>
-
-  <!-- ── Estadísticas de Citas ─────────────────────────────────────── -->
-  <section class="est-section">
-    <h2 class="est-section-title">Estadísticas de Citas</h2>
-    <div class="est-charts-row">
-      <app-chart-citas-por-periodo></app-chart-citas-por-periodo>
-      <app-chart-estados-cita></app-chart-estados-cita>
-    </div>
-  </section>
-
-  <!-- ── Estadísticas de Ingresos ─────────────────────────────────── -->
-  <section class="est-section">
-    <h2 class="est-section-title">Estadísticas de Ingresos</h2>
-    <app-chart-ingresos></app-chart-ingresos>
-  </section>
-
-  <!-- ── Caja Diaria ──────────────────────────────────────────────────── -->
-  <section class="est-section">
-    <app-resumen-caja-diaria></app-resumen-caja-diaria>
-  </section>
-
-  <!-- ── Estadísticas de Pacientes ────────────────────────────────────── -->
-  <section class="est-section">
-    <h2 class="est-section-title">Estadísticas de Pacientes</h2>
-    <app-chart-pacientes></app-chart-pacientes>
-  </section>
-
-  <!-- ── Insights rápidos ─────────────────────────────────────────────── -->
-  <section class="est-section">
-    <app-insights-estadisticas></app-insights-estadisticas>
-  </section>
-
-  <!-- ── Reportes y Exportación ─────────────────────────────────────── -->
-  <section class="est-section">
-    <app-tabla-reportes
-      (exportarReporte)="abrirModalExportar($event)">
-    </app-tabla-reportes>
-  </section>
+  <!-- ── Contenido de la sección activa ──────────────────────────────── -->
+  <router-outlet></router-outlet>
 
 </div>
-
-<!-- ── Modal: exportar reporte ──────────────────────────────────────── -->
-<app-exportar-reporte-modal
-  *ngIf="modalExportarAbierto && reporteParaExportar"
-  [reporte]="reporteParaExportar!"
-  (cerrar)="cerrarModalExportar()"
-  (exportado)="onExportado($event)">
-</app-exportar-reporte-modal>

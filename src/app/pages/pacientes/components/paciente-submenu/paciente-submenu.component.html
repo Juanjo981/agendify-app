@@ -1,0 +1,21 @@
+<div class="psm-wrap">
+  <div class="psm-wrap__label">
+    <ion-icon name="person-circle-outline"></ion-icon>
+    <span>Paciente</span>
+  </div>
+  <div class="psm-divider"></div>
+  <nav class="psm-nav">
+    <button
+      *ngFor="let item of items"
+      class="psm-item"
+      [class.psm-item--active]="seccionActiva === item.key"
+      (click)="seleccionar(item.key)"
+      type="button"
+    >
+      <span class="psm-item__icon-wrap">
+        <ion-icon [name]="item.icon"></ion-icon>
+      </span>
+      <span class="psm-item__label">{{ item.label }}</span>
+    </button>
+  </nav>
+</div>

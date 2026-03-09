@@ -59,30 +59,20 @@
       </div>
     </div>
 
-    <!-- ─── TABS ──────────────────────────────────────────────────────────── -->
-    <div class="det-tabs">
-      <button class="det-tab" [class.active]="tabActiva === 'datos'" (click)="setTab('datos')">
-        <ion-icon name="person-outline"></ion-icon>
-        Datos
-      </button>
-      <button class="det-tab" [class.active]="tabActiva === 'citas'" (click)="setTab('citas')">
-        <ion-icon name="calendar-outline"></ion-icon>
-        Historial de citas
-        <span class="det-tab__badge" *ngIf="paciente.citas.length">{{ paciente.citas.length }}</span>
-      </button>
-      <button class="det-tab" [class.active]="tabActiva === 'notas'" (click)="setTab('notas')">
-        <ion-icon name="document-text-outline"></ion-icon>
-        Notas
-        <span class="det-tab__badge" *ngIf="paciente.notas.length">{{ paciente.notas.length }}</span>
-      </button>
-    </div>
+    <!-- ─── SUBMENU ──────────────────────────────────────────────────────── -->
+    <app-paciente-submenu
+      [seccionActiva]="seccionActiva"
+      (seccionCambiada)="setSeccion($event)">
+    </app-paciente-submenu>
 
-    <!-- ─── TAB CONTENT ───────────────────────────────────────────────────── -->
+    <!-- ─── SECTION CONTENT ──────────────────────────────────────────────── -->
     <div class="det-tab-content">
 
-      <!-- ════ TAB: DATOS ════ -->
-      <div *ngIf="tabActiva === 'datos'" class="det-datos">
-        <div class="det-data-grid">
+      <!-- ════ SECCIÓN: INFORMACIÓN ════ -->
+      <div *ngIf="seccionActiva === 'informacion'" class="det-informacion">
+
+        <!-- Ficha de contacto -->
+        <div class="det-info-grid">
 
           <div class="det-data-card">
             <div class="det-data-card__icon" style="background: rgba(99,102,241,0.10); color: #6366f1;">
@@ -100,11 +90,12 @@
             </div>
             <div class="det-data-card__body">
               <span class="det-data-label">Teléfono</span>
-              <span class="det-data-value">{{ paciente.telefono || '—' }}</span>
+              <a class="det-data-value det-link" *ngIf="paciente.telefono" href="tel:{{ paciente.telefono }}">{{ paciente.telefono }}</a>
+              <span class="det-data-value det-muted" *ngIf="!paciente.telefono">—</span>
             </div>
           </div>
 
-          <div class="det-data-card">
+          <div class="det-data-card" *ngIf="paciente.fecha_nacimiento">
             <div class="det-data-card__icon" style="background: rgba(245,158,11,0.10); color: #f59e0b;">
               <ion-icon name="gift-outline"></ion-icon>
             </div>
@@ -114,16 +105,40 @@
             </div>
           </div>
 
-          <div class="det-data-card">
+          <div class="det-data-card" *ngIf="paciente.fecha_nacimiento">
             <div class="det-data-card__icon" style="background: rgba(139,92,246,0.10); color: #8b5cf6;">
               <ion-icon name="hourglass-outline"></ion-icon>
             </div>
             <div class="det-data-card__body">
               <span class="det-data-label">Edad</span>
-              <span class="det-data-value">{{ paciente.fecha_nacimiento ? calcularEdad(paciente.fecha_nacimiento) + ' años' : '—' }}</span>
+              <span class="det-data-value">{{ calcularEdad(paciente.fecha_nacimiento) }} años</span>
             </div>
           </div>
 
+          <div class="det-data-card" *ngIf="paciente.direccion">
+            <div class="det-data-card__icon" style="background: rgba(59,130,246,0.10); color: #3b82f6;">
+              <ion-icon name="location-outline"></ion-icon>
+            </div>
+            <div class="det-data-card__body">
+              <span class="det-data-label">Dirección</span>
+              <span class="det-data-value">{{ paciente.direccion }}</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Alertas -->
+        <div class="det-alert-card" *ngIf="paciente.alertas && paciente.alertas.length > 0">
+          <div class="det-alert-card__header">
+            <ion-icon name="warning-outline"></ion-icon>
+            <span>Alertas clínicas</span>
+          </div>
+          <ul class="det-alert-list">
+            <li *ngFor="let alerta of paciente.alertas" class="det-alert-item">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              {{ alerta }}
+            </li>
+          </ul>
         </div>
 
         <!-- Notas generales -->
@@ -135,76 +150,42 @@
           <p class="det-notas-card__body" *ngIf="paciente.notas_generales">{{ paciente.notas_generales }}</p>
           <p class="det-notas-card__body det-empty-text" *ngIf="!paciente.notas_generales">Sin notas generales registradas.</p>
         </div>
+
+        <!-- Actions -->
+        <div class="det-info-actions">
+          <button class="det-btn-outline" (click)="abrirEditarModal()">
+            <ion-icon name="pencil-outline"></ion-icon>
+            Editar información
+          </button>
+          <button class="det-btn-primary" (click)="irANuevaCita()">
+            <ion-icon name="calendar-outline"></ion-icon>
+            Nueva cita
+          </button>
+        </div>
+
       </div>
 
-      <!-- ════ TAB: CITAS ════ -->
-      <div *ngIf="tabActiva === 'citas'" class="det-citas">
-
-        <!-- Summary chips -->
-        <div class="det-summary-row">
-          <div class="det-summary-chip det-summary-chip--green">
-            <strong>{{ estadoCount.confirmadas }}</strong>
-            <span>Confirmadas</span>
-          </div>
-          <div class="det-summary-chip det-summary-chip--yellow">
-            <strong>{{ estadoCount.pendientes }}</strong>
-            <span>Pendientes</span>
-          </div>
-          <div class="det-summary-chip det-summary-chip--red">
-            <strong>{{ estadoCount.canceladas }}</strong>
-            <span>Canceladas</span>
-          </div>
-        </div>
-
-        <!-- Filter chips -->
-        <div class="det-filter-chips">
-          <button class="det-filter-chip" [class.active]="filtroCitas === 'todos'" (click)="filtroCitas = 'todos'">Todas</button>
-          <button class="det-filter-chip det-filter-chip--green" [class.active]="filtroCitas === 'Confirmada'" (click)="filtroCitas = 'Confirmada'">Confirmadas</button>
-          <button class="det-filter-chip det-filter-chip--yellow" [class.active]="filtroCitas === 'Pendiente'" (click)="filtroCitas = 'Pendiente'">Pendientes</button>
-          <button class="det-filter-chip det-filter-chip--red" [class.active]="filtroCitas === 'Cancelada'" (click)="filtroCitas = 'Cancelada'">Canceladas</button>
-        </div>
-
-        <!-- Empty -->
-        <div *ngIf="citasFiltradas.length === 0" class="det-empty">
-          <ion-icon name="calendar-outline"></ion-icon>
-          <p>No hay citas {{ filtroCitas !== 'todos' ? 'con este estado' : 'registradas' }}</p>
-        </div>
-
-        <!-- Timeline -->
-        <div class="det-timeline" *ngIf="citasFiltradas.length > 0">
-          <div *ngFor="let cita of citasFiltradas" class="det-timeline-item">
-            <div class="det-timeline-dot" [class]="'det-dot--' + cita.estado.toLowerCase()"></div>
-            <div class="det-timeline-card">
-              <div class="det-timeline-card__head">
-                <div class="det-timeline-meta">
-                  <span class="det-timeline-date">{{ formatFecha(cita.fecha) }}</span>
-                  <span class="det-timeline-hour">{{ cita.hora }}</span>
-                </div>
-                <span class="det-cita-badge" [class]="'det-cita-badge--' + cita.estado.toLowerCase()">
-                  {{ cita.estado }}
-                </span>
-              </div>
-              <p class="det-timeline-tipo">{{ cita.tipo }}</p>
-              <p class="det-timeline-notas" *ngIf="cita.notas">{{ cita.notas }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ════ TAB: NOTAS ════ -->
-      <div *ngIf="tabActiva === 'notas'" class="det-notas">
+      <!-- ════ SECCIÓN: NOTAS ════ -->
+      <div *ngIf="seccionActiva === 'notas'" class="det-notas">
         <div class="det-notas-topbar">
-          <p class="det-notas-count">{{ paciente.notas.length }} nota{{ paciente.notas.length !== 1 ? 's' : '' }} registrada{{ paciente.notas.length !== 1 ? 's' : '' }}</p>
+          <div class="det-notas-topbar__info">
+            <ion-icon name="document-text-outline"></ion-icon>
+            <span>{{ paciente.notas.length }} nota{{ paciente.notas.length !== 1 ? 's' : '' }} clínica{{ paciente.notas.length !== 1 ? 's' : '' }}</span>
+          </div>
           <button class="det-btn-primary" (click)="abrirNotaModal()">
             <ion-icon name="add-outline"></ion-icon>
-            Agregar nota
+            Nueva nota
           </button>
         </div>
 
         <div *ngIf="paciente.notas.length === 0" class="det-empty">
           <ion-icon name="document-text-outline"></ion-icon>
           <p>Sin notas clínicas</p>
-          <span>Usa el botón superior para crear la primera nota</span>
+          <span>Registra la primera nota clínica del paciente</span>
+          <button class="det-btn-primary det-empty-action" (click)="abrirNotaModal()">
+            <ion-icon name="add-outline"></ion-icon>
+            Agregar nota
+          </button>
         </div>
 
         <div class="det-nota-list" *ngIf="paciente.notas.length > 0">
@@ -225,8 +206,6 @@
             </div>
             <p class="det-nota-item__text" *ngIf="nota.contenido">{{ nota.contenido }}</p>
             <p class="det-nota-item__text det-nota-empty-text" *ngIf="!nota.contenido">(Sin texto)</p>
-
-            <!-- Adjunto chip -->
             <div *ngIf="nota.adjunto" class="det-nota-adjunto">
               <div class="det-adjunto-chip">
                 <ion-icon [name]="getFileIcon(nota.adjunto.type)" class="det-adjunto-chip__icon"></ion-icon>
@@ -239,6 +218,128 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- ════ SECCIÓN: SESIONES ════ -->
+      <div *ngIf="seccionActiva === 'sesiones'" class="det-sesiones">
+
+        <!-- Stats row -->
+        <div class="det-ses-stats" *ngIf="sesionesData.length > 0">
+          <div class="det-ses-stat">
+            <strong>{{ sesionesData.length }}</strong>
+            <span>Sesiones</span>
+          </div>
+          <div class="det-ses-stat det-ses-stat--divider"></div>
+          <div class="det-ses-stat">
+            <strong>{{ formatFecha(sesionesData[0].fecha) }}</strong>
+            <span>Última sesión</span>
+          </div>
+          <div class="det-ses-stat det-ses-stat--divider"></div>
+          <div class="det-ses-stat">
+            <strong>{{ sesionesData[0].tipo }}</strong>
+            <span>Tipo de última sesión</span>
+          </div>
+        </div>
+
+        <!-- Session cards -->
+        <div class="det-ses-list" *ngIf="sesionesData.length > 0">
+          <div *ngFor="let ses of sesionesData" class="det-ses-card">
+            <div class="det-ses-card__header">
+              <div class="det-ses-card__meta">
+                <span class="det-ses-card__date">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  {{ formatFecha(ses.fecha) }}
+                </span>
+                <span class="det-ses-card__hour">{{ ses.hora }}</span>
+                <span class="det-ses-card__dur">
+                  <ion-icon name="timer-outline"></ion-icon>
+                  {{ ses.duracion_min }} min
+                </span>
+              </div>
+              <span class="det-ses-card__tipo">{{ ses.tipo }}</span>
+            </div>
+            <p class="det-ses-card__resumen" *ngIf="ses.resumen">{{ ses.resumen }}</p>
+            <div class="det-ses-card__footer" *ngIf="ses.adjunto">
+              <div class="det-adjunto-chip">
+                <ion-icon [name]="getFileIcon(ses.adjunto.type)" class="det-adjunto-chip__icon"></ion-icon>
+                <span class="det-adjunto-chip__name">{{ ses.adjunto.name }}</span>
+                <span class="det-adjunto-chip__size">{{ formatFileSize(ses.adjunto.size) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty -->
+        <div *ngIf="sesionesData.length === 0" class="det-empty">
+          <ion-icon name="pulse-outline"></ion-icon>
+          <p>Sin sesiones registradas</p>
+          <span>Las sesiones clínicas registradas del paciente aparecerán aquí</span>
+        </div>
+
+      </div>
+
+      <!-- ════ SECCIÓN: HISTORIAL ════ -->
+      <div *ngIf="seccionActiva === 'historial'" class="det-historial">
+
+        <!-- Summary bar -->
+        <div class="det-hist-summary">
+          <div class="det-hist-summary-item det-hist-summary-item--green">
+            <strong>{{ estadoCount.confirmadas }}</strong>
+            <span>Confirmadas</span>
+          </div>
+          <div class="det-hist-summary-item det-hist-summary-item--yellow">
+            <strong>{{ estadoCount.pendientes }}</strong>
+            <span>Pendientes</span>
+          </div>
+          <div class="det-hist-summary-item det-hist-summary-item--red">
+            <strong>{{ estadoCount.canceladas }}</strong>
+            <span>Canceladas</span>
+          </div>
+          <div class="det-hist-summary-item det-hist-summary-item--purple">
+            <strong>{{ sesionesData.length }}</strong>
+            <span>Sesiones</span>
+          </div>
+          <div class="det-hist-summary-item det-hist-summary-item--slate">
+            <strong>{{ paciente.notas.length }}</strong>
+            <span>Notas</span>
+          </div>
+        </div>
+
+        <!-- Empty -->
+        <div *ngIf="historialEventos.length === 0" class="det-empty">
+          <ion-icon name="time-outline"></ion-icon>
+          <p>Sin eventos registrados</p>
+          <span>El historial cronológico del paciente aparecerá aquí</span>
+        </div>
+
+        <!-- Timeline -->
+        <div class="det-hist-timeline" *ngIf="historialEventos.length > 0">
+          <div *ngFor="let ev of historialEventos; let last = last" class="det-hist-item">
+
+            <!-- Left: dot + line -->
+            <div class="det-hist-track">
+              <div class="det-hist-dot" [ngClass]="getEventoColorClass(ev.tipo)">
+                <ion-icon [name]="getEventoIcon(ev.tipo)"></ion-icon>
+              </div>
+              <div class="det-hist-line" *ngIf="!last"></div>
+            </div>
+
+            <!-- Right: card -->
+            <div class="det-hist-card" [ngClass]="getEventoColorClass(ev.tipo)">
+              <div class="det-hist-card__head">
+                <span class="det-hist-card__label">{{ getEventoLabel(ev.tipo) }}</span>
+                <div class="det-hist-card__time">
+                  <span class="det-hist-card__date">{{ formatFecha(ev.fecha) }}</span>
+                  <span class="det-hist-card__hour" *ngIf="ev.hora">{{ ev.hora }}</span>
+                </div>
+              </div>
+              <p class="det-hist-card__desc">{{ ev.descripcion }}</p>
+              <p class="det-hist-card__detail" *ngIf="ev.detalle">{{ ev.detalle }}</p>
+            </div>
+
+          </div>
+        </div>
+
       </div>
 
     </div><!-- .det-tab-content -->

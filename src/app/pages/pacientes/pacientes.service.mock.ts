@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
-import { PacienteDto, NotaDto, PACIENTES_MOCK_DATA } from './pacientes.mock';
+import { PacienteDto, NotaDto, SesionPaciente, PACIENTES_MOCK_DATA, SESIONES_MOCK_DATA } from './pacientes.mock';
 
 @Injectable({ providedIn: 'root' })
 export class PacientesMockService {
   private pacientes: PacienteDto[] = JSON.parse(JSON.stringify(PACIENTES_MOCK_DATA));
+  private sesiones: SesionPaciente[] = JSON.parse(JSON.stringify(SESIONES_MOCK_DATA));
 
   getAll(): PacienteDto[] {
     return this.pacientes;
@@ -41,5 +42,11 @@ export class PacientesMockService {
   deleteNota(pacienteId: number, notaId: number): void {
     const p = this.getById(pacienteId);
     if (p) p.notas = p.notas.filter(n => n.id_nota !== notaId);
+  }
+
+  getSesiones(pacienteId: number): SesionPaciente[] {
+    return this.sesiones
+      .filter(s => s.id_paciente === pacienteId)
+      .sort((a, b) => b.fecha.localeCompare(a.fecha));
   }
 }

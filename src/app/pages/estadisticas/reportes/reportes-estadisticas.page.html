@@ -1,0 +1,19 @@
+<div class="est-subpage">
+
+  <!-- ── Reportes tabulares y exportación ────────────────────────── -->
+  <section class="est-section">
+    <h2 class="est-section-title">Reportes y exportación (PDF / Excel)</h2>
+    <app-tabla-reportes
+      (exportarReporte)="abrirModalExportar($event)">
+    </app-tabla-reportes>
+  </section>
+
+</div>
+
+<!-- ── Modal: exportar reporte ──────────────────────────────────────── -->
+<app-exportar-reporte-modal
+  *ngIf="modalExportarAbierto && reporteParaExportar"
+  [reporte]="reporteParaExportar!"
+  (cerrar)="cerrarModalExportar()"
+  (exportado)="onExportado($event)">
+</app-exportar-reporte-modal>

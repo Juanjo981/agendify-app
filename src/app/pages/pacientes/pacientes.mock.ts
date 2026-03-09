@@ -32,9 +32,88 @@ export interface PacienteDto {
   fecha_nacimiento: string; // 'YYYY-MM-DD'
   notas_generales: string;
   activo: boolean;
+  direccion?: string;
+  alertas?: string[];
   citas: CitaDto[];
   notas: NotaDto[];
 }
+
+// ─── Sesión clínica ───────────────────────────────────────────────────────────
+
+export interface SesionPaciente {
+  id_sesion: number;
+  id_paciente: number;
+  fecha: string;        // 'YYYY-MM-DD'
+  hora: string;         // 'HH:mm'
+  duracion_min: number;
+  tipo: string;
+  resumen: string;
+  adjunto?: AdjuntoMeta;
+}
+
+// ─── Historial de eventos ─────────────────────────────────────────────────────
+
+export type HistorialTipoEvento =
+  | 'cita_confirmada'
+  | 'cita_completada'
+  | 'cita_cancelada'
+  | 'cita_pendiente'
+  | 'cita_pospuesta'
+  | 'no_asistio'
+  | 'sesion_registrada'
+  | 'pago_registrado'
+  | 'pago_pendiente'
+  | 'reprogramacion'
+  | 'nota_agregada';
+
+export interface HistorialEvento {
+  id: string;
+  fecha: string;        // 'YYYY-MM-DD'
+  hora?: string;
+  tipo: HistorialTipoEvento;
+  descripcion: string;
+  detalle?: string;
+}
+
+// ─── Mock sesiones ────────────────────────────────────────────────────────────
+
+export const SESIONES_MOCK_DATA: SesionPaciente[] = [
+  {
+    id_sesion: 1, id_paciente: 1, fecha: '2026-02-10', hora: '10:00',
+    duracion_min: 45, tipo: 'Sesión clínica',
+    resumen: 'Se revisó evolución del tratamiento para migraña. Paciente refiere mejoría notable. Se ajustan dosis.',
+  },
+  {
+    id_sesion: 2, id_paciente: 1, fecha: '2026-01-15', hora: '11:30',
+    duracion_min: 30, tipo: 'Consulta de seguimiento',
+    resumen: 'Control tensión arterial. Valores dentro del rango esperado. Sin cambios en medicación.',
+  },
+  {
+    id_sesion: 3, id_paciente: 4, fecha: '2026-02-05', hora: '15:00',
+    duracion_min: 60, tipo: 'Sesión psicología',
+    resumen: 'Se trabajan técnicas de respiración diafragmática y reestructuración cognitiva. Progreso positivo.',
+  },
+  {
+    id_sesion: 4, id_paciente: 6, fecha: '2026-02-20', hora: '10:30',
+    duracion_min: 30, tipo: 'Control clínico',
+    resumen: 'Revisión TA: 132/85. Buena adherencia a dieta baja en sodio. Pendiente analítica en 3 meses.',
+  },
+  {
+    id_sesion: 5, id_paciente: 6, fecha: '2025-12-10', hora: '10:30',
+    duracion_min: 30, tipo: 'Control clínico',
+    resumen: 'TA: 140/90. Se ajusta dosis enalapril a 20 mg. Recomendación: reducir estrés laboral.',
+  },
+  {
+    id_sesion: 6, id_paciente: 18, fecha: '2026-02-08', hora: '17:00',
+    duracion_min: 50, tipo: 'Fisioterapia',
+    resumen: 'Mejoría en flexión lumbar. Se realizan ejercicios de estabilización core y movilidad vertebral.',
+  },
+  {
+    id_sesion: 7, id_paciente: 18, fecha: '2026-01-08', hora: '17:00',
+    duracion_min: 50, tipo: 'Fisioterapia',
+    resumen: 'Primera sesión del mes. Tensión muscular paravertebral. Termoterapia + ejercicios de estiramiento.',
+  },
+];
 
 // ─── Mock Dataset (25 pacientes) ─────────────────────────────────────────────
 
@@ -48,6 +127,8 @@ export const PACIENTES_MOCK_DATA: PacienteDto[] = [
     fecha_nacimiento: '1993-05-15',
     notas_generales: 'Historial de migraña. Alergia a la penicilina.',
     activo: true,
+    direccion: 'Calle Mayor 45, 3º B, Madrid',
+    alertas: ['Alergia a la penicilina', 'Migraña crónica'],
     citas: [
       { id_cita: 101, fecha: '2026-02-10', hora: '10:00', tipo: 'Consulta general', estado: 'Confirmada', notas: 'Revisión rutinaria' },
       { id_cita: 102, fecha: '2026-01-15', hora: '11:30', tipo: 'Seguimiento', estado: 'Confirmada', notas: 'Control tensión arterial' },
@@ -67,6 +148,8 @@ export const PACIENTES_MOCK_DATA: PacienteDto[] = [
     fecha_nacimiento: '1979-11-20',
     notas_generales: 'Diabetes tipo 2. Medicación: metformina 850 mg.',
     activo: true,
+    direccion: 'Av. de la Constitución 12, Sevilla',
+    alertas: ['Diabetes tipo 2 — control glucémico mensual'],
     citas: [
       { id_cita: 201, fecha: '2026-01-28', hora: '08:30', tipo: 'Control diabetes', estado: 'Confirmada', notas: 'HbA1c: 7.2 %' },
       { id_cita: 202, fecha: '2026-03-15', hora: '08:30', tipo: 'Control diabetes', estado: 'Pendiente' },

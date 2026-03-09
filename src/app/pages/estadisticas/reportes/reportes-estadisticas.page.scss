@@ -1,0 +1,15 @@
+:host { display: block; }
+
+.est-subpage {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  @media (max-width: 768px) { gap: 20px; }
+  @media (max-width: 480px) { gap: 16px; }
+}
+
+.est-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

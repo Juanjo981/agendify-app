@@ -61,7 +61,7 @@ const routes: Routes = [
       },
       {
         path: 'estadisticas',
-        loadComponent: () => import('./pages/estadisticas/estadisticas.page').then(m => m.EstadisticasPage)
+        loadChildren: () => import('./pages/estadisticas/estadisticas.routes').then(m => m.ESTADISTICAS_ROUTES)
       }
     ]
   },

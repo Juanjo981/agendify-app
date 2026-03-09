@@ -4,22 +4,26 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PacientesMockService } from './pacientes.service.mock';
-import { PacienteDto, CitaDto, NotaDto, AdjuntoMeta } from './pacientes.mock';
+import { PacienteDto, CitaDto, NotaDto, AdjuntoMeta, SesionPaciente, HistorialEvento, HistorialTipoEvento } from './pacientes.mock';
 import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../shared/confirm-dialog/confirm-dialog.component';
+import { PacienteSubmenuComponent, SeccionPaciente } from './components/paciente-submenu/paciente-submenu.component';
 
 @Component({
   selector: 'app-paciente-detalle',
   templateUrl: './paciente-detalle.page.html',
   styleUrls: ['./paciente-detalle.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule, ConfirmDialogComponent],
+  imports: [IonicModule, CommonModule, FormsModule, ConfirmDialogComponent, PacienteSubmenuComponent],
 })
 export class PacienteDetallePage implements OnInit {
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   paciente: PacienteDto | null = null;
 
-  // ─── Tabs ──────────────────────────────────────────────────────────────────
-  tabActiva: 'datos' | 'citas' | 'notas' = 'datos';
+  // ─── Secciones ─────────────────────────────────────────────────────────────
+  seccionActiva: SeccionPaciente = 'informacion';
+
+  // ─── Sesiones ───────────────────────────────────────────────────────────────
+  sesionesData: SesionPaciente[] = [];
 
   // ─── Citas filter ──────────────────────────────────────────────────────────
   filtroCitas: 'todos' | 'Confirmada' | 'Pendiente' | 'Cancelada' = 'todos';
@@ -58,6 +62,7 @@ export class PacienteDetallePage implements OnInit {
   ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     this.paciente = this.svc.getById(id) ?? null;
+    this.sesionesData = this.svc.getSesiones(id);
   }
 
   volver() {
@@ -105,8 +110,107 @@ export class PacienteDetallePage implements OnInit {
     };
   }
 
-  setTab(tab: 'datos' | 'citas' | 'notas') {
-    this.tabActiva = tab;
+  setSeccion(sec: SeccionPaciente) {
+    this.seccionActiva = sec;
+  }
+
+  // ─── Historial ─────────────────────────────────────────────────────────────
+  get historialEventos(): HistorialEvento[] {
+    if (!this.paciente) return [];
+    const eventos: HistorialEvento[] = [];
+
+    for (const cita of this.paciente.citas) {
+      const tipo: HistorialTipoEvento =
+        cita.estado === 'Confirmada' ? 'cita_confirmada'
+        : cita.estado === 'Cancelada' ? 'cita_cancelada'
+        : 'cita_pendiente';
+      eventos.push({
+        id: `cita-${cita.id_cita}`,
+        fecha: cita.fecha,
+        hora: cita.hora,
+        tipo,
+        descripcion: cita.tipo,
+        detalle: cita.notas,
+      });
+    }
+
+    for (const ses of this.sesionesData) {
+      eventos.push({
+        id: `sesion-${ses.id_sesion}`,
+        fecha: ses.fecha,
+        hora: ses.hora,
+        tipo: 'sesion_registrada',
+        descripcion: ses.tipo,
+        detalle: ses.resumen,
+      });
+    }
+
+    for (const nota of this.paciente.notas) {
+      eventos.push({
+        id: `nota-${nota.id_nota}`,
+        fecha: nota.fecha,
+        tipo: 'nota_agregada',
+        descripcion: 'Nota clínica registrada',
+        detalle: nota.contenido,
+      });
+    }
+
+    return eventos.sort((a, b) => {
+      const d = b.fecha.localeCompare(a.fecha);
+      if (d !== 0) return d;
+      return (b.hora ?? '').localeCompare(a.hora ?? '');
+    });
+  }
+
+  getEventoIcon(tipo: HistorialTipoEvento): string {
+    const map: Record<HistorialTipoEvento, string> = {
+      cita_confirmada:  'checkmark-circle-outline',
+      cita_completada:  'checkmark-done-circle-outline',
+      cita_cancelada:   'close-circle-outline',
+      cita_pendiente:   'time-outline',
+      cita_pospuesta:   'arrow-forward-circle-outline',
+      no_asistio:       'person-remove-outline',
+      sesion_registrada:'pulse-outline',
+      pago_registrado:  'card-outline',
+      pago_pendiente:   'wallet-outline',
+      reprogramacion:   'calendar-outline',
+      nota_agregada:    'document-text-outline',
+    };
+    return map[tipo] ?? 'ellipse-outline';
+  }
+
+  getEventoLabel(tipo: HistorialTipoEvento): string {
+    const map: Record<HistorialTipoEvento, string> = {
+      cita_confirmada:  'Cita confirmada',
+      cita_completada:  'Cita completada',
+      cita_cancelada:   'Cita cancelada',
+      cita_pendiente:   'Cita pendiente',
+      cita_pospuesta:   'Cita pospuesta',
+      no_asistio:       'No asistió',
+      sesion_registrada:'Sesión registrada',
+      pago_registrado:  'Pago registrado',
+      pago_pendiente:   'Pago pendiente',
+      reprogramacion:   'Reprogramación',
+      nota_agregada:    'Nota clínica',
+    };
+    return map[tipo] ?? tipo;
+  }
+
+  getEventoColorClass(tipo: HistorialTipoEvento): string {
+    const map: Record<HistorialTipoEvento, string> = {
+      cita_confirmada:  'ev--green',
+      cita_completada:  'ev--green',
+      cita_cancelada:   'ev--red',
+      cita_pendiente:   'ev--yellow',
+      cita_pospuesta:   'ev--yellow',
+      no_asistio:       'ev--red',
+      sesion_registrada:'ev--purple',
+      pago_registrado:  'ev--blue',
+      pago_pendiente:   'ev--yellow',
+      reprogramacion:   'ev--blue',
+      nota_agregada:    'ev--slate',
+    };
+    return map[tipo] ?? 'ev--slate';
   }
 
   // ─── Editar ────────────────────────────────────────────────────────────────

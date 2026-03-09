@@ -1,0 +1,147 @@
+:host { display: block; }
+
+// ─── Outer wrapper card ───────────────────────────────────────────────────────
+.esm-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  border-radius: 18px;
+  padding: 8px 8px 8px 20px;
+  box-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.04),
+    0 4px 20px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+// ─── Left label (desktop only) ────────────────────────────────────────────────
+.esm-wrap__label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: var(--text-muted, #94a3b8);
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-right: 14px;
+  border-right: 1px solid rgba(209, 213, 219, 0.5);
+  user-select: none;
+
+  @media (max-width: 600px) { display: none; }
+}
+
+.esm-wrap__icon {
+  font-size: 14px;
+  color: var(--primary, #6366f1);
+  opacity: 0.7;
+}
+
+// ─── Nav track (segmented control) ───────────────────────────────────────────
+.esm-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(241, 245, 249, 0.9);
+  border-radius: 13px;
+  padding: 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  flex: 1;
+  min-width: 0;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+// ─── Tab item ─────────────────────────────────────────────────────────────────
+.esm-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted, #64748b);
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition:
+    background  0.18s ease,
+    color       0.18s ease,
+    box-shadow  0.18s ease,
+    transform   0.15s ease;
+
+  // ── Hover (inactive) ──────────────────────────────────────────────────────
+  &:hover:not(.esm-item--active) {
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--text-strong, #1e293b);
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+  }
+
+  // ── Active: floating white pill — premium / iOS segmented style ───────────
+  &.esm-item--active {
+    background: #fff;
+    color: var(--primary, #6366f1);
+    font-weight: 650;
+    box-shadow:
+      0 2px 8px rgba(15, 23, 42, 0.09),
+      0 1px 2px rgba(15, 23, 42, 0.05),
+      inset 0 1px 0 rgba(255, 255, 255, 1);
+    transform: translateY(-0.5px);
+
+    .esm-item__icon {
+      background: rgba(99, 102, 241, 0.10);
+      border-radius: 6px;
+      padding: 2px;
+    }
+  }
+}
+
+.esm-item__icon {
+  font-size: 15px;
+  flex-shrink: 0;
+  color: inherit;
+  transition: background 0.18s, padding 0.18s, border-radius 0.18s;
+}
+
+.esm-item__label {
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+// ─── Responsive ───────────────────────────────────────────────────────────────
+@media (max-width: 600px) {
+  .esm-wrap {
+    padding: 6px;
+    border-radius: 15px;
+    gap: 0;
+  }
+
+  .esm-nav { border-radius: 11px; padding: 3px; }
+
+  .esm-item {
+    padding: 8px 13px;
+    font-size: 12.5px;
+    gap: 6px;
+    border-radius: 9px;
+  }
+
+  .esm-item__icon { font-size: 14px; }
+}
+
+@media (max-width: 400px) {
+  .esm-item__label { display: none; }
+
+  .esm-item { padding: 10px 14px; }
+  .esm-item__icon { font-size: 18px; }
+  .esm-item.esm-item--active .esm-item__icon { padding: 3px; }
+}
+

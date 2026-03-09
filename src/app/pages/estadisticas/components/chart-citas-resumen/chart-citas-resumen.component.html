@@ -1,0 +1,96 @@
+<div class="ccr-card" *ngIf="resumen">
+
+  <!-- ── Título ────────────────────────────────────────────────────────── -->
+  <div class="ccr-header">
+    <div class="ccr-header__left">
+      <div class="ccr-icon-wrap" style="background: rgba(99,102,241,0.1)">
+        <ion-icon name="analytics-outline" style="color:#6366f1"></ion-icon>
+      </div>
+      <div>
+        <p class="ccr-title">Distribución de citas</p>
+        <p class="ccr-sub">{{ resumen.totalPeriodo }} citas · predomina <strong>{{ resumen.estadoPredominante }}</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Contenido principal ────────────────────────────────────────────── -->
+  <div class="ccr-body">
+
+    <!-- Horas más ocupadas -->
+    <div class="ccr-col">
+      <p class="ccr-col__title">
+        <ion-icon name="time-outline"></ion-icon>
+        Horas más ocupadas
+      </p>
+      <div class="ccr-bars">
+        <div class="ccr-bar-row" *ngFor="let h of resumen.horasMasOcupadas">
+          <span class="ccr-bar-label">{{ h.hora }}</span>
+          <div class="ccr-bar-track">
+            <div class="ccr-bar-fill ccr-bar-fill--purple"
+                 [style.width]="barPct(h.citas, maxHoras)"></div>
+          </div>
+          <span class="ccr-bar-val">{{ h.citas }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Días más ocupados -->
+    <div class="ccr-col">
+      <p class="ccr-col__title">
+        <ion-icon name="calendar-number-outline"></ion-icon>
+        Días más ocupados
+      </p>
+      <div class="ccr-bars">
+        <div class="ccr-bar-row" *ngFor="let d of resumen.diasMasOcupados">
+          <span class="ccr-bar-label">{{ d.dia }}</span>
+          <div class="ccr-bar-track">
+            <div class="ccr-bar-fill ccr-bar-fill--teal"
+                 [style.width]="barPct(d.citas, maxDias)"></div>
+          </div>
+          <span class="ccr-bar-val">{{ d.citas }}</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Footer métricas ────────────────────────────────────────────────── -->
+  <div class="ccr-footer">
+
+    <div class="ccr-metric ccr-metric--warn" *ngIf="noAsistencias">
+      <ion-icon name="person-remove-outline"></ion-icon>
+      <div class="ccr-metric__body">
+        <span class="ccr-metric__val">{{ noAsistencias.total }}</span>
+        <span class="ccr-metric__lbl">No asistencias</span>
+      </div>
+      <span class="ccr-metric__pct">{{ noAsistencias.porcentaje }}%</span>
+    </div>
+
+    <div class="ccr-metric ccr-metric--danger" *ngIf="canceladas">
+      <ion-icon name="close-circle-outline"></ion-icon>
+      <div class="ccr-metric__body">
+        <span class="ccr-metric__val">{{ canceladas.total }}</span>
+        <span class="ccr-metric__lbl">Canceladas</span>
+      </div>
+      <span class="ccr-metric__pct">{{ canceladas.porcentaje }}%</span>
+    </div>
+
+    <div class="ccr-metric ccr-metric--info">
+      <ion-icon name="checkmark-circle-outline"></ion-icon>
+      <div class="ccr-metric__body">
+        <span class="ccr-metric__val">{{ resumen.estadoPredominante }}</span>
+        <span class="ccr-metric__lbl">Estado principal</span>
+      </div>
+    </div>
+
+    <div class="ccr-metric ccr-metric--primary">
+      <ion-icon name="bar-chart-outline"></ion-icon>
+      <div class="ccr-metric__body">
+        <span class="ccr-metric__val">{{ resumen.totalPeriodo }}</span>
+        <span class="ccr-metric__lbl">Total periodo</span>
+      </div>
+    </div>
+
+  </div>
+
+</div>
