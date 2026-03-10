@@ -5,9 +5,9 @@
 
 
       <!-- Logo a la izquierda -->
-      <div class="logo-full">
+      <button class="logo-full" (click)="irAAgenda()" aria-label="Ir a Agenda">
         <img src="assets/img/logo-barra.png" alt="Agendify logo" />
-      </div>
+      </button>
 
       <!-- Contenedor derecho -->
       <div class="toolbar-right">
@@ -31,7 +31,8 @@
   </ion-toolbar>
 
   <!-- Menú desplegable de usuario estilo premium -->
-  <div *ngIf="menuAbierto" class="user-dropdown" role="menu">
+  <div *ngIf="menuAbierto" class="user-dropdown-overlay" (click)="cerrarMenuUsuario()">
+  <div class="user-dropdown" role="menu" (click)="$event.stopPropagation()">
 
     <!-- HEADER DEL PERFIL -->
     <div class="user-header">
@@ -89,10 +90,12 @@
     </div>
 
   </div>
+  </div>
 
 
   <!-- NOTIFICACIONES ESTILO PANEL MODERNO -->
-  <div *ngIf="notificacionesAbiertas" class="notification-panel">
+  <div *ngIf="notificacionesAbiertas" class="notification-overlay" (click)="cerrarNotificaciones()">
+  <div class="notification-panel" (click)="$event.stopPropagation()">
 
     <div class="notif-header">
       <h2>Notificaciones</h2>
@@ -137,6 +140,7 @@
       <button (click)="verTodasNotificaciones()">Todas las notificaciones</button>
     </div>
 
+  </div>
   </div>
 
 

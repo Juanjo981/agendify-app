@@ -14,6 +14,8 @@
   padding: 0 16px;
   --background: none;
   overflow: visible;
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
 }
 
 .toolbar-content {
@@ -34,7 +36,24 @@
 .logo-full {
   display: flex;
   align-items: center;
+  justify-content: center;
   height: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    opacity: 0.82;
+    transform: scale(1.03);
+  }
+
+  &:active {
+    opacity: 0.65;
+    transform: scale(0.97);
+  }
 }
 
 .logo-full img {
@@ -628,6 +647,13 @@ ion-item:focus-visible {
 $primary: #7C3AED;
 $secondary: #C4B5FD;
 
+.notification-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: transparent;
+}
+
 .notification-panel {
   position: absolute;
   top: 90px;                   // ← MÁS SEPARADO DEL HEADER
@@ -902,6 +928,13 @@ $primary: #7C3AED;
 $secondary: #C4B5FD;
 
 /* MENÚ DE USUARIO CON LA MISMA ESTÉTICA DEL PANEL DE NOTIFICACIONES */
+.user-dropdown-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: transparent;
+}
+
 .user-dropdown {
   position: absolute;
   top: 90px;

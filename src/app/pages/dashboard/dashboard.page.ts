@@ -99,7 +99,11 @@ export class DashboardPage implements OnInit, OnDestroy {
 
   toggleNotificaciones() {
     this.notificacionesAbiertas = !this.notificacionesAbiertas;
-    this.menuAbierto = false; // opcional: cierra el menú de usuario
+    this.menuAbierto = false;
+  }
+
+  cerrarNotificaciones() {
+    this.notificacionesAbiertas = false;
   }
 
   verTodasNotificaciones() {
@@ -165,6 +169,18 @@ export class DashboardPage implements OnInit, OnDestroy {
   toggleMenu() {
     this.menuAbierto = !this.menuAbierto;
     this.notificacionesAbiertas = false;
+  }
+
+  cerrarMenuUsuario() {
+    this.menuAbierto = false;
+  }
+
+  irAAgenda() {
+    if (this.router.url.startsWith('/dashboard/agenda')) {
+      document.querySelector('ion-content')?.scrollToTop(300);
+    } else {
+      this.router.navigate(['/dashboard/agenda']);
+    }
   }
 
   irAMiPerfil() {
