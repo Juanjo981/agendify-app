@@ -498,8 +498,103 @@
       </div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════
-         9. AVANZADO
+    <!-- ═══════════════════════════════════════════════════════         10. EQUIPO
+    ╚═══════════════════════════════════════════════════════╝ -->
+    <div class="cfg-card">
+      <div class="cfg-card-header">
+        <div class="cfg-card-icon cfg-icon--purple">
+          <ion-icon name="people-circle-outline"></ion-icon>
+        </div>
+        <div>
+          <h3 class="cfg-card-title">Equipo de trabajo</h3>
+          <p class="cfg-card-desc">Administra los recepcionistas vinculados a tu cuenta</p>
+        </div>
+      </div>
+
+      <!-- Bloque 1: Código de vinculación -->
+      <div class="eq-codigo-card">
+        <div class="eq-codigo-header">
+          <div class="eq-codigo-icon">
+            <ion-icon name="link-outline"></ion-icon>
+          </div>
+          <div>
+            <p class="eq-codigo-title">Código de vinculación</p>
+            <p class="eq-codigo-hint">Comparte este código con tu recepcionista para que se vincule a tu cuenta al registrarse.</p>
+          </div>
+        </div>
+        <div class="eq-codigo-display">
+          <span class="eq-codigo-value">{{ codigoVinculacion }}</span>
+          <button class="eq-codigo-copy-btn" (click)="copiarCodigo()" [class.eq-codigo-copy-btn--copied]="copiado">
+            <ion-icon [name]="copiado ? 'checkmark-outline' : 'copy-outline'"></ion-icon>
+            <span>{{ copiado ? 'Copiado' : 'Copiar' }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="cfg-divider"></div>
+
+      <!-- Bloque 2: Recepcionistas vinculados -->
+      <div class="eq-team-header">
+        <p class="eq-team-title">Recepcionistas vinculados</p>
+        <span class="eq-team-count">{{ recepcionistas.length }}</span>
+      </div>
+
+      <!-- Estado vacío -->
+      <div *ngIf="recepcionistas.length === 0" class="eq-empty">
+        <div class="eq-empty-icon"><ion-icon name="person-add-outline"></ion-icon></div>
+        <p class="eq-empty-title">Aún no tienes recepcionistas vinculados</p>
+        <p class="eq-empty-desc">Comparte tu código de vinculación para que un recepcionista se una a tu equipo.</p>
+      </div>
+
+      <!-- Lista de recepcionistas -->
+      <div class="eq-list" *ngIf="recepcionistas.length > 0">
+        <div class="eq-row" *ngFor="let r of recepcionistas" [class.eq-row--inactive]="!r.activo">
+
+          <!-- Fila principal: avatar + info + badge de estado -->
+          <div class="eq-row-main">
+            <div class="eq-avatar" [class.eq-avatar--inactive]="!r.activo">
+              {{ r.initials }}
+            </div>
+
+            <div class="eq-info">
+              <p class="eq-name">{{ r.nombreCompleto }}</p>
+              <p class="eq-email">{{ r.email }}</p>
+              <p class="eq-since">Vinculado desde {{ r.fechaVinculacion }}</p>
+              <p class="eq-permisos-resumen">{{ r.permisosResumen }}</p>
+            </div>
+
+            <span class="eq-badge" [class.eq-badge--active]="r.activo" [class.eq-badge--inactive]="!r.activo">
+              {{ r.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </div>
+
+          <!-- Fila de acciones -->
+          <div class="eq-row-actions">
+            <button class="eq-btn-permisos" (click)="abrirModalPermisos(r)">
+              <ion-icon name="shield-checkmark-outline"></ion-icon>
+              <span>Permisos</span>
+              <span class="eq-btn-permisos-count">{{ r.permisosActivosCount }}/5</span>
+            </button>
+
+            <div class="eq-toggle-wrapper">
+              <span class="eq-toggle-label">{{ r.activo ? 'Activo' : 'Inactivo' }}</span>
+              <button
+                class="eq-toggle-btn"
+                [class.eq-toggle-btn--active]="r.activo"
+                (click)="toggleActivo(r)"
+                [attr.aria-label]="r.activo ? 'Desactivar recepcionista' : 'Activar recepcionista'"
+                [attr.aria-pressed]="r.activo">
+                <span class="eq-toggle-dot"></span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ╔═══════════════════════════════════════════════════════╗         9. AVANZADO
     ════════════════════════════════════════════════════════ -->
     <div class="cfg-card">
       <div class="cfg-card-header">
@@ -597,6 +692,62 @@
         <button class="cfg-confirm-btn cfg-confirm-btn--cancel" (click)="cancelarReset()">Cancelar</button>
         <button class="cfg-confirm-btn cfg-confirm-btn--confirm" (click)="confirmarReset()">Sí, restablecer</button>
       </div>
+    </div>
+
+    <!-- ╔═══════════════════════════════════════════════════════╗
+         MODAL DE PERMISOS
+    ╚═══════════════════════════════════════════════════════╝ -->
+    <div class="eq-modal-backdrop" *ngIf="modalPermisos" (click)="cerrarModalPermisos()"></div>
+    <div class="eq-modal" *ngIf="modalPermisos" role="dialog" aria-modal="true">
+
+      <!-- Drag handle decorativo -->
+      <div class="eq-modal-handle"></div>
+
+      <!-- Header -->
+      <div class="eq-modal-header">
+        <div class="eq-modal-avatar">{{ modalPermisos.initials }}</div>
+        <div class="eq-modal-header-info">
+          <p class="eq-modal-name">{{ modalPermisos.nombre }} {{ modalPermisos.apellido }}</p>
+          <p class="eq-modal-email">{{ modalPermisos.email }}</p>
+        </div>
+        <button class="eq-modal-close" (click)="cerrarModalPermisos()" aria-label="Cerrar modal">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+
+      <!-- Etiqueta de sección -->
+      <div class="eq-modal-subtitle">
+        <ion-icon name="shield-outline"></ion-icon>
+        Módulos de acceso
+      </div>
+
+      <!-- Lista de permisos editables -->
+      <div class="eq-modal-body">
+        <div class="eq-perm-row" *ngFor="let p of permisosDetalles">
+          <div class="eq-perm-icon-wrap">
+            <ion-icon [name]="p.icono"></ion-icon>
+          </div>
+          <div class="eq-perm-info">
+            <p class="eq-perm-label">{{ p.label }}</p>
+            <p class="eq-perm-desc">{{ p.descripcion }}</p>
+          </div>
+          <ion-toggle
+            [checked]="permisosEditando?.[p.key] ?? false"
+            (ionChange)="setPermiso(p.key, $event)"
+            class="eq-perm-toggle">
+          </ion-toggle>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="eq-modal-footer">
+        <button class="eq-modal-btn eq-modal-btn--cancel" (click)="cerrarModalPermisos()">Cancelar</button>
+        <button class="eq-modal-btn eq-modal-btn--save" (click)="guardarPermisos()">
+          <ion-icon name="checkmark-outline"></ion-icon>
+          Guardar cambios
+        </button>
+      </div>
+
     </div>
 
   </div>

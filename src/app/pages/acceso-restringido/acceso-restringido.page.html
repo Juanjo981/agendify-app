@@ -1,0 +1,35 @@
+<ion-content>
+  <div class="ar-wrapper">
+
+    <!-- Ilustración / icono central -->
+    <div class="ar-icon-ring">
+      <div class="ar-icon-inner">
+        <ion-icon name="lock-closed-outline"></ion-icon>
+      </div>
+    </div>
+
+    <!-- Texto -->
+    <h1 class="ar-title">Acceso restringido</h1>
+    <p class="ar-desc">
+      No tienes permisos para acceder a
+      <strong>{{ moduloOrigen }}</strong>.
+    </p>
+    <p class="ar-hint">
+      Si crees que debería tener acceso, habla con el profesional
+      que administra tu cuenta.
+    </p>
+
+    <!-- Acción principal -->
+    <button class="ar-btn-primary" (click)="volverAAgenda()">
+      <ion-icon name="calendar-outline"></ion-icon>
+      Ir a Agenda
+    </button>
+
+    <!-- Contexto del usuario actual -->
+    <div class="ar-user-pill">
+      <ion-icon name="person-circle-outline"></ion-icon>
+      <span>Sesión iniciada como <strong>{{ session.getNombre() }}</strong></span>
+    </div>
+
+  </div>
+</ion-content>

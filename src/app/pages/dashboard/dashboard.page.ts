@@ -5,6 +5,7 @@ import { AuthService } from 'src/app/services/auth';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
+import { AuthorizationService } from 'src/app/auth/authorization.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -57,7 +58,13 @@ export class DashboardPage implements OnInit, OnDestroy {
     private alertCtrl: AlertController,
     private platform: Platform,
     private router: Router,
+    public authSvc: AuthorizationService,
   ) { }
+
+  /** Atajo de plantilla: comprueba si el usuario puede acceder al módulo. */
+  puedeVer(segmento: string): boolean {
+    return this.authSvc.canAccessModule(segmento);
+  }
 
   startResizing(event: MouseEvent) {
     this.resizing = true;

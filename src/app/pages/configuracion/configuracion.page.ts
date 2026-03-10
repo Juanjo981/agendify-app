@@ -2,6 +2,10 @@ import { Component } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { EquipoMockService, PERMISOS_DETALLES } from 'src/app/services/equipo.mock';
+import { UsuarioMock } from 'src/app/shared/models/usuario.model';
+import { PermisosRecepcionista } from 'src/app/shared/models/permisos.model';
+import { PermisoDetalle, RecepcionistaEquipoViewModel } from 'src/app/shared/models/equipo.model';
 
 const DEFAULTS = {
   // General
@@ -70,9 +74,29 @@ export class ConfiguracionPage {
 
   showResetConfirm = false;
   savedToast = false;
+  copiado = false;
 
   readonly appVersion = '0.0.1-prealpha';
   readonly entorno = 'Desarrollo';
+
+  // ─── Datos de equipo (resueltos por EquipoMockService) ─────────────────────
+  readonly profesionalActual: UsuarioMock;
+  readonly codigoVinculacion: string;
+  recepcionistas: RecepcionistaEquipoViewModel[];
+
+  // ─── Modal de permisos ──────────────────────────────────────────────
+  /** Recepcionista cuyo modal de permisos está abierto, o null si cerrado */
+  modalPermisos: RecepcionistaEquipoViewModel | null = null;
+  /** Copia de trabajo de los permisos mientras el modal está abierto */
+  permisosEditando: PermisosRecepcionista | null = null;
+  /** Definición estática de permisos con etiquetas, descripciones e iconos */
+  readonly permisosDetalles: PermisoDetalle[] = PERMISOS_DETALLES;
+
+  constructor(private equipoSvc: EquipoMockService) {
+    this.profesionalActual  = this.equipoSvc.getProfesionalActual();
+    this.codigoVinculacion  = this.equipoSvc.getCodigoVinculacion();
+    this.recepcionistas     = this.equipoSvc.getRecepcionistasDelProfesional();
+  }
 
   readonly integraciones = [
     { nombre: 'Google Calendar', desc: 'Sincroniza citas automáticamente', icon: 'calendar-outline', color: 'linear-gradient(135deg,#4285F4,#34A853)' },
@@ -89,16 +113,58 @@ export class ConfiguracionPage {
     setTimeout(() => (this.savedToast = false), 2800);
   }
 
-  pedirReset() {
-    this.showResetConfirm = true;
-  }
-
-  cancelarReset() {
-    this.showResetConfirm = false;
-  }
-
+  pedirReset() { this.showResetConfirm = true; }
+  cancelarReset() { this.showResetConfirm = false; }
   confirmarReset() {
     this.config = { ...DEFAULTS };
     this.showResetConfirm = false;
+  }
+
+  copiarCodigo() {
+    navigator.clipboard.writeText(this.codigoVinculacion).catch(() => {});
+    this.copiado = true;
+    setTimeout(() => (this.copiado = false), 2000);
+  }
+
+  // ─── Modal de permisos ───────────────────────────────────────────────
+
+  /** Abre el modal de permisos para el recepcionista dado, con una copia de trabajo. */
+  abrirModalPermisos(r: RecepcionistaEquipoViewModel): void {
+    this.modalPermisos    = r;
+    this.permisosEditando = { ...r.permisos };
+  }
+
+  /** Descarta los cambios y cierra el modal. */
+  cerrarModalPermisos(): void {
+    this.modalPermisos    = null;
+    this.permisosEditando = null;
+  }
+
+  /**
+   * Actualiza un permiso individual en la copia de trabajo.
+   * Se llama desde el evento (ionChange) del ion-toggle del modal.
+   */
+  setPermiso(key: keyof PermisosRecepcionista, event: Event): void {
+    if (this.permisosEditando) {
+      this.permisosEditando[key] = (event as CustomEvent<{ checked: boolean }>).detail.checked;
+    }
+  }
+
+  /** Persiste los cambios mock y refresca la lista. */
+  guardarPermisos(): void {
+    if (!this.modalPermisos || !this.permisosEditando) return;
+    this.equipoSvc.updateRecepcionistaPermisos(this.modalPermisos.id, { ...this.permisosEditando });
+    this.recepcionistas = this.equipoSvc.getRecepcionistasDelProfesional();
+    this.cerrarModalPermisos();
+  }
+
+  /**
+   * Invierte el estado activo del recepcionista y refresca el listado.
+   * Llama a `setRecepcionistaActivo` con el valor negado para mayor claridad
+   * de intención (no depende de efectos de toggle interno del servicio).
+   */
+  toggleActivo(r: RecepcionistaEquipoViewModel): void {
+    this.equipoSvc.setRecepcionistaActivo(r.id, !r.activo);
+    this.recepcionistas = this.equipoSvc.getRecepcionistasDelProfesional();
   }
 }

@@ -76,7 +76,7 @@
           <p>Consultorio</p>
         </div>
 
-        <div class="mini-card" (click)="irAConfiguracion()">
+        <div *ngIf="puedeVer('configuracion')" class="mini-card" (click)="irAConfiguracion()">
           <ion-icon name="settings-outline"></ion-icon>
           <p>Configuración</p>
         </div>
@@ -160,31 +160,31 @@
         <ion-label>Agenda</ion-label>
       </ion-item>
 
-      <ion-item button routerLink="/dashboard/pacientes" routerLinkActive="activo"
+      <ion-item *ngIf="puedeVer('pacientes')" button routerLink="/dashboard/pacientes" routerLinkActive="activo"
         [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
         <ion-icon slot="start" name="people-outline"></ion-icon>
         <ion-label>Pacientes</ion-label>
       </ion-item>
 
-      <ion-item button routerLink="/dashboard/citas" routerLinkActive="activo"
+      <ion-item *ngIf="puedeVer('citas')" button routerLink="/dashboard/citas" routerLinkActive="activo"
         [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
         <ion-icon slot="start" name="clipboard-outline"></ion-icon>
         <ion-label>Citas</ion-label>
       </ion-item>
 
-      <ion-item button routerLink="/dashboard/sesiones" routerLinkActive="activo"
+      <ion-item *ngIf="puedeVer('sesiones')" button routerLink="/dashboard/sesiones" routerLinkActive="activo"
         [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
         <ion-icon slot="start" name="pulse-outline"></ion-icon>
         <ion-label>Sesiones</ion-label>
       </ion-item>
 
-      <ion-item button routerLink="/dashboard/estadisticas" routerLinkActive="activo"
+      <ion-item *ngIf="puedeVer('estadisticas')" button routerLink="/dashboard/estadisticas" routerLinkActive="activo"
         [routerLinkActiveOptions]="{ exact: false }" [class.contraido]="sidebarContraido" lines="none">
         <ion-icon slot="start" name="bar-chart-outline"></ion-icon>
         <ion-label>Estadísticas</ion-label>
       </ion-item>
 
-      <ion-item button routerLink="/dashboard/configuracion" routerLinkActive="activo"
+      <ion-item *ngIf="puedeVer('configuracion')" button routerLink="/dashboard/configuracion" routerLinkActive="activo"
         [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
         <ion-icon slot="start" name="settings-outline"></ion-icon>
         <ion-label>Configuración</ion-label>
@@ -227,23 +227,23 @@
       <ion-icon name="calendar-outline" slot="start"></ion-icon>
       <ion-label>Agenda</ion-label>
     </ion-item>
-    <ion-item button lines="none" (click)="irA('/dashboard/pacientes')">
+    <ion-item *ngIf="puedeVer('pacientes')" button lines="none" (click)="irA('/dashboard/pacientes')">
       <ion-icon name="people-outline" slot="start"></ion-icon>
       <ion-label>Pacientes</ion-label>
     </ion-item>
-    <ion-item button lines="none" (click)="irA('/dashboard/citas')">
+    <ion-item *ngIf="puedeVer('citas')" button lines="none" (click)="irA('/dashboard/citas')">
       <ion-icon slot="start" name="clipboard-outline"></ion-icon>
       <ion-label>Citas</ion-label>
     </ion-item>
-    <ion-item button lines="none" (click)="irA('/dashboard/sesiones')">
+    <ion-item *ngIf="puedeVer('sesiones')" button lines="none" (click)="irA('/dashboard/sesiones')">
       <ion-icon slot="start" name="pulse-outline"></ion-icon>
       <ion-label>Sesiones</ion-label>
     </ion-item>
-    <ion-item button lines="none" (click)="irA('/dashboard/estadisticas')">
+    <ion-item *ngIf="puedeVer('estadisticas')" button lines="none" (click)="irA('/dashboard/estadisticas')">
       <ion-icon name="bar-chart-outline" slot="start"></ion-icon>
       <ion-label>Estadísticas</ion-label>
     </ion-item>
-    <ion-item button lines="none" (click)="irA('/dashboard/configuracion')">
+    <ion-item *ngIf="puedeVer('configuracion')" button lines="none" (click)="irA('/dashboard/configuracion')">
       <ion-icon name="settings-outline" slot="start"></ion-icon>
       <ion-label>Configuración</ion-label>
     </ion-item>

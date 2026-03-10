@@ -1,0 +1,126 @@
+// ─── Acceso Restringido page ──────────────────────────────────────────────────
+
+ion-content {
+  --background: var(--glass-bg, #f8f7ff);
+}
+
+.ar-wrapper {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  min-height:      100%;
+  padding:         48px 28px;
+  text-align:      center;
+  gap:             0;
+}
+
+// ─── Icono ────────────────────────────────────────────────────────────────────
+
+.ar-icon-ring {
+  width:         96px;
+  height:        96px;
+  border-radius: 50%;
+  background:    rgba(99, 102, 241, 0.08);
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.ar-icon-inner {
+  width:         66px;
+  height:        66px;
+  border-radius: 50%;
+  background:    linear-gradient(135deg, #6366f1, #8b5cf6);
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  box-shadow:    0 8px 24px rgba(99, 102, 241, 0.34);
+
+  ion-icon {
+    font-size: 30px;
+    color:     #fff;
+  }
+}
+
+// ─── Texto ────────────────────────────────────────────────────────────────────
+
+.ar-title {
+  font-size:     26px;
+  font-weight:   800;
+  color:         var(--text-strong, #1e1b4b);
+  margin:        0 0 14px;
+  letter-spacing: -0.4px;
+}
+
+.ar-desc {
+  font-size:     16px;
+  color:         var(--text-muted, #4b5563);
+  margin:        0 0 10px;
+  line-height:   1.55;
+
+  strong {
+    color:       var(--primary-mid, #6366f1);
+    font-weight: 700;
+    text-transform: capitalize;
+  }
+}
+
+.ar-hint {
+  font-size:     13px;
+  color:         #9ca3af;
+  max-width:     310px;
+  line-height:   1.6;
+  margin:        0 0 36px;
+}
+
+// ─── Botón ────────────────────────────────────────────────────────────────────
+
+.ar-btn-primary {
+  display:         inline-flex;
+  align-items:     center;
+  gap:             8px;
+  padding:         14px 32px;
+  border-radius:   14px;
+  border:          none;
+  background:      linear-gradient(135deg, #6366f1, #8b5cf6);
+  color:           #fff;
+  font-size:       15px;
+  font-weight:     700;
+  cursor:          pointer;
+  box-shadow:      0 6px 20px rgba(99, 102, 241, 0.36);
+  margin-bottom:   28px;
+  transition:      all 0.18s ease;
+
+  ion-icon { font-size: 18px; }
+
+  &:active {
+    transform:  scale(0.97);
+    box-shadow: 0 3px 10px rgba(99, 102, 241, 0.28);
+  }
+}
+
+// ─── Píldora de usuario ───────────────────────────────────────────────────────
+
+.ar-user-pill {
+  display:       inline-flex;
+  align-items:   center;
+  gap:           7px;
+  padding:       8px 16px;
+  background:    rgba(99, 102, 241, 0.07);
+  border:        1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 999px;
+  font-size:     13px;
+  color:         var(--text-muted, #4b5563);
+
+  ion-icon {
+    font-size: 18px;
+    color:     var(--primary-mid, #6366f1);
+  }
+
+  strong {
+    color:       var(--text-strong, #1e1b4b);
+    font-weight: 700;
+  }
+}

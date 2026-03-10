@@ -4,6 +4,113 @@
   background-size: cover;
 }
 
+// ─── Role selector cards ───────────────────────────────────────────────────
+
+.rol-selector {
+  margin: 8px 0 16px;
+}
+
+.rol-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+
+.rol-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.rol-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 10px;
+  border-radius: 14px;
+  border: 2px solid #e5e7eb;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+
+  ion-icon {
+    font-size: 22px;
+    color: #9ca3af;
+    transition: color 0.2s ease;
+  }
+
+  &:hover {
+    border-color: #c4b5fd;
+    background: #f5f3ff;
+  }
+
+  &--active {
+    border-color: #7c3aed;
+    background: #f5f3ff;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+
+    ion-icon {
+      color: #7c3aed;
+    }
+
+    .rol-card-title {
+      color: #7c3aed;
+    }
+  }
+}
+
+.rol-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #374151;
+  transition: color 0.2s ease;
+}
+
+.rol-card-desc {
+  font-size: 11px;
+  color: #9ca3af;
+  line-height: 1.3;
+}
+
+// ─── Campo animado (especialidad / código vinculación) ──────────────────────
+
+.campo-animado {
+  animation: fadeSlideIn 0.22s ease;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.codigo-icon {
+  color: #7c3aed;
+  font-size: 18px;
+  margin-right: 4px;
+}
+
+.codigo-hint {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 6px 8px 12px;
+}
+
+.error-text--codigo {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  ion-icon {
+    flex-shrink: 0;
+    font-size: 14px;
+  }
+}
+
 .login-wrapper {
   display: flex;
   justify-content: center;

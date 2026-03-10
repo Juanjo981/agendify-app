@@ -79,27 +79,60 @@
           Teléfono es requerido
         </div>
 
-        <!-- ROL -->
-        <ion-item lines="none">
-          <ion-label>Rol</ion-label>
-          <ion-select formControlName="idRol" interface="popover">
-            <ion-select-option [value]="3">Profesional</ion-select-option>
-            <ion-select-option [value]="4">Recepcionista</ion-select-option>
-          </ion-select>
-        </ion-item>
-        <div *ngIf="registroForm.get('idRol')?.touched && registroForm.get('idRol')?.invalid" class="error-text">
-          Rol es requerido
+        <!-- ROL — selector de tipo de cuenta -->
+        <div class="rol-selector">
+          <p class="rol-label">Tipo de cuenta</p>
+          <div class="rol-cards">
+
+            <button type="button"
+              class="rol-card"
+              [class.rol-card--active]="rolActual === RolUsuario.PROFESIONAL"
+              (click)="seleccionarRol(RolUsuario.PROFESIONAL)">
+              <ion-icon name="briefcase-outline"></ion-icon>
+              <span class="rol-card-title">Profesional</span>
+              <span class="rol-card-desc">Médico, terapeuta o especialista</span>
+            </button>
+
+            <button type="button"
+              class="rol-card"
+              [class.rol-card--active]="rolActual === RolUsuario.RECEPCIONISTA"
+              (click)="seleccionarRol(RolUsuario.RECEPCIONISTA)">
+              <ion-icon name="people-outline"></ion-icon>
+              <span class="rol-card-title">Recepcionista</span>
+              <span class="rol-card-desc">Asistente de un profesional</span>
+            </button>
+
+          </div>
         </div>
 
         <!-- ESPECIALIDAD (solo si es profesional) -->
-        <ion-item *ngIf="registroForm.get('idRol')?.value == 3" lines="none">
+        <ion-item *ngIf="rolActual === RolUsuario.PROFESIONAL" lines="none" class="campo-animado">
           <ion-input placeholder="Especialidad" formControlName="especialidad"></ion-input>
         </ion-item>
         <div
-          *ngIf="registroForm.get('idRol')?.value == 3 && registroForm.get('especialidad')?.touched && registroForm.get('especialidad')?.invalid"
-          class="error-text"
-        >
+          *ngIf="rolActual === RolUsuario.PROFESIONAL && registroForm.get('especialidad')?.touched && registroForm.get('especialidad')?.invalid"
+          class="error-text">
           Especialidad es requerida
+        </div>
+
+        <!-- CÓDIGO DE VINCULACIÓN (solo si es recepcionista) -->
+        <div *ngIf="rolActual === RolUsuario.RECEPCIONISTA" class="campo-animado">
+          <ion-item lines="none">
+            <ion-icon name="link-outline" slot="start" class="codigo-icon"></ion-icon>
+            <ion-input
+              placeholder="Código de vinculación (ej. AGD-4F7K2Q)"
+              formControlName="codigoVinculacion"
+              [class.input-error]="errorCodigo || (registroForm.get('codigoVinculacion')?.touched && registroForm.get('codigoVinculacion')?.invalid)">
+            </ion-input>
+          </ion-item>
+          <div *ngIf="registroForm.get('codigoVinculacion')?.touched && registroForm.get('codigoVinculacion')?.invalid && !errorCodigo" class="error-text">
+            El código de vinculación es requerido
+          </div>
+          <div *ngIf="errorCodigo" class="error-text error-text--codigo">
+            <ion-icon name="alert-circle-outline"></ion-icon>
+            {{ errorCodigo }}
+          </div>
+          <p class="codigo-hint">Solicita el código al profesional al que te vincularás.</p>
         </div>
 
         <!-- BOTÓN REGISTRARSE -->
