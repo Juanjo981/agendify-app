@@ -735,10 +735,33 @@ export class AgendaPage implements OnDestroy {
     this.closeNewAppointmentPanel();
   }
 
-  ngOnDestroy() {
+  // ─── Ionic lifecycle: cerrar todo al salir de la página ─────────────────
+  ionViewWillLeave() {
+    this.cerrarModales();
+  }
+
+  cerrarModales() {
+    this.selectedDay = null;
+    this.showNewAppointmentPanel = false;
+    this.showDateModal = false;
+    this.showHourModal = false;
+    this.showPacienteModal = false;
+    this.showBuscarPacienteModal = false;
+    this.showQuickActions = false;
+    this.showCqaConfirm = false;
+    this.showBlockModal = false;
+    this.citaActiva = null;
+    this.cqaConfirmConfig = null;
+    this.cqaConfirmFn = null;
     document.body.classList.remove('modal-open');
-    this.openPopover?.dismiss();
-    this.openPopover = null;
+    if (this.openPopover) {
+      this.openPopover.dismiss();
+      this.openPopover = null;
+    }
+  }
+
+  ngOnDestroy() {
+    this.cerrarModales();
   }
 
   // ----------------------------------------
