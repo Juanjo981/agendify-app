@@ -3162,3 +3162,299 @@ ion-modal.block-modal::part(content) {
   }
 }
 
+
+
+// =================================================================
+//  QUICK ACTIONS — Popover (desktop) / Bottom sheet (mobile)
+// =================================================================
+
+@keyframes cqaFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+// ── Backdrop ─────────────────────────────────────────────────────────────────
+.cqa-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  animation: cqaFadeIn 0.15s ease;
+  background: rgba(0, 0, 0, 0.22);          // Mobile: dim overlay
+
+  @media (min-width: 768px) {
+    background: transparent;                 // Desktop: transparent click-away
+  }
+}
+
+// ── Panel: bottom sheet on mobile, floating popover on desktop ────────────────
+.cqa-panel {
+  position: fixed;
+  z-index: 1001;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+
+  // ─ Mobile default: bottom sheet ────────────────────────────────────────────
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-radius: 20px 20px 0 0;
+  max-height: 62vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-shadow: 0 -6px 32px rgba(0, 0, 0, 0.12), 0 -1px 0 rgba(0, 0, 0, 0.04);
+  // safe area + bottom nav clearance (~68px)
+  padding-bottom: calc(max(env(safe-area-inset-bottom), 6px) + 68px);
+
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+
+  &.cqa-panel--open { transform: translateY(0); }
+
+  // ─ Desktop: floating popover ───────────────────────────────────────────────
+  @media (min-width: 768px) {
+    // Reset bottom-sheet geometry
+    bottom: auto;
+    right: auto;
+    left: 0;                        // overridden below with CSS var
+    // Anchor to click position via CSS custom properties set by Angular
+    top: var(--cqa-top, 100px);
+    left: var(--cqa-left, 100px);   // this wins (last declaration)
+    width: 360px;
+    max-height: 82vh;
+    border-radius: 16px;
+    padding-bottom: 10px;
+    border: 1px solid rgba(209, 213, 219, 0.5);
+    box-shadow:
+      0 8px 24px rgba(15, 23, 42, 0.10),
+      0 24px 64px rgba(15, 23, 42, 0.08);
+
+    // Entrance: scale up + fade from top-left origin (where cursor was)
+    transform: scale(0.93) translateY(-6px);
+    opacity: 0;
+    transform-origin: top left;
+    transition:
+      transform 0.2s cubic-bezier(0.34, 1.4, 0.64, 1),
+      opacity   0.15s ease;
+
+    &.cqa-panel--open {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+// ── Handle (mobile only) ─────────────────────────────────────────────────────
+.cqa-handle {
+  width: 36px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
+  margin: 10px auto 0;
+
+  @media (min-width: 768px) { display: none; }
+}
+
+// ── Header ───────────────────────────────────────────────────────────────────
+.cqa-header {
+  display: flex;
+  align-items: center;
+  padding: 14px 14px 10px;
+  gap: 10px;
+}
+
+.cqa-patient {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cqa-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.cqa-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.cqa-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cqa-meta {
+  font-size: 11.5px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cqa-close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(226, 232, 240, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+
+  ion-icon { font-size: 15px; color: #64748b; }
+  &:hover { background: #e2e8f0; }
+}
+
+// ── Badges ────────────────────────────────────────────────────────────────────
+.cqa-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px 12px;
+  flex-wrap: wrap;
+}
+
+.cqa-estado {
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cqa-estado--confirmada { background: #e0e7ff; color: #4338ca; }
+.cqa-estado--completada { background: #d1fae5; color: #065f46; }
+.cqa-estado--pendiente  { background: #fef3c7; color: #92400e; }
+.cqa-estado--cancelada  { background: #fee2e2; color: #991b1b; }
+.cqa-estado--no-asistio { background: #f1f5f9; color: #475569; }
+.cqa-estado--pospuesta  { background: #ede9fe; color: #6d28d9; }
+
+.cqa-pago-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  ion-icon { font-size: 11px; flex-shrink: 0; }
+
+  &--ok      { background: #d1fae5; color: #059669; }
+  &--pend    { background: #fef3c7; color: #d97706; }
+  &--parcial { background: #fffbeb; color: #b45309; }
+}
+
+// ── Separator ─────────────────────────────────────────────────────────────────
+.cqa-sep {
+  height: 1px;
+  background: rgba(226, 232, 240, 0.65);
+  margin: 4px 14px;
+}
+
+// ── Action list ───────────────────────────────────────────────────────────────
+.cqa-actions {
+  padding: 4px 6px 4px;
+}
+
+.cqa-act {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 10px 8px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  text-align: left;
+  transition: background 0.13s;
+
+  &:hover:not(:disabled) {
+    background: rgba(99, 102, 241, 0.05);
+    .cqa-act-icon { background: rgba(99, 102, 241, 0.1); }
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  &--primary {
+    font-weight: 600;
+    color: #4f46e5;
+    .cqa-act-icon { background: rgba(99, 102, 241, 0.08); ion-icon { color: #4f46e5; } }
+    &:hover:not(:disabled) { background: rgba(99, 102, 241, 0.07); .cqa-act-icon { background: rgba(99, 102, 241, 0.14); } }
+  }
+
+  &--success {
+    color: #047857;
+    .cqa-act-icon { background: rgba(16, 185, 129, 0.08); ion-icon { color: #059669; } }
+    &:hover:not(:disabled) { background: rgba(16, 185, 129, 0.05); .cqa-act-icon { background: rgba(16, 185, 129, 0.14); } }
+  }
+
+  &--warning {
+    color: #b45309;
+    .cqa-act-icon { background: rgba(245, 158, 11, 0.08); ion-icon { color: #d97706; } }
+    &:hover:not(:disabled) { background: rgba(245, 158, 11, 0.05); .cqa-act-icon { background: rgba(245, 158, 11, 0.14); } }
+  }
+
+  &--danger {
+    color: #dc2626;
+    .cqa-act-icon { background: rgba(239, 68, 68, 0.08); ion-icon { color: #ef4444; } }
+    &:hover:not(:disabled) { background: rgba(239, 68, 68, 0.05); .cqa-act-icon { background: rgba(239, 68, 68, 0.14); } }
+  }
+
+  &--purple {
+    color: #6d28d9;
+    .cqa-act-icon { background: rgba(124, 58, 237, 0.08); ion-icon { color: #7c3aed; } }
+    &:hover:not(:disabled) { background: rgba(124, 58, 237, 0.05); .cqa-act-icon { background: rgba(124, 58, 237, 0.14); } }
+  }
+}
+
+.cqa-act-icon {
+  width: 31px;
+  height: 31px;
+  border-radius: 8px;
+  background: rgba(241, 245, 249, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.13s;
+  ion-icon { font-size: 16px; color: #64748b; }
+}
+
+.cqa-act-label { flex: 1; }
+
+.cqa-act-arrow {
+  font-size: 13px;
+  color: #cbd5e1;
+  flex-shrink: 0;
+}

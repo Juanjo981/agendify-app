@@ -8,7 +8,7 @@
   background: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(6px) saturate(130%);
   -webkit-backdrop-filter: blur(6px) saturate(130%);
-  z-index: 950;
+  z-index: 1100;
   animation: cfdFadeIn 0.15s ease;
 }
 
@@ -29,7 +29,7 @@
     0 24px 64px rgba(15, 23, 42, 0.18),
     0 4px 16px rgba(15, 23, 42, 0.07);
 
-  z-index: 951;
+  z-index: 1101;
   padding: 28px 28px 24px;
 
   display: flex;

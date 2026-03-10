@@ -1,0 +1,85 @@
+<!-- ─── Header ──────────────────────────────────────────────────────────── -->
+<div class="cpop-header">
+  <div class="cpop-avatar">{{ iniciales }}</div>
+  <div class="cpop-info">
+    <span class="cpop-name">{{ citaActiva.apellido_paciente }}, {{ citaActiva.nombre_paciente }}</span>
+    <span class="cpop-meta">
+      {{ citaActiva.hora_inicio }}–{{ citaActiva.hora_fin }}
+      <ng-container *ngIf="citaActiva.motivo">&nbsp;·&nbsp;{{ citaActiva.motivo }}</ng-container>
+    </span>
+  </div>
+</div>
+
+<!-- ─── Badges ───────────────────────────────────────────────────────────── -->
+<div class="cpop-badges">
+  <span class="cpop-badge" [ngClass]="estadoClaseMap[citaActiva.estado]">
+    {{ citaActiva.estado }}
+  </span>
+  <span class="cpop-badge cpop-badge--pago"
+    [class.cpop-badge--pago-ok]="citaActiva.estado_pago === 'Pagado'"
+    [class.cpop-badge--pago-pend]="citaActiva.estado_pago === 'Pendiente'"
+    [class.cpop-badge--pago-parcial]="citaActiva.estado_pago === 'Parcial'">
+    <ion-icon name="cash-outline"></ion-icon>
+    {{ citaActiva.estado_pago }}&nbsp;·&nbsp;€{{ citaActiva.monto_pagado }}/{{ citaActiva.monto }}
+  </span>
+</div>
+
+<div class="cpop-sep"></div>
+
+<!-- ─── Actions ─────────────────────────────────────────────────────────── -->
+<div class="cpop-actions">
+
+  <!-- Navigate group -->
+  <button class="cpop-act cpop-act--primary" (click)="act('verDetalle')">
+    <div class="cpop-act-icon"><ion-icon name="document-text-outline"></ion-icon></div>
+    <span class="cpop-act-label">Ver detalle completo</span>
+    <ion-icon name="chevron-forward-outline" class="cpop-act-arrow"></ion-icon>
+  </button>
+
+  <button class="cpop-act" (click)="act('paciente')">
+    <div class="cpop-act-icon"><ion-icon name="person-outline"></ion-icon></div>
+    <span class="cpop-act-label">Ver paciente</span>
+    <ion-icon name="chevron-forward-outline" class="cpop-act-arrow"></ion-icon>
+  </button>
+
+  <button class="cpop-act" (click)="act('reprogramar')">
+    <div class="cpop-act-icon"><ion-icon name="calendar-outline"></ion-icon></div>
+    <span class="cpop-act-label">Reprogramar</span>
+    <ion-icon name="chevron-forward-outline" class="cpop-act-arrow"></ion-icon>
+  </button>
+
+  <div class="cpop-sep"></div>
+
+  <!-- State group -->
+  <button class="cpop-act cpop-act--success"
+    (click)="act('completada')"
+    [disabled]="isDisabled('completada')">
+    <div class="cpop-act-icon"><ion-icon name="checkmark-circle-outline"></ion-icon></div>
+    <span class="cpop-act-label">Marcar como completada</span>
+  </button>
+
+  <button class="cpop-act cpop-act--warning"
+    (click)="act('noAsistio')"
+    [disabled]="isDisabled('noAsistio')">
+    <div class="cpop-act-icon"><ion-icon name="person-remove-outline"></ion-icon></div>
+    <span class="cpop-act-label">No asistió</span>
+  </button>
+
+  <button class="cpop-act cpop-act--danger"
+    (click)="act('cancelar')"
+    [disabled]="isDisabled('cancelar')">
+    <div class="cpop-act-icon"><ion-icon name="close-circle-outline"></ion-icon></div>
+    <span class="cpop-act-label">Cancelar cita</span>
+  </button>
+
+  <!-- Crear sesión: only when Completada + no session yet -->
+  <ng-container *ngIf="showCrearSesion">
+    <div class="cpop-sep"></div>
+    <button class="cpop-act cpop-act--purple" (click)="act('crearSesion')">
+      <div class="cpop-act-icon"><ion-icon name="pulse-outline"></ion-icon></div>
+      <span class="cpop-act-label">Crear sesión clínica</span>
+      <ion-icon name="chevron-forward-outline" class="cpop-act-arrow"></ion-icon>
+    </button>
+  </ng-container>
+
+</div>

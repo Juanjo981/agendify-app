@@ -1,17 +1,21 @@
 import { CitaFormModalComponent, CitaFormContext, CitaFormData } from '../../shared/components/cita-form-modal/cita-form-modal.component';
-import { Component, OnDestroy } from '@angular/core';
+import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../shared/confirm-dialog/confirm-dialog.component';
+import { CqaPopoverComponent, CqaAction } from './components/cqa-popover/cqa-popover.component';
+import { Component, HostListener, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, createAnimation } from '@ionic/angular';
+import { IonicModule, PopoverController, createAnimation } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { PacientesMockService } from '../pacientes/pacientes.service.mock';
 import { CitasMockService } from '../citas/citas.service.mock';
+import { CitaDto, EstadoCita } from '../citas/models/cita.model';
 
 interface CalendarEvent {
   title: string;
   time: string;
   color: string;
   status?: 'Confirmada' | 'Pendiente' | 'Cancelada';
+  cita?: CitaDto;
 }
 
 interface CalendarDay {
@@ -28,7 +32,7 @@ interface CalendarDay {
 @Component({
   selector: 'app-agenda',
   templateUrl: './agenda.page.html',
-  imports: [IonicModule, CommonModule, FormsModule, CitaFormModalComponent],
+  imports: [IonicModule, CommonModule, FormsModule, CitaFormModalComponent, ConfirmDialogComponent, CqaPopoverComponent],
   standalone: true,
   styleUrls: ['./agenda.page.scss'],
 })
@@ -120,7 +124,7 @@ export class AgendaPage implements OnDestroy {
   private dragCurrentY = 0;
   private isDragging = false;
 
-  constructor(private pacientesSvc: PacientesMockService, private router: Router, private citasSvc: CitasMockService) {
+  constructor(private pacientesSvc: PacientesMockService, private router: Router, private citasSvc: CitasMockService, private popoverCtrl: PopoverController) {
     this.pacientes = this.pacientesSvc.getAll().map(p => ({
       id: p.id_paciente,
       nombre: `${p.nombre} ${p.apellido}`,
@@ -146,8 +150,44 @@ export class AgendaPage implements OnDestroy {
   apptPrefill: CitaFormContext = {};
   apptShowBanner = false;
   apptContextLabel = '';
+  // ─── Quick Actions Sheet ────────────────────────────────────────────────────
+  citaActiva: CitaDto | null = null;
+  showQuickActions = false;
+  private openPopover: HTMLIonPopoverElement | null = null;
 
+  // ─── Confirm dialog (inline over the QA sheet) ───────────────────────────
+  showCqaConfirm = false;
+  cqaConfirmConfig: ConfirmDialogConfig | null = null;
+  private cqaConfirmFn: (() => void) | null = null;
+
+  readonly estadoClaseMap: Record<string, string> = {
+    'Confirmada': 'cqa-estado--confirmada',
+    'Completada': 'cqa-estado--completada',
+    'Pendiente':  'cqa-estado--pendiente',
+    'Cancelada':  'cqa-estado--cancelada',
+    'No asistió': 'cqa-estado--no-asistio',
+    'Pospuesta':  'cqa-estado--pospuesta',
+  };
   // ─────────────────────────────────────────────────────────────────────────────
+
+  // ─── Map CitaDto → CalendarEvent ───────────────────────────────────────────────────
+  private mapCitaToEvent(c: CitaDto): CalendarEvent {
+    const colorMap: Record<string, string> = {
+      'Confirmada': '#6366f1',
+      'Completada': '#10b981',
+      'Pendiente':  '#f59e0b',
+      'Cancelada':  '#ef4444',
+      'No asistió': '#64748b',
+      'Pospuesta':  '#8b5cf6',
+    };
+    return {
+      title: `${c.nombre_paciente} ${c.apellido_paciente}`,
+      time: c.hora_inicio,
+      color: colorMap[c.estado] ?? '#94a3b8',
+      status: c.estado as any,
+      cita: c,
+    };
+  }
 
   getColorForDay(citas: number): string {
     if (citas >= this.maxCitasPorDia) {
@@ -233,12 +273,21 @@ export class AgendaPage implements OnDestroy {
       this.calendarDays.push(this.buildDay(d, false));
     }
 
+    // Build date → citas map
+    const citasByDate = new Map<string, CitaDto[]>();
+    for (const c of this.citasSvc.getCitas()) {
+      const list = citasByDate.get(c.fecha) ?? [];
+      list.push(c);
+      citasByDate.set(c.fecha, list);
+    }
+
     // Días del mes actual
     for (let i = 1; i <= daysInMonth; i++) {
       const d = new Date(this.currentYear, this.currentMonth, i);
-      this.calendarDays.push(
-        this.buildDay(d, true, Math.random() > 0.7 ? this.exampleEvents : [])
-      );
+      const isoDate = this.formatDateLocal(d);
+      const citasDelDia = citasByDate.get(isoDate) ?? [];
+      const events = citasDelDia.map(c => this.mapCitaToEvent(c));
+      this.calendarDays.push(this.buildDay(d, true, events));
     }
 
     // Relleno hasta completar 42 días (6 filas)
@@ -463,13 +512,198 @@ export class AgendaPage implements OnDestroy {
     this.closeBlockModal();
   }
 
+  // Kept for backward compat — delegates to quick actions
   verCita(ev: CalendarEvent) {
-    console.log('📄 Ver detalle de cita:', ev);
+    this.abrirQuickActions(ev);
   }
 
-  // ----------------------------------------
+  // ─── Quick Actions ───────────────────────────────────────────────────────
+
+  @HostListener('window:resize')
+  onWindowResize() {
+    if (this.openPopover) {
+      this.openPopover.dismiss();
+      this.openPopover = null;
+    }
+  }
+
+  async abrirQuickActions(ev: CalendarEvent, mouseEvent?: MouseEvent) {
+    if (!ev.cita) return;
+
+    if (window.innerWidth >= 768 && mouseEvent) {
+      // Capture the real button rect synchronously (before any await).
+      const anchor = (mouseEvent.currentTarget ?? mouseEvent.target) as HTMLElement;
+      const rect = anchor.getBoundingClientRect();
+
+      // Clamp horizontal position so the 340px popover never overflows the
+      // viewport edges (left or right) and keeps a 24px safe margin.
+      const POPOVER_W = 340;
+      const MARGIN    = 24;
+      const vw        = window.innerWidth;
+      const clampedLeft = Math.max(MARGIN, Math.min(rect.left, vw - POPOVER_W - MARGIN));
+
+      // Synthetic anchor: same vertical position as the real button but with
+      // the clamped horizontal position, so Ionic anchors correctly to it.
+      const syntheticAnchor = {
+        getBoundingClientRect: (): DOMRect => ({
+          top:    rect.top,
+          left:   clampedLeft,
+          right:  clampedLeft + rect.width,
+          bottom: rect.bottom,
+          width:  rect.width,
+          height: rect.height,
+          x:      clampedLeft,
+          y:      rect.top,
+          toJSON() { return {}; },
+        } as DOMRect),
+      };
+
+      // ── Desktop: Ionic PopoverController anchored to the synthetic element ──
+      const popover = await this.popoverCtrl.create({
+        component: CqaPopoverComponent,
+        event: { target: syntheticAnchor } as unknown as Event,
+        componentProps: { citaActiva: ev.cita },
+        cssClass: 'cqa-popover',
+        showBackdrop: false,
+        dismissOnSelect: false,
+        side: 'bottom',
+        alignment: 'start',
+      });
+      this.openPopover = popover;
+      await popover.present();
+      const { data } = await popover.onWillDismiss<{ action: CqaAction }>();
+      this.openPopover = null;
+      if (data?.action) this.handlePopoverAction(ev.cita, data.action);
+      return;
+    }
+
+    // ── Mobile: bottom sheet ──────────────────────────────────────────────────
+    this.citaActiva = ev.cita;
+    requestAnimationFrame(() => { this.showQuickActions = true; });
+  }
+
+  private handlePopoverAction(cita: CitaDto, action: CqaAction) {
+    this.citaActiva = cita;
+    switch (action) {
+      case 'verDetalle':  this.accionVerDetalle(); break;
+      case 'paciente':    this.accionAbrirPaciente(); break;
+      case 'reprogramar': this.accionReprogramar(); break;
+      case 'completada':  this.confirmarCambioEstado('Completada'); break;
+      case 'noAsistio':   this.confirmarCambioEstado('No asistió'); break;
+      case 'cancelar':    this.confirmarCambioEstado('Cancelada'); break;
+      case 'crearSesion': this.accionCrearSesion(); break;
+    }
+  }
+
+  cerrarQuickActions() {
+    this.showQuickActions = false;
+    // Keep citaActiva alive long enough for the close animation to finish
+    // (mobile: 300ms slide-down; desktop: 200ms fade-out)
+    setTimeout(() => { this.citaActiva = null; }, 320);
+  }
+
+  // ─── Inline confirm logic ────────────────────────────────────────────────
+
+  pedirConfirmacion(config: ConfirmDialogConfig, fn: () => void) {
+    this.cqaConfirmConfig = config;
+    this.cqaConfirmFn = fn;
+    this.showCqaConfirm = true;
+  }
+
+  onCqaConfirmado() {
+    this.showCqaConfirm = false;
+    this.cqaConfirmFn?.();
+    this.cqaConfirmFn = null;
+    this.cqaConfirmConfig = null;
+  }
+
+  onCqaCancelado() {
+    this.showCqaConfirm = false;
+    this.cqaConfirmFn = null;
+    this.cqaConfirmConfig = null;
+  }
+
+  /** Asks for confirmation before calling cambiarEstadoCita */
+  confirmarCambioEstado(estado: EstadoCita) {
+    if (!this.citaActiva) return;
+    const nombre = `${this.citaActiva.nombre_paciente} ${this.citaActiva.apellido_paciente}`;
+    const configs: Partial<Record<EstadoCita, ConfirmDialogConfig>> = {
+      'Completada': {
+        title: 'Marcar como completada',
+        message: '¿La cita con este paciente fue realizada?',
+        subject: nombre,
+        confirmLabel: 'Sí, completada',
+        cancelLabel: 'Volver',
+        icon: 'checkmark-circle-outline',
+        variant: 'primary',
+      },
+      'No asistió': {
+        title: 'Registrar inasistencia',
+        message: 'El paciente no se presentó a la cita con',
+        subject: nombre,
+        confirmLabel: 'Confirmar',
+        cancelLabel: 'Volver',
+        variant: 'danger',
+        icon: 'person-remove-outline',
+      },
+      'Cancelada': {
+        title: 'Cancelar cita',
+        message: 'Se cancelará la cita de',
+        subject: nombre,
+        confirmLabel: 'Cancelar cita',
+        cancelLabel: 'Volver',
+        variant: 'danger',
+        icon: 'close-circle-outline',
+      },
+    };
+    const cfg = configs[estado];
+    if (cfg) {
+      this.pedirConfirmacion(cfg, () => this.cambiarEstadoCita(estado));
+    } else {
+      this.cambiarEstadoCita(estado);
+    }
+  }
+
+  accionVerDetalle() {
+    if (!this.citaActiva) return;
+    this.router.navigate(['/dashboard/citas', this.citaActiva.id_cita]);
+  }
+
+  accionAbrirPaciente() {
+    if (!this.citaActiva) return;
+    this.router.navigate(['/dashboard/pacientes', this.citaActiva.id_paciente]);
+  }
+
+  accionReprogramar() {
+    if (!this.citaActiva) return;
+    this.apptPrefill = {
+      fecha:      this.citaActiva.fecha,
+      horaInicio: this.citaActiva.hora_inicio,
+      horaFin:    this.citaActiva.hora_fin,
+    };
+    this.apptShowBanner = true;
+    this.apptContextLabel = 'Reprogramando cita';
+    this.cerrarQuickActions();
+    document.body.classList.add('modal-open');
+    this.showNewAppointmentPanel = true;
+  }
+
+  cambiarEstadoCita(estado: EstadoCita) {
+    if (!this.citaActiva) return;
+    this.citasSvc.updateCita({ ...this.citaActiva, estado });
+    this.cerrarQuickActions();
+    this.generateCalendar();
+  }
+
+  accionCrearSesion() {
+    if (!this.citaActiva) return;
+    // Navigate to sesiones with context — extend when sesiones module supports it
+    this.router.navigate(['/dashboard/sesiones']);
+  }
+
+  // ────────────────────────────────────────────────────────
   // ACCIONES (Nueva cita)
-  // ----------------------------------------
+  // ────────────────────────────────────────────────────────
   nuevaCita() {
     const fecha = this.selectedDay
       ? this.selectedDay.fullDate
@@ -503,6 +737,8 @@ export class AgendaPage implements OnDestroy {
 
   ngOnDestroy() {
     document.body.classList.remove('modal-open');
+    this.openPopover?.dismiss();
+    this.openPopover = null;
   }
 
   // ----------------------------------------

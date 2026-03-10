@@ -1,0 +1,183 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// CQA Popover — compact context menu for Agenda (desktop)
+// ─────────────────────────────────────────────────────────────────────────────
+
+:host {
+  display: block;
+  padding: 8px 0 10px;
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+.cpop-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 8px;
+}
+
+.cpop-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.cpop-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.cpop-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cpop-meta {
+  font-size: 11.5px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// ── Badges ────────────────────────────────────────────────────────────────────
+.cpop-badges {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 14px 8px;
+  flex-wrap: wrap;
+}
+
+.cpop-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  ion-icon { font-size: 10px; flex-shrink: 0; }
+
+  &--confirmada { background: #e0e7ff; color: #4338ca; }
+  &--completada { background: #d1fae5; color: #065f46; }
+  &--pendiente  { background: #fef3c7; color: #92400e; }
+  &--cancelada  { background: #fee2e2; color: #991b1b; }
+  &--no-asistio { background: #f1f5f9; color: #475569; }
+  &--pospuesta  { background: #ede9fe; color: #6d28d9; }
+
+  &--pago-ok      { background: #d1fae5; color: #059669; }
+  &--pago-pend    { background: #fef3c7; color: #d97706; }
+  &--pago-parcial { background: #fffbeb; color: #b45309; }
+}
+
+// ── Separator ─────────────────────────────────────────────────────────────────
+.cpop-sep {
+  height: 1px;
+  background: rgba(226, 232, 240, 0.7);
+  margin: 3px 10px;
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+.cpop-actions {
+  padding: 2px 4px;
+}
+
+.cpop-act {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 9px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #1e293b;
+  text-align: left;
+  transition: background 0.12s;
+
+  &:hover:not(:disabled) {
+    background: rgba(99, 102, 241, 0.05);
+    .cpop-act-icon { background: rgba(99, 102, 241, 0.10); }
+  }
+
+  &:active:not(:disabled) { background: rgba(99, 102, 241, 0.09); }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  // ── Variants ──────────────────────────────────────────────
+  &--primary {
+    font-weight: 600;
+    color: #4f46e5;
+    .cpop-act-icon { background: rgba(99,102,241,0.08); ion-icon { color: #4f46e5; } }
+    &:hover:not(:disabled) { background: rgba(99,102,241,0.07); .cpop-act-icon { background: rgba(99,102,241,0.14); } }
+  }
+
+  &--success {
+    color: #047857;
+    .cpop-act-icon { background: rgba(16,185,129,0.08); ion-icon { color: #059669; } }
+    &:hover:not(:disabled) { background: rgba(16,185,129,0.05); .cpop-act-icon { background: rgba(16,185,129,0.14); } }
+  }
+
+  &--warning {
+    color: #b45309;
+    .cpop-act-icon { background: rgba(245,158,11,0.08); ion-icon { color: #d97706; } }
+    &:hover:not(:disabled) { background: rgba(245,158,11,0.05); .cpop-act-icon { background: rgba(245,158,11,0.14); } }
+  }
+
+  &--danger {
+    color: #dc2626;
+    .cpop-act-icon { background: rgba(239,68,68,0.08); ion-icon { color: #ef4444; } }
+    &:hover:not(:disabled) { background: rgba(239,68,68,0.05); .cpop-act-icon { background: rgba(239,68,68,0.14); } }
+  }
+
+  &--purple {
+    color: #6d28d9;
+    .cpop-act-icon { background: rgba(124,58,237,0.08); ion-icon { color: #7c3aed; } }
+    &:hover:not(:disabled) { background: rgba(124,58,237,0.05); .cpop-act-icon { background: rgba(124,58,237,0.14); } }
+  }
+}
+
+.cpop-act-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: rgba(241, 245, 249, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.12s;
+  ion-icon { font-size: 15px; color: #64748b; }
+}
+
+.cpop-act-label { flex: 1; }
+
+.cpop-act-arrow {
+  font-size: 12px;
+  color: #cbd5e1;
+  flex-shrink: 0;
+}
