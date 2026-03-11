@@ -28,6 +28,10 @@ const routes: Routes = [
   {
     path: 'pacientes/:id',
     loadComponent: () => import('../pacientes/paciente-detalle.page').then(m => m.PacienteDetallePage)
+  },
+  {
+    path: 'soporte',
+    loadComponent: () => import('../soporte/soporte.page').then(m => m.SoportePage)
   }
 ];
 

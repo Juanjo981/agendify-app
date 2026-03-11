@@ -1,0 +1,104 @@
+<ion-content class="sop-content">
+  <div class="sop-wrapper">
+
+    <!-- ═══════════════════════════════════════════════════════
+         HERO
+    ════════════════════════════════════════════════════════ -->
+    <div class="sop-hero">
+      <div class="sop-hero-icon">
+        <ion-icon name="help-buoy-outline"></ion-icon>
+      </div>
+      <div class="sop-hero-text">
+        <h1 class="sop-hero-title">Centro de ayuda</h1>
+        <p class="sop-hero-sub">¿Necesitas ayuda con Agendify?</p>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SECCIÓN 1 — CONTACTO
+    ════════════════════════════════════════════════════════ -->
+    <div class="sop-card">
+      <div class="sop-card-header">
+        <div class="sop-card-icon-wrap sop-icon--indigo">
+          <ion-icon name="mail-outline"></ion-icon>
+        </div>
+        <h2 class="sop-card-title">Soporte</h2>
+      </div>
+
+      <p class="sop-card-body">
+        Si tienes algún problema o pregunta sobre Agendify puedes contactarnos directamente.
+      </p>
+
+      <div class="sop-contact-row">
+        <ion-icon name="at-outline" class="sop-contact-icon"></ion-icon>
+        <span class="sop-contact-email">soporte@agendify.app</span>
+      </div>
+
+      <button class="sop-btn sop-btn--primary" (click)="enviarCorreo()">
+        <ion-icon name="send-outline"></ion-icon>
+        Enviar correo
+      </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SECCIÓN 2 — PREGUNTAS FRECUENTES
+    ════════════════════════════════════════════════════════ -->
+    <div class="sop-card">
+      <div class="sop-card-header">
+        <div class="sop-card-icon-wrap sop-icon--teal">
+          <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+        </div>
+        <h2 class="sop-card-title">Preguntas frecuentes</h2>
+      </div>
+
+      <div class="sop-faq-list">
+        <div
+          *ngFor="let faq of faqs; let i = index"
+          class="sop-faq-item"
+          [class.sop-faq-item--open]="faq.abierta"
+          (click)="toggleFaq(i)"
+        >
+          <div class="sop-faq-row">
+            <div class="sop-faq-icon-wrap">
+              <ion-icon [name]="faq.icono"></ion-icon>
+            </div>
+            <span class="sop-faq-pregunta">{{ faq.pregunta }}</span>
+            <ion-icon
+              class="sop-faq-chevron"
+              [name]="faq.abierta ? 'chevron-up-outline' : 'chevron-down-outline'"
+            ></ion-icon>
+          </div>
+          <p class="sop-faq-respuesta" *ngIf="faq.abierta">{{ faq.respuesta }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SECCIÓN 3 — INFORMACIÓN DEL SISTEMA
+    ════════════════════════════════════════════════════════ -->
+    <div class="sop-card">
+      <div class="sop-card-header">
+        <div class="sop-card-icon-wrap sop-icon--slate">
+          <ion-icon name="information-circle-outline"></ion-icon>
+        </div>
+        <h2 class="sop-card-title">Información del sistema</h2>
+      </div>
+
+      <div class="sop-info-grid">
+        <div class="sop-info-item">
+          <span class="sop-info-label">Versión</span>
+          <span class="sop-info-value">{{ appVersion }}</span>
+        </div>
+        <div class="sop-info-item">
+          <span class="sop-info-label">Build</span>
+          <span class="sop-info-value">{{ buildVersion }}</span>
+        </div>
+        <div class="sop-info-item">
+          <span class="sop-info-label">Plataforma</span>
+          <span class="sop-info-value">Agendify V1</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</ion-content>

@@ -1,0 +1,109 @@
+<ion-content class="act-content">
+  <div class="act-wrapper">
+
+    <!-- ═══════════════════════════════════════════════════════
+         HERO
+    ════════════════════════════════════════════════════════ -->
+    <div class="act-hero">
+      <div class="act-hero-icon">
+        <ion-icon name="pulse-outline"></ion-icon>
+      </div>
+      <div class="act-hero-text">
+        <h1 class="act-hero-title">Actividad</h1>
+        <p class="act-hero-sub">Historial de eventos del sistema</p>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         FILTROS
+    ════════════════════════════════════════════════════════ -->
+    <div class="act-filters">
+      <button
+        *ngFor="let f of filtros"
+        class="act-filter-btn"
+        [class.act-filter-btn--active]="filtroActivo === f.value"
+        (click)="setFiltro(f.value)"
+      >
+        <ion-icon [name]="f.icono"></ion-icon>
+        {{ f.label }}
+      </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         LISTA
+    ════════════════════════════════════════════════════════ -->
+
+    <!-- HOY -->
+    <ng-container *ngIf="eventoHoy.length > 0">
+      <div class="act-group-label">Hoy</div>
+      <div class="act-card">
+        <div
+          *ngFor="let ev of eventoHoy; let last = last"
+          class="act-item"
+          [class.act-item--last]="last"
+        >
+          <div class="act-item-icon act-icon--{{ ev.tipo }}">
+            <ion-icon [name]="ev.icono"></ion-icon>
+          </div>
+          <div class="act-item-body">
+            <p class="act-item-title">{{ ev.titulo }}</p>
+            <p class="act-item-desc">{{ ev.descripcion }}</p>
+            <span class="act-item-time">{{ ev.tiempo }}</span>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- AYER -->
+    <ng-container *ngIf="eventoAyer.length > 0">
+      <div class="act-group-label">Ayer</div>
+      <div class="act-card">
+        <div
+          *ngFor="let ev of eventoAyer; let last = last"
+          class="act-item"
+          [class.act-item--last]="last"
+        >
+          <div class="act-item-icon act-icon--{{ ev.tipo }}">
+            <ion-icon [name]="ev.icono"></ion-icon>
+          </div>
+          <div class="act-item-body">
+            <p class="act-item-title">{{ ev.titulo }}</p>
+            <p class="act-item-desc">{{ ev.descripcion }}</p>
+            <span class="act-item-time">{{ ev.tiempo }}</span>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ANTERIORES -->
+    <ng-container *ngIf="eventoAnteriores.length > 0">
+      <div class="act-group-label">Anteriores</div>
+      <div class="act-card">
+        <div
+          *ngFor="let ev of eventoAnteriores; let last = last"
+          class="act-item"
+          [class.act-item--last]="last"
+        >
+          <div class="act-item-icon act-icon--{{ ev.tipo }}">
+            <ion-icon [name]="ev.icono"></ion-icon>
+          </div>
+          <div class="act-item-body">
+            <p class="act-item-title">{{ ev.titulo }}</p>
+            <p class="act-item-desc">{{ ev.descripcion }}</p>
+            <span class="act-item-time">{{ ev.tiempo }}</span>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- VACÍO -->
+    <div
+      *ngIf="eventoHoy.length === 0 && eventoAyer.length === 0 && eventoAnteriores.length === 0"
+      class="act-empty"
+    >
+      <ion-icon name="checkmark-circle-outline"></ion-icon>
+      <p>Sin actividad para este filtro</p>
+    </div>
+
+  </div>
+</ion-content>

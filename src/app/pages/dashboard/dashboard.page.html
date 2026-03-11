@@ -43,101 +43,119 @@
       <div class="user-info">
         <h3>{{ nombreUsuario }}</h3>
         <p>Profesional de la salud</p>
-      </div>
-
-      <button class="logout-btn" (click)="confirmarSalir()">Salir</button>
-    </div>
-
-  
-    <!-- SECCIÓN: ACTIVIDAD -->
-    <div class="section">
-      <label class="section-title">ACTIVIDAD</label>
-
-      <div class="section-item" (click)="irAMiPerfil()">
-        <ion-icon name="time-outline"></ion-icon>
-        <span>Mi Actividad</span>
-      </div>
-
-      <div class="section-item" (click)="irAMiPerfil()">
-        <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
-        <span>Mensajes</span>
+        <span class="user-brand">Agendify</span>
       </div>
     </div>
 
+    <!-- CONTENIDO DE SECCIONES -->
+    <div class="user-dropdown-content">
 
-    <!-- SECCIÓN: MI CUENTA -->
-    <div class="section">
-      <label class="section-title">MI CUENTA</label>
+      <!-- SECCIÓN: MI CUENTA -->
+      <div class="section">
+        <label class="section-title">MI CUENTA</label>
 
-      <div class="card-grid">
-
-        <div class="mini-card" (click)="irAMiPerfil()">
-          <ion-icon name="business-outline"></ion-icon>
-          <p>Consultorio</p>
+        <div class="section-item" (click)="irAMiPerfil()">
+          <ion-icon name="person-outline"></ion-icon>
+          <span>Mi perfil</span>
+          <ion-icon name="chevron-forward-outline" class="section-item__chevron"></ion-icon>
         </div>
 
-        <div *appHasPermission="'configuracion'" class="mini-card" (click)="irAConfiguracion()">
+        <div *appHasPermission="'configuracion'" class="section-item" (click)="irAConfiguracion()">
           <ion-icon name="settings-outline"></ion-icon>
-          <p>Configuración</p>
+          <span>Configuración</span>
+          <ion-icon name="chevron-forward-outline" class="section-item__chevron"></ion-icon>
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <!-- SECCIÓN: ORGANIZACIÓN -->
+      <div class="section">
+        <label class="section-title">ORGANIZACIÓN</label>
+
+        <!--
+        <div class="section-item" (click)="irAConsultorio()">
+          <ion-icon name="business-outline"></ion-icon>
+          <span>Consultorio</span>
+          <ion-icon name="chevron-forward-outline" class="section-item__chevron"></ion-icon>
+        </div>
+        -->
+
+        <div class="section-item" (click)="irAEquipo()">
+          <ion-icon name="people-outline"></ion-icon>
+          <span>Equipo de trabajo</span>
+          <ion-icon name="chevron-forward-outline" class="section-item__chevron"></ion-icon>
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <!-- SECCIÓN: SISTEMA -->
+      <div class="section menu-section--last">
+        <label class="section-title">SISTEMA</label>
+
+        <div class="section-item" (click)="irAAyuda()">
+          <ion-icon name="help-circle-outline"></ion-icon>
+          <span>Ayuda / soporte</span>
+          <ion-icon name="chevron-forward-outline" class="section-item__chevron"></ion-icon>
         </div>
 
+        <div class="section-item section-item--logout" (click)="confirmarSalir()">
+          <ion-icon name="log-out-outline"></ion-icon>
+          <span>Cerrar sesión</span>
+        </div>
       </div>
-    </div>
 
-    <!-- BOTÓN FINAL -->
-    <div class="footer-btn">
-      <button (click)="irAMiPerfil()">Ir a mi perfil</button>
     </div>
 
   </div>
   </div>
 
 
-  <!-- NOTIFICACIONES ESTILO PANEL MODERNO -->
+  <!-- NOTIFICACIONES -->
   <div *ngIf="notificacionesAbiertas" class="notification-overlay" (click)="cerrarNotificaciones()">
   <div class="notification-panel" (click)="$event.stopPropagation()">
 
     <div class="notif-header">
       <h2>Notificaciones</h2>
-      <p>Tienes {{ activeList.length }} sin leer</p>
+      <p>Tienes {{ cantidadSinLeer() }} sin leer</p>
     </div>
 
-    <!-- Tabs -->
-    <div class="notif-tabs">
-      <div class="tab" [class.active]="activeTab === 'messages'" (click)="changeTab('messages')">
-        Mensajes
-      </div>
-
-      <div class="tab" [class.active]="activeTab === 'events'" (click)="changeTab('events')">
-        Eventos
-      </div>
-
-      <div class="tab" [class.active]="activeTab === 'status'" (click)="changeTab('status')">
-        Estado
-      </div>
-    </div>
-
-    <!-- Contenedor general -->
+    <!-- Lista única de actividad reciente -->
     <div class="notif-list">
-      <div class="timeline-line"></div>
 
-      <div *ngFor="let item of activeList" class="notif-row">
-        <div class="dot"></div>
-
-        <div class="notif-content">
-          <p class="notif-text">{{ item.text }}</p>
-          <span class="notif-time">{{ item.fecha }}</span>
+      <div
+        *ngFor="let item of notificaciones; let i = index"
+        class="notif-row"
+        [class.notif-row--leida]="item.leida"
+      >
+        <div class="notif-icon-wrap" [ngClass]="'notif-icon--' + item.tipo">
+          <ion-icon [name]="item.icono"></ion-icon>
         </div>
 
-        <button class="notif-read-btn">
-          ✓
-        </button>
+        <div class="notif-content">
+          <p class="notif-title">{{ item.titulo }}</p>
+          <p class="notif-desc">{{ item.descripcion }}</p>
+          <span class="notif-time">{{ item.tiempo }}</span>
+        </div>
+
+        <div class="notif-actions">
+          <span *ngIf="!item.leida" class="notif-unread-dot"></span>
+          <button class="notif-read-btn" (click)="marcarLeida(i)" *ngIf="!item.leida" title="Marcar como leída">
+            <ion-icon name="checkmark-outline"></ion-icon>
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="notificaciones.length === 0" class="notif-empty">
+        <ion-icon name="checkmark-circle-outline"></ion-icon>
+        <p>Sin notificaciones pendientes</p>
       </div>
 
     </div>
 
     <div class="notif-footer">
-      <button (click)="verTodasNotificaciones()">Todas las notificaciones</button>
+      <button (click)="verTodasNotificaciones()">Ver toda la actividad</button>
     </div>
 
   </div>

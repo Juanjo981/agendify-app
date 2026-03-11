@@ -1,0 +1,273 @@
+// ─── Design tokens (same as rest of Agendify) ────────────────────────────────
+// --radius-xl: 22px | --radius-lg: 16px | --radius-md: 12px
+// --shadow-soft | --glass-bg | --glass-blur | --border-subtle
+// --primary: #3b3f92 | --primary-mid: #6366f1
+// --text-strong: #0f172a | --text-muted: #64748b
+
+// ─── Page shell ──────────────────────────────────────────────────────────────
+.sop-content {
+  --background: transparent;
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+.sop-wrapper {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 20px 80px;
+}
+
+// ─── Animation ───────────────────────────────────────────────────────────────
+@keyframes sopFadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ─── Hero ────────────────────────────────────────────────────────────────────
+.sop-hero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: var(--glass-bg, rgba(247, 249, 252, 0.82));
+  backdrop-filter: var(--glass-blur, blur(18px) saturate(150%));
+  -webkit-backdrop-filter: var(--glass-blur, blur(18px) saturate(150%));
+  border: 1px solid rgba(209, 213, 219, 0.45);
+  border-radius: var(--radius-xl, 22px);
+  padding: 24px 28px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-soft, 0 2px 12px rgba(15, 23, 42, 0.07));
+  animation: sopFadeUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.sop-hero-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg, 16px);
+  background: linear-gradient(135deg, var(--primary-mid, #6366f1), var(--primary, #3b3f92));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.30);
+}
+
+.sop-hero-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-strong, #0f172a);
+  margin: 0 0 4px;
+  letter-spacing: -0.3px;
+}
+
+.sop-hero-sub {
+  font-size: 14px;
+  color: var(--text-muted, #64748b);
+  margin: 0;
+}
+
+// ─── Card shell ──────────────────────────────────────────────────────────────
+.sop-card {
+  background: var(--glass-bg, rgba(247, 249, 252, 0.82));
+  backdrop-filter: var(--glass-blur, blur(18px) saturate(150%));
+  -webkit-backdrop-filter: var(--glass-blur, blur(18px) saturate(150%));
+  border: 1px solid rgba(209, 213, 219, 0.45);
+  border-radius: var(--radius-xl, 22px);
+  padding: 24px 28px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-soft, 0 2px 12px rgba(15, 23, 42, 0.07));
+  animation: sopFadeUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both;
+}
+
+.sop-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.sop-card-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md, 12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #fff;
+  flex-shrink: 0;
+
+  &.sop-icon--indigo { background: linear-gradient(135deg, var(--primary-mid, #6366f1), var(--primary, #3b3f92)); }
+  &.sop-icon--teal   { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+  &.sop-icon--slate  { background: linear-gradient(135deg, #64748b, #475569); }
+}
+
+.sop-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-strong, #0f172a);
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+
+// ─── Contacto ────────────────────────────────────────────────────────────────
+.sop-card-body {
+  font-size: 14px;
+  color: var(--text-muted, #64748b);
+  line-height: 1.6;
+  margin: 0 0 18px;
+}
+
+.sop-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(99, 102, 241, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: var(--radius-md, 12px);
+  padding: 12px 16px;
+  margin-bottom: 18px;
+}
+
+.sop-contact-icon {
+  font-size: 20px;
+  color: var(--primary-mid, #6366f1);
+  flex-shrink: 0;
+}
+
+.sop-contact-email {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-mid, #6366f1);
+  letter-spacing: 0.1px;
+}
+
+.sop-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  border-radius: var(--radius-pill, 999px);
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &--primary {
+    background: linear-gradient(135deg, var(--primary-mid, #6366f1), var(--primary, #3b3f92));
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(99, 102, 241, 0.30);
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 18px rgba(99, 102, 241, 0.38);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  ion-icon { font-size: 16px; }
+}
+
+// ─── FAQ ─────────────────────────────────────────────────────────────────────
+.sop-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sop-faq-item {
+  border: 1px solid rgba(209, 213, 219, 0.5);
+  border-radius: var(--radius-lg, 16px);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.08);
+  }
+
+  &--open {
+    border-color: rgba(99, 102, 241, 0.35);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.07);
+  }
+}
+
+.sop-faq-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.sop-faq-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--primary-mid, #6366f1);
+  flex-shrink: 0;
+}
+
+.sop-faq-pregunta {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-strong, #0f172a);
+}
+
+.sop-faq-chevron {
+  font-size: 16px;
+  color: var(--text-muted, #64748b);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.sop-faq-respuesta {
+  font-size: 13px;
+  color: var(--text-muted, #64748b);
+  line-height: 1.65;
+  padding: 0 16px 14px 60px;
+  margin: 0;
+  animation: sopFadeUp 0.2s ease both;
+}
+
+// ─── Info del sistema ─────────────────────────────────────────────────────────
+.sop-info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sop-info-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  background: rgba(248, 250, 252, 0.7);
+  border: 1px solid rgba(209, 213, 219, 0.40);
+  border-radius: var(--radius-md, 12px);
+}
+
+.sop-info-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted, #64748b);
+}
+
+.sop-info-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-strong, #0f172a);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  letter-spacing: 0.3px;
+}

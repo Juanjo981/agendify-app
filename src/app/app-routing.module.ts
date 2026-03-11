@@ -78,6 +78,14 @@ const routes: Routes = [
         loadComponent: () =>
           import('./pages/acceso-restringido/acceso-restringido.page').then(m => m.AccesoRestringidoPage)
       },
+      {
+        path: 'soporte',
+        loadComponent: () => import('./pages/soporte/soporte.page').then(m => m.SoportePage)
+      },
+      {
+        path: 'actividad',
+        loadComponent: () => import('./pages/actividad/actividad.page').then(m => m.ActividadPage)
+      },
     ]
   },
   {

@@ -28,26 +28,54 @@ export class DashboardPage implements OnInit, OnDestroy {
   notificacionesAbiertas = false;
   menuInferiorAbierto = false;
 
-  // Tabs
-  activeTab: 'messages' | 'events' | 'status' = 'messages';
-  activeList: any[] = [];
-
-  // Datos de prueba (puedes reemplazar después por backend)
-  notificacionesMessages = [
-    { text: 'Nuevo mensaje de Ana', fecha: 'Hace 2 min' },
-    { text: 'Tu cita ha sido confirmada', fecha: 'Hace 10 min' },
-    { text: 'Tu cita ha sido cancelada', fecha: 'Ayer' },
-    
-  ];
-
-  notificacionesEvents = [
-    { text: 'La sesión de Pedro comienza en 1 hora', fecha: 'Hoy 2:00 PM' },
-    { text: 'Recordatorio: grupo semanal mañana', fecha: 'Ayer' },
-  ];
-
-  notificacionesStatus = [
-    { text: 'Servidor sincronizado correctamente', fecha: 'Hace 5 min' },
-    { text: 'Respaldo automático completado', fecha: 'Hoy 7:00 AM' },
+  notificaciones: {
+    tipo: 'agenda' | 'equipo' | 'sistema';
+    icono: string;
+    titulo: string;
+    descripcion: string;
+    tiempo: string;
+    leida: boolean;
+  }[] = [
+    {
+      tipo: 'agenda',
+      icono: 'calendar-outline',
+      titulo: 'Cita próxima',
+      descripcion: 'Tienes una cita con Carlos Méndez hoy a las 4:00 PM.',
+      tiempo: 'Hace 10 min',
+      leida: false,
+    },
+    {
+      tipo: 'agenda',
+      icono: 'calendar-outline',
+      titulo: 'Nueva cita registrada',
+      descripcion: 'Se agendó una consulta para María López el 15 de marzo.',
+      tiempo: 'Hace 1 hora',
+      leida: false,
+    },
+    {
+      tipo: 'agenda',
+      icono: 'refresh-outline',
+      titulo: 'Cita reprogramada',
+      descripcion: 'La cita de Pedro García fue movida al 18 de marzo a las 11:00 AM.',
+      tiempo: 'Ayer',
+      leida: false,
+    },
+    {
+      tipo: 'equipo',
+      icono: 'people-outline',
+      titulo: 'Recepcionista vinculado',
+      descripcion: 'Laura Torres se unió al consultorio como recepcionista.',
+      tiempo: 'Hace 2 días',
+      leida: true,
+    },
+    {
+      tipo: 'sistema',
+      icono: 'settings-outline',
+      titulo: 'Configuración actualizada',
+      descripcion: 'Los horarios del consultorio fueron actualizados correctamente.',
+      tiempo: 'Hace 3 días',
+      leida: true,
+    },
   ];
 
   
@@ -79,25 +107,16 @@ export class DashboardPage implements OnInit, OnDestroy {
     document.addEventListener('mouseup', stopResize);
   }
 
-  changeTab(tab: 'messages' | 'events' | 'status') {
-    this.activeTab = tab;
-    this.updateActiveList();
+  cantidadSinLeer(): number {
+    return this.notificaciones.filter(n => !n.leida).length;
   }
 
-  updateActiveList() {
-    if (this.activeTab === 'messages') {
-      this.activeList = this.notificacionesMessages;
-    }
-    else if (this.activeTab === 'events') {
-      this.activeList = this.notificacionesEvents;
-    }
-    else {
-      this.activeList = this.notificacionesStatus;
-    }
+  marcarLeida(index: number) {
+    this.notificaciones[index].leida = true;
   }
 
   totalNotificaciones() {
-    return this.notificacionesMessages.length + this.notificacionesEvents.length + this.notificacionesStatus.length;
+    return this.cantidadSinLeer();
   }
 
   toggleNotificaciones() {
@@ -111,8 +130,7 @@ export class DashboardPage implements OnInit, OnDestroy {
 
   verTodasNotificaciones() {
     this.notificacionesAbiertas = false;
-    // Aquí navegas o abres una pantalla de historial si lo deseas
-    console.log('Ver todas las notificaciones');
+    this.navCtrl.navigateForward('dashboard/actividad');
   }
 
   // ─── Responsive: actualiza isMobile al redimensionar el viewport ────────
@@ -160,8 +178,6 @@ export class DashboardPage implements OnInit, OnDestroy {
     // Estado inicial basado en el ancho actual
     this.isMobile = window.innerWidth < 1025;
     this.mostrarBotonMenu = this.isMobile;
-
-    this.updateActiveList();
   }
 
   ngOnDestroy() {
@@ -194,6 +210,21 @@ export class DashboardPage implements OnInit, OnDestroy {
   irAConfiguracion() {
     this.menuAbierto = false;
     this.navCtrl.navigateForward('dashboard/configuracion');
+  }
+
+  irAConsultorio() {
+    this.menuAbierto = false;
+    this.navCtrl.navigateForward('/dashboard/perfil');
+  }
+
+  irAEquipo() {
+    this.menuAbierto = false;
+    this.navCtrl.navigateForward('dashboard/configuracion');
+  }
+
+  irAAyuda() {
+    this.menuAbierto = false;
+    this.navCtrl.navigateForward('dashboard/soporte');
   }
 
   cerrarSesion() {
