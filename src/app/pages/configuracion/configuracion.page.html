@@ -15,656 +15,600 @@
     </div>
 
     <!-- ═══════════════════════════════════════════════════════
-         1. GENERAL
+         TAB NAV BAR
     ════════════════════════════════════════════════════════ -->
-    <div class="cfg-card">
-      <div class="cfg-card-header">
-        <div class="cfg-card-icon cfg-icon--blue">
-          <ion-icon name="apps-outline"></ion-icon>
-        </div>
-        <div>
-          <h3 class="cfg-card-title">General</h3>
-          <p class="cfg-card-desc">Comportamiento básico de la aplicación</p>
-        </div>
+    <div class="cfg-tabs-wrap">
+      <div class="cfg-tabs-label" aria-hidden="true">
+        <ion-icon name="options-outline"></ion-icon>
+        <span>Sección</span>
       </div>
-
-      <div class="cfg-toggle-list">
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Recibir boletines</p>
-            <p class="cfg-toggle-sub">Novedades, actualizaciones y contenido relevante de Agendify</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.boletines" class="cfg-toggle"></ion-toggle>
-        </div>
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Recibir encuestas</p>
-            <p class="cfg-toggle-sub">Participa en encuestas de mejora del producto</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.encuestas" class="cfg-toggle"></ion-toggle>
-        </div>
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Mostrar consejos</p>
-            <p class="cfg-toggle-sub">Tips contextuales mientras usas la aplicación</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.consejosApp" class="cfg-toggle"></ion-toggle>
-        </div>
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Ayudas visuales y tooltips</p>
-            <p class="cfg-toggle-sub">Descripciones emergentes en botones y campos</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.tooltips" class="cfg-toggle"></ion-toggle>
-        </div>
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Confirmar antes de acciones importantes</p>
-            <p class="cfg-toggle-sub">Solicitar confirmación en operaciones críticas como borrado</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.confirmarAcciones" class="cfg-toggle"></ion-toggle>
-        </div>
-      </div>
+      <nav class="cfg-tabs-nav" role="navigation" aria-label="Secciones de configuración">
+        <button
+          *ngFor="let tab of cfgTabs"
+          class="cfg-tab-item"
+          [class.cfg-tab-item--active]="activeTab === tab.id"
+          (click)="setTab(tab.id)"
+          [attr.aria-current]="activeTab === tab.id ? 'page' : null">
+          <ion-icon [name]="tab.icon" class="cfg-tab-icon" aria-hidden="true"></ion-icon>
+          <span class="cfg-tab-label">{{ tab.label }}</span>
+          <span *ngIf="tab.id === 'equipo' && recepcionistas.length > 0" class="cfg-tab-badge">
+            {{ recepcionistas.length }}
+          </span>
+        </button>
+      </nav>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════
-         2. AGENDA
+         TAB: GENERAL  —  Apariencia
     ════════════════════════════════════════════════════════ -->
-    <div class="cfg-card">
-      <div class="cfg-card-header">
-        <div class="cfg-card-icon cfg-icon--indigo">
-          <ion-icon name="calendar-outline"></ion-icon>
-        </div>
-        <div>
-          <h3 class="cfg-card-title">Agenda</h3>
-          <p class="cfg-card-desc">Comportamiento y visualización del calendario</p>
-        </div>
-      </div>
+    <div *ngIf="activeTab === 'general'" class="cfg-tab-content">
 
-      <div class="cfg-fields">
-        <div class="cfg-field">
-          <label class="cfg-field-label">Vista predeterminada</label>
-          <ion-select [(ngModel)]="config.vistaDefault" interface="popover" class="cfg-select">
-            <ion-select-option value="dia">Día</ion-select-option>
-            <ion-select-option value="semana">Semana</ion-select-option>
-            <ion-select-option value="mes">Mes</ion-select-option>
-          </ion-select>
-        </div>
-        <div class="cfg-field">
-          <label class="cfg-field-label">Intervalo visual</label>
-          <ion-select [(ngModel)]="config.intervaloCalendario" interface="popover" class="cfg-select">
-            <ion-select-option [value]="15">15 minutos</ion-select-option>
-            <ion-select-option [value]="30">30 minutos</ion-select-option>
-            <ion-select-option [value]="60">1 hora</ion-select-option>
-          </ion-select>
-        </div>
-        <div class="cfg-field">
-          <label class="cfg-field-label">Inicio de jornada</label>
-          <input type="time" [(ngModel)]="config.inicioJornada" class="cfg-input-time">
-        </div>
-        <div class="cfg-field">
-          <label class="cfg-field-label">Fin de jornada</label>
-          <input type="time" [(ngModel)]="config.finJornada" class="cfg-input-time">
-        </div>
-        <div class="cfg-field">
-          <label class="cfg-field-label">Duración predeterminada</label>
-          <ion-select [(ngModel)]="config.duracionCita" interface="popover" class="cfg-select">
-            <ion-select-option [value]="15">15 min</ion-select-option>
-            <ion-select-option [value]="30">30 min</ion-select-option>
-            <ion-select-option [value]="45">45 min</ion-select-option>
-            <ion-select-option [value]="50">50 min</ion-select-option>
-            <ion-select-option [value]="60">60 min</ion-select-option>
-            <ion-select-option [value]="90">90 min</ion-select-option>
-          </ion-select>
-        </div>
-        <div class="cfg-field">
-          <label class="cfg-field-label">Buffer entre citas</label>
-          <ion-select [(ngModel)]="config.bufferCitas" interface="popover" class="cfg-select">
-            <ion-select-option [value]="0">Sin buffer</ion-select-option>
-            <ion-select-option [value]="5">5 min</ion-select-option>
-            <ion-select-option [value]="10">10 min</ion-select-option>
-            <ion-select-option [value]="15">15 min</ion-select-option>
-          </ion-select>
-        </div>
-      </div>
-
-      <div class="cfg-divider"></div>
-
-      <div class="cfg-toggle-list">
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Permitir citas superpuestas</p>
-            <p class="cfg-toggle-sub">Dos o más citas pueden coincidir en el mismo horario</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.citasSuperpuestas" class="cfg-toggle cfg-toggle--warning"></ion-toggle>
-        </div>
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Mostrar sábados</p>
-            <p class="cfg-toggle-sub">Incluir sábados en la vista de semana</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.mostrarSabados" class="cfg-toggle"></ion-toggle>
-        </div>
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Mostrar domingos</p>
-            <p class="cfg-toggle-sub">Incluir domingos en la vista de semana</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.mostrarDomingos" class="cfg-toggle"></ion-toggle>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══════════════════════════════════════════════════════
-         3. RECORDATORIOS Y AUTOMATIZACIONES
-    ════════════════════════════════════════════════════════ -->
-    <div class="cfg-card">
-      <div class="cfg-card-header">
-        <div class="cfg-card-icon cfg-icon--teal">
-          <ion-icon name="alarm-outline"></ion-icon>
-        </div>
-        <div>
-          <h3 class="cfg-card-title">Recordatorios y automatizaciones</h3>
-          <p class="cfg-card-desc">Comunicación automática con pacientes y alertas</p>
-        </div>
-      </div>
-
-      <div class="cfg-toggle-list">
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Recordatorio automático al paciente</p>
-            <p class="cfg-toggle-sub">Enviar aviso previo a la cita al canal configurado</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.recordatorioPaciente" class="cfg-toggle"></ion-toggle>
-        </div>
-      </div>
-
-      <div class="cfg-fields cfg-fields--compact" [class.cfg-fields--disabled]="!config.recordatorioPaciente">
-        <div class="cfg-field">
-          <label class="cfg-field-label">Tiempo de anticipación</label>
-          <ion-select [(ngModel)]="config.tiempoRecordatorio" interface="popover" class="cfg-select"
-                      [disabled]="!config.recordatorioPaciente">
-            <ion-select-option value="1h">1 hora antes</ion-select-option>
-            <ion-select-option value="3h">3 horas antes</ion-select-option>
-            <ion-select-option value="1dia">1 día antes</ion-select-option>
-            <ion-select-option value="2dias">2 días antes</ion-select-option>
-          </ion-select>
-        </div>
-      </div>
-
-      <div class="cfg-divider"></div>
-
-      <div class="cfg-toggle-list">
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Recordatorio al profesional</p>
-            <p class="cfg-toggle-sub">Recibe un aviso propio antes de cada cita</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.recordatorioProfesional" class="cfg-toggle"></ion-toggle>
-        </div>
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Notificar cancelaciones</p>
-            <p class="cfg-toggle-sub">Alerta inmediata cuando un paciente cancela</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.notificarCancelaciones" class="cfg-toggle"></ion-toggle>
-        </div>
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Notificar reprogramaciones</p>
-            <p class="cfg-toggle-sub">Alerta cuando se cambia la fecha u hora de una cita</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.notificarReprogramaciones" class="cfg-toggle"></ion-toggle>
-        </div>
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Mensaje de confirmación al crear cita</p>
-            <p class="cfg-toggle-sub">Enviar confirmación automática al paciente al agendar</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.mensajeConfirmacionCita" class="cfg-toggle"></ion-toggle>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══════════════════════════════════════════════════════
-         4. NOTIFICACIONES DEL SISTEMA
-    ════════════════════════════════════════════════════════ -->
-    <div class="cfg-card">
-      <div class="cfg-card-header">
-        <div class="cfg-card-icon cfg-icon--purple">
-          <ion-icon name="notifications-outline"></ion-icon>
-        </div>
-        <div>
-          <h3 class="cfg-card-title">Notificaciones del sistema</h3>
-          <p class="cfg-card-desc">Alertas internas mientras usas la app</p>
-        </div>
-      </div>
-
-      <div class="cfg-toggle-list">
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Notificaciones dentro de la app</p>
-            <p class="cfg-toggle-sub">Avisos en tiempo real en el panel</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.notifInApp" class="cfg-toggle"></ion-toggle>
-        </div>
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Alertas sonoras</p>
-            <p class="cfg-toggle-sub">Reproducir sonido al recibir notificaciones</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.alertasSonoras" class="cfg-toggle"></ion-toggle>
-        </div>
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Avisos de citas próximas</p>
-            <p class="cfg-toggle-sub">Recordatorio de citas que están por comenzar</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.avisosCitasProximas" class="cfg-toggle"></ion-toggle>
-        </div>
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Avisos de pacientes nuevos</p>
-            <p class="cfg-toggle-sub">Notificación cuando se registra un paciente nuevo</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.avisosPacientesNuevos" class="cfg-toggle"></ion-toggle>
-        </div>
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Avisos de pagos pendientes</p>
-            <p class="cfg-toggle-sub">Alerta de consultas con cobro pendiente</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.avisosPagosPendientes" class="cfg-toggle"></ion-toggle>
-        </div>
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Avisos de reprogramaciones</p>
-            <p class="cfg-toggle-sub">Notificación interna al cambiar una cita</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.avisosReprogramaciones" class="cfg-toggle"></ion-toggle>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══════════════════════════════════════════════════════
-         5. APARIENCIA
-    ════════════════════════════════════════════════════════ -->
-    <div class="cfg-card">
-      <div class="cfg-card-header">
-        <div class="cfg-card-icon cfg-icon--orange">
-          <ion-icon name="color-palette-outline"></ion-icon>
-        </div>
-        <div>
-          <h3 class="cfg-card-title">Apariencia</h3>
-          <p class="cfg-card-desc">Tema visual y densidad de la interfaz</p>
-        </div>
-      </div>
-
-      <div class="cfg-fields">
-        <div class="cfg-field">
-          <label class="cfg-field-label">Tema visual</label>
-          <div class="cfg-theme-selector">
-            <button class="cfg-theme-btn" [class.cfg-theme-btn--active]="config.tema === 'claro'"
-                    (click)="config.tema = 'claro'">
-              <ion-icon name="sunny-outline"></ion-icon>
-              <span>Claro</span>
-            </button>
-            <button class="cfg-theme-btn" [class.cfg-theme-btn--active]="config.tema === 'oscuro'"
-                    (click)="config.tema = 'oscuro'">
-              <ion-icon name="moon-outline"></ion-icon>
-              <span>Oscuro</span>
-              <span class="cfg-badge-soon">Próx.</span>
-            </button>
-            <button class="cfg-theme-btn" [class.cfg-theme-btn--active]="config.tema === 'auto'"
-                    (click)="config.tema = 'auto'">
-              <ion-icon name="contrast-outline"></ion-icon>
-              <span>Auto</span>
-              <span class="cfg-badge-soon">Próx.</span>
-            </button>
-          </div>
-        </div>
-        <div class="cfg-field">
-          <label class="cfg-field-label">Tamaño de interfaz</label>
-          <div class="cfg-theme-selector">
-            <button class="cfg-theme-btn" [class.cfg-theme-btn--active]="config.tamanoInterfaz === 'compacto'"
-                    (click)="config.tamanoInterfaz = 'compacto'">
-              <ion-icon name="remove-outline"></ion-icon>
-              <span>Compacto</span>
-            </button>
-            <button class="cfg-theme-btn" [class.cfg-theme-btn--active]="config.tamanoInterfaz === 'normal'"
-                    (click)="config.tamanoInterfaz = 'normal'">
-              <ion-icon name="reorder-four-outline"></ion-icon>
-              <span>Normal</span>
-            </button>
-            <button class="cfg-theme-btn" [class.cfg-theme-btn--active]="config.tamanoInterfaz === 'amplio'"
-                    (click)="config.tamanoInterfaz = 'amplio'">
-              <ion-icon name="add-outline"></ion-icon>
-              <span>Amplio</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="cfg-divider"></div>
-
-      <div class="cfg-toggle-list">
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Animaciones de interfaz</p>
-            <p class="cfg-toggle-sub">Transiciones y microinteracciones al navegar</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.animaciones" class="cfg-toggle"></ion-toggle>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══════════════════════════════════════════════════════
-         6. PREFERENCIAS REGIONALES
-    ════════════════════════════════════════════════════════ -->
-    <div class="cfg-card">
-      <div class="cfg-card-header">
-        <div class="cfg-card-icon cfg-icon--green">
-          <ion-icon name="globe-outline"></ion-icon>
-        </div>
-        <div>
-          <h3 class="cfg-card-title">Preferencias regionales</h3>
-          <p class="cfg-card-desc">Idioma, zona horaria y formatos locales</p>
-        </div>
-      </div>
-
-      <div class="cfg-fields">
-        <div class="cfg-field">
-          <label class="cfg-field-label">Idioma</label>
-          <ion-select [(ngModel)]="config.idioma" interface="popover" class="cfg-select">
-            <ion-select-option value="es">Español</ion-select-option>
-            <ion-select-option value="en">Inglés</ion-select-option>
-          </ion-select>
-        </div>
-        <div class="cfg-field">
-          <label class="cfg-field-label">Zona horaria</label>
-          <ion-select [(ngModel)]="config.zonaHoraria" interface="popover" class="cfg-select">
-            <ion-select-option value="GMT-6">GMT-6 (CDMX)</ion-select-option>
-            <ion-select-option value="GMT-5">GMT-5</ion-select-option>
-            <ion-select-option value="GMT-4">GMT-4</ion-select-option>
-            <ion-select-option value="GMT-3">GMT-3</ion-select-option>
-          </ion-select>
-        </div>
-        <div class="cfg-field">
-          <label class="cfg-field-label">Formato de hora</label>
-          <ion-select [(ngModel)]="config.formatoHora" interface="popover" class="cfg-select">
-            <ion-select-option value="12h">12 horas (AM/PM)</ion-select-option>
-            <ion-select-option value="24h">24 horas</ion-select-option>
-          </ion-select>
-        </div>
-        <div class="cfg-field">
-          <label class="cfg-field-label">Formato de fecha</label>
-          <ion-select [(ngModel)]="config.formatoFecha" interface="popover" class="cfg-select">
-            <ion-select-option value="DD/MM/YYYY">DD/MM/YYYY</ion-select-option>
-            <ion-select-option value="MM/DD/YYYY">MM/DD/YYYY</ion-select-option>
-            <ion-select-option value="YYYY-MM-DD">YYYY-MM-DD</ion-select-option>
-          </ion-select>
-        </div>
-        <div class="cfg-field">
-          <label class="cfg-field-label">Moneda predeterminada</label>
-          <ion-select [(ngModel)]="config.moneda" interface="popover" class="cfg-select">
-            <ion-select-option value="MXN">MXN — Peso mexicano</ion-select-option>
-            <ion-select-option value="USD">USD — Dólar</ion-select-option>
-            <ion-select-option value="EUR">EUR — Euro</ion-select-option>
-            <ion-select-option value="COP">COP — Peso colombiano</ion-select-option>
-            <ion-select-option value="ARS">ARS — Peso argentino</ion-select-option>
-          </ion-select>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══════════════════════════════════════════════════════
-         7. PRIVACIDAD Y PERMISOS
-    ════════════════════════════════════════════════════════ -->
-    <div class="cfg-card">
-      <div class="cfg-card-header">
-        <div class="cfg-card-icon cfg-icon--red">
-          <ion-icon name="shield-checkmark-outline"></ion-icon>
-        </div>
-        <div>
-          <h3 class="cfg-card-title">Privacidad y permisos</h3>
-          <p class="cfg-card-desc">Control sobre datos y confirmaciones de seguridad</p>
-        </div>
-      </div>
-
-      <div class="cfg-toggle-list">
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Ocultar información sensible</p>
-            <p class="cfg-toggle-sub">No mostrar datos clínicos en resúmenes y vistas rápidas</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.ocultarDatosSensibles" class="cfg-toggle"></ion-toggle>
-        </div>
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Confirmar eliminación de citas</p>
-            <p class="cfg-toggle-sub">Solicitar confirmación antes de borrar una cita</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.confirmarEliminarCitas" class="cfg-toggle"></ion-toggle>
-        </div>
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Confirmar eliminación de pacientes</p>
-            <p class="cfg-toggle-sub">Solicitar confirmación antes de borrar un expediente</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.confirmarEliminarPacientes" class="cfg-toggle"></ion-toggle>
-        </div>
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Vista previa de datos clínicos</p>
-            <p class="cfg-toggle-sub">Mostrar diagnóstico y notas en el listado de pacientes</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.vistaPreviaDatos" class="cfg-toggle"></ion-toggle>
-        </div>
-        <div class="cfg-toggle-row">
-          <div class="cfg-toggle-info">
-            <p class="cfg-toggle-label">Bloquear cambios críticos sin confirmación</p>
-            <p class="cfg-toggle-sub">Requiere verificación para modificar datos importantes</p>
-          </div>
-          <ion-toggle [(ngModel)]="config.bloquearCambiosCriticos" class="cfg-toggle"></ion-toggle>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══════════════════════════════════════════════════════
-         8. INTEGRACIONES FUTURAS
-    ════════════════════════════════════════════════════════ -->
-    <div class="cfg-card">
-      <div class="cfg-card-header">
-        <div class="cfg-card-icon cfg-icon--gray">
-          <ion-icon name="grid-outline"></ion-icon>
-        </div>
-        <div>
-          <h3 class="cfg-card-title">Integraciones</h3>
-          <p class="cfg-card-desc">Conecta Agendify con otras herramientas</p>
-        </div>
-      </div>
-
-      <div class="cfg-integrations">
-        <div class="cfg-integration-item" *ngFor="let int of integraciones">
-          <div class="cfg-integration-icon" [style.background]="int.color">
-            <ion-icon [name]="int.icon"></ion-icon>
-          </div>
-          <div class="cfg-integration-info">
-            <p class="cfg-integration-name">{{ int.nombre }}</p>
-            <p class="cfg-integration-desc">{{ int.desc }}</p>
-          </div>
-          <span class="cfg-badge-soon">Próximamente</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══════════════════════════════════════════════════════         10. EQUIPO
-    ╚═══════════════════════════════════════════════════════╝ -->
-    <div class="cfg-card">
-      <div class="cfg-card-header">
-        <div class="cfg-card-icon cfg-icon--purple">
-          <ion-icon name="people-circle-outline"></ion-icon>
-        </div>
-        <div>
-          <h3 class="cfg-card-title">Equipo de trabajo</h3>
-          <p class="cfg-card-desc">Administra los recepcionistas vinculados a tu cuenta</p>
-        </div>
-      </div>
-
-      <!-- Bloque 1: Código de vinculación -->
-      <div class="eq-codigo-card">
-        <div class="eq-codigo-header">
-          <div class="eq-codigo-icon">
-            <ion-icon name="link-outline"></ion-icon>
+      <div class="cfg-card">
+        <div class="cfg-card-header">
+          <div class="cfg-card-icon cfg-icon--orange">
+            <ion-icon name="color-palette-outline"></ion-icon>
           </div>
           <div>
-            <p class="eq-codigo-title">Código de vinculación</p>
-            <p class="eq-codigo-hint">Comparte este código con tu recepcionista para que se vincule a tu cuenta al registrarse.</p>
+            <h3 class="cfg-card-title">Apariencia</h3>
+            <p class="cfg-card-desc">Tema visual y densidad de la interfaz</p>
           </div>
         </div>
-        <div class="eq-codigo-display">
-          <span class="eq-codigo-value">{{ codigoVinculacion }}</span>
-          <button class="eq-codigo-copy-btn" (click)="copiarCodigo()" [class.eq-codigo-copy-btn--copied]="copiado">
-            <ion-icon [name]="copiado ? 'checkmark-outline' : 'copy-outline'"></ion-icon>
-            <span>{{ copiado ? 'Copiado' : 'Copiar' }}</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="cfg-divider"></div>
-
-      <!-- Bloque 2: Recepcionistas vinculados -->
-      <div class="eq-team-header">
-        <p class="eq-team-title">Recepcionistas vinculados</p>
-        <span class="eq-team-count">{{ recepcionistas.length }}</span>
-      </div>
-
-      <!-- Estado vacío -->
-      <div *ngIf="recepcionistas.length === 0" class="eq-empty">
-        <div class="eq-empty-icon"><ion-icon name="person-add-outline"></ion-icon></div>
-        <p class="eq-empty-title">Aún no tienes recepcionistas vinculados</p>
-        <p class="eq-empty-desc">Comparte tu código de vinculación para que un recepcionista se una a tu equipo.</p>
-      </div>
-
-      <!-- Lista de recepcionistas -->
-      <div class="eq-list" *ngIf="recepcionistas.length > 0">
-        <div class="eq-row" *ngFor="let r of recepcionistas" [class.eq-row--inactive]="!r.activo">
-
-          <!-- Fila principal: avatar + info + badge de estado -->
-          <div class="eq-row-main">
-            <div class="eq-avatar" [class.eq-avatar--inactive]="!r.activo">
-              {{ r.initials }}
-            </div>
-
-            <div class="eq-info">
-              <p class="eq-name">{{ r.nombreCompleto }}</p>
-              <p class="eq-email">{{ r.email }}</p>
-              <p class="eq-since">Vinculado desde {{ r.fechaVinculacion }}</p>
-              <p class="eq-permisos-resumen">{{ r.permisosResumen }}</p>
-            </div>
-
-            <span class="eq-badge" [class.eq-badge--active]="r.activo" [class.eq-badge--inactive]="!r.activo">
-              {{ r.activo ? 'Activo' : 'Inactivo' }}
-            </span>
-          </div>
-
-          <!-- Fila de acciones -->
-          <div class="eq-row-actions">
-            <button class="eq-btn-permisos" (click)="abrirModalPermisos(r)">
-              <ion-icon name="shield-checkmark-outline"></ion-icon>
-              <span>Permisos</span>
-              <span class="eq-btn-permisos-count">{{ r.permisosActivosCount }}/5</span>
-            </button>
-
-            <div class="eq-toggle-wrapper">
-              <span class="eq-toggle-label">{{ r.activo ? 'Activo' : 'Inactivo' }}</span>
-              <button
-                class="eq-toggle-btn"
-                [class.eq-toggle-btn--active]="r.activo"
-                (click)="toggleActivo(r)"
-                [attr.aria-label]="r.activo ? 'Desactivar recepcionista' : 'Activar recepcionista'"
-                [attr.aria-pressed]="r.activo">
-                <span class="eq-toggle-dot"></span>
+        <div class="cfg-fields">
+          <div class="cfg-field">
+            <label class="cfg-field-label">Tema visual</label>
+            <div class="cfg-theme-selector">
+              <button class="cfg-theme-btn" [class.cfg-theme-btn--active]="config.tema === 'claro'"
+                      (click)="config.tema = 'claro'">
+                <ion-icon name="sunny-outline"></ion-icon>
+                <span>Claro</span>
+              </button>
+              <button class="cfg-theme-btn" [class.cfg-theme-btn--active]="config.tema === 'oscuro'"
+                      (click)="config.tema = 'oscuro'">
+                <ion-icon name="moon-outline"></ion-icon>
+                <span>Oscuro</span>
+                <span class="cfg-badge-soon">Próx.</span>
+              </button>
+              <button class="cfg-theme-btn" [class.cfg-theme-btn--active]="config.tema === 'auto'"
+                      (click)="config.tema = 'auto'">
+                <ion-icon name="contrast-outline"></ion-icon>
+                <span>Auto</span>
+                <span class="cfg-badge-soon">Próx.</span>
               </button>
             </div>
           </div>
-
+          <div class="cfg-field">
+            <label class="cfg-field-label">Tamaño de interfaz</label>
+            <div class="cfg-theme-selector">
+              <button class="cfg-theme-btn" [class.cfg-theme-btn--active]="config.tamanoInterfaz === 'compacto'"
+                      (click)="config.tamanoInterfaz = 'compacto'">
+                <ion-icon name="remove-outline"></ion-icon>
+                <span>Compacto</span>
+              </button>
+              <button class="cfg-theme-btn" [class.cfg-theme-btn--active]="config.tamanoInterfaz === 'normal'"
+                      (click)="config.tamanoInterfaz = 'normal'">
+                <ion-icon name="reorder-four-outline"></ion-icon>
+                <span>Normal</span>
+              </button>
+              <button class="cfg-theme-btn" [class.cfg-theme-btn--active]="config.tamanoInterfaz === 'amplio'"
+                      (click)="config.tamanoInterfaz = 'amplio'">
+                <ion-icon name="add-outline"></ion-icon>
+                <span>Amplio</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="cfg-divider"></div>
+        <div class="cfg-toggle-list">
+          <div class="cfg-toggle-row">
+            <div class="cfg-toggle-info">
+              <p class="cfg-toggle-label">Animaciones de interfaz</p>
+              <p class="cfg-toggle-sub">Transiciones y microinteracciones al navegar</p>
+            </div>
+            <ion-toggle [(ngModel)]="config.animaciones" class="cfg-toggle"></ion-toggle>
+          </div>
         </div>
       </div>
 
-    </div>
-
-    <!-- ╔═══════════════════════════════════════════════════════╗         9. AVANZADO
-    ════════════════════════════════════════════════════════ -->
-    <div class="cfg-card">
-      <div class="cfg-card-header">
-        <div class="cfg-card-icon cfg-icon--slate">
-          <ion-icon name="construct-outline"></ion-icon>
-        </div>
-        <div>
-          <h3 class="cfg-card-title">Avanzado</h3>
-          <p class="cfg-card-desc">Herramientas de mantenimiento y diagnóstico</p>
-        </div>
-      </div>
-
-      <div class="cfg-action-list">
-        <button class="cfg-action-row">
-          <ion-icon name="refresh-outline" class="cfg-action-icon cfg-action-icon--blue"></ion-icon>
-          <div class="cfg-action-info">
-            <p class="cfg-action-label">Restablecer preferencias visuales</p>
-            <p class="cfg-action-sub">Vuelve la apariencia a los valores de fábrica</p>
-          </div>
-          <ion-icon name="chevron-forward-outline" class="cfg-action-arrow"></ion-icon>
-        </button>
-        <button class="cfg-action-row">
-          <ion-icon name="funnel-outline" class="cfg-action-icon cfg-action-icon--indigo"></ion-icon>
-          <div class="cfg-action-info">
-            <p class="cfg-action-label">Limpiar filtros guardados</p>
-            <p class="cfg-action-sub">Elimina las búsquedas y filtros almacenados</p>
-          </div>
-          <ion-icon name="chevron-forward-outline" class="cfg-action-arrow"></ion-icon>
-        </button>
-        <button class="cfg-action-row">
-          <ion-icon name="download-outline" class="cfg-action-icon cfg-action-icon--teal"></ion-icon>
-          <div class="cfg-action-info">
-            <p class="cfg-action-label">Exportar configuración</p>
-            <p class="cfg-action-sub">Descarga un archivo con toda tu configuración actual</p>
-          </div>
-          <ion-icon name="chevron-forward-outline" class="cfg-action-arrow"></ion-icon>
-        </button>
-        <button class="cfg-action-row">
-          <ion-icon name="cloud-upload-outline" class="cfg-action-icon cfg-action-icon--purple"></ion-icon>
-          <div class="cfg-action-info">
-            <p class="cfg-action-label">Importar configuración</p>
-            <p class="cfg-action-sub">Carga una configuración previamente exportada</p>
-          </div>
-          <ion-icon name="chevron-forward-outline" class="cfg-action-arrow"></ion-icon>
-        </button>
-      </div>
-
-      <div class="cfg-divider"></div>
-
-      <div class="cfg-meta-row">
-        <div class="cfg-meta-item">
-          <span class="cfg-meta-label">Versión</span>
-          <span class="cfg-meta-value">{{ appVersion }}</span>
-        </div>
-        <div class="cfg-meta-item">
-          <span class="cfg-meta-label">Entorno</span>
-          <span class="cfg-meta-badge cfg-meta-badge--dev">{{ entorno }}</span>
-        </div>
-      </div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════
-         SAVE BAR
+         TAB: AGENDA  —  Agenda + Recordatorios + Avisos de citas
     ════════════════════════════════════════════════════════ -->
-    <div class="cfg-save-bar">
-      <button class="cfg-reset-btn" (click)="pedirReset()">
+    <div *ngIf="activeTab === 'agenda'" class="cfg-tab-content">
+
+      <div class="cfg-card">
+        <div class="cfg-card-header">
+          <div class="cfg-card-icon cfg-icon--indigo">
+            <ion-icon name="calendar-outline"></ion-icon>
+          </div>
+          <div>
+            <h3 class="cfg-card-title">Agenda</h3>
+            <p class="cfg-card-desc">Comportamiento y visualización del calendario</p>
+          </div>
+        </div>
+        <div class="cfg-fields">
+          <div class="cfg-field">
+            <label class="cfg-field-label">Vista predeterminada</label>
+            <ion-select [(ngModel)]="config.vistaDefault" interface="popover" class="cfg-select">
+              <ion-select-option value="dia">Día</ion-select-option>
+              <ion-select-option value="semana">Semana</ion-select-option>
+              <ion-select-option value="mes">Mes</ion-select-option>
+            </ion-select>
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-field-label">Intervalo visual</label>
+            <ion-select [(ngModel)]="config.intervaloCalendario" interface="popover" class="cfg-select">
+              <ion-select-option [value]="15">15 minutos</ion-select-option>
+              <ion-select-option [value]="30">30 minutos</ion-select-option>
+              <ion-select-option [value]="60">1 hora</ion-select-option>
+            </ion-select>
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-field-label">Inicio de jornada</label>
+            <input type="time" [(ngModel)]="config.inicioJornada" class="cfg-input-time">
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-field-label">Fin de jornada</label>
+            <input type="time" [(ngModel)]="config.finJornada" class="cfg-input-time">
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-field-label">Duración predeterminada</label>
+            <ion-select [(ngModel)]="config.duracionCita" interface="popover" class="cfg-select">
+              <ion-select-option [value]="15">15 min</ion-select-option>
+              <ion-select-option [value]="30">30 min</ion-select-option>
+              <ion-select-option [value]="45">45 min</ion-select-option>
+              <ion-select-option [value]="50">50 min</ion-select-option>
+              <ion-select-option [value]="60">60 min</ion-select-option>
+              <ion-select-option [value]="90">90 min</ion-select-option>
+            </ion-select>
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-field-label">Buffer entre citas</label>
+            <ion-select [(ngModel)]="config.bufferCitas" interface="popover" class="cfg-select">
+              <ion-select-option [value]="0">Sin buffer</ion-select-option>
+              <ion-select-option [value]="5">5 min</ion-select-option>
+              <ion-select-option [value]="10">10 min</ion-select-option>
+              <ion-select-option [value]="15">15 min</ion-select-option>
+            </ion-select>
+          </div>
+        </div>
+        <div class="cfg-divider"></div>
+        <div class="cfg-toggle-list">
+          <div class="cfg-toggle-row">
+            <div class="cfg-toggle-info">
+              <p class="cfg-toggle-label">Permitir citas superpuestas</p>
+              <p class="cfg-toggle-sub">Dos o más citas pueden coincidir en el mismo horario</p>
+            </div>
+            <ion-toggle [(ngModel)]="config.citasSuperpuestas" class="cfg-toggle cfg-toggle--warning"></ion-toggle>
+          </div>
+          <div class="cfg-toggle-row">
+            <div class="cfg-toggle-info">
+              <p class="cfg-toggle-label">Mostrar sábados</p>
+              <p class="cfg-toggle-sub">Incluir sábados en la vista de semana</p>
+            </div>
+            <ion-toggle [(ngModel)]="config.mostrarSabados" class="cfg-toggle"></ion-toggle>
+          </div>
+          <div class="cfg-toggle-row">
+            <div class="cfg-toggle-info">
+              <p class="cfg-toggle-label">Mostrar domingos</p>
+              <p class="cfg-toggle-sub">Incluir domingos en la vista de semana</p>
+            </div>
+            <ion-toggle [(ngModel)]="config.mostrarDomingos" class="cfg-toggle"></ion-toggle>
+          </div>
+        </div>
+      </div>
+
+      <div class="cfg-card">
+        <div class="cfg-card-header">
+          <div class="cfg-card-icon cfg-icon--teal">
+            <ion-icon name="alarm-outline"></ion-icon>
+          </div>
+          <div>
+            <h3 class="cfg-card-title">Recordatorios y automatizaciones</h3>
+            <p class="cfg-card-desc">Comunicación automática con pacientes y alertas</p>
+          </div>
+        </div>
+        <div class="cfg-toggle-list">
+          <div class="cfg-toggle-row">
+            <div class="cfg-toggle-info">
+              <p class="cfg-toggle-label">Recordatorio automático al paciente</p>
+              <p class="cfg-toggle-sub">Enviar aviso previo a la cita al canal configurado</p>
+            </div>
+            <ion-toggle [(ngModel)]="config.recordatorioPaciente" class="cfg-toggle"></ion-toggle>
+          </div>
+        </div>
+        <div class="cfg-fields cfg-fields--compact" [class.cfg-fields--disabled]="!config.recordatorioPaciente">
+          <div class="cfg-field">
+            <label class="cfg-field-label">Tiempo de anticipación</label>
+            <ion-select [(ngModel)]="config.tiempoRecordatorio" interface="popover" class="cfg-select"
+                        [disabled]="!config.recordatorioPaciente">
+              <ion-select-option value="1h">1 hora antes</ion-select-option>
+              <ion-select-option value="3h">3 horas antes</ion-select-option>
+              <ion-select-option value="1dia">1 día antes</ion-select-option>
+              <ion-select-option value="2dias">2 días antes</ion-select-option>
+            </ion-select>
+          </div>
+        </div>
+        <div class="cfg-divider"></div>
+        <div class="cfg-toggle-list">
+          <div class="cfg-toggle-row">
+            <div class="cfg-toggle-info">
+              <p class="cfg-toggle-label">Recordatorio al profesional</p>
+              <p class="cfg-toggle-sub">Recibe un aviso propio antes de cada cita</p>
+            </div>
+            <ion-toggle [(ngModel)]="config.recordatorioProfesional" class="cfg-toggle"></ion-toggle>
+          </div>
+        </div>
+      </div>
+
+      <div class="cfg-card">
+        <div class="cfg-card-header">
+          <div class="cfg-card-icon cfg-icon--orange">
+            <ion-icon name="notifications-outline"></ion-icon>
+          </div>
+          <div>
+            <h3 class="cfg-card-title">Avisos de citas</h3>
+            <p class="cfg-card-desc">Notificaciones operativas de tu agenda</p>
+          </div>
+        </div>
+        <div class="cfg-toggle-list">
+          <div class="cfg-toggle-row">
+            <div class="cfg-toggle-info">
+              <p class="cfg-toggle-label">Avisos de citas próximas</p>
+              <p class="cfg-toggle-sub">Recordatorio cuando una cita está por comenzar</p>
+            </div>
+            <ion-toggle [(ngModel)]="config.avisosCitasProximas" class="cfg-toggle"></ion-toggle>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         TAB: EQUIPO  —  Equipo de trabajo
+    ════════════════════════════════════════════════════════ -->
+    <div *ngIf="activeTab === 'equipo'" class="cfg-tab-content">
+
+      <!-- ─── Section hero ─────────────────────────────────────────── -->
+      <div class="eq-section-hero">
+        <div class="eq-section-hero-icon">
+          <ion-icon name="people-circle-outline"></ion-icon>
+        </div>
+        <div class="eq-section-hero-text">
+          <h2 class="eq-section-hero-title">Equipo de trabajo</h2>
+          <p class="eq-section-hero-desc">Gestiona los accesos y permisos de tu equipo</p>
+        </div>
+        <div class="eq-section-hero-meta">
+          <span class="eq-section-hero-num">{{ recepcionistas.length }}</span>
+          <span class="eq-section-hero-label">{{ recepcionistas.length === 1 ? 'recepcionista' : 'recepcionistas' }}</span>
+        </div>
+      </div>
+
+      <!-- ─── Card: Código de vinculación ─────────────────────────── -->
+      <div class="cfg-card">
+        <div class="cfg-card-header">
+          <div class="cfg-card-icon cfg-icon--indigo">
+            <ion-icon name="link-outline"></ion-icon>
+          </div>
+          <div>
+            <h3 class="cfg-card-title">Código de vinculación</h3>
+            <p class="cfg-card-desc">Comparte este código para que un recepcionista se vincule a tu cuenta</p>
+          </div>
+        </div>
+        <div class="eq-codigo-card">
+          <div class="eq-codigo-header">
+            <div class="eq-codigo-icon">
+              <ion-icon name="link-outline"></ion-icon>
+            </div>
+            <div>
+              <p class="eq-codigo-title">Tu código único</p>
+              <p class="eq-codigo-hint">Comparte este código con tu recepcionista para que se vincule a tu cuenta al registrarse.</p>
+            </div>
+          </div>
+          <div class="eq-codigo-display">
+            <span class="eq-codigo-value">{{ codigoVinculacion }}</span>
+            <button class="eq-codigo-copy-btn" (click)="copiarCodigo()" [class.eq-codigo-copy-btn--copied]="copiado">
+              <ion-icon [name]="copiado ? 'checkmark-outline' : 'copy-outline'"></ion-icon>
+              <span>{{ copiado ? 'Copiado' : 'Copiar' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Card: Recepcionistas ─────────────────────────────────── -->
+      <div class="cfg-card">
+        <div class="eq-team-header">
+          <p class="eq-team-title">Recepcionistas vinculados</p>
+          <span class="eq-team-count">{{ recepcionistas.length }}</span>
+        </div>
+
+        <!-- Estado vacío -->
+        <div *ngIf="recepcionistas.length === 0" class="eq-empty">
+          <div class="eq-empty-icon"><ion-icon name="person-add-outline"></ion-icon></div>
+          <p class="eq-empty-title">Aún no tienes recepcionistas vinculados</p>
+          <p class="eq-empty-desc">Comparte tu código de vinculación para que un recepcionista se una a tu equipo.</p>
+        </div>
+
+        <!-- Lista de recepcionistas -->
+        <div class="eq-list" *ngIf="recepcionistas.length > 0">
+          <div class="eq-row" *ngFor="let r of recepcionistas" [class.eq-row--inactive]="!r.activo">
+
+            <!-- Fila principal: avatar + info + badge de estado -->
+            <div class="eq-row-main">
+              <div class="eq-avatar" [class.eq-avatar--inactive]="!r.activo">
+                {{ r.initials }}
+              </div>
+              <div class="eq-info">
+                <p class="eq-name">{{ r.nombreCompleto }}</p>
+                <p class="eq-email">{{ r.email }}</p>
+                <p class="eq-since">Vinculado desde {{ r.fechaVinculacion }}</p>
+                <p class="eq-permisos-resumen">{{ r.permisosResumen }}</p>
+              </div>
+              <span class="eq-badge" [class.eq-badge--active]="r.activo" [class.eq-badge--inactive]="!r.activo">
+                {{ r.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </div>
+
+            <!-- Fila de acciones -->
+            <div class="eq-row-actions">
+              <button class="eq-btn-permisos" (click)="abrirModalPermisos(r)">
+                <ion-icon name="shield-checkmark-outline"></ion-icon>
+                <span>Permisos</span>
+                <span class="eq-btn-permisos-count">{{ r.permisosActivosCount }}/5</span>
+              </button>
+              <div class="eq-toggle-wrapper">
+                <span class="eq-toggle-label">{{ r.activo ? 'Activo' : 'Inactivo' }}</span>
+                <button
+                  class="eq-toggle-btn"
+                  [class.eq-toggle-btn--active]="r.activo"
+                  (click)="toggleActivo(r)"
+                  [attr.aria-label]="r.activo ? 'Desactivar recepcionista' : 'Activar recepcionista'"
+                  [attr.aria-pressed]="r.activo">
+                  <span class="eq-toggle-dot"></span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         TAB: SEGURIDAD  —  Privacidad y permisos
+    ════════════════════════════════════════════════════════ -->
+    <div *ngIf="activeTab === 'seguridad'" class="cfg-tab-content">
+
+      <div class="cfg-card">
+        <div class="cfg-card-header">
+          <div class="cfg-card-icon cfg-icon--red">
+            <ion-icon name="shield-checkmark-outline"></ion-icon>
+          </div>
+          <div>
+            <h3 class="cfg-card-title">Privacidad y permisos</h3>
+            <p class="cfg-card-desc">Control sobre datos y confirmaciones de seguridad</p>
+          </div>
+        </div>
+        <div class="cfg-toggle-list">
+          <div class="cfg-toggle-row">
+            <div class="cfg-toggle-info">
+              <p class="cfg-toggle-label">Ocultar información sensible</p>
+              <p class="cfg-toggle-sub">No mostrar datos clínicos en resúmenes y vistas rápidas</p>
+            </div>
+            <ion-toggle [(ngModel)]="config.ocultarDatosSensibles" class="cfg-toggle"></ion-toggle>
+          </div>
+          <div class="cfg-toggle-row">
+            <div class="cfg-toggle-info">
+              <p class="cfg-toggle-label">Confirmar eliminación de citas</p>
+              <p class="cfg-toggle-sub">Solicitar confirmación antes de borrar una cita</p>
+            </div>
+            <ion-toggle [(ngModel)]="config.confirmarEliminarCitas" class="cfg-toggle"></ion-toggle>
+          </div>
+          <div class="cfg-toggle-row">
+            <div class="cfg-toggle-info">
+              <p class="cfg-toggle-label">Confirmar eliminación de pacientes</p>
+              <p class="cfg-toggle-sub">Solicitar confirmación antes de borrar un expediente</p>
+            </div>
+            <ion-toggle [(ngModel)]="config.confirmarEliminarPacientes" class="cfg-toggle"></ion-toggle>
+          </div>
+          <div class="cfg-toggle-row">
+            <div class="cfg-toggle-info">
+              <p class="cfg-toggle-label">Vista previa de datos clínicos</p>
+              <p class="cfg-toggle-sub">Mostrar diagnóstico y notas en el listado de pacientes</p>
+            </div>
+            <ion-toggle [(ngModel)]="config.vistaPreviaDatos" class="cfg-toggle"></ion-toggle>
+          </div>
+          <div class="cfg-toggle-row">
+            <div class="cfg-toggle-info">
+              <p class="cfg-toggle-label">Bloquear cambios críticos sin confirmación</p>
+              <p class="cfg-toggle-sub">Requiere verificación para modificar datos importantes</p>
+            </div>
+            <ion-toggle [(ngModel)]="config.bloquearCambiosCriticos" class="cfg-toggle"></ion-toggle>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         TAB: SISTEMA  —  Regional + Notificaciones + Integraciones + Avanzado
+    ════════════════════════════════════════════════════════ -->
+    <div *ngIf="activeTab === 'sistema'" class="cfg-tab-content">
+
+      <!-- Preferencias regionales — moved here from General -->
+      <div class="cfg-card">
+        <div class="cfg-card-header">
+          <div class="cfg-card-icon cfg-icon--green">
+            <ion-icon name="globe-outline"></ion-icon>
+          </div>
+          <div>
+            <h3 class="cfg-card-title">Preferencias regionales</h3>
+            <p class="cfg-card-desc">Idioma, zona horaria y formatos locales</p>
+          </div>
+        </div>
+        <div class="cfg-fields">
+          <div class="cfg-field">
+            <label class="cfg-field-label">Idioma</label>
+            <ion-select [(ngModel)]="config.idioma" interface="popover" class="cfg-select">
+              <ion-select-option value="es">Español</ion-select-option>
+              <ion-select-option value="en">Inglés</ion-select-option>
+            </ion-select>
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-field-label">Zona horaria</label>
+            <ion-select [(ngModel)]="config.zonaHoraria" interface="popover" class="cfg-select">
+              <ion-select-option value="GMT-6">GMT-6 (CDMX)</ion-select-option>
+              <ion-select-option value="GMT-5">GMT-5</ion-select-option>
+              <ion-select-option value="GMT-4">GMT-4</ion-select-option>
+              <ion-select-option value="GMT-3">GMT-3</ion-select-option>
+            </ion-select>
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-field-label">Formato de hora</label>
+            <ion-select [(ngModel)]="config.formatoHora" interface="popover" class="cfg-select">
+              <ion-select-option value="12h">12 horas (AM/PM)</ion-select-option>
+              <ion-select-option value="24h">24 horas</ion-select-option>
+            </ion-select>
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-field-label">Formato de fecha</label>
+            <ion-select [(ngModel)]="config.formatoFecha" interface="popover" class="cfg-select">
+              <ion-select-option value="DD/MM/YYYY">DD/MM/YYYY</ion-select-option>
+              <ion-select-option value="MM/DD/YYYY">MM/DD/YYYY</ion-select-option>
+              <ion-select-option value="YYYY-MM-DD">YYYY-MM-DD</ion-select-option>
+            </ion-select>
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-field-label">Moneda</label>
+            <ion-select [(ngModel)]="config.moneda" interface="popover" class="cfg-select">
+              <ion-select-option value="MXN">MXN — Peso mexicano</ion-select-option>
+              <ion-select-option value="USD">USD — Dólar</ion-select-option>
+              <ion-select-option value="EUR">EUR — Euro</ion-select-option>
+              <ion-select-option value="COP">COP — Peso colombiano</ion-select-option>
+              <ion-select-option value="ARS">ARS — Peso argentino</ion-select-option>
+            </ion-select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notificaciones del sistema — simplified for V1 -->
+      <div class="cfg-card">
+        <div class="cfg-card-header">
+          <div class="cfg-card-icon cfg-icon--purple">
+            <ion-icon name="notifications-outline"></ion-icon>
+          </div>
+          <div>
+            <h3 class="cfg-card-title">Notificaciones</h3>
+            <p class="cfg-card-desc">Alertas generales del sistema</p>
+          </div>
+        </div>
+        <div class="cfg-toggle-list">
+          <div class="cfg-toggle-row">
+            <div class="cfg-toggle-info">
+              <p class="cfg-toggle-label">Notificaciones dentro de la app</p>
+              <p class="cfg-toggle-sub">Avisos en tiempo real en el panel</p>
+            </div>
+            <ion-toggle [(ngModel)]="config.notifInApp" class="cfg-toggle"></ion-toggle>
+          </div>
+          <div class="cfg-toggle-row">
+            <div class="cfg-toggle-info">
+              <p class="cfg-toggle-label">Alertas sonoras</p>
+              <p class="cfg-toggle-sub">Reproducir sonido al recibir notificaciones</p>
+            </div>
+            <ion-toggle [(ngModel)]="config.alertasSonoras" class="cfg-toggle"></ion-toggle>
+          </div>
+          <div class="cfg-toggle-row">
+            <div class="cfg-toggle-info">
+              <p class="cfg-toggle-label">Avisos de pagos pendientes</p>
+              <p class="cfg-toggle-sub">Alerta de consultas con cobro pendiente</p>
+            </div>
+            <ion-toggle [(ngModel)]="config.avisosPagosPendientes" class="cfg-toggle"></ion-toggle>
+          </div>
+        </div>
+      </div>
+
+      <!-- Avanzado — simplified for V1 -->
+      <div class="cfg-card">
+        <div class="cfg-card-header">
+          <div class="cfg-card-icon cfg-icon--slate">
+            <ion-icon name="construct-outline"></ion-icon>
+          </div>
+          <div>
+            <h3 class="cfg-card-title">Avanzado</h3>
+            <p class="cfg-card-desc">Mantenimiento y diagnóstico</p>
+          </div>
+        </div>
+        <div class="cfg-action-list">
+          <button class="cfg-action-row">
+            <ion-icon name="refresh-outline" class="cfg-action-icon cfg-action-icon--blue"></ion-icon>
+            <div class="cfg-action-info">
+              <p class="cfg-action-label">Restablecer preferencias visuales</p>
+              <p class="cfg-action-sub">Vuelve la apariencia a los valores de fábrica</p>
+            </div>
+            <ion-icon name="chevron-forward-outline" class="cfg-action-arrow"></ion-icon>
+          </button>
+          <!-- V2: Exportar / Importar configuración -->
+        </div>
+      </div>
+
+      <!-- Acerca de Agendify -->
+      <div class="cfg-card">
+        <div class="cfg-card-header">
+          <div class="cfg-card-icon cfg-icon--blue">
+            <ion-icon name="information-circle-outline"></ion-icon>
+          </div>
+          <div>
+            <h3 class="cfg-card-title">Acerca de Agendify</h3>
+            <p class="cfg-card-desc">Sistema de gestión de citas para profesionales</p>
+          </div>
+        </div>
+        <div class="cfg-about-list">
+          <div class="cfg-about-row">
+            <span class="cfg-about-label">Versión</span>
+            <span class="cfg-about-value">{{ appVersion }}</span>
+          </div>
+          <div class="cfg-about-row">
+            <span class="cfg-meta-label">Entorno</span>
+            <span class="cfg-meta-badge cfg-meta-badge--dev">{{ entorno }}</span>
+          </div>
+          <div class="cfg-about-row">
+            <span class="cfg-about-label">Build</span>
+            <span class="cfg-about-value">{{ aboutApp.build }}</span>
+          </div>
+          <div class="cfg-about-row">
+            <span class="cfg-about-label">Empresa</span>
+            <span class="cfg-about-value">{{ aboutApp.empresa }}</span>
+          </div>
+          <div class="cfg-about-row">
+            <span class="cfg-about-label">Contacto</span>
+            <a class="cfg-about-link" [href]="'mailto:' + aboutApp.contacto">{{ aboutApp.contacto }}</a>
+          </div>
+          <div class="cfg-about-row">
+            <span class="cfg-about-label">Sitio web</span>
+            <a class="cfg-about-link" [href]="aboutApp.sitioWeb" target="_blank" rel="noopener">{{ aboutApp.sitioWeb }}</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SAVE BAR (hidden on Equipo tab — auto-persisted)
+    ════════════════════════════════════════════════════════ -->
+    <div *ngIf="activeTab !== 'equipo'" class="cfg-save-bar">
+      <button
+        *ngIf="hasChanges()"
+        class="cfg-reset-btn"
+        (click)="pedirReset()">
         <ion-icon name="refresh-outline"></ion-icon>
         Restablecer
       </button>
-      <button class="cfg-save-btn" (click)="guardar()">
+      <button
+        class="cfg-save-btn"
+        [disabled]="!hasChanges()"
+        [class.cfg-save-btn--disabled]="!hasChanges()"
+        (click)="guardar()">
         <ion-icon name="checkmark-circle-outline"></ion-icon>
         Guardar cambios
       </button>

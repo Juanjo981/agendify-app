@@ -8,13 +8,6 @@ import { PermisosRecepcionista } from 'src/app/shared/models/permisos.model';
 import { PermisoDetalle, RecepcionistaEquipoViewModel } from 'src/app/shared/models/equipo.model';
 
 const DEFAULTS = {
-  // General
-  boletines: true,
-  encuestas: false,
-  consejosApp: true,
-  tooltips: true,
-  confirmarAcciones: true,
-
   // Agenda
   vistaDefault: 'semana',
   inicioJornada: '09:00',
@@ -30,9 +23,6 @@ const DEFAULTS = {
   recordatorioPaciente: true,
   tiempoRecordatorio: '1dia',
   recordatorioProfesional: true,
-  notificarCancelaciones: true,
-  notificarReprogramaciones: true,
-  mensajeConfirmacionCita: true,
 
   // Notificaciones del sistema
   notifInApp: true,
@@ -40,7 +30,6 @@ const DEFAULTS = {
   avisosCitasProximas: true,
   avisosPacientesNuevos: true,
   avisosPagosPendientes: true,
-  avisosReprogramaciones: true,
 
   // Apariencia
   tema: 'claro',
@@ -62,6 +51,8 @@ const DEFAULTS = {
   bloquearCambiosCriticos: true,
 };
 
+type CfgTab = 'general' | 'agenda' | 'equipo' | 'seguridad' | 'sistema';
+
 @Component({
   selector: 'app-configuracion',
   standalone: true,
@@ -71,6 +62,11 @@ const DEFAULTS = {
 })
 export class ConfiguracionPage {
   config = { ...DEFAULTS };
+  private configOriginal = { ...DEFAULTS };
+
+  hasChanges(): boolean {
+    return JSON.stringify(this.config) !== JSON.stringify(this.configOriginal);
+  }
 
   showResetConfirm = false;
   savedToast = false;
@@ -78,6 +74,13 @@ export class ConfiguracionPage {
 
   readonly appVersion = '0.0.1-prealpha';
   readonly entorno = 'Desarrollo';
+
+  readonly aboutApp = {
+    build:     '2026.03.10',
+    empresa:   'Scottware',
+    contacto:  'soporte@agendify.app',
+    sitioWeb:  'https://agendify.app',
+  };
 
   // ─── Datos de equipo (resueltos por EquipoMockService) ─────────────────────
   readonly profesionalActual: UsuarioMock;
@@ -92,23 +95,30 @@ export class ConfiguracionPage {
   /** Definición estática de permisos con etiquetas, descripciones e iconos */
   readonly permisosDetalles: PermisoDetalle[] = PERMISOS_DETALLES;
 
+  // ─── Tab navigation ──────────────────────────────────────────────────────────
+  activeTab: CfgTab = 'general';
+
+  readonly cfgTabs: { id: CfgTab; label: string; icon: string }[] = [
+    { id: 'general',   label: 'General',   icon: 'apps-outline'             },
+    { id: 'agenda',    label: 'Agenda',    icon: 'calendar-outline'         },
+    { id: 'equipo',    label: 'Equipo',    icon: 'people-circle-outline'    },
+    { id: 'seguridad', label: 'Seguridad', icon: 'shield-checkmark-outline' },
+    { id: 'sistema',   label: 'Sistema',   icon: 'construct-outline'        },
+  ];
+
+  setTab(tab: CfgTab): void {
+    this.activeTab = tab;
+  }
+
   constructor(private equipoSvc: EquipoMockService) {
     this.profesionalActual  = this.equipoSvc.getProfesionalActual();
     this.codigoVinculacion  = this.equipoSvc.getCodigoVinculacion();
     this.recepcionistas     = this.equipoSvc.getRecepcionistasDelProfesional();
   }
 
-  readonly integraciones = [
-    { nombre: 'Google Calendar', desc: 'Sincroniza citas automáticamente', icon: 'calendar-outline', color: 'linear-gradient(135deg,#4285F4,#34A853)' },
-    { nombre: 'WhatsApp Business', desc: 'Envía recordatorios a pacientes', icon: 'logo-whatsapp', color: 'linear-gradient(135deg,#25D366,#128C7E)' },
-    { nombre: 'Correo transaccional', desc: 'Confirmaciones y alertas por email', icon: 'mail-outline', color: 'linear-gradient(135deg,#6366f1,#3b3f92)' },
-    { nombre: 'Videollamadas', desc: 'Consultas en línea integradas', icon: 'videocam-outline', color: 'linear-gradient(135deg,#14b8a6,#0d9488)' },
-    { nombre: 'Pagos en línea', desc: 'Cobra consultas directamente', icon: 'card-outline', color: 'linear-gradient(135deg,#f97316,#ea580c)' },
-    { nombre: 'Facturación', desc: 'Genera y envía facturas fiscales', icon: 'receipt-outline', color: 'linear-gradient(135deg,#a855f7,#9333ea)' },
-  ];
-
   guardar() {
     console.log('Configuración guardada:', this.config);
+    this.configOriginal = { ...this.config };
     this.savedToast = true;
     setTimeout(() => (this.savedToast = false), 2800);
   }
@@ -117,6 +127,7 @@ export class ConfiguracionPage {
   cancelarReset() { this.showResetConfirm = false; }
   confirmarReset() {
     this.config = { ...DEFAULTS };
+    this.configOriginal = { ...DEFAULTS };
     this.showResetConfirm = false;
   }
 

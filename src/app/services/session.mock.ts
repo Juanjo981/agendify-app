@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { RolUsuario } from '../shared/models/rol.model';
-import { PermisosRecepcionista } from '../shared/models/permisos.model';
 import { UsuarioMock } from '../shared/models/usuario.model';
 
 /**
@@ -39,25 +38,6 @@ const DEFAULT_USER: UsuarioMock = {
   codigoVinculacion: 'AGD-4F7K2Q',
 };
 
-/**
- * Mapa que traduce cada ruta del dashboard al permiso que la protege.
- * Las rutas sin entrada aquí están disponibles para todos los roles.
- *
- * FASE REAL: este mapa puede venir del backend como parte del manifiesto
- * de permisos del usuario.
- */
-export const RUTA_PERMISO: Record<string, keyof PermisosRecepcionista> = {
-  agenda:           'agenda',
-  citas:            'citas',
-  'citas/:id':      'citas',
-  pacientes:        'pacientes',
-  'pacientes/:id':  'pacientes',
-  sesiones:         'notasClinicas',
-  'sesiones/:id':   'notasClinicas',
-  estadisticas:     'notasClinicas',   // se usa notasClinicas como proxy
-  configuracion:    'configuracion',
-};
-
 @Injectable({ providedIn: 'root' })
 export class SessionMockService {
 
@@ -83,40 +63,6 @@ export class SessionMockService {
 
   getNombre(): string {
     return this._currentUser.nombre;
-  }
-
-  // ─── Permisos ────────────────────────────────────────────────────────────────
-
-  /**
-   * Comprueba si el usuario actual tiene acceso a un módulo concreto.
-   *
-   * - PROFESIONAL: siempre true (acceso total).
-   * - RECEPCIONISTA: delega en su mapa de permisos.
-   */
-  tienePermiso(permiso: keyof PermisosRecepcionista): boolean {
-    if (this.esProfesional()) return true;
-    return this._currentUser.permisos?.[permiso] ?? false;
-  }
-
-  /**
-   * Devuelve true si el usuario puede acceder al segmento de ruta dado.
-   * Recibe el segmento tal como aparece en el router (p. ej. "pacientes").
-   *
-   * Si la ruta no está en RUTA_PERMISO se considera pública (perfil, etc.).
-   */
-  tieneAccesoRuta(segmento: string): boolean {
-    if (this.esProfesional()) return true;
-    const permiso = RUTA_PERMISO[segmento];
-    if (!permiso) return true;          // ruta no restringida
-    return this.tienePermiso(permiso);
-  }
-
-  /**
-   * Devuelve la lista de permisos activos como objeto normalizado.
-   * Undefined si el usuario es PROFESIONAL (no aplica restricciones).
-   */
-  getPermisos(): PermisosRecepcionista | undefined {
-    return this.esRecepcionista() ? this._currentUser.permisos : undefined;
   }
 
   // ─── Mutación (llamado desde login/registro mock) ────────────────────────────

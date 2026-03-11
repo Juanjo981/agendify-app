@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
-import { SessionMockService } from 'src/app/services/session.mock';
+import { AuthorizationService } from 'src/app/auth/authorization.service';
 
 @Component({
   selector: 'app-acceso-restringido',
@@ -16,9 +16,9 @@ export class AccesoRestringidoPage implements OnInit {
   moduloOrigen = 'este módulo';
 
   constructor(
-    private route:   ActivatedRoute,
-    private router:  Router,
-    public  session: SessionMockService,
+    private route:  ActivatedRoute,
+    private router: Router,
+    public  authSvc: AuthorizationService,
   ) {}
 
   ngOnInit(): void {

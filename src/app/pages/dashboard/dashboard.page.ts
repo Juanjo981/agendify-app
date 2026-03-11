@@ -6,11 +6,12 @@ import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { AuthorizationService } from 'src/app/auth/authorization.service';
+import { HasPermissionDirective } from 'src/app/auth/has-permission.directive';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [IonicModule, CommonModule, RouterModule],
+  imports: [IonicModule, CommonModule, RouterModule, HasPermissionDirective],
   templateUrl: './dashboard.page.html',
   styleUrls: ['./dashboard.page.scss'],
 })
@@ -60,11 +61,6 @@ export class DashboardPage implements OnInit, OnDestroy {
     private router: Router,
     public authSvc: AuthorizationService,
   ) { }
-
-  /** Atajo de plantilla: comprueba si el usuario puede acceder al módulo. */
-  puedeVer(segmento: string): boolean {
-    return this.authSvc.canAccessModule(segmento);
-  }
 
   startResizing(event: MouseEvent) {
     this.resizing = true;

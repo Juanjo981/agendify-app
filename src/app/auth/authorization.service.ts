@@ -49,6 +49,11 @@ export class AuthorizationService {
     return this.session.esRecepcionista();
   }
 
+  /** Returns the display name of the current user. */
+  getNombreUsuario(): string {
+    return this.session.getNombre();
+  }
+
   // ─── Permission queries ───────────────────────────────────────────────────────
 
   /**
