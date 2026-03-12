@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';
+import { AlertController, IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SesionesMockService } from '../sesiones.service.mock';
 import { SesionDto } from '../models/sesion.model';
@@ -29,6 +29,7 @@ export class DetalleSesionPage implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private svc: SesionesMockService,
+    private alertCtrl: AlertController,
   ) {}
 
   ngOnInit() {
@@ -77,6 +78,41 @@ export class DetalleSesionPage implements OnInit {
   }
 
   // ─── Adjunto ──────────────────────────────────────────────────────────────
+  async verAdjunto() {
+    if (!this.sesion?.adjunto) return;
+    const adj = this.sesion.adjunto;
+    if (adj.previewUrl) {
+      window.open(adj.previewUrl, '_blank');
+    } else {
+      const alert = await this.alertCtrl.create({
+        header: 'Vista previa',
+        message: `Vista previa no disponible para <strong>${adj.name}</strong>.<br><br>Este formato requiere una aplicación externa. Usa el botón de descarga para obtener el archivo.`,
+        buttons: [{ text: 'Entendido', role: 'cancel' }],
+        cssClass: 'agendify-alert',
+      });
+      await alert.present();
+    }
+  }
+
+  async descargarAdjunto() {
+    if (!this.sesion?.adjunto) return;
+    const adj = this.sesion.adjunto;
+    if (adj.previewUrl) {
+      const link = document.createElement('a');
+      link.href = adj.previewUrl;
+      link.download = adj.name;
+      link.click();
+    } else {
+      const alert = await this.alertCtrl.create({
+        header: 'Descarga simulada',
+        message: `En producción, el archivo <strong>${adj.name}</strong> se descargaría desde el servidor. Esta es una vista de demostración.`,
+        buttons: [{ text: 'Entendido', role: 'cancel' }],
+        cssClass: 'agendify-alert',
+      });
+      await alert.present();
+    }
+  }
+
   eliminarAdjunto() {
     if (!this.sesion) return;
     this.openConfirm(

@@ -1,61 +1,139 @@
-<ion-content class="login-bg">
-  <div class="login-wrapper">
-    <div class="login-card">
+﻿<ion-content class="login-bg">
+  <div class="auth-page">
 
-      <!-- LOGO + NOMBRE -->
-      <img src="assets/img/logo2.png" class="logo" alt="Agendify logo" />
-      <h2>Inicia sesión</h2>
-      <p class="subtitle">Gestiona tu agenda de forma inteligente</p>
+    <!-- ── Decorative background (covers full screen) ──────────────── -->
+    <div class="auth-background">
+      <div class="auth-bg__blob auth-bg__blob--1"></div>
+      <div class="auth-bg__blob auth-bg__blob--2"></div>
+      <div class="auth-bg__blob auth-bg__blob--3"></div>
+      <div class="auth-bg__blob auth-bg__blob--4"></div>
+    </div>
 
-      <!-- FORMULARIO -->
-      <form [formGroup]="loginForm" (ngSubmit)="login()" autocomplete="on">
+    <!-- ── Content layout ───────────────────────────────────────────── -->
+    <div class="auth-layout">
 
-        <!-- USUARIO -->
-        <ion-item lines="none">
-          <ion-input
-            placeholder="Usuario"
-            formControlName="usuario"
-            type="text"
-            inputmode="text"
-          ></ion-input>
-        </ion-item>
+    <!-- ── Branding panel (left on desktop, top on mobile) ──────────── -->
+    <div class="login-brand">
+      <div class="login-brand__inner">
+        <img src="assets/img/logo2.png" class="login-brand__logo" alt="Agendify" />
+        <span class="login-brand__name">Agendify</span>
+        <p class="login-brand__tagline">Plataforma de gestión de citas para profesionales</p>
 
-        <!-- CONTRASEÑA + OJO -->
-        <ion-item lines="none">
-          <ion-input
-            placeholder="Contraseña"
-            [type]="verPassword ? 'text' : 'password'"
-            formControlName="contrasena"
-            inputmode="text"
-          ></ion-input>
-          <ion-icon
-            slot="end"
-            [name]="verPassword ? 'eye-off' : 'eye'"
-            class="eye-icon"
-            (click)="togglePassword()"
-          ></ion-icon>
-        </ion-item>
+        <ul class="login-brand__benefits">
+          <li>
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            Agenda inteligente
+          </li>
+          <li>
+            <ion-icon name="calendar-outline"></ion-icon>
+            Gestión de pacientes
+          </li>
+          <li>
+            <ion-icon name="document-text-outline"></ion-icon>
+            Historial clínico
+          </li>
+          <li>
+            <ion-icon name="bar-chart-outline"></ion-icon>
+            Reportes
+          </li>
+        </ul>
 
-        <!-- BOTÓN -->
-        <ion-button
-          expand="block"
-          class="login-button"
-          type="submit"
-          [disabled]="loginForm.invalid"
-        >
-          INICIAR SESIÓN
-        </ion-button>
-      </form>
-
-      <!-- LINKS INFERIORES -->
-      <div class="extras">
-        <p class="link-light">¿Olvidaste tu contraseña?</p>
-        <p class="link-bold">
-          ¿Aún no tienes cuenta?
-          <a (click)="goToRegister()">Regístrate</a>
-        </p>
+        <p class="login-brand__version">v0.0.1-prealpha &middot; &copy; Scottware</p>
       </div>
+    </div>
+
+    <!-- ── Form panel (right on desktop, bottom on mobile) ──────────── -->
+    <div class="login-form-panel">
+      <div class="login-card">
+
+        <!-- Header -->
+        <div class="login-card__header">
+          <h1 class="login-card__title">Inicia sesión</h1>
+          <p class="login-card__subtitle">Bienvenido de nuevo a Agendify</p>
+        </div>
+
+        <!-- Formulario -->
+        <form [formGroup]="loginForm" (ngSubmit)="login()" autocomplete="on">
+
+          <!-- Usuario -->
+          <div class="lf-field">
+            <ion-item lines="none" class="lf-item">
+              <ion-icon name="person-outline" slot="start" class="lf-icon"></ion-icon>
+              <ion-input
+                placeholder="Ingresa tu usuario o email"
+                formControlName="usuario"
+                type="text"
+                inputmode="email"
+                autocomplete="username">
+              </ion-input>
+            </ion-item>
+          </div>
+
+          <!-- Contraseña -->
+          <div class="lf-field">
+            <ion-item lines="none" class="lf-item">
+              <ion-icon name="lock-closed-outline" slot="start" class="lf-icon"></ion-icon>
+              <ion-input
+                placeholder="Ingresa tu contraseña"
+                [type]="verPassword ? 'text' : 'password'"
+                formControlName="contrasena"
+                autocomplete="current-password">
+              </ion-input>
+              <ion-icon
+                slot="end"
+                [name]="verPassword ? 'eye-off-outline' : 'eye-outline'"
+                class="lf-eye-icon"
+                (click)="togglePassword()">
+              </ion-icon>
+            </ion-item>
+          </div>
+
+          <!-- Recordarme -->
+          <label class="lf-remember">
+            <input type="checkbox" [(ngModel)]="recordarme" [ngModelOptions]="{standalone: true}" />
+            <span class="lf-remember__box"></span>
+            <span class="lf-remember__lbl">Recordarme en este dispositivo</span>
+          </label>
+
+          <!-- Botón principal -->
+          <button
+            class="lf-btn"
+            type="submit"
+            [disabled]="loginForm.invalid || cargando"
+            [class.lf-btn--loading]="cargando">
+            <ion-icon *ngIf="!cargando" name="log-in-outline"></ion-icon>
+            <ion-icon *ngIf="cargando" name="sync-outline" class="lf-spin"></ion-icon>
+            {{ cargando ? 'Iniciando sesión…' : 'Iniciar sesión' }}
+          </button>
+
+          <!-- Error de login -->
+          <div class="lf-error" *ngIf="errorLogin">
+            <ion-icon name="alert-circle-outline"></ion-icon>
+            {{ errorLogin }}
+          </div>
+
+        </form>
+
+        <!-- Links -->
+        <div class="login-extras">
+          <p class="login-link-forgot" (click)="openForgotPassword()">¿Olvidaste tu contraseña?</p>
+          <p class="login-link-register">
+            ¿Aún no tienes cuenta?
+            <a (click)="goToRegister()">Regístrate</a>
+          </p>
+        </div>
+
+      </div>
+    </div>
 
     </div>
+
   </div>
+
+  <!-- ── Forgot password modal ──────────────────────────────────────────── -->
+  <app-forgot-password
+    *ngIf="mostrarForgotPassword"
+    (closed)="closeForgotPassword()">
+  </app-forgot-password>
+
 </ion-content>

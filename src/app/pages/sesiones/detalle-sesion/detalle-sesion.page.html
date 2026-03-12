@@ -68,19 +68,20 @@
         <!-- Adjunto existente -->
         <div *ngIf="sesion.adjunto; else sinAdjunto" class="dse-adjunto">
           <div class="dse-adjunto__icon">
-            <ion-icon [name]="sesion.adjunto.type.startsWith('image/') ? 'image-outline' : 'document-outline'"></ion-icon>
+            <ion-icon [name]="sesion.adjunto.type.startsWith('image/') ? 'image-outline' : sesion.adjunto.type === 'application/pdf' ? 'document-outline' : 'document-text-outline'"></ion-icon>
           </div>
           <div class="dse-adjunto__info">
             <span class="dse-adjunto__name">{{ sesion.adjunto.name }}</span>
             <span class="dse-adjunto__size">{{ formatFileSize(sesion.adjunto.size) }}</span>
           </div>
-          <button
-            class="dse-adjunto__view"
-            *ngIf="sesion.adjunto.previewUrl"
-            (click)="$any(null)"
-          >
-            <ion-icon name="eye-outline"></ion-icon>
-          </button>
+          <div class="dse-adjunto__actions">
+            <button class="dse-adjunto__action dse-adjunto__action--view" (click)="verAdjunto()" title="Ver archivo">
+              <ion-icon name="eye-outline"></ion-icon>
+            </button>
+            <button class="dse-adjunto__action dse-adjunto__action--download" (click)="descargarAdjunto()" title="Descargar">
+              <ion-icon name="download-outline"></ion-icon>
+            </button>
+          </div>
         </div>
 
         <ng-template #sinAdjunto>

@@ -9,6 +9,13 @@ import { PERMISOS_DEFAULT_RECEPCIONISTA } from 'src/app/shared/models/permisos.m
 import { UsuarioRegistroDto } from 'src/app/shared/models/usuario.model';
 import { VinculacionMockService } from 'src/app/services/vinculacion.mock';
 
+/** Valid beta invite codes for closed-beta access (mock). */
+const BETA_INVITE_CODES: ReadonlySet<string> = new Set([
+  'AGD-BETA-001',
+  'AGD-BETA-002',
+  'AGD-BETA-003',
+]);
+
 @Component({
   selector: 'app-registro',
   standalone: true,
@@ -21,10 +28,12 @@ import { VinculacionMockService } from 'src/app/services/vinculacion.mock';
   templateUrl: './registro.page.html',
   styleUrls: ['./registro.page.scss']
 })
+
 export class RegistroPage {
   registroForm: FormGroup;
   verPassword = false;
   errorCodigo = '';
+  errorInvitacion = '';
 
   readonly RolUsuario = RolUsuario;
 
@@ -45,26 +54,33 @@ export class RegistroPage {
       numero_telefono:   ['', Validators.required],
       idRol:             [RolUsuario.PROFESIONAL, Validators.required],
       especialidad:      ['', Validators.required],
+      codigoInvitacion:  ['', Validators.required],
       codigoVinculacion: [''],
     });
 
     // Revalidar campos condicionales cuando cambia el rol
     this.registroForm.get('idRol')?.valueChanges.subscribe((rol: RolUsuario) => {
       const especialidadCtrl      = this.registroForm.get('especialidad');
+      const invitacionCtrl        = this.registroForm.get('codigoInvitacion');
       const codigoCtrl            = this.registroForm.get('codigoVinculacion');
       this.errorCodigo            = '';
+      this.errorInvitacion        = '';
 
       if (rol === RolUsuario.PROFESIONAL) {
         especialidadCtrl?.setValidators([Validators.required]);
+        invitacionCtrl?.setValidators([Validators.required]);
         codigoCtrl?.clearValidators();
         codigoCtrl?.setValue('');
       } else {
         especialidadCtrl?.clearValidators();
         especialidadCtrl?.setValue('');
+        invitacionCtrl?.clearValidators();
+        invitacionCtrl?.setValue('');
         codigoCtrl?.setValidators([Validators.required]);
       }
 
       especialidadCtrl?.updateValueAndValidity();
+      invitacionCtrl?.updateValueAndValidity();
       codigoCtrl?.updateValueAndValidity();
     });
   }
@@ -86,7 +102,8 @@ export class RegistroPage {
   }
 
   registrarse() {
-    this.errorCodigo = '';
+    this.errorCodigo     = '';
+    this.errorInvitacion = '';
 
     if (this.registroForm.invalid) {
       this.registroForm.markAllAsTouched();
@@ -94,6 +111,16 @@ export class RegistroPage {
     }
 
     const fv = this.registroForm.value;
+
+    // ── Validación mock del código de invitación (beta cerrada) ──
+    if (fv.idRol === RolUsuario.PROFESIONAL) {
+      const codigo = (fv.codigoInvitacion ?? '').trim().toUpperCase();
+      if (!BETA_INVITE_CODES.has(codigo)) {
+        this.errorInvitacion = 'El código de invitación no es válido. Verifica que esté escrito correctamente.';
+        this.registroForm.get('codigoInvitacion')?.markAsTouched();
+        return;
+      }
+    }
 
     // ── Validación mock del código de vinculación ──
     if (fv.idRol === RolUsuario.RECEPCIONISTA) {

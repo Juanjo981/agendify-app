@@ -215,6 +215,14 @@
 
   </aside>
 
+<!-- ── Modal: confirmar cierre de sesión ─────────────────────────── -->
+<app-confirm-dialog
+  *ngIf="logoutConfirmAbierto"
+  [config]="logoutConfirmConfig"
+  (confirmed)="cerrarSesion()"
+  (cancelled)="cancelarLogout()">
+</app-confirm-dialog>
+
   <!-- Divider para redimensionar -->
   <div class="resizer" (mousedown)="startResizing($event)"></div>
 

@@ -28,6 +28,10 @@ export class PacientesPage implements OnInit {
   formPaciente = this.emptyForm();
   formErrores: Record<string, string> = {};
 
+  // ─── Alertas clínicas ──────────────────────────────────────────────────────
+  alertasForm: string[] = [];
+  alertaInput = '';
+
   // ─── Confirm dialog ────────────────────────────────────────────────────────
   confirmConfig: ConfirmDialogConfig | null = null;
   private confirmCallback: (() => void) | null = null;
@@ -115,6 +119,8 @@ export class PacientesPage implements OnInit {
     this.formPaciente = this.emptyForm();
     this.formErrores = {};
     this.pacienteEditando = null;
+    this.alertasForm = [];
+    this.alertaInput = '';
     this.showFormModal = true;
   }
 
@@ -124,6 +130,8 @@ export class PacientesPage implements OnInit {
     this.pacienteEditando = p;
     this.formPaciente = { nombre: p.nombre, apellido: p.apellido, email: p.email, telefono: p.telefono, fecha_nacimiento: p.fecha_nacimiento, notas_generales: p.notas_generales, activo: p.activo };
     this.formErrores = {};
+    this.alertasForm = [...(p.alertas ?? [])];
+    this.alertaInput = '';
     this.showFormModal = true;
   }
 
@@ -149,14 +157,28 @@ export class PacientesPage implements OnInit {
     this.pacienteEditando = null;
   }
 
+  agregarAlerta() {
+    const t = this.alertaInput.trim();
+    if (!t) return;
+    this.alertasForm = [...this.alertasForm, t];
+    this.alertaInput = '';
+  }
+
+  eliminarAlerta(i: number) {
+    this.alertasForm = this.alertasForm.filter((_, idx) => idx !== i);
+  }
+
   private formHasChanges(): boolean {
     if (this.modoModal === 'crear') {
       const empty = this.emptyForm();
-      return Object.keys(empty).some(k => (this.formPaciente as any)[k] !== (empty as any)[k]);
+      const baseChanged = Object.keys(empty).some(k => (this.formPaciente as any)[k] !== (empty as any)[k]);
+      return baseChanged || this.alertasForm.length > 0;
     }
     if (!this.pacienteEditando) return false;
     const fields = ['nombre', 'apellido', 'email', 'telefono', 'fecha_nacimiento', 'notas_generales', 'activo'] as const;
-    return fields.some(k => this.formPaciente[k] !== (this.pacienteEditando as any)[k]);
+    const fieldsChanged = fields.some(k => this.formPaciente[k] !== (this.pacienteEditando as any)[k]);
+    const alertasChanged = JSON.stringify(this.alertasForm) !== JSON.stringify(this.pacienteEditando.alertas ?? []);
+    return fieldsChanged || alertasChanged;
   }
 
   validarForm(): boolean {
@@ -190,9 +212,9 @@ export class PacientesPage implements OnInit {
 
   private ejecutarGuardar() {
     if (this.modoModal === 'crear') {
-      this.svc.create({ id_paciente: Date.now(), ...this.formPaciente, citas: [], notas: [] });
+      this.svc.create({ id_paciente: Date.now(), ...this.formPaciente, alertas: [...this.alertasForm], citas: [], notas: [] });
     } else if (this.pacienteEditando) {
-      this.svc.update({ ...this.pacienteEditando, ...this.formPaciente });
+      this.svc.update({ ...this.pacienteEditando, ...this.formPaciente, alertas: [...this.alertasForm] });
     }
     this.filtrar();
     this.showFormModal = false;

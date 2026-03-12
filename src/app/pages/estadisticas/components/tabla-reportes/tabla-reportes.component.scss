@@ -204,23 +204,14 @@
   }
 }
 
-.tr-btn--excel {
-  background: rgba(5, 150, 105, 0.08);
-  color: #059669;
-  border: 1px solid rgba(5, 150, 105, 0.2);
+.tr-btn--export {
+  background: rgba(99, 102, 241, 0.07);
+  color: var(--primary, #6366f1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
 
   &:hover {
-    background: rgba(5, 150, 105, 0.15);
-  }
-}
-
-.tr-btn--pdf {
-  background: rgba(239, 68, 68, 0.08);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.2);
-
-  &:hover {
-    background: rgba(239, 68, 68, 0.15);
+    background: rgba(99, 102, 241, 0.14);
+    border-color: rgba(99, 102, 241, 0.35);
   }
 }
 

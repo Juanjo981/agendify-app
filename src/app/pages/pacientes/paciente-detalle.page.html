@@ -214,6 +214,9 @@
                 <button class="det-adjunto-chip__btn" (click)="verAdjunto(nota.adjunto)" title="Ver adjunto">
                   <ion-icon name="eye-outline"></ion-icon>
                 </button>
+                <button class="det-adjunto-chip__btn det-adjunto-chip__btn--download" (click)="descargarAdjunto(nota.adjunto)" title="Descargar adjunto">
+                  <ion-icon name="download-outline"></ion-icon>
+                </button>
               </div>
             </div>
           </div>
@@ -264,6 +267,12 @@
                 <ion-icon [name]="getFileIcon(ses.adjunto.type)" class="det-adjunto-chip__icon"></ion-icon>
                 <span class="det-adjunto-chip__name">{{ ses.adjunto.name }}</span>
                 <span class="det-adjunto-chip__size">{{ formatFileSize(ses.adjunto.size) }}</span>
+                <button class="det-adjunto-chip__btn" (click)="verAdjunto(ses.adjunto)" title="Ver adjunto">
+                  <ion-icon name="eye-outline"></ion-icon>
+                </button>
+                <button class="det-adjunto-chip__btn det-adjunto-chip__btn--download" (click)="descargarAdjunto(ses.adjunto)" title="Descargar adjunto">
+                  <ion-icon name="download-outline"></ion-icon>
+                </button>
               </div>
             </div>
           </div>
@@ -280,6 +289,24 @@
 
       <!-- ════ SECCIÓN: HISTORIAL ════ -->
       <div *ngIf="seccionActiva === 'historial'" class="det-historial">
+
+        <!-- Topbar with export button -->
+        <div class="det-hist-topbar">
+          <div class="det-hist-topbar__count">
+            <ion-icon name="time-outline"></ion-icon>
+            <span>{{ historialEventos.length }} evento{{ historialEventos.length !== 1 ? 's' : '' }}</span>
+          </div>
+          <button
+            class="det-hist-export-btn"
+            (click)="exportarHistorialPDF()"
+            [disabled]="exportandoPDF"
+            [class.loading]="exportandoPDF"
+            title="Exportar historial a PDF"
+          >
+            <ion-icon [name]="exportandoPDF ? 'hourglass-outline' : 'download-outline'"></ion-icon>
+            {{ exportandoPDF ? 'Generando…' : 'Exportar PDF' }}
+          </button>
+        </div>
 
         <!-- Summary bar -->
         <div class="det-hist-summary">
@@ -387,6 +414,37 @@
         <label>Notas generales</label>
         <textarea [(ngModel)]="formPaciente.notas_generales" rows="3"></textarea>
       </div>
+
+      <div class="pac-field">
+        <label>Alertas clínicas</label>
+        <div class="pac-alertas-section">
+          <div class="pac-alerta-input-row">
+            <input
+              type="text"
+              class="pac-alerta-input"
+              placeholder="Ej. Alergia a la penicilina…"
+              [(ngModel)]="alertaEditInput"
+              (keydown.enter)="$event.preventDefault(); agregarAlertaEditar()"
+              maxlength="80"
+            />
+            <button type="button" class="pac-alerta-add-btn" (click)="agregarAlertaEditar()">
+              <ion-icon name="add-outline"></ion-icon>
+              Agregar
+            </button>
+          </div>
+          <div class="pac-alertas-chips" *ngIf="alertasEditForm.length > 0">
+            <span *ngFor="let alerta of alertasEditForm; let i = index" class="pac-alerta-chip">
+              <ion-icon name="alert-circle-outline" class="pac-alerta-chip__icon"></ion-icon>
+              <span class="pac-alerta-chip__text">{{ alerta }}</span>
+              <button type="button" class="pac-alerta-chip__remove" (click)="eliminarAlertaEditar(i)" title="Eliminar alerta">
+                <ion-icon name="close-outline"></ion-icon>
+              </button>
+            </span>
+          </div>
+          <p class="pac-alertas-hint" *ngIf="alertasEditForm.length === 0">Sin alertas registradas</p>
+        </div>
+      </div>
+
       <div class="pac-field pac-field--toggle">
         <label>Paciente activo</label>
         <button class="pac-toggle" [class.on]="formPaciente.activo" (click)="formPaciente.activo = !formPaciente.activo" type="button">

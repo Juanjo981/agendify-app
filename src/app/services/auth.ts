@@ -38,4 +38,10 @@ export class AuthService {
     const user = this.getUsuario();
     return user?.nombre || '';
   }
+
+  forgotPassword(email: string): Promise<any> {
+    return this.http
+      .post(`${this.baseUrl}/auth/forgot-password`, { email })
+      .toPromise();
+  }
 }

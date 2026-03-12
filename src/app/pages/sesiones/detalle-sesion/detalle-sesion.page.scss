@@ -181,13 +181,28 @@
   &__name { font-size: 13px; font-weight: 600; color: var(--text-strong, #0f172a); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   &__size { font-size: 11px; color: var(--text-muted, #64748b); margin-top: 2px; }
 
-  &__view {
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__action {
     background: none; border: none; cursor: pointer;
     padding: 6px; border-radius: 7px;
-    color: var(--text-muted, #64748b);
     display: flex; align-items: center;
-    &:hover { background: rgba(14,165,233,0.08); color: #0369a1; }
+    transition: background 0.15s, color 0.15s;
     ion-icon { font-size: 16px; }
+
+    &--view {
+      color: var(--text-muted, #64748b);
+      &:hover { background: rgba(14,165,233,0.08); color: #0369a1; }
+    }
+
+    &--download {
+      color: var(--text-muted, #64748b);
+      &:hover { background: rgba(16,185,129,0.08); color: #059669; }
+    }
   }
 }
 

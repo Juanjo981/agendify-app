@@ -1,155 +1,262 @@
-<ion-content class="login-bg">
-  <div class="login-wrapper">
-    <div class="login-card">
+﻿<ion-content class="reg-bg">
+  <div class="auth-page">
 
-      <img src="assets/img/logo2.png" class="logo" alt="Agendify logo" />
-      <h2>Crear cuenta</h2>
-      <p class="subtitle">Registra tus datos para empezar</p>
+    <!-- ── Decorative background (covers full screen) ────────────── -->
+    <div class="auth-background">
+      <div class="auth-bg__blob auth-bg__blob--1"></div>
+      <div class="auth-bg__blob auth-bg__blob--2"></div>
+      <div class="auth-bg__blob auth-bg__blob--3"></div>
+      <div class="auth-bg__blob auth-bg__blob--4"></div>
+    </div>
 
-      <form [formGroup]="registroForm" (ngSubmit)="registrarse()" autocomplete="off">
+    <!-- ── Content layout ──────────────────────────────────────────── -->
+    <div class="auth-layout">
 
-        <!-- NOMBRE -->
-        <ion-item lines="none">
-          <ion-input placeholder="Nombre" formControlName="nombre"></ion-input>
-        </ion-item>
-        <div *ngIf="registroForm.get('nombre')?.touched && registroForm.get('nombre')?.invalid" class="error-text">
-          Nombre es requerido
+    <!-- ── Branding panel (left on desktop, top on mobile) ──────────── -->
+    <div class="reg-brand">
+      <div class="reg-brand__inner">
+        <img src="assets/img/logo2.png" class="reg-brand__logo" alt="Agendify" />
+        <span class="reg-brand__name">Agendify</span>
+        <p class="reg-brand__tagline">Plataforma de gestión de citas para profesionales</p>
+
+        <ul class="reg-brand__benefits">
+          <li>
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            Agenda inteligente
+          </li>
+          <li>
+            <ion-icon name="calendar-outline"></ion-icon>
+            Gestión de pacientes
+          </li>
+          <li>
+            <ion-icon name="document-text-outline"></ion-icon>
+            Historial clínico
+          </li>
+          <li>
+            <ion-icon name="bar-chart-outline"></ion-icon>
+            Reportes
+          </li>
+        </ul>
+
+        <p class="reg-brand__version">v0.0.1-prealpha &middot; &copy; Scottware</p>
+      </div>
+    </div>
+
+    <!-- ── Form panel (right on desktop, bottom on mobile) ──────────── -->
+    <div class="reg-form-panel">
+      <div class="reg-card">
+
+        <!-- Header -->
+        <div class="reg-card__header">
+          <h1 class="reg-card__title">Crear cuenta</h1>
+          <p class="reg-card__subtitle">Registra tus datos para empezar</p>
         </div>
 
-        <!-- APELLIDO -->
-        <ion-item lines="none">
-          <ion-input placeholder="Apellido" formControlName="apellido"></ion-input>
-        </ion-item>
-        <div *ngIf="registroForm.get('apellido')?.touched && registroForm.get('apellido')?.invalid" class="error-text">
-          Apellido es requerido
-        </div>
+        <!-- Form -->
+        <form [formGroup]="registroForm" (ngSubmit)="registrarse()" autocomplete="off">
 
-        <!-- EMAIL -->
-        <ion-item lines="none">
-          <ion-input type="email" placeholder="Correo electrónico" formControlName="email"></ion-input>
-        </ion-item>
-        <div *ngIf="registroForm.get('email')?.touched && registroForm.get('email')?.invalid" class="error-text">
-          Correo válido es requerido
-        </div>
+          <!-- Nombre + Apellido en dos columnas -->
+          <div class="reg-row-2">
+            <div class="reg-field">
+              <ion-item lines="none" class="reg-item">
+                <ion-icon name="person-outline" slot="start" class="reg-icon"></ion-icon>
+                <ion-input placeholder="Nombre" formControlName="nombre"></ion-input>
+              </ion-item>
+              <div *ngIf="registroForm.get('nombre')?.touched && registroForm.get('nombre')?.invalid" class="reg-error">
+                Nombre es requerido
+              </div>
+            </div>
 
-        <!-- USUARIO -->
-        <ion-item lines="none">
-          <ion-input placeholder="Usuario" formControlName="usuario"></ion-input>
-        </ion-item>
-        <div *ngIf="registroForm.get('usuario')?.touched && registroForm.get('usuario')?.invalid" class="error-text">
-          Usuario es requerido
-        </div>
-
-        <!-- CONTRASEÑA -->
-        <ion-item lines="none">
-          <ion-input
-            [type]="verPassword ? 'text' : 'password'"
-            placeholder="Contraseña"
-            formControlName="contrasena"
-          ></ion-input>
-          <ion-icon
-            slot="end"
-            [name]="verPassword ? 'eye-off' : 'eye'"
-            class="eye-icon"
-            (click)="togglePassword()"
-          ></ion-icon>
-        </ion-item>
-        <div *ngIf="registroForm.get('contrasena')?.touched && registroForm.get('contrasena')?.invalid" class="error-text">
-          Contraseña es requerida
-        </div>
-
-        <!-- FECHA NACIMIENTO -->
-        <ion-item lines="none">
-          <ion-input type="date" formControlName="fecha_nacimiento"></ion-input>
-        </ion-item>
-        <div *ngIf="registroForm.get('fecha_nacimiento')?.touched && registroForm.get('fecha_nacimiento')?.invalid" class="error-text">
-          Fecha de nacimiento es requerida
-        </div>
-
-        <!-- DOMICILIO -->
-        <ion-item lines="none">
-          <ion-input placeholder="Domicilio" formControlName="domicilio"></ion-input>
-        </ion-item>
-
-        <!-- TELÉFONO -->
-        <ion-item lines="none">
-          <ion-input type="tel" placeholder="Teléfono" formControlName="numero_telefono"></ion-input>
-        </ion-item>
-        <div *ngIf="registroForm.get('numero_telefono')?.touched && registroForm.get('numero_telefono')?.invalid" class="error-text">
-          Teléfono es requerido
-        </div>
-
-        <!-- ROL — selector de tipo de cuenta -->
-        <div class="rol-selector">
-          <p class="rol-label">Tipo de cuenta</p>
-          <div class="rol-cards">
-
-            <button type="button"
-              class="rol-card"
-              [class.rol-card--active]="rolActual === RolUsuario.PROFESIONAL"
-              (click)="seleccionarRol(RolUsuario.PROFESIONAL)">
-              <ion-icon name="briefcase-outline"></ion-icon>
-              <span class="rol-card-title">Profesional</span>
-              <span class="rol-card-desc">Médico, terapeuta o especialista</span>
-            </button>
-
-            <button type="button"
-              class="rol-card"
-              [class.rol-card--active]="rolActual === RolUsuario.RECEPCIONISTA"
-              (click)="seleccionarRol(RolUsuario.RECEPCIONISTA)">
-              <ion-icon name="people-outline"></ion-icon>
-              <span class="rol-card-title">Recepcionista</span>
-              <span class="rol-card-desc">Asistente de un profesional</span>
-            </button>
-
+            <div class="reg-field">
+              <ion-item lines="none" class="reg-item">
+                <ion-icon name="person-outline" slot="start" class="reg-icon"></ion-icon>
+                <ion-input placeholder="Apellido" formControlName="apellido"></ion-input>
+              </ion-item>
+              <div *ngIf="registroForm.get('apellido')?.touched && registroForm.get('apellido')?.invalid" class="reg-error">
+                Apellido es requerido
+              </div>
+            </div>
           </div>
-        </div>
 
-        <!-- ESPECIALIDAD (solo si es profesional) -->
-        <ion-item *ngIf="rolActual === RolUsuario.PROFESIONAL" lines="none" class="campo-animado">
-          <ion-input placeholder="Especialidad" formControlName="especialidad"></ion-input>
-        </ion-item>
-        <div
-          *ngIf="rolActual === RolUsuario.PROFESIONAL && registroForm.get('especialidad')?.touched && registroForm.get('especialidad')?.invalid"
-          class="error-text">
-          Especialidad es requerida
-        </div>
-
-        <!-- CÓDIGO DE VINCULACIÓN (solo si es recepcionista) -->
-        <div *ngIf="rolActual === RolUsuario.RECEPCIONISTA" class="campo-animado">
-          <ion-item lines="none">
-            <ion-icon name="link-outline" slot="start" class="codigo-icon"></ion-icon>
-            <ion-input
-              placeholder="Código de vinculación (ej. AGD-4F7K2Q)"
-              formControlName="codigoVinculacion"
-              [class.input-error]="errorCodigo || (registroForm.get('codigoVinculacion')?.touched && registroForm.get('codigoVinculacion')?.invalid)">
-            </ion-input>
-          </ion-item>
-          <div *ngIf="registroForm.get('codigoVinculacion')?.touched && registroForm.get('codigoVinculacion')?.invalid && !errorCodigo" class="error-text">
-            El código de vinculación es requerido
+          <!-- Email -->
+          <div class="reg-field">
+            <ion-item lines="none" class="reg-item">
+              <ion-icon name="mail-outline" slot="start" class="reg-icon"></ion-icon>
+              <ion-input type="email" placeholder="Correo electrónico" formControlName="email"></ion-input>
+            </ion-item>
+            <div *ngIf="registroForm.get('email')?.touched && registroForm.get('email')?.invalid" class="reg-error">
+              Correo válido es requerido
+            </div>
           </div>
-          <div *ngIf="errorCodigo" class="error-text error-text--codigo">
-            <ion-icon name="alert-circle-outline"></ion-icon>
-            {{ errorCodigo }}
+
+          <!-- Usuario -->
+          <div class="reg-field">
+            <ion-item lines="none" class="reg-item">
+              <ion-icon name="at-outline" slot="start" class="reg-icon"></ion-icon>
+              <ion-input placeholder="Usuario" formControlName="usuario"></ion-input>
+            </ion-item>
+            <div *ngIf="registroForm.get('usuario')?.touched && registroForm.get('usuario')?.invalid" class="reg-error">
+              Usuario es requerido
+            </div>
           </div>
-          <p class="codigo-hint">Solicita el código al profesional al que te vincularás.</p>
-        </div>
 
-        <!-- BOTÓN REGISTRARSE -->
-        <ion-button expand="block" type="submit" class="login-button" [disabled]="registroForm.invalid">
-          REGISTRARSE
-        </ion-button>
+          <!-- Contraseña -->
+          <div class="reg-field">
+            <ion-item lines="none" class="reg-item">
+              <ion-icon name="lock-closed-outline" slot="start" class="reg-icon"></ion-icon>
+              <ion-input
+                [type]="verPassword ? 'text' : 'password'"
+                placeholder="Contraseña"
+                formControlName="contrasena">
+              </ion-input>
+              <ion-icon
+                slot="end"
+                [name]="verPassword ? 'eye-off-outline' : 'eye-outline'"
+                class="reg-eye-icon"
+                (click)="togglePassword()">
+              </ion-icon>
+            </ion-item>
+            <div *ngIf="registroForm.get('contrasena')?.touched && registroForm.get('contrasena')?.invalid" class="reg-error">
+              Contraseña es requerida
+            </div>
+          </div>
 
-        <!-- VOLVER AL LOGIN -->
-        <div class="extras">
-          <p class="link-bold">
+          <!-- Fecha nacimiento + Teléfono en dos columnas -->
+          <div class="reg-row-2">
+            <div class="reg-field">
+              <ion-item lines="none" class="reg-item">
+                <ion-icon name="calendar-outline" slot="start" class="reg-icon"></ion-icon>
+                <ion-input type="date" formControlName="fecha_nacimiento"></ion-input>
+              </ion-item>
+              <div *ngIf="registroForm.get('fecha_nacimiento')?.touched && registroForm.get('fecha_nacimiento')?.invalid" class="reg-error">
+                Fecha requerida
+              </div>
+            </div>
+
+            <div class="reg-field">
+              <ion-item lines="none" class="reg-item">
+                <ion-icon name="call-outline" slot="start" class="reg-icon"></ion-icon>
+                <ion-input type="tel" placeholder="Teléfono" formControlName="numero_telefono"></ion-input>
+              </ion-item>
+              <div *ngIf="registroForm.get('numero_telefono')?.touched && registroForm.get('numero_telefono')?.invalid" class="reg-error">
+                Teléfono requerido
+              </div>
+            </div>
+          </div>
+
+          <!-- Domicilio -->
+          <div class="reg-field">
+            <ion-item lines="none" class="reg-item">
+              <ion-icon name="home-outline" slot="start" class="reg-icon"></ion-icon>
+              <ion-input placeholder="Domicilio (opcional)" formControlName="domicilio"></ion-input>
+            </ion-item>
+          </div>
+
+          <!-- Tipo de cuenta -->
+          <div class="rol-selector">
+            <p class="rol-label">Tipo de cuenta</p>
+            <div class="rol-cards">
+              <button type="button"
+                class="rol-card"
+                [class.rol-card--active]="rolActual === RolUsuario.PROFESIONAL"
+                (click)="seleccionarRol(RolUsuario.PROFESIONAL)">
+                <ion-icon name="briefcase-outline"></ion-icon>
+                <span class="rol-card-title">Profesional</span>
+                <span class="rol-card-desc">Médico, terapeuta o especialista</span>
+              </button>
+
+              <button type="button"
+                class="rol-card"
+                [class.rol-card--active]="rolActual === RolUsuario.RECEPCIONISTA"
+                (click)="seleccionarRol(RolUsuario.RECEPCIONISTA)">
+                <ion-icon name="people-outline"></ion-icon>
+                <span class="rol-card-title">Recepcionista</span>
+                <span class="rol-card-desc">Asistente de un profesional</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Profesional: Especialidad + Código de invitación beta -->
+          <ng-container *ngIf="rolActual === RolUsuario.PROFESIONAL">
+
+            <div class="reg-field campo-animado">
+              <ion-item lines="none" class="reg-item">
+                <ion-icon name="medkit-outline" slot="start" class="reg-icon"></ion-icon>
+                <ion-input placeholder="Especialidad" formControlName="especialidad"></ion-input>
+              </ion-item>
+              <div *ngIf="registroForm.get('especialidad')?.touched && registroForm.get('especialidad')?.invalid" class="reg-error">
+                Especialidad es requerida
+              </div>
+            </div>
+
+            <!-- Código de invitación (beta cerrada) -->
+            <div class="reg-field campo-animado">
+              <ion-item lines="none" class="reg-item reg-item--beta"
+                [class.reg-item--error]="errorInvitacion || (registroForm.get('codigoInvitacion')?.touched && registroForm.get('codigoInvitacion')?.invalid)">
+                <ion-icon name="ticket-outline" slot="start" class="reg-icon beta-icon"></ion-icon>
+                <ion-input
+                  placeholder="Código de invitación (ej. AGD-BETA-001)"
+                  formControlName="codigoInvitacion"
+                  autocomplete="off">
+                </ion-input>
+              </ion-item>
+              <div *ngIf="registroForm.get('codigoInvitacion')?.touched && registroForm.get('codigoInvitacion')?.invalid && !errorInvitacion" class="reg-error">
+                El código de invitación es requerido
+              </div>
+              <div *ngIf="errorInvitacion" class="reg-error reg-error--beta">
+                <ion-icon name="alert-circle-outline"></ion-icon>
+                {{ errorInvitacion }}
+              </div>
+              <p class="beta-hint">
+                <ion-icon name="information-circle-outline"></ion-icon>
+                Ingresa el código que recibiste para unirte a la beta de Agendify.
+              </p>
+            </div>
+
+          </ng-container>
+
+          <!-- Código de vinculación (solo recepcionista) -->
+          <div class="campo-animado" *ngIf="rolActual === RolUsuario.RECEPCIONISTA">
+            <div class="reg-field">
+              <ion-item lines="none" class="reg-item">
+                <ion-icon name="link-outline" slot="start" class="reg-icon codigo-icon"></ion-icon>
+                <ion-input
+                  placeholder="Código de vinculación (ej. AGD-4F7K2Q)"
+                  formControlName="codigoVinculacion"
+                  [class.input-error]="errorCodigo || (registroForm.get('codigoVinculacion')?.touched && registroForm.get('codigoVinculacion')?.invalid)">
+                </ion-input>
+              </ion-item>
+              <div *ngIf="registroForm.get('codigoVinculacion')?.touched && registroForm.get('codigoVinculacion')?.invalid && !errorCodigo" class="reg-error">
+                El código de vinculación es requerido
+              </div>
+              <div *ngIf="errorCodigo" class="reg-error reg-error--codigo">
+                <ion-icon name="alert-circle-outline"></ion-icon>
+                {{ errorCodigo }}
+              </div>
+              <p class="codigo-hint">Solicita el código al profesional al que te vincularás.</p>
+            </div>
+          </div>
+
+          <!-- Botón registrarse -->
+          <button
+            class="reg-btn"
+            type="submit"
+            [disabled]="registroForm.invalid">
+            <ion-icon name="person-add-outline"></ion-icon>
+            Registrarse
+          </button>
+
+          <!-- Volver al login -->
+          <p class="reg-login-link">
             ¿Ya tienes cuenta?
             <a (click)="goToLogin()">Inicia sesión</a>
           </p>
-        </div>
 
-      </form>
+        </form>
+      </div>
+    </div>
 
     </div>
+
   </div>
 </ion-content>

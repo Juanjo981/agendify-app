@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
-import { IonicModule, NavController, AlertController, Platform } from '@ionic/angular';
+import { IonicModule, NavController, Platform } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { AuthService } from 'src/app/services/auth';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
@@ -7,11 +7,12 @@ import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { AuthorizationService } from 'src/app/auth/authorization.service';
 import { HasPermissionDirective } from 'src/app/auth/has-permission.directive';
+import { ConfirmDialogComponent, ConfirmDialogConfig } from 'src/app/shared/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [IonicModule, CommonModule, RouterModule, HasPermissionDirective],
+  imports: [IonicModule, CommonModule, RouterModule, HasPermissionDirective, ConfirmDialogComponent],
   templateUrl: './dashboard.page.html',
   styleUrls: ['./dashboard.page.scss'],
 })
@@ -81,10 +82,20 @@ export class DashboardPage implements OnInit, OnDestroy {
   
 
 
+  // ── Logout confirmation dialog state ──────────────────────────────────────
+  logoutConfirmAbierto = false;
+  readonly logoutConfirmConfig: ConfirmDialogConfig = {
+    title: 'Cerrar sesión',
+    message: 'Se cerrará tu sesión actual en Agendify.',
+    confirmLabel: 'Cerrar sesión',
+    cancelLabel: 'Cancelar',
+    variant: 'primary',
+    icon: 'log-out-outline',
+  };
+
   constructor(
     private navCtrl: NavController,
     private authService: AuthService,
-    private alertCtrl: AlertController,
     private platform: Platform,
     private router: Router,
     public authSvc: AuthorizationService,
@@ -227,31 +238,18 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.navCtrl.navigateForward('dashboard/soporte');
   }
 
-  cerrarSesion() {
+  confirmarSalir() {
     this.menuAbierto = false;
-    localStorage.clear(); // o sessionStorage.clear()
+    this.logoutConfirmAbierto = true;
+  }
+
+  cerrarSesion() {
+    this.logoutConfirmAbierto = false;
+    localStorage.clear();
     this.navCtrl.navigateRoot('/login');
   }
 
-  async confirmarSalir() {
-    const alert = await this.alertCtrl.create({
-      header: '¿Estás seguro?',
-      message: 'Agendify te espera pronto',
-      cssClass: 'custom-alert',
-      buttons: [
-        {
-          text: 'Cancelar',
-          role: 'cancel',
-          cssClass: 'alert-cancel',
-        },
-        {
-          text: 'Salir',
-          handler: () => this.cerrarSesion(),
-          cssClass: 'alert-exit',
-        },
-      ],
-    });
-
-    await alert.present();
+  cancelarLogout() {
+    this.logoutConfirmAbierto = false;
   }
 }

@@ -583,10 +583,16 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: background 0.15s;
+    transition: background 0.15s, color 0.15s;
 
     ion-icon { font-size: 13px; }
     &:hover { background: var(--primary-mid, #6366f1); color: #fff; }
+
+    &--download {
+      background: rgba(16,185,129,0.10);
+      color: #059669;
+      &:hover { background: #059669; color: #fff; }
+    }
   }
 }
 
@@ -1000,6 +1006,130 @@
   &:hover { background: rgba(15, 23, 42, 0.05); color: var(--text-strong, #0f172a); }
 }
 
+// ─── Alertas clínicas (modal) ──────────────────────────────────────────────
+.pac-alertas-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pac-alerta-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+  .pac-alerta-input {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: var(--radius-md, 12px);
+    border: 1px solid rgba(209, 213, 219, 0.6);
+    background: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    color: var(--text-strong, #0f172a);
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &::placeholder { color: var(--text-muted, #9ca3af); }
+
+    &:focus {
+      border-color: var(--primary-mid, #6366f1);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+      background: #fff;
+    }
+  }
+}
+
+.pac-alerta-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 12px);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  background: rgba(245, 158, 11, 0.07);
+  color: #b45309;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+
+  ion-icon { font-size: 15px; }
+
+  &:hover {
+    background: rgba(245, 158, 11, 0.14);
+    border-color: rgba(245, 158, 11, 0.45);
+  }
+
+  &:active { background: rgba(245, 158, 11, 0.22); }
+}
+
+.pac-alertas-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.pac-alerta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border-radius: var(--radius-pill, 999px);
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  color: #92400e;
+  font-size: 12.5px;
+  font-weight: 500;
+  max-width: 100%;
+
+  &__icon {
+    font-size: 13px;
+    color: #d97706;
+    flex-shrink: 0;
+  }
+
+  &__text {
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__remove {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(245, 158, 11, 0.12);
+    color: #b45309;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0;
+    font-family: inherit;
+    transition: background 0.14s, color 0.14s;
+
+    ion-icon { font-size: 11px; }
+
+    &:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #dc2626;
+    }
+  }
+}
+
+.pac-alertas-hint {
+  font-size: 12px;
+  color: var(--text-muted, #9ca3af);
+  font-style: italic;
+  margin: 2px 0 0;
+}
+
 // ─── Animations ──────────────────────────────────────────────────────────────
 @keyframes fadeIn {
   from { opacity: 0; }
@@ -1249,6 +1379,61 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 .det-historial { display: flex; flex-direction: column; gap: 16px; animation: fadeIn 0.2s ease; }
+
+// Historial topbar
+.det-hist-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  &__count {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-muted, #64748b);
+    ion-icon { font-size: 15px; }
+  }
+}
+
+.det-hist-export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid rgba(59, 63, 146, 0.22);
+  background: rgba(59, 63, 146, 0.06);
+  color: var(--primary, #3b3f92);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+
+  ion-icon { font-size: 15px; }
+
+  &:hover:not(:disabled) {
+    background: rgba(59, 63, 146, 0.12);
+    border-color: rgba(59, 63, 146, 0.38);
+  }
+
+  &:disabled, &.loading {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  &.loading ion-icon {
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
 
 // Summary bar
 .det-hist-summary {

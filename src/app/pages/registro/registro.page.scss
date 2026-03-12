@@ -1,22 +1,314 @@
-.login-bg {
-  --background: none;
-  background: url('/assets/img/login-bg.png') no-repeat center center fixed;
-  background-size: cover;
+﻿// ─── Host shell: gradient fills the ion-page frame (overscroll / safe-area) ──
+:host {
+  background: linear-gradient(160deg, #e8eeff 0%, #f0f4f8 50%, #dde8f5 100%);
 }
 
-// ─── Role selector cards ───────────────────────────────────────────────────
+// ─── ion-content: solid base color covers scroll container + overrides the
+//     global --padding-bottom (added for tab bar, not needed on auth pages)
+ion-content.reg-bg {
+  --background: #dde8f5;
+  --padding-bottom: env(safe-area-inset-bottom, 0px);
+}
 
+// ─── Page shell: owns gradient + full-screen containment ─────────────────────
+.auth-page {
+  min-height: 100dvh;
+  position: relative;
+  background: linear-gradient(160deg, #e8eeff 0%, #f0f4f8 50%, #dde8f5 100%);
+}
+
+// ─── Decorative background layer ─────────────────────────────────────────────
+.auth-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.auth-bg__blob {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.auth-bg__blob--1 {
+  width: 600px;
+  height: 600px;
+  top: -160px;
+  right: -80px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.13) 0%, transparent 68%);
+  filter: blur(48px);
+}
+
+.auth-bg__blob--2 {
+  width: 460px;
+  height: 460px;
+  bottom: -120px;
+  right: 12%;
+  background: radial-gradient(circle, rgba(79, 70, 229, 0.09) 0%, transparent 68%);
+  filter: blur(56px);
+}
+
+.auth-bg__blob--3 {
+  width: 320px;
+  height: 320px;
+  top: 38%;
+  right: 4%;
+  background: radial-gradient(circle, rgba(165, 180, 252, 0.18) 0%, transparent 65%);
+  filter: blur(36px);
+}
+
+.auth-bg__blob--4 {
+  width: 240px;
+  height: 240px;
+  top: 55%;
+  right: 28%;
+  background: radial-gradient(circle, rgba(224, 231, 255, 0.4) 0%, transparent 70%);
+  filter: blur(28px);
+}
+
+// ─── Content layout ───────────────────────────────────────────────────────────
+.auth-layout {
+  display: flex;
+  min-height: 100dvh;
+  position: relative;
+  z-index: 2;
+}
+
+// ─── Branding panel (left) ──────────────────────────────────────────────────
+.reg-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 42%;
+  background: linear-gradient(160deg, #3b3f92 0%, #4f46e5 55%, #6366f1 100%);
+  padding: 48px 40px;
+  position: relative;
+  overflow: hidden;
+
+  // Decorative circle blobs
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.08;
+    background: #fff;
+  }
+
+  &::before {
+    width: 400px;
+    height: 400px;
+    top: -120px;
+    right: -100px;
+  }
+
+  &::after {
+    width: 280px;
+    height: 280px;
+    bottom: -80px;
+    left: -80px;
+  }
+}
+
+.reg-brand__inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 320px;
+}
+
+.reg-brand__logo {
+  width: 160px;
+  max-width: 100%;
+  // Invert logo to white for the dark panel
+  filter: brightness(0) invert(1);
+  opacity: 0.92;
+  margin-bottom: 4px;
+}
+
+.reg-brand__name {
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+
+.reg-brand__tagline {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.55;
+  margin: 4px 0 20px;
+}
+
+.reg-brand__benefits {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.88);
+
+    ion-icon {
+      font-size: 18px;
+      color: #a5b4fc;
+      flex-shrink: 0;
+    }
+  }
+}
+
+.reg-brand__version {
+  margin-top: 32px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.38);
+}
+
+// ─── Form panel (right) ─────────────────────────────────────────────────────
+.reg-form-panel {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 24px;
+  overflow-y: auto;
+}
+
+// ─── Card ───────────────────────────────────────────────────────────────────
+.reg-card {
+  width: 100%;
+  max-width: 520px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid rgba(200, 208, 255, 0.35);
+  border-radius: 24px;
+  padding: 36px 32px 32px;
+  box-shadow: 0 8px 40px rgba(79, 70, 229, 0.09), 0 2px 8px rgba(0, 0, 0, 0.05);
+  animation: reg-fadeIn 0.4s ease-out;
+}
+
+@keyframes reg-fadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ─── Card header ────────────────────────────────────────────────────────────
+.reg-card__header {
+  margin-bottom: 24px;
+}
+
+.reg-card__title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px;
+  letter-spacing: -0.4px;
+}
+
+.reg-card__subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+// ─── Form fields ────────────────────────────────────────────────────────────
+.reg-field {
+  margin-bottom: 10px;
+}
+
+// Two-column row
+.reg-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 0;
+}
+
+.reg-item {
+  --background: rgba(240, 244, 255, 0.7);
+  --border-radius: 12px;
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(209, 213, 219, 0.6);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.18s;
+
+  &:focus-within {
+    border-color: rgba(79, 70, 229, 0.45);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+  }
+
+  ion-input {
+    --padding-start: 4px;
+    --padding-end: 8px;
+    --padding-top: 11px;
+    --padding-bottom: 11px;
+    font-size: 14px;
+    color: #0f172a;
+  }
+}
+
+.reg-icon {
+  font-size: 15px;
+  color: #94a3b8;
+  margin-left: 14px;
+  margin-right: 2px;
+  flex-shrink: 0;
+}
+
+.reg-eye-icon {
+  font-size: 18px;
+  margin-right: 12px;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: color 0.15s;
+
+  &:hover { color: #4f46e5; }
+}
+
+.reg-error {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #dc2626;
+  margin: 3px 4px 0;
+
+  &--codigo {
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.16);
+    font-size: 12px;
+
+    ion-icon { font-size: 14px; flex-shrink: 0; }
+  }
+}
+
+// ─── Role selector cards ────────────────────────────────────────────────────
 .rol-selector {
-  margin: 8px 0 16px;
+  margin: 10px 0 14px;
 }
 
 .rol-label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .rol-cards {
@@ -29,19 +321,19 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   padding: 14px 10px;
   border-radius: 14px;
-  border: 2px solid #e5e7eb;
-  background: #f9fafb;
+  border: 2px solid rgba(209, 213, 219, 0.7);
+  background: rgba(249, 250, 251, 0.8);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
   text-align: center;
 
   ion-icon {
-    font-size: 22px;
+    font-size: 20px;
     color: #9ca3af;
-    transition: color 0.2s ease;
+    transition: color 0.18s;
   }
 
   &:hover {
@@ -52,23 +344,18 @@
   &--active {
     border-color: #7c3aed;
     background: #f5f3ff;
-    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
 
-    ion-icon {
-      color: #7c3aed;
-    }
-
-    .rol-card-title {
-      color: #7c3aed;
-    }
+    ion-icon { color: #7c3aed; }
+    .rol-card-title { color: #7c3aed; }
   }
 }
 
 .rol-card-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: #374151;
-  transition: color 0.2s ease;
+  transition: color 0.18s;
 }
 
 .rol-card-desc {
@@ -77,222 +364,277 @@
   line-height: 1.3;
 }
 
-// ─── Campo animado (especialidad / código vinculación) ──────────────────────
-
+// ─── Animated conditional field ─────────────────────────────────────────────
 .campo-animado {
-  animation: fadeSlideIn 0.22s ease;
+  animation: reg-slideIn 0.22s ease;
 }
 
-@keyframes fadeSlideIn {
+@keyframes reg-slideIn {
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.codigo-icon {
-  color: #7c3aed;
-  font-size: 18px;
-  margin-right: 4px;
-}
+.codigo-icon { color: #7c3aed !important; }
 
 .codigo-hint {
   font-size: 12px;
   color: #9ca3af;
-  margin: 6px 8px 12px;
+  margin: 6px 4px 10px;
 }
 
-.error-text--codigo {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+// ─── Beta invite code field ──────────────────────────────────────────────────
+.beta-icon {
+  color: #d97706 !important; // amber accent for beta badge feel
+}
 
-  ion-icon {
-    flex-shrink: 0;
-    font-size: 14px;
+.reg-item--beta {
+  border-color: rgba(217, 119, 6, 0.25) !important;
+
+  &:focus-within {
+    border-color: rgba(217, 119, 6, 0.5) !important;
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.08) !important;
   }
 }
 
-.login-wrapper {
+.reg-item--error {
+  border-color: rgba(220, 38, 38, 0.4) !important;
+}
+
+.reg-error--beta {
   display: flex;
-  justify-content: center;
   align-items: center;
-  min-height: 100%;
-  padding: 24px;
+  gap: 6px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.16);
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 4px;
+
+  ion-icon { font-size: 14px; flex-shrink: 0; }
 }
 
-.login-card {
-  background-color: rgba(255, 255, 255, 0.85);
-  border-radius: 20px;
-  padding: 32px;
-  max-width: 400px;
+.beta-hint {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #92400e;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(217, 119, 6, 0.18);
+  border-radius: 8px;
+  padding: 7px 10px;
+  margin: 6px 0 4px;
+  line-height: 1.45;
+
+  ion-icon {
+    font-size: 14px;
+    color: #d97706;
+    flex-shrink: 0;
+  }
+}
+
+// ─── Submit button ───────────────────────────────────────────────────────────
+.reg-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   width: 100%;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(8px);
-}
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(15px);
-    }
+  margin-top: 18px;
+  padding: 13px 20px;
+  border: none;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.28);
+  transition: opacity 0.18s, box-shadow 0.18s, transform 0.12s;
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
+  ion-icon { font-size: 18px; }
 
+  &:hover:not(:disabled) {
+    opacity: 0.93;
+    box-shadow: 0 6px 22px rgba(79, 70, 229, 0.35);
+    transform: translateY(-1px);
+  }
 
-h2 {
-    font-size: 24px;
-    color: #111827;
-    margin-top: 0;
-    margin-bottom: 4px;
-}
+  &:active:not(:disabled) { transform: translateY(0); }
 
-.subtitle {
-    color: #6b7280;
-    font-size: 14px;
-    margin-bottom: 32px;
-    margin-bottom: 16px;
-}
-
-.input-item {
-    margin-bottom: 16px;
-    --background: white;
-    border-radius: 12px;
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
 }
 
-.login-button {
-    margin-top: 16px;
-    --background: #4f46e5;
-    --background-activated: #4338ca;
-    font-weight: 600;
-    border-radius: 12px;
-    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
-}
+// ─── Back to login link ──────────────────────────────────────────────────────
+.reg-login-link {
+  text-align: center;
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 16px;
 
-.extras {
-    margin-top: 24px;
-    font-size: 14px;
-}
-
-.link-light {
-    margin-bottom: 8px;
-    color: #6b7280;
-    text-decoration: underline;
-    cursor: pointer;
-}
-
-.link-bold a {
+  a {
     color: #4f46e5;
     font-weight: 600;
     text-decoration: none;
     cursor: pointer;
+    transition: opacity 0.15s;
+
+    &:hover { opacity: 0.75; }
+  }
 }
 
-.login-wrapper::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(6px);
-    z-index: 0;
-}
+// ─── Responsive: collapse to single column on mobile ────────────────────────
+@media (max-width: 768px) {
 
-.login-card {
-    position: relative;
-    z-index: 1;
-    padding: 24px 20px 32px;
-}
+  // ── Clean light background for mobile ──────────────────────────────────────
+  :host {
+    background: linear-gradient(175deg, #edf0ff 0%, #f5f7ff 60%, #eff2ff 100%);
+  }
 
-.login-wrapper {
-    display: flex;
-    justify-content: center;
+  ion-content.reg-bg {
+    --background: #f5f7ff;
+  }
+
+  .auth-page {
+    background: linear-gradient(175deg, #edf0ff 0%, #f5f7ff 60%, #eff2ff 100%);
+  }
+
+  // ── Hide heavy blobs — single soft centered glow ──────────────────────────
+  .auth-bg__blob--1,
+  .auth-bg__blob--3,
+  .auth-bg__blob--4 {
+    display: none;
+  }
+
+  .auth-bg__blob--2 {
+    width: 520px;
+    height: 520px;
+    top: 50%;
+    left: 50%;
+    bottom: auto;
+    right: auto;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.07) 0%, transparent 65%);
+    filter: blur(64px);
+  }
+
+  // ── Stack layout vertically ────────────────────────────────────────────────
+  .auth-layout {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  // ── Brand panel: transparent container, sides aligned with form panel ─────
+  .reg-brand {
+    flex: none;
+    background: transparent;
+    padding: 52px 16px 10px;
+    border-radius: 0;
+    box-shadow: none;
+
+    &::before,
+    &::after {
+      display: none;
+    }
+  }
+
+  // ── Compact purple header chip ────────────────────────────────────────────
+  .reg-brand__inner {
+    flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
-    height: 100%;
-    padding: 24px;
-    background: url('/assets/img/login-bg.png') no-repeat center center;
-    background-size: cover;
+    text-align: left;
+    gap: 10px;
+    max-width: 100%;
+    background: linear-gradient(135deg, #3b3f92 0%, #4f46e5 55%, #6366f1 100%);
+    border-radius: 18px;
+    padding: 16px 20px;
     position: relative;
-}
+    overflow: hidden;
 
-.logo {
-    width: 160px;
-    max-width: 80%;
-    margin-bottom: 16px;
-    transition: width 0.2s ease-in-out;
-}
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      background: #fff;
+      opacity: 0.06;
+      pointer-events: none;
+    }
 
-.input-item {
-    margin-bottom: 16px;
-    --background: white;
-    border-radius: 12px;
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
-}
+    &::before {
+      width: 130px;
+      height: 130px;
+      top: -44px;
+      right: -24px;
+    }
 
-.eye-icon {
-    font-size: 20px;
-    margin-right: 12px;
-    cursor: pointer;
-    color: #6b7280;
-}
-
-ion-input {
-    --padding-start: 12px;
-    --padding-end: 12px;
-    --padding-top: 10px;
-    --padding-bottom: 10px;
-    font-size: 15px;
-    background: #f0f4ff;
-    border-radius: 10px;
-}
-
-.login-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 24px;
-  height: 100%;
-}
-
-.login-card {
-  width: 100%;
-  max-width: 400px;
-  padding: 32px 24px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  text-align: center;
-}
-
-.error-text {
-  color: #ef4444; // rojo suave
-  font-size: 13px;
-  margin: 4px 8px 12px;
-}
-
-ion-content {
-  --padding-bottom: 0;
-  --padding-top: 0;
-  height: 100%;
-}
-
-/* RESPONSIVE: Logo más pequeño en pantallas pequeñas */
-@media (max-width: 600px) {
-  .logo {
-    width: 120px;
+    &::after {
+      width: 70px;
+      height: 70px;
+      bottom: -24px;
+      left: -16px;
+    }
   }
 
-  .login-card {
-    padding: 24px 16px;
+  .reg-brand__logo {
+    width: 34px;
+    flex-shrink: 0;
+    margin-bottom: 0;
+    filter: brightness(0) invert(1);
+    opacity: 0.92;
   }
 
-  ion-input {
-    font-size: 14px;
+  .reg-brand__name {
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.3px;
+    margin-bottom: 0;
   }
 
-  .login-button {
-    font-size: 14px;
+  // Tagline wraps to its own row below logo + name
+  .reg-brand__tagline {
+    display: block;
+    flex: 0 0 100%;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.68);
+    line-height: 1.4;
+    margin: 0;
   }
+
+  .reg-brand__benefits,
+  .reg-brand__version {
+    display: none;
+  }
+
+  // ── Form panel: snug under the header chip ────────────────────────────────
+  .reg-form-panel {
+    padding: 10px 16px 40px;
+  }
+
+  // ── Card ──────────────────────────────────────────────────────────────────
+  .reg-card {
+    max-width: 100%;
+    padding: 24px 20px 22px;
+    border-radius: 20px;
+    box-shadow:
+      0 4px 24px rgba(79, 70, 229, 0.11),
+      0 1px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .reg-row-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .reg-card__title { font-size: 20px; }
 }

@@ -41,6 +41,11 @@ body {
   font-family: 'Inter', sans-serif;
 }
 
+// Base color that fills any native gap (overscroll, safe-area, ion-page chrome)
+html, body, ion-app {
+  background: #dde8f5;
+}
+
 ion-content {
   --padding-bottom: calc( env(safe-area-inset-bottom) + 80px );
 }

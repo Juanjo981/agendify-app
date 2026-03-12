@@ -194,6 +194,36 @@
         <textarea [(ngModel)]="formPaciente.notas_generales" rows="3" placeholder="Alergias, antecedentes, observaciones…"></textarea>
       </div>
 
+      <div class="pac-field">
+        <label>Alertas clínicas</label>
+        <div class="pac-alertas-section">
+          <div class="pac-alerta-input-row">
+            <input
+              type="text"
+              class="pac-alerta-input"
+              placeholder="Ej. Alergia a la penicilina…"
+              [(ngModel)]="alertaInput"
+              (keydown.enter)="$event.preventDefault(); agregarAlerta()"
+              maxlength="80"
+            />
+            <button type="button" class="pac-alerta-add-btn" (click)="agregarAlerta()">
+              <ion-icon name="add-outline"></ion-icon>
+              Agregar
+            </button>
+          </div>
+          <div class="pac-alertas-chips" *ngIf="alertasForm.length > 0">
+            <span *ngFor="let alerta of alertasForm; let i = index" class="pac-alerta-chip">
+              <ion-icon name="alert-circle-outline" class="pac-alerta-chip__icon"></ion-icon>
+              <span class="pac-alerta-chip__text">{{ alerta }}</span>
+              <button type="button" class="pac-alerta-chip__remove" (click)="eliminarAlerta(i)" title="Eliminar alerta">
+                <ion-icon name="close-outline"></ion-icon>
+              </button>
+            </span>
+          </div>
+          <p class="pac-alertas-hint" *ngIf="alertasForm.length === 0">Sin alertas — opcional</p>
+        </div>
+      </div>
+
       <div class="pac-field pac-field--toggle">
         <label>Paciente activo</label>
         <button class="pac-toggle" [class.on]="formPaciente.activo" (click)="formPaciente.activo = !formPaciente.activo" type="button" [attr.aria-pressed]="formPaciente.activo">
