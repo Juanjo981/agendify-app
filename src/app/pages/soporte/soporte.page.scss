@@ -34,7 +34,7 @@
   border: 1px solid rgba(209, 213, 219, 0.45);
   border-radius: var(--radius-xl, 22px);
   padding: 24px 28px;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
   box-shadow: var(--shadow-soft, 0 2px 12px rgba(15, 23, 42, 0.07));
   animation: sopFadeUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
@@ -54,15 +54,15 @@
 }
 
 .sop-hero-title {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 700;
   color: var(--text-strong, #0f172a);
-  margin: 0 0 4px;
-  letter-spacing: -0.3px;
+  margin: 0 0 2px;
+  letter-spacing: -0.4px;
 }
 
 .sop-hero-sub {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-muted, #64748b);
   margin: 0;
 }

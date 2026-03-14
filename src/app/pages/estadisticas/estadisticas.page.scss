@@ -26,6 +26,7 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+  margin-bottom: 24px;
 }
 
 .est-header__left {
@@ -38,12 +39,12 @@
   font-size: 26px;
   font-weight: 700;
   color: var(--text-strong, #0f172a);
-  margin: 0;
-  letter-spacing: -0.5px;
+  margin: 0 0 2px;
+  letter-spacing: -0.4px;
 }
 
 .est-subtitle {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-muted, #64748b);
   margin: 0;
 }
