@@ -536,6 +536,34 @@
     border-color: var(--danger, #dc2626);
     &:focus { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12); }
   }
+
+  input[type='date'] {
+    height: 38px;
+    padding: 0 12px;
+    border-width: 1.5px;
+    border-color: var(--border-subtle, rgba(209, 213, 219, 0.65));
+    background: rgba(255, 255, 255, 0.82);
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+
+    &:hover:not(:focus) { border-color: rgba(209, 213, 219, 0.90); }
+
+    &:focus {
+      border-color: var(--primary-mid, #6366f1);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+      background: rgba(255, 255, 255, 0.97);
+    }
+
+    &::-webkit-calendar-picker-indicator {
+      opacity: 0.5;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: opacity 0.15s;
+      &:hover { opacity: 0.85; }
+    }
+  }
 }
 
 .pac-field__error {

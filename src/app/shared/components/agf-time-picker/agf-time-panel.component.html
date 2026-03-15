@@ -1,0 +1,43 @@
+<div class="atp">
+
+  <div class="atp-cols">
+
+    <!-- ── Hours column ────────────────────────────────────────────── -->
+    <div class="atp-col">
+      <div class="atp-col__header">Hora</div>
+      <div class="atp-col__scroll" #hoursScroll>
+        <button
+          *ngFor="let h of hours"
+          type="button"
+          class="atp-item"
+          [class.atp-item--selected]="h === selectedHour"
+          (click)="selectHour(h)"
+        >{{ pad(h) }}</button>
+      </div>
+    </div>
+
+    <!-- ── Separator ────────────────────────────────────────────────── -->
+    <div class="atp-sep">:</div>
+
+    <!-- ── Minutes column ──────────────────────────────────────────── -->
+    <div class="atp-col">
+      <div class="atp-col__header">Min</div>
+      <div class="atp-col__scroll" #minsScroll>
+        <button
+          *ngFor="let m of minutes"
+          type="button"
+          class="atp-item"
+          [class.atp-item--selected]="m === selectedMinute"
+          (click)="selectMinute(m)"
+        >{{ pad(m) }}</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Live preview ──────────────────────────────────────────────── -->
+  <div class="atp-footer">
+    <span class="atp-preview">{{ pad(selectedHour) }}:{{ pad(selectedMinute) }}</span>
+  </div>
+
+</div>

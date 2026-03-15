@@ -1,0 +1,28 @@
+<div class="agf-dp">
+
+  <label class="agf-dp__label" *ngIf="label">{{ label }}</label>
+
+  <button
+    #trigger
+    type="button"
+    class="agf-dp__trigger"
+    [class.agf-dp__trigger--open]="isOpen"
+    [class.agf-dp__trigger--filled]="!!value"
+    [class.agf-dp__trigger--error]="hasError"
+    [disabled]="isDisabled"
+    (click)="toggle($event)"
+    aria-haspopup="true"
+    [attr.aria-expanded]="isOpen"
+  >
+    <ion-icon name="calendar-outline" class="agf-dp__icon"></ion-icon>
+    <span class="agf-dp__text">{{ displayLabel || placeholder }}</span>
+    <ion-icon
+      name="chevron-down-outline"
+      class="agf-dp__arrow"
+      [class.agf-dp__arrow--open]="isOpen"
+    ></ion-icon>
+  </button>
+
+  <span class="agf-dp__error" *ngIf="hasError && errorMsg">{{ errorMsg }}</span>
+
+</div>

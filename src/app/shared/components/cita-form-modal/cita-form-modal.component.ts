@@ -7,6 +7,7 @@ import { PacienteDto } from '../../../pages/pacientes/pacientes.mock';
 import { BuscarPacienteModalComponent } from '../../../pages/citas/components/buscar-paciente-modal/buscar-paciente-modal.component';
 import { CitasMockService } from '../../../pages/citas/citas.service.mock';
 import { DatePickerFieldComponent } from '../date-picker-field/date-picker-field.component';
+import { AgfTimePickerComponent } from '../agf-time-picker/agf-time-picker.component';
 
 export type CitaFormData = Omit<CitaDto, 'id_cita' | 'tiene_sesion'>;
 
@@ -22,7 +23,7 @@ export interface CitaFormContext {
   templateUrl: './cita-form-modal.component.html',
   styleUrls: ['./cita-form-modal.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule, BuscarPacienteModalComponent, DatePickerFieldComponent],
+  imports: [CommonModule, FormsModule, IonicModule, BuscarPacienteModalComponent, DatePickerFieldComponent, AgfTimePickerComponent],
 })
 export class CitaFormModalComponent implements OnInit, OnChanges {
   /**

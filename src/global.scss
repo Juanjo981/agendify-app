@@ -37,6 +37,11 @@
 @import "@ionic/angular/css/palettes/dark.system.css";
 
 
+// ── Agendify shared date/time picker design system ───────────────────────────
+// Exposes .agf-dt-input and .agf-dt-wrap utility classes globally, plus the
+// @mixin agf-date-time-input / agf-date-time-wrap for component-level use.
+@import './theme/date-pickers';
+
 body {
   font-family: 'Inter', sans-serif;
 }

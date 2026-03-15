@@ -294,7 +294,7 @@
         <div class="det-hist-topbar">
           <div class="det-hist-topbar__count">
             <ion-icon name="time-outline"></ion-icon>
-            <span>{{ historialEventos.length }} evento{{ historialEventos.length !== 1 ? 's' : '' }}</span>
+            <span>{{ historialFiltrado.length }} evento{{ historialFiltrado.length !== 1 ? 's' : '' }}</span>
           </div>
           <button
             class="det-hist-export-btn"
@@ -306,6 +306,28 @@
             <ion-icon [name]="exportandoPDF ? 'hourglass-outline' : 'download-outline'"></ion-icon>
             {{ exportandoPDF ? 'Generando…' : 'Exportar PDF' }}
           </button>
+        </div>
+
+        <!-- Search + chips bar -->
+        <div class="det-hist-search-row">
+          <div class="det-hist-search">
+            <ion-icon name="search-outline" class="det-hist-search__icon"></ion-icon>
+            <input
+              class="det-hist-search__input"
+              type="text"
+              placeholder="Buscar en historial del paciente…"
+              [(ngModel)]="histBusqueda"
+            />
+            <button *ngIf="histBusqueda" class="det-hist-search__clear" (click)="histBusqueda = ''">
+              <ion-icon name="close-outline"></ion-icon>
+            </button>
+          </div>
+          <div class="det-hist-chips">
+            <button class="det-hist-chip" [class.det-hist-chip--active]="histFiltroTipo === 'todos'"    (click)="histFiltroTipo = 'todos'">Todos</button>
+            <button class="det-hist-chip" [class.det-hist-chip--active]="histFiltroTipo === 'citas'"    (click)="histFiltroTipo = 'citas'">Citas</button>
+            <button class="det-hist-chip" [class.det-hist-chip--active]="histFiltroTipo === 'sesiones'" (click)="histFiltroTipo = 'sesiones'">Sesiones</button>
+            <button class="det-hist-chip" [class.det-hist-chip--active]="histFiltroTipo === 'notas'"    (click)="histFiltroTipo = 'notas'">Notas</button>
+          </div>
         </div>
 
         <!-- Summary bar -->
@@ -332,16 +354,23 @@
           </div>
         </div>
 
-        <!-- Empty -->
+        <!-- Empty — sin eventos en absoluto -->
         <div *ngIf="historialEventos.length === 0" class="det-empty">
           <ion-icon name="time-outline"></ion-icon>
           <p>Sin eventos registrados</p>
           <span>El historial cronológico del paciente aparecerá aquí</span>
         </div>
 
+        <!-- Empty — sin resultados de búsqueda/filtro -->
+        <div *ngIf="historialEventos.length > 0 && historialFiltrado.length === 0" class="det-empty">
+          <ion-icon name="search-outline"></ion-icon>
+          <p>Sin resultados</p>
+          <span>No se encontraron eventos en el historial</span>
+        </div>
+
         <!-- Timeline -->
-        <div class="det-hist-timeline" *ngIf="historialEventos.length > 0">
-          <div *ngFor="let ev of historialEventos; let last = last" class="det-hist-item">
+        <div class="det-hist-timeline" *ngIf="historialFiltrado.length > 0">
+          <div *ngFor="let ev of historialFiltrado; let last = last" class="det-hist-item">
 
             <!-- Left: dot + line -->
             <div class="det-hist-track">
@@ -407,7 +436,11 @@
         </div>
         <div class="pac-field">
           <label>Fecha de nacimiento</label>
-          <input type="date" [(ngModel)]="formPaciente.fecha_nacimiento" />
+          <agf-date-picker
+            [(ngModel)]="formPaciente.fecha_nacimiento"
+            [allowPast]="true"
+            placeholder="Seleccionar fecha"
+          ></agf-date-picker>
         </div>
       </div>
       <div class="pac-field">

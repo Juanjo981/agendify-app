@@ -26,15 +26,19 @@
       </div>
 
       <div class="sf-row">
-        <div class="sf-date-wrap">
-          <ion-icon name="calendar-outline"></ion-icon>
-          <input class="sf-date" type="date" [(ngModel)]="filtros.fecha_desde" (ngModelChange)="filtrar()" />
-        </div>
+        <agf-date-picker
+          class="sf-date-picker"
+          [(ngModel)]="filtros.fecha_desde"
+          (ngModelChange)="filtrar()"
+          placeholder="Desde"
+        ></agf-date-picker>
 
-        <div class="sf-date-wrap">
-          <ion-icon name="calendar-outline"></ion-icon>
-          <input class="sf-date" type="date" [(ngModel)]="filtros.fecha_hasta" (ngModelChange)="filtrar()" />
-        </div>
+        <agf-date-picker
+          class="sf-date-picker"
+          [(ngModel)]="filtros.fecha_hasta"
+          (ngModelChange)="filtrar()"
+          placeholder="Hasta"
+        ></agf-date-picker>
 
         <div class="sf-select-wrap">
           <ion-icon name="attach-outline"></ion-icon>

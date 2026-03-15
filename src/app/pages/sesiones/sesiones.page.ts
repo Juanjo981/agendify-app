@@ -5,6 +5,7 @@ import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { SesionesMockService } from './sesiones.service.mock';
 import { SesionDto } from './models/sesion.model';
+import { AgfDatePickerComponent } from '../../shared/components/agf-date-picker/agf-date-picker.component';
 
 interface FiltrosSesiones {
   busqueda: string;
@@ -18,7 +19,7 @@ interface FiltrosSesiones {
   templateUrl: './sesiones.page.html',
   styleUrls: ['./sesiones.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule],
+  imports: [IonicModule, CommonModule, FormsModule, AgfDatePickerComponent],
 })
 export class SesionesPage implements OnInit {
   sesionesFiltradas: SesionDto[] = [];

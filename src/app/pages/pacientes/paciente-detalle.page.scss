@@ -945,6 +945,34 @@
   &.has-error textarea {
     border-color: var(--danger, #dc2626);
   }
+
+  input[type='date'] {
+    height: 38px;
+    padding: 0 12px;
+    border-width: 1.5px;
+    border-color: var(--border-subtle, rgba(209, 213, 219, 0.65));
+    background: rgba(255, 255, 255, 0.82);
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+
+    &:hover:not(:focus) { border-color: rgba(209, 213, 219, 0.90); }
+
+    &:focus {
+      border-color: var(--primary-mid, #6366f1);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+      background: rgba(255, 255, 255, 0.97);
+    }
+
+    &::-webkit-calendar-picker-indicator {
+      opacity: 0.5;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: opacity 0.15s;
+      &:hover { opacity: 0.85; }
+    }
+  }
 }
 
 .pac-field__error {
@@ -1463,6 +1491,98 @@
   &--red strong    { color: #dc2626; }
   &--purple strong { color: #7c3aed; }
   &--slate strong  { color: #64748b; }
+}
+
+// Search + chips bar
+.det-hist-search-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.det-hist-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  &__icon {
+    position: absolute;
+    left: 12px;
+    font-size: 16px;
+    color: var(--text-muted, #94a3b8);
+    pointer-events: none;
+  }
+
+  &__input {
+    width: 100%;
+    padding: 9px 36px 9px 36px;
+    border: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.55));
+    border-radius: var(--radius-md, 10px);
+    background: var(--glass-bg, rgba(247, 249, 252, 0.92));
+    font-size: 13.5px;
+    color: var(--text-strong, #0f172a);
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.18s, box-shadow 0.18s;
+
+    &::placeholder { color: var(--text-muted, #94a3b8); }
+
+    &:focus {
+      border-color: rgba(99, 102, 241, 0.50);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.10);
+    }
+  }
+
+  &__clear {
+    position: absolute;
+    right: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted, #94a3b8);
+    font-size: 17px;
+    padding: 4px;
+    border-radius: 50%;
+    transition: color 0.15s, background 0.15s;
+
+    &:hover { color: var(--text-strong, #0f172a); background: rgba(15, 23, 42, 0.06); }
+  }
+}
+
+.det-hist-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.det-hist-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: var(--radius-pill, 999px);
+  border: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.55));
+  background: transparent;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.16s ease;
+
+  &:hover:not(.det-hist-chip--active) {
+    background: rgba(15, 23, 42, 0.04);
+    border-color: rgba(99, 102, 241, 0.30);
+    color: var(--text-strong, #0f172a);
+  }
+
+  &--active {
+    background: var(--primary, #6366f1);
+    border-color: var(--primary, #6366f1);
+    color: #fff;
+  }
 }
 
 // Timeline container

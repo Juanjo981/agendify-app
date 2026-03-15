@@ -1,8 +1,8 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';
-import { CitaDto } from '../../models/cita.model';
+import { IonicModule } from '@ionic/angular';import { AgfDatePickerComponent } from '../../../../shared/components/agf-date-picker/agf-date-picker.component';
+import { AgfTimePickerComponent } from '../../../../shared/components/agf-time-picker/agf-time-picker.component';import { CitaDto } from '../../models/cita.model';
 
 export interface ReprogramarData {
   fecha: string;
@@ -15,7 +15,7 @@ export interface ReprogramarData {
   templateUrl: './reprogramar-modal.component.html',
   styleUrls: ['./reprogramar-modal.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule],
+  imports: [CommonModule, FormsModule, IonicModule, AgfDatePickerComponent, AgfTimePickerComponent],
 })
 export class ReprogramarModalComponent implements OnInit {
   @Input({ required: true }) cita!: CitaDto;

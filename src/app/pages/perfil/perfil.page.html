@@ -201,14 +201,12 @@
         <div class="prf-field">
           <label class="prf-field-label">Horario de inicio</label>
           <span *ngIf="!editarHorarios" class="prf-field-value">{{ horarios.inicio }}</span>
-          <ion-input *ngIf="editarHorarios" class="prf-field-input"
-                     [(ngModel)]="horarios.inicio" type="time"></ion-input>
+          <agf-time-picker *ngIf="editarHorarios" [(ngModel)]="horarios.inicio"></agf-time-picker>
         </div>
         <div class="prf-field">
           <label class="prf-field-label">Horario de cierre</label>
           <span *ngIf="!editarHorarios" class="prf-field-value">{{ horarios.fin }}</span>
-          <ion-input *ngIf="editarHorarios" class="prf-field-input"
-                     [(ngModel)]="horarios.fin" type="time"></ion-input>
+          <agf-time-picker *ngIf="editarHorarios" [(ngModel)]="horarios.fin"></agf-time-picker>
         </div>
       </div>
     </div>

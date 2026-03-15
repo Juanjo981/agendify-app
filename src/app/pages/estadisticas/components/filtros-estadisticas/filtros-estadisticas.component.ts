@@ -2,6 +2,7 @@ import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
+import { AgfDatePickerComponent } from '../../../../shared/components/agf-date-picker/agf-date-picker.component';
 import {
   FiltroEstadisticas,
   RangoFecha,
@@ -15,7 +16,7 @@ import { EstadisticasMockService } from '../../estadisticas.service.mock';
   templateUrl: './filtros-estadisticas.component.html',
   styleUrls: ['./filtros-estadisticas.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule],
+  imports: [CommonModule, FormsModule, IonicModule, AgfDatePickerComponent],
 })
 export class FiltrosEstadisticasComponent implements OnInit {
   @Output() filtrosCambiados = new EventEmitter<FiltroEstadisticas>();

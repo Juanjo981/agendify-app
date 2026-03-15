@@ -2,6 +2,7 @@ import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AlertController, IonicModule } from '@ionic/angular';
+import { AgfDatePickerComponent } from '../../shared/components/agf-date-picker/agf-date-picker.component';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PacientesMockService } from './pacientes.service.mock';
 import { PacienteDto, CitaDto, NotaDto, AdjuntoMeta, SesionPaciente, HistorialEvento, HistorialTipoEvento } from './pacientes.mock';
@@ -14,7 +15,7 @@ import html2pdf from 'html2pdf.js';
   templateUrl: './paciente-detalle.page.html',
   styleUrls: ['./paciente-detalle.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule, ConfirmDialogComponent, PacienteSubmenuComponent],
+  imports: [IonicModule, CommonModule, FormsModule, ConfirmDialogComponent, PacienteSubmenuComponent, AgfDatePickerComponent],
 })
 export class PacienteDetallePage implements OnInit {
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
@@ -28,6 +29,9 @@ export class PacienteDetallePage implements OnInit {
 
   // ─── Citas filter ──────────────────────────────────────────────────────────
   filtroCitas: 'todos' | 'Confirmada' | 'Pendiente' | 'Cancelada' = 'todos';
+  // ─── Historial search & filter ────────────────────────────────────────────
+  histBusqueda = '';
+  histFiltroTipo: 'todos' | 'citas' | 'sesiones' | 'notas' = 'todos';
   // ─── Export ───────────────────────────────────────────────────────────
   exportandoPDF = false;
   // ─── Edit modal ────────────────────────────────────────────────────────────
@@ -169,6 +173,31 @@ export class PacienteDetallePage implements OnInit {
     });
   }
 
+  get historialFiltrado(): HistorialEvento[] {
+    const TIPOS_CITAS = new Set<HistorialTipoEvento>([
+      'cita_confirmada', 'cita_completada', 'cita_cancelada',
+      'cita_pendiente', 'cita_pospuesta', 'no_asistio',
+      'reprogramacion', 'pago_registrado', 'pago_pendiente',
+    ]);
+    let eventos = this.historialEventos;
+    if (this.histFiltroTipo === 'citas') {
+      eventos = eventos.filter(ev => TIPOS_CITAS.has(ev.tipo));
+    } else if (this.histFiltroTipo === 'sesiones') {
+      eventos = eventos.filter(ev => ev.tipo === 'sesion_registrada');
+    } else if (this.histFiltroTipo === 'notas') {
+      eventos = eventos.filter(ev => ev.tipo === 'nota_agregada');
+    }
+    const q = this.histBusqueda.trim().toLowerCase();
+    if (q) {
+      eventos = eventos.filter(ev =>
+        ev.descripcion.toLowerCase().includes(q) ||
+        (ev.detalle ?? '').toLowerCase().includes(q) ||
+        this.getEventoLabel(ev.tipo).toLowerCase().includes(q)
+      );
+    }
+    return eventos;
+  }
+
   getEventoIcon(tipo: HistorialTipoEvento): string {
     const map: Record<HistorialTipoEvento, string> = {
       cita_confirmada:  'checkmark-circle-outline',
@@ -225,7 +254,7 @@ export class PacienteDetallePage implements OnInit {
     this.exportandoPDF = true;
 
     const p = this.paciente;
-    const eventos = this.historialEventos;
+    const eventos = this.historialFiltrado;
     const edad = p.fecha_nacimiento ? this.calcularEdad(p.fecha_nacimiento) : null;
     const fechaNac = p.fecha_nacimiento ? this.formatFecha(p.fecha_nacimiento) : '—';
     const nombreArchivo = `historial-${(p.nombre + '-' + p.apellido).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')}.pdf`;

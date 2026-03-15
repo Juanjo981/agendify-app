@@ -1,0 +1,98 @@
+// agf-date-picker  —  trigger button (host + layout)
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+.agf-dp {
+  display:        flex;
+  flex-direction: column;
+  gap:            5px;
+  width:          100%;
+
+  // ── Optional label ────────────────────────────────────────────────────────
+  &__label {
+    font-size:      11.5px;
+    font-weight:    600;
+    color:          var(--text-muted, #64748b);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  // ── Trigger button ────────────────────────────────────────────────────────
+  &__trigger {
+    display:       flex;
+    align-items:   center;
+    gap:           8px;
+    width:         100%;
+    height:        38px;
+    padding:       0 12px;
+    border:        1.5px solid var(--border-subtle, rgba(209, 213, 219, 0.65));
+    border-radius: var(--radius-md, 10px);
+    background:    rgba(255, 255, 255, 0.82);
+    cursor:        pointer;
+    text-align:    left;
+    font-family:   'Inter', sans-serif;
+    box-sizing:    border-box;
+    transition:    border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+
+    &:hover:not(:disabled):not(.agf-dp__trigger--open) {
+      border-color: rgba(209, 213, 219, 0.92);
+    }
+
+    &--open,
+    &:focus {
+      border-color: var(--primary-mid, #6366f1);
+      box-shadow:   0 0 0 3px rgba(99, 102, 241, 0.12);
+      background:   rgba(255, 255, 255, 0.97);
+      outline:      none;
+    }
+
+    &--error {
+      border-color: var(--danger, #ef4444) !important;
+      &:focus { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12) !important; }
+    }
+
+    &:disabled { opacity: 0.54; cursor: not-allowed; }
+  }
+
+  // ── Calendar icon ─────────────────────────────────────────────────────────
+  &__icon {
+    font-size:  15px;
+    color:      var(--text-muted, #64748b);
+    flex-shrink: 0;
+  }
+
+  // ── Date label / placeholder text ─────────────────────────────────────────
+  &__text {
+    flex:          1;
+    font-size:     13.5px;
+    color:         var(--text-faint, #94a3b8);
+    overflow:      hidden;
+    text-overflow: ellipsis;
+    white-space:   nowrap;
+  }
+
+  &__trigger--filled &__text {
+    color:       var(--text-strong, #0f172a);
+    font-weight: 500;
+  }
+
+  // ── Chevron indicator ─────────────────────────────────────────────────────
+  &__arrow {
+    font-size:  14px;
+    color:      var(--text-faint, #94a3b8);
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+
+    &--open { transform: rotate(180deg); }
+  }
+
+  // ── Inline error message ──────────────────────────────────────────────────
+  &__error {
+    font-size:   11.5px;
+    color:       var(--danger, #ef4444);
+    font-weight: 500;
+  }
+}

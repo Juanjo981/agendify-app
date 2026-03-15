@@ -53,22 +53,20 @@
     <!-- Rango de fechas -->
     <div class="erm-row-2">
       <div class="erm-field">
-        <label class="erm-label" for="fecha-desde">Desde</label>
-        <input
-          id="fecha-desde"
-          class="erm-input"
-          type="date"
+        <label class="erm-label">Desde</label>
+        <agf-date-picker
           [(ngModel)]="fechaDesde"
-          [max]="fechaHasta" />
+          [max]="fechaHasta"
+          placeholder="Seleccionar fecha"
+        ></agf-date-picker>
       </div>
       <div class="erm-field">
-        <label class="erm-label" for="fecha-hasta">Hasta</label>
-        <input
-          id="fecha-hasta"
-          class="erm-input"
-          type="date"
+        <label class="erm-label">Hasta</label>
+        <agf-date-picker
           [(ngModel)]="fechaHasta"
-          [min]="fechaDesde" />
+          [min]="fechaDesde"
+          placeholder="Seleccionar fecha"
+        ></agf-date-picker>
       </div>
     </div>
 

@@ -32,25 +32,19 @@
       </select>
     </div>
 
-    <div class="cf-date-wrap">
-      <ion-icon name="calendar-outline"></ion-icon>
-      <input
-        class="cf-date"
-        type="date"
-        [(ngModel)]="filtros.fecha_desde"
-        (ngModelChange)="emitir()"
-      />
-    </div>
+    <agf-date-picker
+      class="cf-date-picker"
+      [(ngModel)]="filtros.fecha_desde"
+      (ngModelChange)="emitir()"
+      placeholder="Desde"
+    ></agf-date-picker>
 
-    <div class="cf-date-wrap">
-      <ion-icon name="calendar-outline"></ion-icon>
-      <input
-        class="cf-date"
-        type="date"
-        [(ngModel)]="filtros.fecha_hasta"
-        (ngModelChange)="emitir()"
-      />
-    </div>
+    <agf-date-picker
+      class="cf-date-picker"
+      [(ngModel)]="filtros.fecha_hasta"
+      (ngModelChange)="emitir()"
+      placeholder="Hasta"
+    ></agf-date-picker>
 
     <button *ngIf="tieneActivos" class="cf-clear" (click)="limpiar()">
       <ion-icon name="refresh-outline"></ion-icon>

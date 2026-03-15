@@ -122,25 +122,25 @@
       </div>
       <div class="cfm-field">
         <label class="cfm-label">Hora inicio *</label>
-        <input
-          class="cfm-input"
-          type="time"
+        <agf-time-picker
           [(ngModel)]="form.hora_inicio"
           (ngModelChange)="onHoraChange()"
-          [class.cfm-input--error]="errores['hora_inicio']"
-        />
-        <span *ngIf="errores['hora_inicio']" class="cfm-error">{{ errores['hora_inicio'] }}</span>
+          [closeOnSelect]="true"
+          [hasError]="!!errores['hora_inicio']"
+          [errorMsg]="errores['hora_inicio'] || ''"
+          placeholder="--:--"
+        ></agf-time-picker>
       </div>
       <div class="cfm-field">
         <label class="cfm-label">Hora fin *</label>
-        <input
-          class="cfm-input"
-          type="time"
+        <agf-time-picker
           [(ngModel)]="form.hora_fin"
           (ngModelChange)="onHoraChange()"
-          [class.cfm-input--error]="errores['hora_fin']"
-        />
-        <span *ngIf="errores['hora_fin']" class="cfm-error">{{ errores['hora_fin'] }}</span>
+          [closeOnSelect]="true"
+          [hasError]="!!errores['hora_fin']"
+          [errorMsg]="errores['hora_fin'] || ''"
+          placeholder="--:--"
+        ></agf-time-picker>
       </div>
     </div>
 

@@ -2,6 +2,7 @@ import { Component, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
+import { AgfDatePickerComponent } from '../../../../shared/components/agf-date-picker/agf-date-picker.component';
 import { FiltroCitas, EstadoCita, EstadoPago } from '../../models/cita.model';
 
 @Component({
@@ -9,7 +10,7 @@ import { FiltroCitas, EstadoCita, EstadoPago } from '../../models/cita.model';
   templateUrl: './cita-filtros.component.html',
   styleUrls: ['./cita-filtros.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule],
+  imports: [CommonModule, FormsModule, IonicModule, AgfDatePickerComponent],
 })
 export class CitaFiltrosComponent implements OnInit {
   @Output() filtrosCambiados = new EventEmitter<FiltroCitas>();

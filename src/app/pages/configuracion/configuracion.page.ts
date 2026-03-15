@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AgfTimePickerComponent } from '../../shared/components/agf-time-picker/agf-time-picker.component';
 import { EquipoMockService, PERMISOS_DETALLES } from 'src/app/services/equipo.mock';
 import { UsuarioMock } from 'src/app/shared/models/usuario.model';
 import { PermisosRecepcionista } from 'src/app/shared/models/permisos.model';
@@ -56,7 +57,7 @@ type CfgTab = 'general' | 'agenda' | 'equipo' | 'seguridad' | 'sistema';
 @Component({
   selector: 'app-configuracion',
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule],
+  imports: [IonicModule, CommonModule, FormsModule, AgfTimePickerComponent],
   templateUrl: './configuracion.page.html',
   styleUrls: ['./configuracion.page.scss']
 })

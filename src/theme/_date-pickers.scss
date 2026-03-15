@@ -1,0 +1,116 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// _date-pickers.scss  —  Agendify  |  Shared Date & Time Picker Design System
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// PURPOSE
+//   Canonical SCSS mixins and the global .agf-dt-input / .agf-dt-wrap utility
+//   classes for every native <input type="date"> and <input type="time"> in the
+//   app (EXCLUDING the Nueva-Cita form which keeps its own .czf-input/.cfm-input
+//   styling).
+//
+// USAGE — Option A: global class (add to HTML element)
+//   <input type="date" class="agf-dt-input" [(ngModel)]="..." />
+//
+// USAGE — Option B: mixin (in component SCSS)
+//   @use '../../../../theme/date-pickers' as pickers;
+//   .my-input { @include pickers.agf-date-time-input; }
+//
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Design tokens (resolved from :root, with Agendify fallbacks) ─────────────
+$_border:       var(--border-subtle, rgba(209, 213, 219, 0.65));
+$_bg:           rgba(255, 255, 255, 0.82);
+$_bg-focus:     rgba(255, 255, 255, 0.97);
+$_primary:      var(--primary-mid, #6366f1);
+$_primary-ring: rgba(99, 102, 241, 0.12);
+$_text:         var(--text-strong, #0f172a);
+$_radius:       var(--radius-md, 10px);
+
+// ── Mixin: canonical native date / time input ─────────────────────────────────
+@mixin agf-date-time-input {
+  height: 38px;
+  padding: 0 12px;
+  border: 1.5px solid $_border;
+  border-radius: $_radius;
+  background: $_bg;
+  color: $_text;
+  font-size: 13.5px;
+  font-weight: 500;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+
+  &:hover:not(:focus) {
+    border-color: rgba(209, 213, 219, 0.9);
+  }
+
+  &:focus {
+    border-color: $_primary;
+    box-shadow: 0 0 0 3px $_primary-ring;
+    background: $_bg-focus;
+  }
+
+  // Normalize browser date/time chrome icon
+  &::-webkit-calendar-picker-indicator {
+    opacity: 0.5;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: opacity 0.15s;
+
+    &:hover { opacity: 0.85; }
+  }
+}
+
+// ── Mixin: wrapper div containing an icon + bare input (á la .sf-date-wrap) ───
+@mixin agf-date-time-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1.5px solid $_border;
+  border-radius: $_radius;
+  padding: 0 10px;
+  height: 38px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+
+  &:focus-within {
+    border-color: $_primary;
+    box-shadow: 0 0 0 3px $_primary-ring;
+    background: $_bg-focus;
+  }
+
+  ion-icon {
+    color: var(--text-muted, #64748b);
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  input[type='date'],
+  input[type='time'] {
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 13px;
+    color: $_text;
+    cursor: pointer;
+    flex: 1;
+    min-width: 0;
+    font-family: inherit;
+    // The wrapper handles the focus ring; remove any inner-input focus ring
+    &:focus { box-shadow: none; }
+  }
+}
+
+// ── Global utility classes (imported via global.scss → available everywhere) ──
+
+// Use on any standalone <input type="date"> or <input type="time">
+.agf-dt-input {
+  @include agf-date-time-input;
+}
+
+// Use on a wrapper <div> that contains an icon + bare input
+.agf-dt-wrap {
+  @include agf-date-time-wrap;
+}

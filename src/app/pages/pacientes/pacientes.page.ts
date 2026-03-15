@@ -6,13 +6,14 @@ import { Router } from '@angular/router';
 import { PacientesMockService } from './pacientes.service.mock';
 import { PacienteDto } from './pacientes.mock';
 import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../shared/confirm-dialog/confirm-dialog.component';
+import { AgfDatePickerComponent } from '../../shared/components/agf-date-picker/agf-date-picker.component';
 
 @Component({
   selector: 'app-pacientes',
   templateUrl: './pacientes.page.html',
   styleUrls: ['./pacientes.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule, ConfirmDialogComponent],
+  imports: [IonicModule, CommonModule, FormsModule, ConfirmDialogComponent, AgfDatePickerComponent],
 })
 export class PacientesPage implements OnInit {
   // ─── Data & filters ────────────────────────────────────────────────────────

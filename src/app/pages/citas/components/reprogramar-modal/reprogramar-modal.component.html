@@ -18,35 +18,29 @@
 
       <div class="rp-field">
         <label class="rp-label">Nueva fecha *</label>
-        <input
-          class="rp-input"
-          type="date"
+        <agf-date-picker
           [(ngModel)]="fecha"
-          [class.rp-input--error]="errores['fecha']"
-        />
-        <span *ngIf="errores['fecha']" class="rp-error">{{ errores['fecha'] }}</span>
+          [hasError]="!!errores['fecha']"
+          [errorMsg]="errores['fecha'] || ''"
+        ></agf-date-picker>
       </div>
 
       <div class="rp-row">
         <div class="rp-field">
           <label class="rp-label">Hora inicio *</label>
-          <input
-            class="rp-input"
-            type="time"
+          <agf-time-picker
             [(ngModel)]="hora_inicio"
-            [class.rp-input--error]="errores['hora_inicio']"
-          />
-          <span *ngIf="errores['hora_inicio']" class="rp-error">{{ errores['hora_inicio'] }}</span>
+            [hasError]="!!errores['hora_inicio']"
+            [errorMsg]="errores['hora_inicio'] || ''"
+          ></agf-time-picker>
         </div>
         <div class="rp-field">
           <label class="rp-label">Hora fin *</label>
-          <input
-            class="rp-input"
-            type="time"
+          <agf-time-picker
             [(ngModel)]="hora_fin"
-            [class.rp-input--error]="errores['hora_fin']"
-          />
-          <span *ngIf="errores['hora_fin']" class="rp-error">{{ errores['hora_fin'] }}</span>
+            [hasError]="!!errores['hora_fin']"
+            [errorMsg]="errores['hora_fin'] || ''"
+          ></agf-time-picker>
         </div>
       </div>
 

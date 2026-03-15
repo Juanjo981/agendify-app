@@ -185,7 +185,11 @@
         </div>
         <div class="pac-field">
           <label>Fecha de nacimiento</label>
-          <input type="date" [(ngModel)]="formPaciente.fecha_nacimiento" />
+          <agf-date-picker
+            [(ngModel)]="formPaciente.fecha_nacimiento"
+            [allowPast]="true"
+            placeholder="Seleccionar fecha"
+          ></agf-date-picker>
         </div>
       </div>
 

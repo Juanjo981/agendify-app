@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
+import { AgfDatePickerComponent } from '../../../../shared/components/agf-date-picker/agf-date-picker.component';
 import {
   ReporteEstadistica,
   ExportacionReporteRequest,
@@ -15,7 +16,7 @@ import { EstadisticasMockService } from '../../estadisticas.service.mock';
   templateUrl: './exportar-reporte-modal.component.html',
   styleUrls: ['./exportar-reporte-modal.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule],
+  imports: [CommonModule, FormsModule, IonicModule, AgfDatePickerComponent],
 })
 export class ExportarReporteModalComponent implements OnInit {
   @Input() reporte!: ReporteEstadistica;

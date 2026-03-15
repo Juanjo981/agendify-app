@@ -1,0 +1,28 @@
+<div class="agf-tp">
+
+  <label class="agf-tp__label" *ngIf="label">{{ label }}</label>
+
+  <button
+    #trigger
+    type="button"
+    class="agf-tp__trigger"
+    [class.agf-tp__trigger--open]="isOpen"
+    [class.agf-tp__trigger--filled]="!!value"
+    [class.agf-tp__trigger--error]="hasError"
+    [disabled]="isDisabled"
+    (click)="toggle($event)"
+    aria-haspopup="true"
+    [attr.aria-expanded]="isOpen"
+  >
+    <ion-icon name="time-outline" class="agf-tp__icon"></ion-icon>
+    <span class="agf-tp__text">{{ value || placeholder }}</span>
+    <ion-icon
+      name="chevron-down-outline"
+      class="agf-tp__arrow"
+      [class.agf-tp__arrow--open]="isOpen"
+    ></ion-icon>
+  </button>
+
+  <span class="agf-tp__error" *ngIf="hasError && errorMsg">{{ errorMsg }}</span>
+
+</div>

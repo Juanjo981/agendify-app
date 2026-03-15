@@ -15,19 +15,19 @@
   <div class="fe-row fe-row--dates" *ngIf="filtros.rango === 'personalizado'">
     <div class="fe-field">
       <label class="fe-label">Desde</label>
-      <input
-        class="fe-input"
-        type="date"
+      <agf-date-picker
         [(ngModel)]="filtros.fechaDesde"
-        (change)="emitir()" />
+        (change)="emitir()"
+        placeholder="Seleccionar"
+      ></agf-date-picker>
     </div>
     <div class="fe-field">
       <label class="fe-label">Hasta</label>
-      <input
-        class="fe-input"
-        type="date"
+      <agf-date-picker
         [(ngModel)]="filtros.fechaHasta"
-        (change)="emitir()" />
+        (change)="emitir()"
+        placeholder="Seleccionar"
+      ></agf-date-picker>
     </div>
   </div>
 

@@ -1,0 +1,104 @@
+// agf-time-panel  —  Agendify branded floating time selector
+
+:host { display: block; }
+
+// ── Panel shell ────────────────────────────────────────────────────────────────
+.atp {
+  background:    rgba(250, 251, 253, 0.99);
+  border-radius: var(--radius-lg, 16px);
+  border:        1px solid var(--glass-border, rgba(209, 213, 219, 0.50));
+  box-shadow:    0 8px 32px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.06);
+  overflow:      hidden;
+  width:         184px;
+  font-family:   'Inter', sans-serif;
+  user-select:   none;
+}
+
+// ── Two-column layout ──────────────────────────────────────────────────────────
+.atp-cols {
+  display:     flex;
+  align-items: stretch;
+}
+
+.atp-col {
+  flex:            1;
+  display:         flex;
+  flex-direction:  column;
+
+  &__header {
+    font-size:      10px;
+    font-weight:    700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color:          var(--text-muted, #64748b);
+    text-align:     center;
+    padding:        10px 0 6px;
+    border-bottom:  1px solid rgba(209, 213, 219, 0.35);
+  }
+
+  &__scroll {
+    max-height:      204px;
+    overflow-y:      auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(99, 102, 241, 0.30) transparent;
+
+    &::-webkit-scrollbar       { width: 4px; }
+    &::-webkit-scrollbar-track { background:    transparent; }
+    &::-webkit-scrollbar-thumb { background:    rgba(99, 102, 241, 0.30); border-radius: 4px; }
+  }
+}
+
+// ── Colon separator ────────────────────────────────────────────────────────────
+.atp-sep {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  padding-top:     40px;  // aligns with first row under header
+  font-size:       18px;
+  font-weight:     700;
+  color:           var(--text-faint, #94a3b8);
+  width:           18px;
+  flex-shrink:     0;
+}
+
+// ── Hour / minute buttons ──────────────────────────────────────────────────────
+.atp-item {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           100%;
+  height:          38px;
+  border:          none;
+  background:      none;
+  font-size:       15px;
+  font-weight:     500;
+  color:           var(--text-strong, #0f172a);
+  cursor:          pointer;
+  font-family:     'Inter', sans-serif;
+  transition:      background 0.10s, color 0.10s;
+
+  &:hover:not(.atp-item--selected) {
+    background: var(--primary-soft, rgba(99, 102, 241, 0.08));
+    color:      var(--primary-mid, #6366f1);
+  }
+
+  &--selected {
+    background: var(--primary-mid, #6366f1) !important;
+    color:      #fff !important;
+    font-weight: 700;
+  }
+}
+
+// ── Footer preview ─────────────────────────────────────────────────────────────
+.atp-footer {
+  border-top:  1px solid rgba(209, 213, 219, 0.35);
+  padding:     10px;
+  text-align:  center;
+}
+
+.atp-preview {
+  font-size:      22px;
+  font-weight:    700;
+  color:          var(--text-strong, #0f172a);
+  letter-spacing: 0.06em;
+}
