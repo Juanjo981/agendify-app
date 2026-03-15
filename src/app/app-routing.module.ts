@@ -93,6 +93,13 @@ const routes: Routes = [
     loadComponent: () =>
       import('./pages/registro/registro.page').then(m => m.RegistroPage)
   },
+  {
+    // Public page — no auth guard. Patient arrives here via SMS link.
+    // Future shape: /confirmar-cita/:token
+    path: 'confirmar-cita',
+    loadComponent: () =>
+      import('./pages/confirmar-cita/confirmar-cita.page').then(m => m.ConfirmarCitaPage)
+  },
 ];
 
 @NgModule({

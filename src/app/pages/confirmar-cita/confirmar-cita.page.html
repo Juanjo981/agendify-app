@@ -1,0 +1,327 @@
+﻿<ion-content class="cc-page">
+  <div class="cc-wrap">
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• BRANDING â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <header class="cc-brand">
+      <img src="assets/img/logo2.png" class="cc-brand__logo" alt="Agendify" />
+      <span class="cc-brand__name">Agendify</span>
+    </header>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• HERO DINÃMICO â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- Estado: pendiente -->
+    <div class="cc-hero" *ngIf="vista === 'pendiente'">
+      <p class="cc-hero__eyebrow">
+        <ion-icon name="notifications-outline"></ion-icon>
+        Tu cita es en {{ cita.diasRestantes }} dÃ­a{{ cita.diasRestantes === 1 ? '' : 's' }}
+      </p>
+      <h1 class="cc-hero__title">Confirma tu<br>asistencia</h1>
+      <p class="cc-hero__sub">
+        Solo te tomarÃ¡ unos segundos. Confirma que estarÃ¡s presente en tu cita.
+      </p>
+    </div>
+
+    <!-- Estado: reprogramar -->
+    <div class="cc-hero" *ngIf="vista === 'reprogramar'">
+      <p class="cc-hero__eyebrow cc-hero__eyebrow--blue">
+        <ion-icon name="calendar-outline"></ion-icon>
+        Cambio de horario
+      </p>
+      <h1 class="cc-hero__title cc-hero__title--sm">Solicitar<br>reprogramaciÃ³n</h1>
+      <p class="cc-hero__sub">
+        Dinos cuÃ¡ndo podrÃ­as asistir y se lo comunicaremos a tu profesional.
+      </p>
+    </div>
+
+    <!-- Estado: cancelar (confirmaciÃ³n previa) -->
+    <div class="cc-hero" *ngIf="vista === 'cancelar'">
+      <p class="cc-hero__eyebrow cc-hero__eyebrow--red">
+        <ion-icon name="close-circle-outline"></ion-icon>
+        Cancelar cita
+      </p>
+      <h1 class="cc-hero__title cc-hero__title--sm">Â¿Deseas cancelar<br>tu cita?</h1>
+      <p class="cc-hero__sub">
+        Por favor confirma esta acciÃ³n. Tu profesional serÃ¡ notificado.
+      </p>
+    </div>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• CARD DE CITA â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- Visible en todos los estados excepto expirado -->
+    <div class="cc-card" *ngIf="vista !== 'expirado'">
+
+      <!-- Paciente + badge de estado -->
+      <div class="cc-patient">
+        <div class="cc-patient__avatar" [style.background]="cita.avatarColor">
+          {{ cita.inicialesPaciente }}
+        </div>
+        <div class="cc-patient__info">
+          <span class="cc-patient__name">{{ cita.nombrePaciente }}</span>
+          <span class="cc-patient__label">Paciente</span>
+        </div>
+        <!-- Badge de estado â€” color cambia con cada transiciÃ³n -->
+        <div class="cc-status"
+             [class.cc-status--pending]="vista === 'pendiente' || vista === 'reprogramar' || vista === 'cancelar'"
+             [class.cc-status--confirmed]="vista === 'confirmada'"
+             [class.cc-status--cancelled]="vista === 'cancelada'"
+             [class.cc-status--rescheduled]="vista === 'reprogramada'">
+          <ion-icon [name]="statusIcon"></ion-icon>
+          <span>{{ statusLabel }}</span>
+        </div>
+      </div>
+
+      <div class="cc-card__divider"></div>
+
+      <!-- Detalles de la cita -->
+      <div class="cc-details">
+
+        <div class="cc-detail-item">
+          <div class="cc-detail-item__icon">
+            <ion-icon name="person-circle-outline"></ion-icon>
+          </div>
+          <div class="cc-detail-item__body">
+            <span class="cc-detail-item__label">Profesional</span>
+            <span class="cc-detail-item__value">{{ cita.profesional }}</span>
+          </div>
+        </div>
+
+        <div class="cc-detail-item">
+          <div class="cc-detail-item__icon">
+            <ion-icon name="medical-outline"></ion-icon>
+          </div>
+          <div class="cc-detail-item__body">
+            <span class="cc-detail-item__label">Especialidad</span>
+            <span class="cc-detail-item__value">{{ cita.especialidad }}</span>
+          </div>
+        </div>
+
+        <div class="cc-card__divider cc-card__divider--inner"></div>
+
+        <div class="cc-detail-item">
+          <div class="cc-detail-item__icon">
+            <ion-icon name="calendar-outline"></ion-icon>
+          </div>
+          <div class="cc-detail-item__body">
+            <span class="cc-detail-item__label">Fecha</span>
+            <span class="cc-detail-item__value cc-detail-item__value--strong">
+              {{ cita.fechaLarga }}
+            </span>
+          </div>
+        </div>
+
+        <div class="cc-detail-item">
+          <div class="cc-detail-item__icon">
+            <ion-icon name="time-outline"></ion-icon>
+          </div>
+          <div class="cc-detail-item__body">
+            <span class="cc-detail-item__label">Hora</span>
+            <span class="cc-detail-item__value cc-detail-item__value--highlight">
+              {{ cita.horaInicio }} â€“ {{ cita.horaFin }}
+            </span>
+          </div>
+        </div>
+
+        <div class="cc-card__divider cc-card__divider--inner"></div>
+
+        <div class="cc-detail-item">
+          <div class="cc-detail-item__icon"
+               [class.cc-detail-item__icon--virtual]="cita.modalidad === 'Virtual'">
+            <ion-icon [name]="cita.modalidad === 'Virtual' ? 'videocam-outline' : 'business-outline'"></ion-icon>
+          </div>
+          <div class="cc-detail-item__body">
+            <span class="cc-detail-item__label">Modalidad</span>
+            <span class="cc-detail-item__value">{{ cita.modalidad }}</span>
+          </div>
+        </div>
+
+        <div class="cc-detail-item" *ngIf="cita.ubicacion">
+          <div class="cc-detail-item__icon">
+            <ion-icon name="location-outline"></ion-icon>
+          </div>
+          <div class="cc-detail-item__body">
+            <span class="cc-detail-item__label">DirecciÃ³n</span>
+            <span class="cc-detail-item__value">{{ cita.ubicacion }}</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â• ACCIONES PRINCIPALES (estado pendiente) â•â•â•â•â•â•â•â•â•â•â• -->
+    <div class="cc-actions" *ngIf="vista === 'pendiente'">
+      <p class="cc-actions__hint">
+        <ion-icon name="information-circle-outline"></ion-icon>
+        Si no puedes asistir, puedes solicitar un cambio o cancelar directamente.
+      </p>
+
+      <!-- CTA principal -->
+      <button class="cc-btn-confirm" (click)="confirmar()">
+        <ion-icon name="checkmark-circle-outline"></ion-icon>
+        Confirmar mi asistencia
+      </button>
+
+      <!-- CTA secundario: reprogramar -->
+      <button class="cc-btn-reschedule" (click)="irAReprogramar()">
+        <ion-icon name="calendar-outline"></ion-icon>
+        Solicitar reprogramaciÃ³n
+      </button>
+
+      <!-- CTA terciario: cancelar â€” mÃ­nimo peso visual -->
+      <button class="cc-btn-cancel-link" (click)="irACancelar()">
+        No podrÃ© asistir â€” cancelar cita
+      </button>
+    </div>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â• SECCIÃ“N REPROGRAMAR â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <div class="cc-section cc-repro" *ngIf="vista === 'reprogramar'">
+
+      <p class="cc-section__subtitle">Horarios disponibles sugeridos</p>
+
+      <!-- Slots de horario sugeridos -->
+      <div class="cc-slots">
+        <button class="cc-slot"
+                [class.cc-slot--selected]="slotSeleccionado === 0"
+                (click)="slotSeleccionado = 0">
+          <span class="cc-slot__day">MiÃ© 18 mar</span>
+          <span class="cc-slot__time">09:00 â€“ 10:00</span>
+        </button>
+        <button class="cc-slot"
+                [class.cc-slot--selected]="slotSeleccionado === 1"
+                (click)="slotSeleccionado = 1">
+          <span class="cc-slot__day">Jue 19 mar</span>
+          <span class="cc-slot__time">11:00 â€“ 12:00</span>
+        </button>
+        <button class="cc-slot"
+                [class.cc-slot--selected]="slotSeleccionado === 2"
+                (click)="slotSeleccionado = 2">
+          <span class="cc-slot__day">Vie 20 mar</span>
+          <span class="cc-slot__time">16:00 â€“ 17:00</span>
+        </button>
+      </div>
+
+      <p class="cc-section__or">o describe tu preferencia</p>
+
+      <div class="cc-textarea-wrap">
+        <label class="cc-textarea-label">Motivo o sugerencia de horario</label>
+        <textarea
+          class="cc-textarea"
+          rows="3"
+          placeholder="Ej: Prefiero en la tarde a partir de las 15:00 hâ€¦"
+          [(ngModel)]="motivoReprogramacion"
+        ></textarea>
+      </div>
+
+      <div class="cc-section__actions">
+        <button class="cc-btn-confirm" (click)="enviarReprogramacion()">
+          <ion-icon name="send-outline"></ion-icon>
+          Enviar solicitud
+        </button>
+        <button class="cc-btn-back" (click)="volver()">
+          <ion-icon name="arrow-back-outline"></ion-icon>
+          Volver
+        </button>
+      </div>
+
+    </div>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â• SECCIÃ“N CANCELAR (confirmaciÃ³n previa) â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <div class="cc-section cc-cancel-confirm" *ngIf="vista === 'cancelar'">
+
+      <div class="cc-cancel-confirm__icon-wrap">
+        <ion-icon name="warning-outline"></ion-icon>
+      </div>
+
+      <p class="cc-cancel-confirm__text">
+        Si cancelas, tu profesional serÃ¡ notificado y el turno quedarÃ¡ disponible
+        para otros pacientes. <strong>Esta acciÃ³n no puede deshacerse.</strong>
+      </p>
+
+      <div class="cc-section__actions">
+        <button class="cc-btn-cancel-danger" (click)="cancelarCita()">
+          <ion-icon name="close-circle-outline"></ion-icon>
+          SÃ­, cancelar mi cita
+        </button>
+        <button class="cc-btn-back" (click)="volver()">
+          <ion-icon name="arrow-back-outline"></ion-icon>
+          Volver â€” no quiero cancelar
+        </button>
+      </div>
+
+    </div>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â• RESULTADO: CONFIRMADA â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <div class="cc-result cc-result--confirmed" *ngIf="vista === 'confirmada'">
+      <div class="cc-result__ring cc-result__ring--green">
+        <div class="cc-result__icon cc-result__icon--green">
+          <ion-icon name="checkmark-outline"></ion-icon>
+        </div>
+      </div>
+      <h2 class="cc-result__title">Â¡Cita confirmada!</h2>
+      <p class="cc-result__sub">
+        Tu asistencia ha sido registrada correctamente.<br>
+        Te esperamos el <strong>{{ cita.fechaCorta }}</strong> a las <strong>{{ cita.horaInicio }}</strong> h.
+      </p>
+      <div class="cc-result__chips">
+        <span class="cc-chip cc-chip--green">
+          <ion-icon name="calendar-outline"></ion-icon>
+          {{ cita.fechaCorta }}
+        </span>
+        <span class="cc-chip cc-chip--green">
+          <ion-icon name="time-outline"></ion-icon>
+          {{ cita.horaInicio }} â€“ {{ cita.horaFin }}
+        </span>
+      </div>
+    </div>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â• RESULTADO: CANCELADA â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <div class="cc-result cc-result--cancelled" *ngIf="vista === 'cancelada'">
+      <div class="cc-result__ring cc-result__ring--red">
+        <div class="cc-result__icon cc-result__icon--red">
+          <ion-icon name="close-outline"></ion-icon>
+        </div>
+      </div>
+      <h2 class="cc-result__title">Cita cancelada</h2>
+      <p class="cc-result__sub">
+        Tu cita ha sido cancelada. Si cambias de opiniÃ³n, comunÃ­cate directamente
+        con tu profesional para agendar una nueva cita.
+      </p>
+    </div>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â• RESULTADO: REPROGRAMACIÃ“N SOLICITADA â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <div class="cc-result cc-result--rescheduled" *ngIf="vista === 'reprogramada'">
+      <div class="cc-result__ring cc-result__ring--blue">
+        <div class="cc-result__icon cc-result__icon--blue">
+          <ion-icon name="calendar-outline"></ion-icon>
+        </div>
+      </div>
+      <h2 class="cc-result__title">Solicitud enviada</h2>
+      <p class="cc-result__sub">
+        Tu solicitud de reprogramaciÃ³n fue enviada correctamente. Tu profesional
+        se pondrÃ¡ en contacto contigo para acordar el nuevo horario.
+      </p>
+    </div>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â• ESTADO: ENLACE INVÃLIDO / EXPIRADO â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <div class="cc-expired" *ngIf="vista === 'expirado'">
+      <div class="cc-expired__icon-wrap">
+        <ion-icon name="link-outline"></ion-icon>
+      </div>
+      <h2 class="cc-expired__title">Enlace no vÃ¡lido</h2>
+      <p class="cc-expired__sub">
+        Este enlace ha expirado o ya no estÃ¡ disponible.
+      </p>
+      <div class="cc-expired__hint">
+        <ion-icon name="call-outline"></ion-icon>
+        <span>ComunÃ­cate directamente con tu consultorio o profesional para gestionar tu cita.</span>
+      </div>
+    </div>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• FOOTER DE CONFIANZA â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <footer class="cc-footer" *ngIf="vista !== 'expirado'">
+      <ion-icon name="shield-checkmark-outline"></ion-icon>
+      <span>
+        Este enlace fue enviado por tu profesional a travÃ©s de <strong>Agendify</strong>.
+        No compartas esta URL con nadie mÃ¡s.
+      </span>
+    </footer>
+
+  </div>
+</ion-content>
