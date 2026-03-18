@@ -1,6 +1,9 @@
 import { CitaFormModalComponent, CitaFormContext, CitaFormData } from '../../shared/components/cita-form-modal/cita-form-modal.component';
 import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../shared/confirm-dialog/confirm-dialog.component';
 import { CqaPopoverComponent, CqaAction } from './components/cqa-popover/cqa-popover.component';
+import { SolicitudReprogramacionModalComponent } from '../../shared/components/solicitud-reprogramacion-modal/solicitud-reprogramacion-modal.component';
+import { SolicitudReprogramacionService } from '../citas/solicitud-reprogramacion.service.mock';
+import { SolicitudReprogramacion } from '../../shared/models/solicitud-reprogramacion.model';
 import { Component, HostListener, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -32,7 +35,7 @@ interface CalendarDay {
 @Component({
   selector: 'app-agenda',
   templateUrl: './agenda.page.html',
-  imports: [IonicModule, CommonModule, FormsModule, CitaFormModalComponent, ConfirmDialogComponent, CqaPopoverComponent],
+  imports: [IonicModule, CommonModule, FormsModule, CitaFormModalComponent, ConfirmDialogComponent, CqaPopoverComponent, SolicitudReprogramacionModalComponent],
   standalone: true,
   styleUrls: ['./agenda.page.scss'],
 })
@@ -124,7 +127,7 @@ export class AgendaPage implements OnDestroy {
   private dragCurrentY = 0;
   private isDragging = false;
 
-  constructor(private pacientesSvc: PacientesMockService, private router: Router, private citasSvc: CitasMockService, private popoverCtrl: PopoverController) {
+  constructor(private pacientesSvc: PacientesMockService, private router: Router, private citasSvc: CitasMockService, private popoverCtrl: PopoverController, private solicitudSvc: SolicitudReprogramacionService) {
     this.pacientes = this.pacientesSvc.getAll().map(p => ({
       id: p.id_paciente,
       nombre: `${p.nombre} ${p.apellido}`,
@@ -154,6 +157,61 @@ export class AgendaPage implements OnDestroy {
   citaActiva: CitaDto | null = null;
   showQuickActions = false;
   private openPopover: HTMLIonPopoverElement | null = null;
+
+  // ─── Solicitud de reprogramación ─────────────────────────────────────────
+  solicitudSeleccionada: SolicitudReprogramacion | null = null;
+  showSolicitudModal = false;
+
+  /** Returns the pending solicitud for a given cita, or undefined. */
+  getSolicitudPendiente(idCita: number | undefined): SolicitudReprogramacion | undefined {
+    if (!idCita) return undefined;
+    return this.solicitudSvc.getByCita(idCita);
+  }
+
+  abrirSolicitudDesdeAgenda(ev: CalendarEvent): void {
+    if (!ev.cita) return;
+    const s = this.solicitudSvc.getByCita(ev.cita.id_cita);
+    if (!s) return;
+    this.solicitudSeleccionada = s;
+    this.showSolicitudModal = true;
+  }
+
+  onSolicitudAceptada(): void {
+    if (!this.solicitudSeleccionada) return;
+    this.solicitudSvc.aceptar(this.solicitudSeleccionada.idSolicitud);
+    // Pre-fill the cita form so the professional can set the new slot
+    const cita = this.citasSvc.getCitas().find(c => c.id_cita === this.solicitudSeleccionada!.idCita);
+    if (cita) {
+      this.citaActiva = cita;
+      this.apptPrefill = { fecha: cita.fecha, horaInicio: cita.hora_inicio, horaFin: cita.hora_fin };
+      this.apptShowBanner = true;
+      this.apptContextLabel = 'Reprogramando cita aceptada';
+    }
+    this.showSolicitudModal = false;
+    this.solicitudSeleccionada = null;
+    if (cita) {
+      document.body.classList.add('modal-open');
+      this.showNewAppointmentPanel = true;
+    }
+  }
+
+  onSolicitudRechazada(_motivo: string): void {
+    if (!this.solicitudSeleccionada) return;
+    this.solicitudSvc.rechazar(this.solicitudSeleccionada.idSolicitud);
+    this.showSolicitudModal = false;
+    this.solicitudSeleccionada = null;
+    this.generateCalendar();
+  }
+
+  onVerAgendaDesdeModal(): void {
+    this.showSolicitudModal = false;
+    this.solicitudSeleccionada = null;
+  }
+
+  cerrarSolicitudModal(): void {
+    this.showSolicitudModal = false;
+    this.solicitudSeleccionada = null;
+  }
 
   // ─── Confirm dialog (inline over the QA sheet) ───────────────────────────
   showCqaConfirm = false;

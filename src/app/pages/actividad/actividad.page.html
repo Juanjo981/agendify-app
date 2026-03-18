@@ -41,6 +41,7 @@
           *ngFor="let ev of eventoHoy; let last = last"
           class="act-item"
           [class.act-item--last]="last"
+          [class.act-item--cta]="!!ev.solicitudId"
         >
           <div class="act-item-icon act-icon--{{ ev.tipo }}">
             <ion-icon [name]="ev.icono"></ion-icon>
@@ -50,6 +51,14 @@
             <p class="act-item-desc">{{ ev.descripcion }}</p>
             <span class="act-item-time">{{ ev.tiempo }}</span>
           </div>
+          <button
+            *ngIf="ev.solicitudId"
+            class="act-cta-btn"
+            (click)="abrirSolicitud(ev.solicitudId!)"
+          >
+            <ion-icon name="eye-outline"></ion-icon>
+            Ver
+          </button>
         </div>
       </div>
     </ng-container>
@@ -62,6 +71,7 @@
           *ngFor="let ev of eventoAyer; let last = last"
           class="act-item"
           [class.act-item--last]="last"
+          [class.act-item--cta]="!!ev.solicitudId"
         >
           <div class="act-item-icon act-icon--{{ ev.tipo }}">
             <ion-icon [name]="ev.icono"></ion-icon>
@@ -71,6 +81,14 @@
             <p class="act-item-desc">{{ ev.descripcion }}</p>
             <span class="act-item-time">{{ ev.tiempo }}</span>
           </div>
+          <button
+            *ngIf="ev.solicitudId"
+            class="act-cta-btn"
+            (click)="abrirSolicitud(ev.solicitudId!)"
+          >
+            <ion-icon name="eye-outline"></ion-icon>
+            Ver
+          </button>
         </div>
       </div>
     </ng-container>
@@ -83,6 +101,7 @@
           *ngFor="let ev of eventoAnteriores; let last = last"
           class="act-item"
           [class.act-item--last]="last"
+          [class.act-item--cta]="!!ev.solicitudId"
         >
           <div class="act-item-icon act-icon--{{ ev.tipo }}">
             <ion-icon [name]="ev.icono"></ion-icon>
@@ -92,6 +111,14 @@
             <p class="act-item-desc">{{ ev.descripcion }}</p>
             <span class="act-item-time">{{ ev.tiempo }}</span>
           </div>
+          <button
+            *ngIf="ev.solicitudId"
+            class="act-cta-btn"
+            (click)="abrirSolicitud(ev.solicitudId!)"
+          >
+            <ion-icon name="eye-outline"></ion-icon>
+            Ver
+          </button>
         </div>
       </div>
     </ng-container>
@@ -107,3 +134,15 @@
 
   </div>
 </ion-content>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MODAL: Solicitud de reprogramación
+════════════════════════════════════════════════════════════════════════════ -->
+<app-solicitud-reprogramacion-modal
+  *ngIf="showSolicitudModal && solicitudSeleccionada"
+  [solicitud]="solicitudSeleccionada!"
+  (aceptada)="onSolicitudAceptada()"
+  (rechazada)="onSolicitudRechazada($event)"
+  (verAgenda)="onVerAgenda()"
+  (cerrado)="cerrarSolicitudModal()"
+></app-solicitud-reprogramacion-modal>

@@ -89,6 +89,14 @@
         <ion-label>
           <h2>{{ ev.title }}</h2>
           <p>{{ ev.time }}</p>
+          <!-- Badge: solicitud de reprogramación pendiente -->
+          <button class="cita-repro-badge"
+                  *ngIf="getSolicitudPendiente(ev.cita?.id_cita)"
+                  (click)="$event.stopPropagation(); abrirSolicitudDesdeAgenda(ev)"
+                  title="Ver solicitud de reprogramación">
+            <ion-icon name="swap-horizontal-outline"></ion-icon>
+            Solicitud de cambio
+          </button>
         </ion-label>
 
         <div class="right-section">
@@ -500,6 +508,16 @@
     </ng-template>
   </ion-modal>
 
+
+  <!-- ─── MODAL: Solicitud de reprogramación ──────────────────────────────────── -->
+  <app-solicitud-reprogramacion-modal
+    *ngIf="showSolicitudModal && solicitudSeleccionada"
+    [solicitud]="solicitudSeleccionada!"
+    (aceptada)="onSolicitudAceptada()"
+    (rechazada)="onSolicitudRechazada($event)"
+    (verAgenda)="onVerAgendaDesdeModal()"
+    (cerrado)="cerrarSolicitudModal()">
+  </app-solicitud-reprogramacion-modal>
 
 </ion-content>
 

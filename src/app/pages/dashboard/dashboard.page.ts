@@ -8,11 +8,14 @@ import { filter } from 'rxjs/operators';
 import { AuthorizationService } from 'src/app/auth/authorization.service';
 import { HasPermissionDirective } from 'src/app/auth/has-permission.directive';
 import { ConfirmDialogComponent, ConfirmDialogConfig } from 'src/app/shared/confirm-dialog/confirm-dialog.component';
+import { SolicitudReprogramacionService } from '../citas/solicitud-reprogramacion.service.mock';
+import { SolicitudReprogramacion } from 'src/app/shared/models/solicitud-reprogramacion.model';
+import { SolicitudReprogramacionModalComponent } from 'src/app/shared/components/solicitud-reprogramacion-modal/solicitud-reprogramacion-modal.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [IonicModule, CommonModule, RouterModule, HasPermissionDirective, ConfirmDialogComponent],
+  imports: [IonicModule, CommonModule, RouterModule, HasPermissionDirective, ConfirmDialogComponent, SolicitudReprogramacionModalComponent],
   templateUrl: './dashboard.page.html',
   styleUrls: ['./dashboard.page.scss'],
 })
@@ -29,13 +32,18 @@ export class DashboardPage implements OnInit, OnDestroy {
   notificacionesAbiertas = false;
   menuInferiorAbierto = false;
 
+  // ─── Solicitudes de reprogramación ────────────────────────────────────────
+  solicitudSeleccionada: SolicitudReprogramacion | null = null;
+  showSolicitudModal = false;
+
   notificaciones: {
-    tipo: 'agenda' | 'equipo' | 'sistema';
+    tipo: 'agenda' | 'equipo' | 'sistema' | 'reprogramar';
     icono: string;
     titulo: string;
     descripcion: string;
     tiempo: string;
     leida: boolean;
+    solicitudId?: number;
   }[] = [
     {
       tipo: 'agenda',
@@ -99,6 +107,7 @@ export class DashboardPage implements OnInit, OnDestroy {
     private platform: Platform,
     private router: Router,
     public authSvc: AuthorizationService,
+    private solicitudSvc: SolicitudReprogramacionService,
   ) { }
 
   startResizing(event: MouseEvent) {
@@ -189,6 +198,9 @@ export class DashboardPage implements OnInit, OnDestroy {
     // Estado inicial basado en el ancho actual
     this.isMobile = window.innerWidth < 1025;
     this.mostrarBotonMenu = this.isMobile;
+
+    // Prepend solicitudes pendientes al panel de notificaciones
+    this.cargarSolicitudesEnNotificaciones();
   }
 
   ngOnDestroy() {
@@ -199,6 +211,79 @@ export class DashboardPage implements OnInit, OnDestroy {
   toggleMenu() {
     this.menuAbierto = !this.menuAbierto;
     this.notificacionesAbiertas = false;
+  }
+
+  // ─── Solicitudes de reprogramación ───────────────────────────────────────
+
+  private cargarSolicitudesEnNotificaciones(): void {
+    const solicitudes = this.solicitudSvc.getPendientes();
+    const nuevas = solicitudes.map(s => ({
+      tipo:       'reprogramar' as const,
+      icono:      'swap-horizontal-outline',
+      titulo:     'Solicitud de reprogramación',
+      descripcion: `${s.pacienteNombre} quiere cambiar su cita del ${this.formatFechaCita(s.fechaCita)} • ${s.horaCita}`,
+      tiempo:     this.tiempoRelativo(s.fechaSolicitud),
+      leida:      false,
+      solicitudId: s.idSolicitud,
+    }));
+    // Solicitudes always appear first, before regular notifications
+    this.notificaciones = [...nuevas, ...this.notificaciones];
+  }
+
+  abrirSolicitud(solicitudId: number): void {
+    const s = this.solicitudSvc.getById(solicitudId);
+    if (!s) return;
+    this.solicitudSeleccionada = s;
+    this.showSolicitudModal = true;
+    this.notificacionesAbiertas = false;
+  }
+
+  onSolicitudAceptada(): void {
+    if (!this.solicitudSeleccionada) return;
+    this.solicitudSvc.aceptar(this.solicitudSeleccionada.idSolicitud);
+    this.eliminarNotificacionSolicitud(this.solicitudSeleccionada.idSolicitud);
+    this.showSolicitudModal = false;
+    this.solicitudSeleccionada = null;
+    // Open the agenda so the professional can adjust the appointment
+    this.router.navigate(['/dashboard/agenda']);
+  }
+
+  onSolicitudRechazada(motivo: string): void {
+    if (!this.solicitudSeleccionada) return;
+    this.solicitudSvc.rechazar(this.solicitudSeleccionada.idSolicitud);
+    this.eliminarNotificacionSolicitud(this.solicitudSeleccionada.idSolicitud);
+    this.showSolicitudModal = false;
+    this.solicitudSeleccionada = null;
+  }
+
+  onVerAgendaDesdeModal(): void {
+    this.showSolicitudModal = false;
+    this.solicitudSeleccionada = null;
+    this.router.navigate(['/dashboard/agenda']);
+  }
+
+  cerrarSolicitudModal(): void {
+    this.showSolicitudModal = false;
+    this.solicitudSeleccionada = null;
+  }
+
+  private eliminarNotificacionSolicitud(solicitudId: number): void {
+    this.notificaciones = this.notificaciones.filter(n => n.solicitudId !== solicitudId);
+  }
+
+  private tiempoRelativo(isoDate: string): string {
+    const diff = Date.now() - new Date(isoDate).getTime();
+    const mins  = Math.floor(diff / 60000);
+    if (mins < 60)  return `Hace ${mins} min`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `Hace ${hours}h`;
+    const days = Math.floor(hours / 24);
+    return `Hace ${days} día${days > 1 ? 's' : ''}`;
+  }
+
+  private formatFechaCita(fecha: string): string {
+    const d = new Date(fecha + 'T00:00');
+    return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
   }
 
   cerrarMenuUsuario() {
@@ -230,7 +315,7 @@ export class DashboardPage implements OnInit, OnDestroy {
 
   irAEquipo() {
     this.menuAbierto = false;
-    this.navCtrl.navigateForward('dashboard/configuracion');
+    this.navCtrl.navigateForward('dashboard/configuracion', { queryParams: { tab: 'equipo' } });
   }
 
   irAAyuda() {

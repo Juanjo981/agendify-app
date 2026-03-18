@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -20,10 +21,25 @@ const DEFAULTS = {
   mostrarSabados: true,
   mostrarDomingos: false,
 
-  // Recordatorios
+  // Recordatorios — bloque 1: comunicación con paciente
   recordatorioPaciente: true,
+  canalSMS: false,
+  canalEmail: true,
   tiempoRecordatorio: '1dia',
+  recordatorioMismoDia: false,
+  tiempoRecordatorioMismoDia: '2h',
+  solicitarConfirmacion: true,
+
+  // Recordatorios — bloque 2: reglas de gestión
+  permitirCancelacion: true,
+  permitirReprogramacion: true,
+  limiteCancelacion: '12h',
+
+  // Recordatorios — bloque 3: alertas internas
   recordatorioProfesional: true,
+  notifPacienteConfirma: true,
+  notifPacienteCancela: true,
+  notifPacienteReprograma: false,
 
   // Notificaciones del sistema
   notifInApp: true,
@@ -61,7 +77,7 @@ type CfgTab = 'general' | 'agenda' | 'equipo' | 'seguridad' | 'sistema';
   templateUrl: './configuracion.page.html',
   styleUrls: ['./configuracion.page.scss']
 })
-export class ConfiguracionPage {
+export class ConfiguracionPage implements OnInit {
   config = { ...DEFAULTS };
   private configOriginal = { ...DEFAULTS };
 
@@ -111,10 +127,20 @@ export class ConfiguracionPage {
     this.activeTab = tab;
   }
 
-  constructor(private equipoSvc: EquipoMockService) {
+  constructor(
+    private equipoSvc: EquipoMockService,
+    private route: ActivatedRoute,
+  ) {
     this.profesionalActual  = this.equipoSvc.getProfesionalActual();
     this.codigoVinculacion  = this.equipoSvc.getCodigoVinculacion();
     this.recepcionistas     = this.equipoSvc.getRecepcionistasDelProfesional();
+  }
+
+  ngOnInit(): void {
+    const tabParam = this.route.snapshot.queryParamMap.get('tab');
+    if (tabParam && this.cfgTabs.some(t => t.id === tabParam)) {
+      this.activeTab = tabParam as CfgTab;
+    }
   }
 
   guardar() {

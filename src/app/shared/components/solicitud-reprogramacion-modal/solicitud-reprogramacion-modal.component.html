@@ -1,0 +1,113 @@
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SOLICITUD DE REPROGRAMACIÓN — MODAL
+     Renderiza un overlay fijo. Coloca este componente directamente en la
+     plantilla del padre; no requiere IonicModule modal wrapper.
+════════════════════════════════════════════════════════════════════════ -->
+
+<!-- Backdrop -->
+<div class="srm-backdrop" (click)="onCerrar()" aria-hidden="true"></div>
+
+<!-- Card -->
+<div class="srm-card" role="dialog" aria-modal="true" aria-label="Solicitud de reprogramación">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <div class="srm-header">
+    <div class="srm-header-icon">
+      <ion-icon name="swap-horizontal-outline"></ion-icon>
+    </div>
+
+    <div class="srm-header-text">
+      <h2 class="srm-title">Solicitud de reprogramación</h2>
+      <span class="srm-estado-badge"
+            [class.srm-estado-badge--pendiente]="solicitud.estado === 'PENDIENTE'"
+            [class.srm-estado-badge--aceptada]="solicitud.estado  === 'ACEPTADA'"
+            [class.srm-estado-badge--rechazada]="solicitud.estado  === 'RECHAZADA'">
+        {{ solicitud.estado }}
+      </span>
+    </div>
+
+    <button class="srm-close-btn" (click)="onCerrar()" aria-label="Cerrar">
+      <ion-icon name="close-outline"></ion-icon>
+    </button>
+  </div>
+
+  <div class="srm-divider"></div>
+
+  <!-- ── Body ───────────────────────────────────────────────────────────── -->
+  <div class="srm-body">
+
+    <!-- Paciente -->
+    <div class="srm-field">
+      <span class="srm-field-label">Paciente</span>
+      <p class="srm-field-value srm-field-value--strong">{{ solicitud.pacienteNombre }}</p>
+    </div>
+
+    <!-- Cita original -->
+    <div class="srm-field">
+      <span class="srm-field-label">Cita original</span>
+      <p class="srm-field-value">
+        <ion-icon name="calendar-outline" class="srm-inline-icon"></ion-icon>
+        {{ fechaFormateada }} &bull; {{ solicitud.horaCita }}
+      </p>
+    </div>
+
+    <!-- Fecha sugerida (condicional) -->
+    <div class="srm-field srm-field--suggested" *ngIf="fechaSugeridaFormateada">
+      <span class="srm-field-label">Fecha sugerida por el paciente</span>
+      <p class="srm-field-value srm-field-value--accent">
+        <ion-icon name="time-outline" class="srm-inline-icon"></ion-icon>
+        {{ fechaSugeridaFormateada }}
+      </p>
+    </div>
+
+    <!-- Mensaje del paciente -->
+    <div class="srm-field" *ngIf="solicitud.mensajePaciente">
+      <span class="srm-field-label">Mensaje del paciente</span>
+      <blockquote class="srm-quote">{{ solicitud.mensajePaciente }}</blockquote>
+    </div>
+
+    <p class="srm-timestamp">Recibida {{ tiempoTranscurrido }}</p>
+
+  </div>
+
+  <!-- ── Panel de rechazo (condicional) ────────────────────────────────── -->
+  <div class="srm-reject-panel" *ngIf="mostrarRechazo">
+    <label class="srm-reject-label">
+      Motivo del rechazo
+      <span class="srm-reject-optional">(opcional)</span>
+    </label>
+    <textarea
+      class="srm-reject-textarea"
+      rows="3"
+      placeholder="Explica brevemente por qué no puedes aceptar esta solicitud..."
+      [(ngModel)]="motivoRechazo"
+      name="motivoRechazo">
+    </textarea>
+    <div class="srm-reject-actions">
+      <button class="srm-btn srm-btn--ghost"   (click)="toggleRechazo()">Cancelar</button>
+      <button class="srm-btn srm-btn--danger"   (click)="confirmarRechazo()">Confirmar rechazo</button>
+    </div>
+  </div>
+
+  <!-- ── Footer — solicitud PENDIENTE ─────────────────────────────────── -->
+  <div class="srm-footer" *ngIf="esPendiente && !mostrarRechazo">
+    <button class="srm-btn srm-btn--ghost" (click)="onVerAgenda()">
+      <ion-icon name="calendar-outline"></ion-icon>
+      Ver agenda
+    </button>
+    <button class="srm-btn srm-btn--danger-outline" (click)="toggleRechazo()">
+      <ion-icon name="close-circle-outline"></ion-icon>
+      Rechazar
+    </button>
+    <button class="srm-btn srm-btn--primary" (click)="onAceptar()">
+      <ion-icon name="checkmark-circle-outline"></ion-icon>
+      Aceptar solicitud
+    </button>
+  </div>
+
+  <!-- ── Footer — solicitud ya resuelta ───────────────────────────────── -->
+  <div class="srm-footer srm-footer--resolved" *ngIf="!esPendiente">
+    <button class="srm-btn srm-btn--ghost" (click)="onCerrar()">Cerrar</button>
+  </div>
+
+</div>

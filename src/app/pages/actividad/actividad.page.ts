@@ -1,9 +1,13 @@
 import { Component } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { SolicitudReprogramacionService } from '../citas/solicitud-reprogramacion.service.mock';
+import { SolicitudReprogramacion } from 'src/app/shared/models/solicitud-reprogramacion.model';
+import { SolicitudReprogramacionModalComponent } from 'src/app/shared/components/solicitud-reprogramacion-modal/solicitud-reprogramacion-modal.component';
 
-type TipoEvento = 'agenda' | 'equipo' | 'sistema';
-type FiltroActivo = 'todos' | TipoEvento;
+type TipoEvento = 'agenda' | 'equipo' | 'sistema' | 'reprogramar';
+type FiltroActivo = 'todos' | 'agenda' | 'equipo' | 'sistema';
 
 interface EventoActividad {
   tipo: TipoEvento;
@@ -12,17 +16,65 @@ interface EventoActividad {
   descripcion: string;
   tiempo: string;
   fecha: 'hoy' | 'ayer' | 'anterior';
+  /** If set, clicking "Ver solicitud" opens the reprogramación modal */
+  solicitudId?: number;
 }
 
 @Component({
   selector: 'app-actividad',
   standalone: true,
-  imports: [IonicModule, CommonModule],
+  imports: [IonicModule, CommonModule, FormsModule, SolicitudReprogramacionModalComponent],
   templateUrl: './actividad.page.html',
   styleUrls: ['./actividad.page.scss'],
 })
 export class ActividadPage {
 
+  constructor(private solicitudSvc: SolicitudReprogramacionService) {
+    this.cargarSolicitudes();
+  }
+
+  // ─── Modal de solicitud ──────────────────────────────────────────────────
+  solicitudSeleccionada: SolicitudReprogramacion | null = null;
+  showSolicitudModal = false;
+
+  abrirSolicitud(solicitudId: number): void {
+    const s = this.solicitudSvc.getById(solicitudId);
+    if (!s) return;
+    this.solicitudSeleccionada = s;
+    this.showSolicitudModal = true;
+  }
+
+  onSolicitudAceptada(): void {
+    if (!this.solicitudSeleccionada) return;
+    this.solicitudSvc.aceptar(this.solicitudSeleccionada.idSolicitud);
+    this.eliminarSolicitudDeLista(this.solicitudSeleccionada.idSolicitud);
+    this.showSolicitudModal = false;
+    this.solicitudSeleccionada = null;
+  }
+
+  onSolicitudRechazada(motivo: string): void {
+    if (!this.solicitudSeleccionada) return;
+    this.solicitudSvc.rechazar(this.solicitudSeleccionada.idSolicitud);
+    this.eliminarSolicitudDeLista(this.solicitudSeleccionada.idSolicitud);
+    this.showSolicitudModal = false;
+    this.solicitudSeleccionada = null;
+  }
+
+  onVerAgenda(): void {
+    this.showSolicitudModal = false;
+    this.solicitudSeleccionada = null;
+  }
+
+  cerrarSolicitudModal(): void {
+    this.showSolicitudModal = false;
+    this.solicitudSeleccionada = null;
+  }
+
+  private eliminarSolicitudDeLista(idSolicitud: number): void {
+    this._todos = this._todos.filter(e => e.solicitudId !== idSolicitud);
+  }
+
+  // ─── Filtros ─────────────────────────────────────────────────────────────
   filtroActivo: FiltroActivo = 'todos';
 
   filtros: { label: string; value: FiltroActivo; icono: string }[] = [
@@ -32,7 +84,7 @@ export class ActividadPage {
     { label: 'Sistema', value: 'sistema', icono: 'settings-outline'   },
   ];
 
-  private todos: EventoActividad[] = [
+  private _todos: EventoActividad[] = [
     // ── HOY ──────────────────────────────────────────────────────────────
     {
       tipo: 'agenda', icono: 'calendar-outline',
@@ -98,9 +150,45 @@ export class ActividadPage {
     },
   ];
 
+  // ─── Inject solicitudes PENDIENTES from the service ─────────────────────
+  private cargarSolicitudes(): void {
+    const pendientes = this.solicitudSvc.getPendientes();
+    const eventos: EventoActividad[] = pendientes.map(s => ({
+      tipo:        'reprogramar' as TipoEvento,
+      icono:       'swap-horizontal-outline',
+      titulo:      'Solicitud de reprogramación',
+      descripcion: `${s.pacienteNombre} quiere cambiar su cita del ${this.formatFecha(s.fechaCita)} • ${s.horaCita}`,
+      tiempo:      this.tiempoRelativo(s.fechaSolicitud),
+      fecha:       'hoy' as const,
+      solicitudId: s.idSolicitud,
+    }));
+    // Prepend so they appear first inside "hoy"
+    this._todos = [...eventos, ...this._todos];
+  }
+
+  private formatFecha(isoDate: string): string {
+    const d = new Date(isoDate + 'T00:00');
+    return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+  }
+
+  private tiempoRelativo(isoDate: string): string {
+    const diff = Date.now() - new Date(isoDate).getTime();
+    const mins  = Math.floor(diff / 60000);
+    if (mins < 60)  return `Hace ${mins} min`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `Hace ${hours}h`;
+    const days = Math.floor(hours / 24);
+    return `Hace ${days} día${days > 1 ? 's' : ''}`;
+  }
+
+  // ─── Filtered getters ────────────────────────────────────────────────────
   get eventosFiltrados(): EventoActividad[] {
-    if (this.filtroActivo === 'todos') return this.todos;
-    return this.todos.filter(e => e.tipo === this.filtroActivo);
+    if (this.filtroActivo === 'todos') return this._todos;
+    // 'reprogramar' tipo is shown under 'agenda' filter
+    const matchAgenda = this.filtroActivo === 'agenda';
+    return this._todos.filter(e =>
+      e.tipo === this.filtroActivo || (matchAgenda && e.tipo === 'reprogramar')
+    );
   }
 
   get eventoHoy(): EventoActividad[] {
@@ -120,6 +208,12 @@ export class ActividadPage {
   }
 
   iconoPorTipo(tipo: TipoEvento): string {
-    return { agenda: 'calendar-outline', equipo: 'people-outline', sistema: 'settings-outline' }[tipo];
+    const map: Record<TipoEvento, string> = {
+      agenda:       'calendar-outline',
+      equipo:       'people-outline',
+      sistema:      'settings-outline',
+      reprogramar:  'swap-horizontal-outline',
+    };
+    return map[tipo];
   }
 }

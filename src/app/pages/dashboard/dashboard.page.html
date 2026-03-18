@@ -128,6 +128,8 @@
         *ngFor="let item of notificaciones; let i = index"
         class="notif-row"
         [class.notif-row--leida]="item.leida"
+        [class.notif-row--cta]="!!item.solicitudId"
+        (click)="item.solicitudId ? abrirSolicitud(item.solicitudId) : null"
       >
         <div class="notif-icon-wrap" [ngClass]="'notif-icon--' + item.tipo">
           <ion-icon [name]="item.icono"></ion-icon>
@@ -141,7 +143,16 @@
 
         <div class="notif-actions">
           <span *ngIf="!item.leida" class="notif-unread-dot"></span>
-          <button class="notif-read-btn" (click)="marcarLeida(i)" *ngIf="!item.leida" title="Marcar como leída">
+          <!-- Solicitud CTA: opens the modal -->
+          <button class="notif-cta-btn"
+                  *ngIf="item.solicitudId"
+                  (click)="$event.stopPropagation(); abrirSolicitud(item.solicitudId!)"
+                  title="Ver solicitud">
+            Ver solicitud
+          </button>
+          <!-- Standard mark-read button for regular notifications -->
+          <button class="notif-read-btn" (click)="$event.stopPropagation(); marcarLeida(i)"
+                  *ngIf="!item.leida && !item.solicitudId" title="Marcar como leída">
             <ion-icon name="checkmark-outline"></ion-icon>
           </button>
         </div>
@@ -276,3 +287,13 @@
   </div>
 
 </div>
+
+<!-- ─── MODAL: Solicitud de reprogramación ───────────────────────────────────── -->
+<app-solicitud-reprogramacion-modal
+  *ngIf="showSolicitudModal && solicitudSeleccionada"
+  [solicitud]="solicitudSeleccionada!"
+  (aceptada)="onSolicitudAceptada()"
+  (rechazada)="onSolicitudRechazada($event)"
+  (verAgenda)="onVerAgendaDesdeModal()"
+  (cerrado)="cerrarSolicitudModal()">
+</app-solicitud-reprogramacion-modal>

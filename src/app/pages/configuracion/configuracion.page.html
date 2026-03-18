@@ -205,40 +205,179 @@
           </div>
           <div>
             <h3 class="cfg-card-title">Recordatorios y automatizaciones</h3>
-            <p class="cfg-card-desc">Comunicación automática con pacientes y alertas</p>
+            <p class="cfg-card-desc">Comunicación automática con pacientes y alertas internas</p>
           </div>
         </div>
-        <div class="cfg-toggle-list">
-          <div class="cfg-toggle-row">
-            <div class="cfg-toggle-info">
-              <p class="cfg-toggle-label">Recordatorio automático al paciente</p>
-              <p class="cfg-toggle-sub">Enviar aviso previo a la cita al canal configurado</p>
+
+        <!-- ══ BLOQUE 1: Comunicación con paciente ══════════════════════════ -->
+        <div class="cfg-ra-block">
+          <p class="cfg-ra-block-title">
+            <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+            Comunicación con paciente
+          </p>
+
+          <div class="cfg-toggle-list">
+            <!-- A. Switch principal -->
+            <div class="cfg-toggle-row">
+              <div class="cfg-toggle-info">
+                <p class="cfg-toggle-label">Recordatorio automático al paciente</p>
+                <p class="cfg-toggle-sub">Enviar aviso previo a la cita al canal configurado</p>
+              </div>
+              <ion-toggle [(ngModel)]="config.recordatorioPaciente" class="cfg-toggle"></ion-toggle>
             </div>
-            <ion-toggle [(ngModel)]="config.recordatorioPaciente" class="cfg-toggle"></ion-toggle>
+          </div>
+
+          <!-- B. Canales de envío (subordinado) -->
+          <div class="cfg-ra-sub" [class.cfg-ra-sub--hidden]="!config.recordatorioPaciente">
+            <p class="cfg-ra-sub-label">Canales de envío</p>
+            <div class="cfg-ra-channels">
+              <label class="cfg-ra-channel">
+                <ion-checkbox [(ngModel)]="config.canalSMS" class="cfg-ra-check"></ion-checkbox>
+                <ion-icon name="phone-portrait-outline"></ion-icon>
+                <span>SMS</span>
+              </label>
+              <label class="cfg-ra-channel">
+                <ion-checkbox [(ngModel)]="config.canalEmail" class="cfg-ra-check"></ion-checkbox>
+                <ion-icon name="mail-outline"></ion-icon>
+                <span>Email</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- C. Tiempo de anticipación (subordinado) -->
+          <div class="cfg-ra-sub" [class.cfg-ra-sub--hidden]="!config.recordatorioPaciente">
+            <div class="cfg-field">
+              <label class="cfg-field-label">Tiempo de anticipación</label>
+              <ion-select [(ngModel)]="config.tiempoRecordatorio" interface="popover" class="cfg-select">
+                <ion-select-option value="1h">1 hora antes</ion-select-option>
+                <ion-select-option value="2h">2 horas antes</ion-select-option>
+                <ion-select-option value="6h">6 horas antes</ion-select-option>
+                <ion-select-option value="12h">12 horas antes</ion-select-option>
+                <ion-select-option value="1dia">1 día antes</ion-select-option>
+                <ion-select-option value="2dias">2 días antes</ion-select-option>
+              </ion-select>
+            </div>
+          </div>
+
+          <!-- D. Recordatorio adicional el mismo día -->
+          <div class="cfg-toggle-list" [class.cfg-fields--disabled]="!config.recordatorioPaciente">
+            <div class="cfg-toggle-row">
+              <div class="cfg-toggle-info">
+                <p class="cfg-toggle-label">Recordatorio adicional el mismo día</p>
+              </div>
+              <ion-toggle [(ngModel)]="config.recordatorioMismoDia" class="cfg-toggle"
+                          [disabled]="!config.recordatorioPaciente"></ion-toggle>
+            </div>
+          </div>
+
+          <!-- D-sub. Selector de hora subordinado -->
+          <div class="cfg-ra-sub" [class.cfg-ra-sub--hidden]="!config.recordatorioPaciente || !config.recordatorioMismoDia">
+            <div class="cfg-field">
+              <label class="cfg-field-label">Enviar el mismo día</label>
+              <ion-select [(ngModel)]="config.tiempoRecordatorioMismoDia" interface="popover" class="cfg-select">
+                <ion-select-option value="1h">1 hora antes</ion-select-option>
+                <ion-select-option value="2h">2 horas antes</ion-select-option>
+                <ion-select-option value="3h">3 horas antes</ion-select-option>
+              </ion-select>
+            </div>
+          </div>
+
+          <!-- E. Solicitar confirmación -->
+          <div class="cfg-toggle-list">
+            <div class="cfg-toggle-row">
+              <div class="cfg-toggle-info">
+                <p class="cfg-toggle-label">Solicitar confirmación del paciente</p>
+                <p class="cfg-toggle-sub">El paciente recibirá un enlace para confirmar su asistencia</p>
+              </div>
+              <ion-toggle [(ngModel)]="config.solicitarConfirmacion" class="cfg-toggle"></ion-toggle>
+            </div>
           </div>
         </div>
-        <div class="cfg-fields cfg-fields--compact" [class.cfg-fields--disabled]="!config.recordatorioPaciente">
-          <div class="cfg-field">
-            <label class="cfg-field-label">Tiempo de anticipación</label>
-            <ion-select [(ngModel)]="config.tiempoRecordatorio" interface="popover" class="cfg-select"
-                        [disabled]="!config.recordatorioPaciente">
-              <ion-select-option value="1h">1 hora antes</ion-select-option>
-              <ion-select-option value="3h">3 horas antes</ion-select-option>
-              <ion-select-option value="1dia">1 día antes</ion-select-option>
-              <ion-select-option value="2dias">2 días antes</ion-select-option>
-            </ion-select>
-          </div>
-        </div>
+
         <div class="cfg-divider"></div>
-        <div class="cfg-toggle-list">
-          <div class="cfg-toggle-row">
-            <div class="cfg-toggle-info">
-              <p class="cfg-toggle-label">Recordatorio al profesional</p>
-              <p class="cfg-toggle-sub">Recibe un aviso propio antes de cada cita</p>
+
+        <!-- ══ BLOQUE 2: Reglas de gestión de cita ══════════════════════════ -->
+        <div class="cfg-ra-block">
+          <p class="cfg-ra-block-title">
+            <ion-icon name="calendar-clear-outline"></ion-icon>
+            Reglas de gestión de cita
+          </p>
+
+          <div class="cfg-toggle-list">
+            <div class="cfg-toggle-row">
+              <div class="cfg-toggle-info">
+                <p class="cfg-toggle-label">Permitir cancelación por el paciente</p>
+              </div>
+              <ion-toggle [(ngModel)]="config.permitirCancelacion" class="cfg-toggle"></ion-toggle>
             </div>
-            <ion-toggle [(ngModel)]="config.recordatorioProfesional" class="cfg-toggle"></ion-toggle>
+            <div class="cfg-toggle-row">
+              <div class="cfg-toggle-info">
+                <p class="cfg-toggle-label">Permitir solicitudes de reprogramación</p>
+                <p class="cfg-toggle-sub">El paciente podrá solicitar cambio de horario desde su enlace</p>
+              </div>
+              <ion-toggle [(ngModel)]="config.permitirReprogramacion" class="cfg-toggle"></ion-toggle>
+            </div>
+          </div>
+
+          <!-- Límite para cancelar/reprogramar (subordinado) -->
+          <div class="cfg-ra-sub"
+               [class.cfg-ra-sub--hidden]="!config.permitirCancelacion && !config.permitirReprogramacion">
+            <div class="cfg-field">
+              <label class="cfg-field-label">Permitir cancelación / reprogramación hasta</label>
+              <ion-select [(ngModel)]="config.limiteCancelacion" interface="popover" class="cfg-select">
+                <ion-select-option value="1h">1 hora antes</ion-select-option>
+                <ion-select-option value="2h">2 horas antes</ion-select-option>
+                <ion-select-option value="6h">6 horas antes</ion-select-option>
+                <ion-select-option value="12h">12 horas antes</ion-select-option>
+                <ion-select-option value="24h">24 horas antes</ion-select-option>
+                <ion-select-option value="48h">48 horas antes</ion-select-option>
+              </ion-select>
+              <p class="cfg-ra-field-hint">
+                <ion-icon name="information-circle-outline"></ion-icon>
+                Después de ese tiempo, el paciente ya no podrá gestionar la cita desde el enlace
+              </p>
+            </div>
           </div>
         </div>
+
+        <div class="cfg-divider"></div>
+
+        <!-- ══ BLOQUE 3: Alertas internas ═══════════════════════════════════ -->
+        <div class="cfg-ra-block cfg-ra-block--last">
+          <p class="cfg-ra-block-title">
+            <ion-icon name="notifications-circle-outline"></ion-icon>
+            Alertas internas
+          </p>
+
+          <div class="cfg-toggle-list">
+            <div class="cfg-toggle-row">
+              <div class="cfg-toggle-info">
+                <p class="cfg-toggle-label">Recordatorio al profesional</p>
+                <p class="cfg-toggle-sub">Recibe un aviso propio antes de cada cita</p>
+              </div>
+              <ion-toggle [(ngModel)]="config.recordatorioProfesional" class="cfg-toggle"></ion-toggle>
+            </div>
+            <div class="cfg-toggle-row">
+              <div class="cfg-toggle-info">
+                <p class="cfg-toggle-label">Avisar cuando el paciente confirme</p>
+              </div>
+              <ion-toggle [(ngModel)]="config.notifPacienteConfirma" class="cfg-toggle"></ion-toggle>
+            </div>
+            <div class="cfg-toggle-row">
+              <div class="cfg-toggle-info">
+                <p class="cfg-toggle-label">Avisar cuando el paciente cancele</p>
+              </div>
+              <ion-toggle [(ngModel)]="config.notifPacienteCancela" class="cfg-toggle"></ion-toggle>
+            </div>
+            <div class="cfg-toggle-row">
+              <div class="cfg-toggle-info">
+                <p class="cfg-toggle-label">Avisar cuando el paciente solicite reprogramación</p>
+              </div>
+              <ion-toggle [(ngModel)]="config.notifPacienteReprograma" class="cfg-toggle"></ion-toggle>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <div class="cfg-card">

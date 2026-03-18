@@ -93,7 +93,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .cfg-card-icon {
@@ -137,7 +137,127 @@
 .cfg-divider {
   height: 1px;
   background: rgba(209, 213, 219, 0.32);
-  margin: 16px 0;
+  margin: 24px 0;
+}
+
+// ─── Recordatorios & automatizaciones — bloques internos ─────────────────────
+.cfg-ra-block {
+  padding-bottom: 2px;
+
+  &--last { padding-bottom: 0; }
+}
+
+.cfg-ra-block-title {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  font-size:   11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.75px;
+  color:       var(--text-faint, #94a3b8);
+  margin:      0 0 14px;
+
+  ion-icon {
+    font-size:  15px;
+    color:      var(--primary-mid, #6366f1);
+    opacity:    0.75;
+    flex-shrink: 0;
+  }
+}
+
+// Subordinate panels — collapse/expand with height transition
+.cfg-ra-sub {
+  margin:     12px 0 8px;
+  padding:    14px 16px;
+  background: rgba(99, 102, 241, 0.035);
+  border:     1px solid rgba(99, 102, 241, 0.10);
+  border-radius: var(--radius-md, 12px);
+  overflow:   hidden;
+  max-height: 260px;
+  transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.22s ease,
+              margin 0.22s ease;
+
+  &--hidden {
+    max-height: 0;
+    opacity:    0;
+    margin:     0;
+    pointer-events: none;
+    border-color: transparent;
+    background: transparent;
+  }
+}
+
+.cfg-ra-sub-label {
+  font-size:      11px;
+  font-weight:    700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color:          var(--text-faint, #94a3b8);
+  margin:         0 0 10px;
+}
+
+// Channel checkboxes (SMS / Email)
+.cfg-ra-channels {
+  display:   flex;
+  gap:       12px;
+  flex-wrap: wrap;
+}
+
+.cfg-ra-channel {
+  display:      flex;
+  align-items:  center;
+  gap:          8px;
+  padding:      10px 16px;
+  border:       1.5px solid rgba(209, 213, 219, 0.55);
+  border-radius: var(--radius-md, 12px);
+  background:   rgba(255, 255, 255, 0.65);
+  cursor:       pointer;
+  font-size:    13px;
+  font-weight:  600;
+  color:        var(--text-strong, #0f172a);
+  user-select:  none;
+  transition:   border-color 0.18s, background 0.18s;
+
+  ion-icon {
+    font-size: 16px;
+    color:     var(--text-muted, #64748b);
+  }
+
+  &:has(ion-checkbox[aria-checked="true"]),
+  &:has(ion-checkbox.checkbox-checked) {
+    border-color: var(--primary-mid, #6366f1);
+    background:   rgba(99, 102, 241, 0.07);
+
+    ion-icon { color: var(--primary-mid, #6366f1); }
+  }
+}
+
+.cfg-ra-check {
+  --checkmark-color: #fff;
+  --checkbox-background-checked: var(--primary-mid, #6366f1);
+  --border-color-checked: var(--primary-mid, #6366f1);
+  --size: 18px;
+  flex-shrink: 0;
+}
+
+// Hint text below a field
+.cfg-ra-field-hint {
+  display:     flex;
+  align-items: flex-start;
+  gap:         5px;
+  font-size:   11.5px;
+  color:       var(--text-faint, #94a3b8);
+  margin:      9px 0 0;
+  line-height: 1.45;
+
+  ion-icon {
+    font-size:  14px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    color:      rgba(99, 102, 241, 0.55);
+  }
 }
 
 // ─── Toggle list ─────────────────────────────────────────────────────────────
@@ -148,39 +268,41 @@
 
 .cfg-toggle-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
-  padding: 12px 0;
+  gap: 18px;
+  padding: 14px 0;
   border-bottom: 1px solid rgba(209, 213, 219, 0.20);
 
-  &:last-child { border-bottom: none; padding-bottom: 0; }
+  &:last-child { border-bottom: none; padding-bottom: 2px; }
   &:first-child { padding-top: 0; }
 }
 
 .cfg-toggle-info {
   flex: 1;
   min-width: 0;
+  padding-top: 1px; /* optical alignment with toggle thumb */
 }
 
 .cfg-toggle-label {
   font-size: 13.5px;
   font-weight: 600;
   color: var(--text-strong, #0f172a);
-  margin: 0 0 2px;
+  margin: 0 0 3px;
 }
 
 .cfg-toggle-sub {
   font-size: 12px;
   color: var(--text-muted, #64748b);
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
 .cfg-toggle {
   --track-background: rgba(209, 213, 219, 0.6);
   --track-background-checked: var(--primary-mid, #6366f1);
   flex-shrink: 0;
+  margin-top: 1px; /* nudge to optically align thumb with label cap-height */
 
   &.cfg-toggle--warning {
     --track-background-checked: #f97316;
@@ -205,7 +327,7 @@
 .cfg-field {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
 }
 
 .cfg-field-label {

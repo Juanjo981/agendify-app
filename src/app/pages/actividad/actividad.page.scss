@@ -166,9 +166,45 @@
   flex-shrink: 0;
   margin-top: 1px;
 
-  &.act-icon--agenda  { background: linear-gradient(135deg, #6366f1, #3b3f92); }
-  &.act-icon--equipo  { background: linear-gradient(135deg, #14b8a6, #0d9488); }
-  &.act-icon--sistema { background: linear-gradient(135deg, #64748b, #475569); }
+  &.act-icon--agenda      { background: linear-gradient(135deg, #6366f1, #3b3f92); }
+  &.act-icon--equipo      { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+  &.act-icon--sistema     { background: linear-gradient(135deg, #64748b, #475569); }
+  &.act-icon--reprogramar { background: linear-gradient(135deg, #f59e0b, #d97706); }
+}
+
+// ─── CTA items (solicitudes de reprogramación) ────────────────────────────────
+.act-item--cta {
+  background: rgba(245, 158, 11, 0.04);
+  cursor: default;
+
+  &:hover {
+    background: rgba(245, 158, 11, 0.08);
+  }
+}
+
+.act-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: center;
+  transition: all 0.18s ease;
+
+  ion-icon { font-size: 14px; }
+
+  &:hover {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.7);
+  }
 }
 
 // ─── Contenido ────────────────────────────────────────────────────────────────
