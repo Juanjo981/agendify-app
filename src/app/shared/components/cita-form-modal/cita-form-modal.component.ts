@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { CitaDto, EstadoCita } from '../../../pages/citas/models/cita.model';
-import { PacienteDto } from '../../../pages/pacientes/pacientes.mock';
+import { PacienteDto } from '../../../pages/pacientes/models/paciente.model';
+import { getAvatarColor as avatarColorUtil } from '../../utils/avatar.utils';
 import { BuscarPacienteModalComponent } from '../../../pages/citas/components/buscar-paciente-modal/buscar-paciente-modal.component';
 import { CitasMockService } from '../../../pages/citas/citas.service.mock';
 import { DatePickerFieldComponent } from '../date-picker-field/date-picker-field.component';
@@ -126,8 +127,7 @@ export class CitaFormModalComponent implements OnInit, OnChanges {
   }
 
   avatarColor(nombre: string): string {
-    const colors = ['#6366f1', '#8b5cf6', '#3b82f6', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444'];
-    return colors[nombre.charCodeAt(0) % colors.length];
+    return avatarColorUtil(nombre);
   }
 
   // ─────────────────────────────────────────────────────────────

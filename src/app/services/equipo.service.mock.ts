@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { VinculacionMockService } from './vinculacion.mock';
+import { VinculacionMockService } from './vinculacion.service.mock';
 import { UsuarioMock } from '../shared/models/usuario.model';
 import { PermisosRecepcionista, PERMISO_LABEL } from '../shared/models/permisos.model';
 import { PermisoDetalle, RecepcionistaEquipoViewModel } from '../shared/models/equipo.model';

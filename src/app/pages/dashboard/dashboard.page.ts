@@ -10,6 +10,7 @@ import { HasPermissionDirective } from 'src/app/auth/has-permission.directive';
 import { ConfirmDialogComponent, ConfirmDialogConfig } from 'src/app/shared/confirm-dialog/confirm-dialog.component';
 import { SolicitudReprogramacionService } from '../citas/solicitud-reprogramacion.service.mock';
 import { SolicitudReprogramacion } from 'src/app/shared/models/solicitud-reprogramacion.model';
+import { tiempoRelativo, formatFechaLarga } from '../../shared/utils/date.utils';
 import { SolicitudReprogramacionModalComponent } from 'src/app/shared/components/solicitud-reprogramacion-modal/solicitud-reprogramacion-modal.component';
 
 @Component({
@@ -221,8 +222,8 @@ export class DashboardPage implements OnInit, OnDestroy {
       tipo:       'reprogramar' as const,
       icono:      'swap-horizontal-outline',
       titulo:     'Solicitud de reprogramación',
-      descripcion: `${s.pacienteNombre} quiere cambiar su cita del ${this.formatFechaCita(s.fechaCita)} • ${s.horaCita}`,
-      tiempo:     this.tiempoRelativo(s.fechaSolicitud),
+      descripcion: `${s.pacienteNombre} quiere cambiar su cita del ${formatFechaLarga(s.fechaCita)} • ${s.horaCita}`,
+      tiempo:     tiempoRelativo(s.fechaSolicitud),
       leida:      false,
       solicitudId: s.idSolicitud,
     }));
@@ -272,18 +273,11 @@ export class DashboardPage implements OnInit, OnDestroy {
   }
 
   private tiempoRelativo(isoDate: string): string {
-    const diff = Date.now() - new Date(isoDate).getTime();
-    const mins  = Math.floor(diff / 60000);
-    if (mins < 60)  return `Hace ${mins} min`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `Hace ${hours}h`;
-    const days = Math.floor(hours / 24);
-    return `Hace ${days} día${days > 1 ? 's' : ''}`;
+    return tiempoRelativo(isoDate);
   }
 
   private formatFechaCita(fecha: string): string {
-    const d = new Date(fecha + 'T00:00');
-    return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+    return formatFechaLarga(fecha);
   }
 
   cerrarMenuUsuario() {

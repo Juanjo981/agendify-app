@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { SessionMockService } from '../services/session.mock';
+import { SessionMockService } from '../services/session.service.mock';
 import { Permiso, Modulo } from './permission.types';
 import { MODULO_PERMISO, SEGMENTO_MODULO, RUTA_MODULO } from './permission.maps';
 

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
+import { formatFecha as formatFechaUtil } from '../../shared/utils/date.utils';
 import { CitasMockService } from './citas.service.mock';
 import { CitaDto, FiltroCitas } from './models/cita.model';
 import { CitaCardComponent } from './components/cita-card/cita-card.component';
@@ -84,9 +85,7 @@ export class CitasPage implements OnInit, OnDestroy {
   }
 
   formatFecha(iso: string): string {
-    if (!iso) return '—';
-    const [y, m, d] = iso.split('-');
-    return `${d}/${m}/${y}`;
+    return formatFechaUtil(iso);
   }
 
   ngOnDestroy() {

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { PacienteDto, NotaDto, SesionPaciente, PACIENTES_MOCK_DATA, SESIONES_MOCK_DATA } from './pacientes.mock';
+import { PacienteDto, NotaDto, SesionPaciente } from './models/paciente.model';
+import { PACIENTES_MOCK_DATA, SESIONES_MOCK_DATA } from './pacientes.mock';
 
 @Injectable({ providedIn: 'root' })
 export class PacientesMockService {

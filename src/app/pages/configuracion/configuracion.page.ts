@@ -4,7 +4,7 @@ import { IonicModule } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgfTimePickerComponent } from '../../shared/components/agf-time-picker/agf-time-picker.component';
-import { EquipoMockService, PERMISOS_DETALLES } from 'src/app/services/equipo.mock';
+import { EquipoMockService, PERMISOS_DETALLES } from 'src/app/services/equipo.service.mock';
 import { UsuarioMock } from 'src/app/shared/models/usuario.model';
 import { PermisosRecepcionista } from 'src/app/shared/models/permisos.model';
 import { PermisoDetalle, RecepcionistaEquipoViewModel } from 'src/app/shared/models/equipo.model';

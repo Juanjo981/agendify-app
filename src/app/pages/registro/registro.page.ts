@@ -3,178 +3,208 @@ import { CommonModule } from '@angular/common';
 import { IonicModule, NavController } from '@ionic/angular';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { UsuarioService } from 'src/app/services/usuario';
-import { RolUsuario } from 'src/app/shared/models/rol.model';
-import { PERMISOS_DEFAULT_RECEPCIONISTA } from 'src/app/shared/models/permisos.model';
-import { UsuarioRegistroDto } from 'src/app/shared/models/usuario.model';
-import { VinculacionMockService } from 'src/app/services/vinculacion.mock';
-
-/** Valid beta invite codes for closed-beta access (mock). */
-const BETA_INVITE_CODES: ReadonlySet<string> = new Set([
-  'AGD-BETA-001',
-  'AGD-BETA-002',
-  'AGD-BETA-003',
-]);
+import { AuthService } from 'src/app/services/auth';
+import { ROL_REGISTRO } from 'src/app/shared/models/auth.models';
+import { mapApiError, humanizeFieldError, API_ERROR_CODES } from 'src/app/shared/utils/api-error.mapper';
 
 @Component({
   selector: 'app-registro',
   standalone: true,
-  imports: [
-    CommonModule,
-    IonicModule,
-    ReactiveFormsModule,
-    RouterModule
-  ],
+  imports: [CommonModule, IonicModule, ReactiveFormsModule, RouterModule],
   templateUrl: './registro.page.html',
-  styleUrls: ['./registro.page.scss']
+  styleUrls: ['./registro.page.scss'],
 })
-
 export class RegistroPage {
   registroForm: FormGroup;
-  verPassword = false;
-  errorCodigo = '';
+  verPassword     = false;
+  cargando        = false;
+  registroExitoso = false;
+  errorGlobal     = '';
+  errorCodigo     = '';
   errorInvitacion = '';
+  errorEmail      = '';
+  errorUsuario    = '';
+  validationDetails: string[] = [];
 
-  readonly RolUsuario = RolUsuario;
+  readonly ROL_REGISTRO = ROL_REGISTRO;
 
   constructor(
     private fb: FormBuilder,
     private navCtrl: NavController,
-    private usuarioService: UsuarioService,
-    private vinculacionSvc: VinculacionMockService
+    private authService: AuthService,
   ) {
     this.registroForm = this.fb.group({
       nombre:            ['', Validators.required],
       apellido:          ['', Validators.required],
       email:             ['', [Validators.required, Validators.email]],
-      usuario:           ['', Validators.required],
+      usuario:           ['', Validators.required],   // mapeado a `username` en el payload
       contrasena:        ['', Validators.required],
       fecha_nacimiento:  ['', Validators.required],
       domicilio:         [''],
       numero_telefono:   ['', Validators.required],
-      idRol:             [RolUsuario.PROFESIONAL, Validators.required],
+      idRol:             [ROL_REGISTRO.PROFESIONAL, Validators.required],
+      // PROFESIONAL
       especialidad:      ['', Validators.required],
-      codigoInvitacion:  ['', Validators.required],
+      codigoInvitacion:  ['', Validators.required],   // mapeado a `codigo_beta`
+      // RECEPCIONISTA
       codigoVinculacion: [''],
+      alias_interno:     [''],
+      puesto:            [''],
     });
 
-    // Revalidar campos condicionales cuando cambia el rol
-    this.registroForm.get('idRol')?.valueChanges.subscribe((rol: RolUsuario) => {
-      const especialidadCtrl      = this.registroForm.get('especialidad');
-      const invitacionCtrl        = this.registroForm.get('codigoInvitacion');
-      const codigoCtrl            = this.registroForm.get('codigoVinculacion');
-      this.errorCodigo            = '';
-      this.errorInvitacion        = '';
-
-      if (rol === RolUsuario.PROFESIONAL) {
-        especialidadCtrl?.setValidators([Validators.required]);
-        invitacionCtrl?.setValidators([Validators.required]);
-        codigoCtrl?.clearValidators();
-        codigoCtrl?.setValue('');
-      } else {
-        especialidadCtrl?.clearValidators();
-        especialidadCtrl?.setValue('');
-        invitacionCtrl?.clearValidators();
-        invitacionCtrl?.setValue('');
-        codigoCtrl?.setValidators([Validators.required]);
-      }
-
-      especialidadCtrl?.updateValueAndValidity();
-      invitacionCtrl?.updateValueAndValidity();
-      codigoCtrl?.updateValueAndValidity();
+    this.registroForm.get('idRol')?.valueChanges.subscribe((rol: number) => {
+      this.limpiarErrores();
+      this.actualizarValidacionesPorRol(rol);
     });
   }
 
-  get rolActual(): RolUsuario {
+  get rolActual(): number {
     return this.registroForm.get('idRol')?.value;
   }
 
-  seleccionarRol(rol: RolUsuario) {
+  seleccionarRol(rol: number): void {
     this.registroForm.get('idRol')?.setValue(rol);
   }
 
-  togglePassword() {
+  togglePassword(): void {
     this.verPassword = !this.verPassword;
   }
 
-  goToLogin() {
+  goToLogin(): void {
     this.navCtrl.navigateBack('/login');
   }
 
-  registrarse() {
-    this.errorCodigo     = '';
-    this.errorInvitacion = '';
+  async registrarse(): Promise<void> {
+    this.limpiarErrores();
 
     if (this.registroForm.invalid) {
       this.registroForm.markAllAsTouched();
       return;
     }
+    if (this.cargando) return;
 
-    const fv = this.registroForm.value;
+    this.cargando = true;
+    const fv  = this.registroForm.value;
+    const rol = fv.idRol as number;
 
-    // ── Validación mock del código de invitación (beta cerrada) ──
-    if (fv.idRol === RolUsuario.PROFESIONAL) {
-      const codigo = (fv.codigoInvitacion ?? '').trim().toUpperCase();
-      if (!BETA_INVITE_CODES.has(codigo)) {
-        this.errorInvitacion = 'El código de invitación no es válido. Verifica que esté escrito correctamente.';
-        this.registroForm.get('codigoInvitacion')?.markAsTouched();
-        return;
-      }
-    }
-
-    // ── Validación mock del código de vinculación ──
-    if (fv.idRol === RolUsuario.RECEPCIONISTA) {
-      const profesional = this.vinculacionSvc.getProfesionalPorCodigo(fv.codigoVinculacion);
-      if (!profesional) {
-        this.errorCodigo = 'El código de vinculación no es válido. Solicítalo a tu profesional.';
-        this.registroForm.get('codigoVinculacion')?.markAsTouched();
-        return;
-      }
-
-      const usuarioDTO: UsuarioRegistroDto = {
-        nombre:           fv.nombre,
-        apellido:         fv.apellido,
-        email:            fv.email,
-        usuario:          fv.usuario,
-        contrasena:       fv.contrasena,
-        fecha_nacimiento: fv.fecha_nacimiento,
-        domicilio:        fv.domicilio,
-        numero_telefono:  fv.numero_telefono,
-        activo:           true,
-        idRol:            RolUsuario.RECEPCIONISTA,
-        codigoVinculacionIngresado: fv.codigoVinculacion.trim().toUpperCase(),
-        profesionalId:    profesional.id,
-        permisos:         { ...PERMISOS_DEFAULT_RECEPCIONISTA },
-      };
-
-      console.log('[MOCK] Recepcionista registrado:', usuarioDTO);
-      this.enviarRegistro(usuarioDTO);
-      return;
-    }
-
-    // ── Registro como Profesional ──
-    const usuarioDTO: UsuarioRegistroDto = {
-      nombre:           fv.nombre,
-      apellido:         fv.apellido,
-      email:            fv.email,
-      usuario:          fv.usuario,
-      contrasena:       fv.contrasena,
-      fecha_nacimiento: fv.fecha_nacimiento,
-      domicilio:        fv.domicilio,
-      numero_telefono:  fv.numero_telefono,
-      activo:           true,
-      idRol:            RolUsuario.PROFESIONAL,
-      especialidad:     fv.especialidad,
+    const payload = {
+      nombre:             fv.nombre.trim(),
+      apellido:           fv.apellido.trim(),
+      email:              fv.email.trim().toLowerCase(),
+      username:           fv.usuario.trim(),
+      contrasena:         fv.contrasena,
+      fecha_nacimiento:   fv.fecha_nacimiento,
+      domicilio:          fv.domicilio?.trim() ?? '',
+      numero_telefono:    fv.numero_telefono.trim(),
+      id_rol:             rol as 1 | 2,
+      especialidad:       rol === ROL_REGISTRO.PROFESIONAL ? (fv.especialidad?.trim() || null) : null,
+      codigo_beta:        rol === ROL_REGISTRO.PROFESIONAL ? (fv.codigoInvitacion?.trim() || null) : null,
+      codigo_vinculacion: rol === ROL_REGISTRO.RECEPCIONISTA ? (fv.codigoVinculacion?.trim() || null) : null,
+      alias_interno:      rol === ROL_REGISTRO.RECEPCIONISTA ? (fv.alias_interno?.trim() || null) : null,
+      puesto:             rol === ROL_REGISTRO.RECEPCIONISTA ? (fv.puesto?.trim() || null) : null,
     };
 
-    console.log('[MOCK] Profesional registrado:', usuarioDTO);
-    this.enviarRegistro(usuarioDTO);
+    try {
+      await this.authService.register(payload);
+      this.registroExitoso = true;
+      // Breve pausa para que el usuario vea el mensaje de éxito antes de redirigir
+      setTimeout(() => this.navCtrl.navigateRoot('/login'), 2500);
+    } catch (err) {
+      this.manejarError(err);
+    } finally {
+      this.cargando = false;
+    }
   }
 
-  private enviarRegistro(dto: UsuarioRegistroDto) {
-    this.usuarioService.registrarUsuario(dto).subscribe({
-      next: () => this.navCtrl.navigateRoot('/login'),
-      error: (err) => console.error('Error al registrar usuario:', err),
-    });
+  // ── Private helpers ───────────────────────────────────────────────────────
+
+  private actualizarValidacionesPorRol(rol: number): void {
+    const especialidad = this.registroForm.get('especialidad');
+    const invitacion   = this.registroForm.get('codigoInvitacion');
+    const vinculacion  = this.registroForm.get('codigoVinculacion');
+
+    if (rol === ROL_REGISTRO.PROFESIONAL) {
+      especialidad?.setValidators([Validators.required]);
+      invitacion?.setValidators([Validators.required]);
+      vinculacion?.clearValidators();
+      vinculacion?.setValue('');
+    } else {
+      especialidad?.clearValidators();
+      especialidad?.setValue('');
+      invitacion?.clearValidators();
+      invitacion?.setValue('');
+      vinculacion?.setValidators([Validators.required]);
+    }
+
+    especialidad?.updateValueAndValidity();
+    invitacion?.updateValueAndValidity();
+    vinculacion?.updateValueAndValidity();
+  }
+
+  private limpiarErrores(): void {
+    this.errorGlobal       = '';
+    this.errorCodigo       = '';
+    this.errorInvitacion   = '';
+    this.errorEmail        = '';
+    this.errorUsuario      = '';
+    this.validationDetails = [];
+  }
+
+  private manejarError(err: unknown): void {
+    const mapped = mapApiError(err);
+    const { code, fieldErrors, userMessage } = mapped;
+
+    switch (code) {
+
+      case API_ERROR_CODES.EMAIL_DUPLICADO:
+        this.errorEmail = fieldErrors?.['email'] ?? userMessage;
+        break;
+
+      case API_ERROR_CODES.USUARIO_DUPLICADO:
+        this.errorUsuario = fieldErrors?.['username'] ?? userMessage;
+        break;
+
+      case API_ERROR_CODES.CODIGO_BETA_INVALIDO:
+        this.errorInvitacion = userMessage;
+        this.registroForm.get('codigoInvitacion')?.setErrors({ backendError: true });
+        break;
+
+      case API_ERROR_CODES.CODIGO_VINCULACION_INVALIDO:
+        this.errorCodigo = userMessage;
+        this.registroForm.get('codigoVinculacion')?.setErrors({ backendError: true });
+        break;
+
+      case API_ERROR_CODES.VALIDATION_ERROR: {
+        this.errorGlobal = userMessage;
+
+        if (fieldErrors) {
+          if (fieldErrors['email'])    this.errorEmail   = humanizeFieldError(fieldErrors['email']);
+          if (fieldErrors['username']) this.errorUsuario = humanizeFieldError(fieldErrors['username']);
+
+          if (fieldErrors['codigo_beta']) {
+            this.errorInvitacion = humanizeFieldError(fieldErrors['codigo_beta']);
+            this.registroForm.get('codigoInvitacion')?.setErrors({ backendError: true });
+          }
+          if (fieldErrors['codigo_vinculacion']) {
+            this.errorCodigo = humanizeFieldError(fieldErrors['codigo_vinculacion']);
+            this.registroForm.get('codigoVinculacion')?.setErrors({ backendError: true });
+          }
+        }
+
+        // Show any remaining detail lines that weren't routed to a specific field
+        const handledFields = new Set(['email', 'username', 'codigo_beta', 'codigo_vinculacion']);
+        this.validationDetails = (mapped.raw?.details ?? [])
+          .filter(d => !handledFields.has(d.split(':')[0].trim()))
+          .map(d => {
+            const colonIdx = d.indexOf(':');
+            return humanizeFieldError(colonIdx > 0 ? d.substring(colonIdx + 1).trim() : d);
+          });
+        break;
+      }
+
+      default:
+        this.errorGlobal = userMessage;
+    }
   }
 }
+

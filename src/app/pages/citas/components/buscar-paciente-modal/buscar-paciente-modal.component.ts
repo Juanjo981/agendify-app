@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { PacientesMockService } from '../../../pacientes/pacientes.service.mock';
-import { PacienteDto } from '../../../pacientes/pacientes.mock';
+import { PacienteDto } from '../../../pacientes/models/paciente.model';
+import { getAvatarColor as avatarColorUtil } from '../../../../shared/utils/avatar.utils';
 
 @Component({
   selector: 'app-buscar-paciente-modal',
@@ -62,7 +63,6 @@ export class BuscarPacienteModalComponent implements OnInit, OnDestroy {
   }
 
   getAvatarColor(nombre: string): string {
-    const colors = ['#6366f1', '#8b5cf6', '#3b82f6', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444'];
-    return colors[nombre.charCodeAt(0) % colors.length];
+    return avatarColorUtil(nombre);
   }
 }

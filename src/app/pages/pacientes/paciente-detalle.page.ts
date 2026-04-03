@@ -5,7 +5,9 @@ import { AlertController, IonicModule } from '@ionic/angular';
 import { AgfDatePickerComponent } from '../../shared/components/agf-date-picker/agf-date-picker.component';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PacientesMockService } from './pacientes.service.mock';
-import { PacienteDto, CitaDto, NotaDto, AdjuntoMeta, SesionPaciente, HistorialEvento, HistorialTipoEvento } from './pacientes.mock';
+import { PacienteDto, CitaResumenDto, NotaDto, AdjuntoMeta, SesionPaciente, HistorialEvento, HistorialTipoEvento } from './models/paciente.model';
+import { getAvatarColor as avatarColorUtil } from '../../shared/utils/avatar.utils';
+import { formatFecha as formatFechaUtil } from '../../shared/utils/date.utils';
 import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../shared/confirm-dialog/confirm-dialog.component';
 import { PacienteSubmenuComponent, SeccionPaciente } from './components/paciente-submenu/paciente-submenu.component';
 import html2pdf from 'html2pdf.js';
@@ -96,17 +98,14 @@ export class PacienteDetallePage implements OnInit {
 
   getAvatarColor(): string {
     if (!this.paciente) return '#6366f1';
-    const colors = ['#6366f1', '#8b5cf6', '#3b82f6', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444'];
-    return colors[this.paciente.nombre.charCodeAt(0) % colors.length];
+    return avatarColorUtil(this.paciente.nombre);
   }
 
   formatFecha(iso: string): string {
-    if (!iso) return '—';
-    const [y, m, d] = iso.split('-');
-    return `${d}/${m}/${y}`;
+    return formatFechaUtil(iso);
   }
 
-  get citasFiltradas(): CitaDto[] {
+  get citasFiltradas(): CitaResumenDto[] {
     if (!this.paciente) return [];
     if (this.filtroCitas === 'todos') return this.paciente.citas;
     return this.paciente.citas.filter(c => c.estado === this.filtroCitas);

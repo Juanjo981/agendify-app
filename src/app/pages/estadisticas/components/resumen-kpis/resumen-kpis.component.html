@@ -4,26 +4,24 @@
     class="kpi-card"
     [ngClass]="'kpi-card--' + kpi.color">
 
-    <div class="kpi-icon-wrap">
-      <ion-icon [name]="kpi.icono"></ion-icon>
+    <div class="kpi-header">
+      <div class="kpi-icon-wrap">
+        <ion-icon [name]="kpi.icono"></ion-icon>
+      </div>
+      <span class="kpi-pip" aria-hidden="true"></span>
     </div>
 
-    <div class="kpi-body">
-      <p class="kpi-label">{{ kpi.label }}</p>
-      <p class="kpi-value">{{ formatValor(kpi) }}</p>
+    <p class="kpi-label">{{ kpi.label }}</p>
+    <p class="kpi-value">{{ formatValor(kpi) }}</p>
 
-      <div class="kpi-tendencia" *ngIf="kpi.tendencia">
-        <ion-icon
-          [name]="kpi.tendencia.direccion === 'up' ? 'trending-up-outline' : 'trending-down-outline'"
-          [class.t-positivo]="kpi.tendencia.positivo"
-          [class.t-negativo]="!kpi.tendencia.positivo">
-        </ion-icon>
-        <span
-          [class.t-positivo]="kpi.tendencia.positivo"
-          [class.t-negativo]="!kpi.tendencia.positivo">
-          {{ tendenciaLabel(kpi) }}
-        </span>
-      </div>
+    <div class="kpi-tendencia"
+         *ngIf="kpi.tendencia"
+         [class.kpi-tendencia--pos]="kpi.tendencia.positivo"
+         [class.kpi-tendencia--neg]="!kpi.tendencia.positivo">
+      <ion-icon
+        [name]="kpi.tendencia.direccion === 'up' ? 'trending-up-outline' : 'trending-down-outline'">
+      </ion-icon>
+      <span>{{ tendenciaLabel(kpi) }}</span>
     </div>
 
   </div>

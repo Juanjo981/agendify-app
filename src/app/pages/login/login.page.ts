@@ -4,6 +4,7 @@ import { IonicModule, NavController } from '@ionic/angular';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from 'src/app/services/auth';
 import { ForgotPasswordComponent } from 'src/app/shared/components/forgot-password/forgot-password.component';
+import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
 
 @Component({
   selector: 'app-login',
@@ -44,10 +45,19 @@ export class LoginPage implements OnInit {
 
     const { usuario, contrasena } = this.loginForm.value;
     try {
+      // 1. Autenticar → guarda access_token y refresh_token
       await this.authService.login(usuario, contrasena);
+
+      // 2. Obtener perfil verificado desde /api/auth/me
+      const user = await this.authService.getCurrentUser();
+
+      // 3. Persistir usuario en localStorage
+      this.authService.saveUser(user);
+
+      // 4. Navegar al dashboard
       this.navCtrl.navigateRoot('/dashboard');
-    } catch {
-      this.errorLogin = 'Usuario o contraseña incorrectos.';
+    } catch (err) {
+      this.errorLogin = mapApiError(err).userMessage;
     } finally {
       this.cargando = false;
     }

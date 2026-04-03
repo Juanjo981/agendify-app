@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
+import { getAvatarColor as avatarColorUtil } from '../../shared/utils/avatar.utils';
+import { formatFecha as formatFechaUtil } from '../../shared/utils/date.utils';
 import { SesionesMockService } from './sesiones.service.mock';
 import { SesionDto } from './models/sesion.model';
 import { AgfDatePickerComponent } from '../../shared/components/agf-date-picker/agf-date-picker.component';
@@ -73,9 +75,7 @@ export class SesionesPage implements OnInit {
   }
 
   formatFecha(iso: string): string {
-    if (!iso) return '—';
-    const [y, m, d] = iso.split('-');
-    return `${d}/${m}/${y}`;
+    return formatFechaUtil(iso);
   }
 
   formatCreacion(iso: string): string {
@@ -93,8 +93,7 @@ export class SesionesPage implements OnInit {
   }
 
   getAvatarColor(nombre: string): string {
-    const colors = ['#6366f1', '#8b5cf6', '#3b82f6', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444'];
-    return colors[nombre.charCodeAt(0) % colors.length];
+    return avatarColorUtil(nombre);
   }
 
   getFileIcon(type: string): string {

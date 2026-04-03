@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SolicitudReprogramacionService } from '../citas/solicitud-reprogramacion.service.mock';
 import { SolicitudReprogramacion } from 'src/app/shared/models/solicitud-reprogramacion.model';
+import { tiempoRelativo, formatFechaLarga } from '../../shared/utils/date.utils';
 import { SolicitudReprogramacionModalComponent } from 'src/app/shared/components/solicitud-reprogramacion-modal/solicitud-reprogramacion-modal.component';
 
 type TipoEvento = 'agenda' | 'equipo' | 'sistema' | 'reprogramar';
@@ -157,8 +158,8 @@ export class ActividadPage {
       tipo:        'reprogramar' as TipoEvento,
       icono:       'swap-horizontal-outline',
       titulo:      'Solicitud de reprogramación',
-      descripcion: `${s.pacienteNombre} quiere cambiar su cita del ${this.formatFecha(s.fechaCita)} • ${s.horaCita}`,
-      tiempo:      this.tiempoRelativo(s.fechaSolicitud),
+      descripcion: `${s.pacienteNombre} quiere cambiar su cita del ${formatFechaLarga(s.fechaCita)} • ${s.horaCita}`,
+      tiempo:      tiempoRelativo(s.fechaSolicitud),
       fecha:       'hoy' as const,
       solicitudId: s.idSolicitud,
     }));
@@ -167,18 +168,11 @@ export class ActividadPage {
   }
 
   private formatFecha(isoDate: string): string {
-    const d = new Date(isoDate + 'T00:00');
-    return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+    return formatFechaLarga(isoDate);
   }
 
   private tiempoRelativo(isoDate: string): string {
-    const diff = Date.now() - new Date(isoDate).getTime();
-    const mins  = Math.floor(diff / 60000);
-    if (mins < 60)  return `Hace ${mins} min`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `Hace ${hours}h`;
-    const days = Math.floor(hours / 24);
-    return `Hace ${days} día${days > 1 ? 's' : ''}`;
+    return tiempoRelativo(isoDate);
   }
 
   // ─── Filtered getters ────────────────────────────────────────────────────
