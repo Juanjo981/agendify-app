@@ -1,10 +1,11 @@
-import { Component, Output, EventEmitter, OnInit, OnDestroy, ElementRef } from '@angular/core';
+import { Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { PacientesApiService } from '../../../pacientes/pacientes-api.service';
 import { PacienteDto } from '../../../pacientes/models/paciente.model';
 import { getAvatarColor as avatarColorUtil } from '../../../../shared/utils/avatar.utils';
+import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
 
 @Component({
   selector: 'app-buscar-paciente-modal',
@@ -18,8 +19,11 @@ export class BuscarPacienteModalComponent implements OnInit, OnDestroy {
   @Output() cerrado = new EventEmitter<void>();
 
   busqueda = '';
-  todos: PacienteDto[] = [];
   filtrados: PacienteDto[] = [];
+  loading = false;
+  errorMessage = '';
+
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private pacientesSvc: PacientesApiService,
@@ -27,34 +31,23 @@ export class BuscarPacienteModalComponent implements OnInit, OnDestroy {
   ) {}
 
   async ngOnInit() {
-    try {
-      const page = await this.pacientesSvc.getAll({ activo: true, size: 500 });
-      this.todos = page.content;
-      this.filtrados = [...this.todos];
-    } catch { /* silent */ }
-
-    // Portal to <body> so position:fixed escapes any ancestor stacking context
-    // (e.g. backdrop-filter / transform on .new-appointment-panel in Agenda).
-    // Angular change detection and event bindings are unaffected by this move.
     document.body.appendChild(this.el.nativeElement);
+    await this.buscarPacientes();
   }
 
   ngOnDestroy() {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
     const node = this.el.nativeElement;
     if (node.parentNode) {
       node.parentNode.removeChild(node);
     }
   }
 
-  filtrar() {
-    const q = this.busqueda.trim().toLowerCase();
-    this.filtrados = q
-      ? this.todos.filter(p =>
-          p.nombre.toLowerCase().includes(q) ||
-          p.apellido.toLowerCase().includes(q) ||
-          p.email.toLowerCase().includes(q)
-        )
-      : [...this.todos];
+  onBusquedaChange() {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => {
+      void this.buscarPacientes();
+    }, 250);
   }
 
   elegir(p: PacienteDto) {
@@ -67,5 +60,26 @@ export class BuscarPacienteModalComponent implements OnInit, OnDestroy {
 
   getAvatarColor(nombre: string): string {
     return avatarColorUtil(nombre);
+  }
+
+  private async buscarPacientes() {
+    this.loading = true;
+    this.errorMessage = '';
+
+    try {
+      const page = await this.pacientesSvc.getAll({
+        search: this.busqueda.trim() || undefined,
+        activo: true,
+        page: 0,
+        size: 20,
+        sort: 'apellido,asc',
+      });
+      this.filtrados = page.content;
+    } catch (err) {
+      this.filtrados = [];
+      this.errorMessage = mapApiError(err).userMessage;
+    } finally {
+      this.loading = false;
+    }
   }
 }

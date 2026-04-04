@@ -372,6 +372,29 @@
   ion-icon { font-size: 13px; }
 }
 
+.cfm-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cfm-slot-chip {
+  border: 1px solid rgba(99, 102, 241, 0.24);
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--primary, #6366f1);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 9999px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+
+.cfm-slot-chip:hover {
+  background: rgba(99, 102, 241, 0.16);
+}
+
 // ── Footer ────────────────────────────────────────────────────────────────────
 .cfm-footer {
   display: flex;

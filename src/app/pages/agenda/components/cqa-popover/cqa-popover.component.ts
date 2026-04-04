@@ -24,12 +24,12 @@ export class CqaPopoverComponent {
   @Input() citaActiva!: CitaDto;
 
   readonly estadoClaseMap: Record<string, string> = {
-    'Confirmada': 'cpop-badge--confirmada',
-    'Completada': 'cpop-badge--completada',
-    'Pendiente':  'cpop-badge--pendiente',
-    'Cancelada':  'cpop-badge--cancelada',
-    'No asistió': 'cpop-badge--no-asistio',
-    'Pospuesta':  'cpop-badge--pospuesta',
+    CONFIRMADA: 'cpop-badge--confirmada',
+    COMPLETADA: 'cpop-badge--completada',
+    PENDIENTE:  'cpop-badge--pendiente',
+    CANCELADA:  'cpop-badge--cancelada',
+    NO_ASISTIO: 'cpop-badge--no-asistio',
+    REPROGRAMADA:  'cpop-badge--pospuesta',
   };
 
   constructor(private popoverCtrl: PopoverController) {}
@@ -46,14 +46,14 @@ export class CqaPopoverComponent {
   }
 
   isDisabled(action: CqaAction): boolean {
-    const e = this.citaActiva.estado;
-    if (action === 'completada') return e === 'Completada';
-    if (action === 'noAsistio')  return e === 'No asistió';
-    if (action === 'cancelar')   return e === 'Cancelada';
+    const e = this.citaActiva.estado_cita;
+    if (action === 'completada') return e === 'COMPLETADA';
+    if (action === 'noAsistio')  return e === 'NO_ASISTIO';
+    if (action === 'cancelar')   return e === 'CANCELADA';
     return false;
   }
 
   get showCrearSesion(): boolean {
-    return this.citaActiva.estado === 'Completada' && !this.citaActiva.tiene_sesion;
+    return this.citaActiva.estado_cita === 'COMPLETADA' && !this.citaActiva.tiene_sesion;
   }
 }

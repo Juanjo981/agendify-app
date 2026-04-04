@@ -1,7 +1,5 @@
 <ion-content class="cit-content">
   <div class="cit-wrapper">
-
-    <!-- ════════════════════════ PAGE HEADER ════════════════════════ -->
     <div class="cit-page-header">
       <div class="cit-page-header__text">
         <h1 class="cit-title">Citas</h1>
@@ -13,18 +11,27 @@
       </button>
     </div>
 
-    <!-- ════════════════════════ FILTROS ════════════════════════════ -->
     <app-cita-filtros (filtrosCambiados)="aplicarFiltros($event)"></app-cita-filtros>
 
-    <!-- ════════════════════════ CONTADOR ═══════════════════════════ -->
-    <p class="cit-counter">
+    <div *ngIf="errorMessage && !loading" class="cit-error">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      <p>{{ errorMessage }}</p>
+      <button class="cit-btn-primary" (click)="aplicarFiltros(filtrosActuales)">
+        <ion-icon name="refresh-outline"></ion-icon>
+        Reintentar
+      </button>
+    </div>
+
+    <div *ngIf="loading" class="cit-loading">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Cargando citas...</p>
+    </div>
+
+    <p class="cit-counter" *ngIf="!loading">
       Mostrando <strong>{{ citasFiltradas.length }}</strong> de <strong>{{ totalCitas }}</strong> citas
     </p>
 
-    <!-- ════════════════════════ LISTA DESKTOP ══════════════════════ -->
-    <div class="cit-table-wrapper">
-
-      <!-- Head (oculto en móvil) -->
+    <div class="cit-table-wrapper" *ngIf="!loading">
       <div class="cit-table-head">
         <div class="cit-col cit-col--paciente">Paciente</div>
         <div class="cit-col cit-col--fecha">Fecha</div>
@@ -36,14 +43,12 @@
         <div class="cit-col cit-col--acciones">Acciones</div>
       </div>
 
-      <!-- Empty state -->
-      <div *ngIf="citasFiltradas.length === 0" class="cit-empty">
+      <div *ngIf="citasFiltradas.length === 0 && !errorMessage" class="cit-empty">
         <ion-icon name="calendar-outline"></ion-icon>
         <p>No se encontraron citas</p>
         <span>Prueba con otros filtros o crea una nueva cita</span>
       </div>
 
-      <!-- Rows desktop -->
       <div
         *ngFor="let c of citasFiltradas"
         class="cit-row"
@@ -63,17 +68,17 @@
 
         <div class="cit-col cit-col--fecha">
           <span class="cit-data-label">Fecha</span>
-          <span>{{ formatFecha(c.fecha) }}</span>
+          <span>{{ formatFecha(c.fecha_inicio) }}</span>
         </div>
 
         <div class="cit-col cit-col--hora">
           <span class="cit-data-label">Hora</span>
-          <span>{{ c.hora_inicio }}</span>
+          <span>{{ formatHora(c.fecha_inicio) }}</span>
         </div>
 
         <div class="cit-col cit-col--estado">
           <span class="cit-data-label">Estado</span>
-          <app-estado-badge [estado]="c.estado"></app-estado-badge>
+          <app-estado-badge [estado]="c.estado_cita"></app-estado-badge>
         </div>
 
         <div class="cit-col cit-col--pago">
@@ -83,7 +88,7 @@
 
         <div class="cit-col cit-col--metodo">
           <span class="cit-data-label">Método</span>
-          <span>{{ c.metodo_pago || '—' }}</span>
+          <span>—</span>
         </div>
 
         <div class="cit-col cit-col--monto">
@@ -97,17 +102,20 @@
             <button class="cit-action-btn cit-action-btn--view" (click)="verDetalle(c)" title="Ver detalle">
               <ion-icon name="eye-outline"></ion-icon>
             </button>
-            <button class="cit-action-btn cit-action-btn--edit" (click)="abrirEditar(c)" title="Editar">
+            <button
+              class="cit-action-btn cit-action-btn--edit"
+              [disabled]="!puedeEditar(c)"
+              (click)="abrirEditar(c)"
+              title="Editar"
+            >
               <ion-icon name="pencil-outline"></ion-icon>
             </button>
           </div>
         </div>
       </div>
-
     </div>
 
-    <!-- ════════════════════════ CARDS MÓVIL ════════════════════════ -->
-    <div class="cit-cards-grid">
+    <div class="cit-cards-grid" *ngIf="!loading">
       <app-cita-card
         *ngFor="let c of citasFiltradas"
         [cita]="c"
@@ -115,20 +123,27 @@
         (editar)="abrirEditar($event)"
       ></app-cita-card>
 
-      <div *ngIf="citasFiltradas.length === 0" class="cit-empty-mobile">
+      <div *ngIf="citasFiltradas.length === 0 && !errorMessage" class="cit-empty-mobile">
         <ion-icon name="calendar-outline"></ion-icon>
         <p>No se encontraron citas</p>
       </div>
     </div>
 
+    <div *ngIf="!isLastPage && !loading" class="cit-load-more">
+      <button class="cit-btn-primary" (click)="cargarMas()" [disabled]="loadingMore">
+        <ion-spinner *ngIf="loadingMore" name="crescent"></ion-spinner>
+        <span *ngIf="!loadingMore">Cargar más</span>
+        <span *ngIf="loadingMore">Cargando...</span>
+      </button>
+    </div>
   </div>
 </ion-content>
 
-<!-- Form modal -->
 <app-cita-form-modal
   context="citas"
   *ngIf="showFormModal"
   [cita]="citaEditando"
+  [saving]="saving"
   (saved)="onGuardado($event)"
   (cancelled)="cerrarModal()"
 ></app-cita-form-modal>

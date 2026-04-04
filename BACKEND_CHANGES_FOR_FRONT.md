@@ -746,7 +746,7 @@ Renombrar fields a `username` y `password`. Actualizar `LoginRequest` y el formu
 
 **Prioridad:** Crítica — el login no funciona sin esto  
 **Bloqueante:** Sí  
-**Estado:** ⬜ Pendiente — Cambio en frontend
+**Estado:** ✅ Resuelto (Fase 2) — LoginRequest alineado al contrato real usado por backend.
 
 ---
 
@@ -776,7 +776,7 @@ export enum RolUsuario { PROFESIONAL = 2, RECEPCIONISTA = 3 }
 
 **Prioridad:** Crítica — el registro y los guards de rol fallarán  
 **Bloqueante:** Sí  
-**Estado:** ⬜ Pendiente — Cambio en frontend
+**Estado:** ✅ Resuelto (Fase 2) — `ROL_REGISTRO` y `RolUsuario` corregidos a ADMIN=1, PROFESIONAL=2, RECEPCIONISTA=3.
 
 ---
 
@@ -823,7 +823,7 @@ export interface CitaDto {
 
 **Prioridad:** Crítica  
 **Bloqueante:** Sí, para Fase 4  
-**Estado:** ⬜ Pendiente — Cambio en frontend
+**Estado:** 🟡 Parcial — Resuelto en módulo Citas (Fase 4). Se mantiene compatibilidad legacy para Agenda/Fase 5.
 
 ---
 
@@ -870,7 +870,7 @@ Crear mapeo de labels para UI (ej: `'NO_ASISTIO'` → `'No asistió'`).
 
 **Prioridad:** Crítica  
 **Bloqueante:** Sí  
-**Estado:** ⬜ Pendiente — Cambio en frontend
+**Estado:** 🟡 Parcial — Enums UPPERCASE aplicados en Citas (Fase 4). Falta cierre total en Agenda/Fase 5.
 
 ---
 
@@ -1260,8 +1260,8 @@ Los query params de filtros usan naming inconsistente. Jackson SNAKE_CASE **NO**
 | 3 | ROL IDs incorrectos (original) | 2 | Registro y guards fallan |
 | 21 | LoginRequest: usuario/contrasena → username/password | 2 | Login no funciona |
 | 22 | ROL IDs: TODAS las constantes incorrectas | 2 | Registro y guards fallan |
-| 23 | CitaDto: reestructuración completa | 4 | Todo el módulo de citas |
-| 24 | Enums UPPERCASE + valores renombrados | 4 | Toda la app (badges, filtros, lógica) |
+| 23 | CitaDto: reestructuración completa | 4 | **Parcial:** resuelto en módulo Citas; pendiente cierre en Agenda (Fase 5) |
+| 24 | Enums UPPERCASE + valores renombrados | 4 | **Parcial:** aplicados en Citas; pendiente migración total en Agenda |
 | 26 | NotaClinicaDto: estructura diferente | 3, 6 | CRUD de notas |
 | 28 | Adjuntos: modelo entity-based + signed URLs | 6 | Upload/download de archivos |
 | 29 | SolicitudReprogramacion: camelCase→snake_case | 7, 12 | Solicitudes de reprogramación |
@@ -1310,8 +1310,8 @@ Los query params de filtros usan naming inconsistente. Jackson SNAKE_CASE **NO**
    - Adaptar HistorialEvento (Hallazgo 32)
 
 4. **Fase 4 — Citas: la más impactada:**
-   - Reescribir CitaDto completamente (Hallazgo 23)
-   - Migrar TODOS los enums a UPPERCASE (Hallazgo 24)
+   - ✅ Reescribir CitaDto en módulo Citas (Hallazgo 23) — pendiente cierre en Agenda
+   - ✅ Migrar enums UPPERCASE en módulo Citas (Hallazgo 24) — pendiente migración total en Agenda
    - Reescribir SolicitudReprogramacion (Hallazgo 29)
    - Buscar y reemplazar en toda la app: comparaciones de estado, labels, filtros
 
@@ -1339,5 +1339,5 @@ Los query params de filtros usan naming inconsistente. Jackson SNAKE_CASE **NO**
 
 ---
 
-*Documento actualizado el 03/04/2026 — Post-auditoría con FRONTEND_API_REFERENCE.md*  
-*Versión 2.0 — 17 hallazgos resueltos, 17 pendientes (todos en frontend)*
+*Documento actualizado el 04/04/2026 — Cierre Fase 4 (Citas).*  
+*Versión 2.1 — Hallazgos 23 y 24 en estado parcial (resueltos en módulo Citas, pendiente Agenda/Fase 5).*

@@ -101,20 +101,20 @@
 
         <div class="right-section">
           <div class="status"
-            [class.confirmed]="ev.cita?.estado === 'Confirmada'"
-            [class.pending]="ev.cita?.estado === 'Pendiente'"
-            [class.completada]="ev.cita?.estado === 'Completada'"
-            [class.cancelada]="ev.cita?.estado === 'Cancelada' || ev.cita?.estado === 'No asistió'"
-            [class.pospuesta]="ev.cita?.estado === 'Pospuesta'">
+            [class.confirmed]="ev.cita?.estado_cita === 'CONFIRMADA'"
+            [class.pending]="ev.cita?.estado_cita === 'PENDIENTE'"
+            [class.completada]="ev.cita?.estado_cita === 'COMPLETADA'"
+            [class.cancelada]="ev.cita?.estado_cita === 'CANCELADA' || ev.cita?.estado_cita === 'NO_ASISTIO'"
+            [class.pospuesta]="ev.cita?.estado_cita === 'REPROGRAMADA'">
             <ion-icon
-              [name]="ev.cita?.estado === 'Completada' ? 'checkmark-done-circle'
-                    : ev.cita?.estado === 'Cancelada'  ? 'close-circle'
-                    : ev.cita?.estado === 'No asistió' ? 'person-remove'
-                    : ev.cita?.estado === 'Confirmada' ? 'checkmark-circle'
-                    : ev.cita?.estado === 'Pospuesta'  ? 'time'
+              [name]="ev.cita?.estado_cita === 'COMPLETADA' ? 'checkmark-done-circle'
+                    : ev.cita?.estado_cita === 'CANCELADA'  ? 'close-circle'
+                    : ev.cita?.estado_cita === 'NO_ASISTIO' ? 'person-remove'
+                    : ev.cita?.estado_cita === 'CONFIRMADA' ? 'checkmark-circle'
+                    : ev.cita?.estado_cita === 'REPROGRAMADA'  ? 'time'
                     : 'time-outline'">
             </ion-icon>
-            <span>{{ ev.cita?.estado ?? ev.status }}</span>
+            <span>{{ ev.cita?.estado ?? ev.cita?.estado_cita ?? ev.status }}</span>
           </div>
 
           <button class="view-btn" (click)="$event.stopPropagation(); abrirQuickActions(ev, $event)">
@@ -404,14 +404,14 @@
 
     <!-- Badges: estado + pago -->
     <div class="cqa-badges">
-      <span class="cqa-estado" [ngClass]="estadoClaseMap[citaActiva.estado]">
-        {{ citaActiva.estado }}
+      <span class="cqa-estado" [ngClass]="estadoClaseMap[citaActiva.estado_cita]">
+        {{ citaActiva.estado ?? citaActiva.estado_cita }}
       </span>
       <span
         class="cqa-pago-badge"
-        [class.cqa-pago-badge--ok]="citaActiva.estado_pago === 'Pagado'"
-        [class.cqa-pago-badge--pend]="citaActiva.estado_pago === 'Pendiente'"
-        [class.cqa-pago-badge--parcial]="citaActiva.estado_pago === 'Parcial'">
+        [class.cqa-pago-badge--ok]="citaActiva.estado_pago === 'PAGADO'"
+        [class.cqa-pago-badge--pend]="citaActiva.estado_pago === 'PENDIENTE'"
+        [class.cqa-pago-badge--parcial]="citaActiva.estado_pago === 'PARCIAL'">
         <ion-icon name="cash-outline"></ion-icon>
         {{ citaActiva.estado_pago }} · €{{ citaActiva.monto_pagado }}/{{ citaActiva.monto }}
       </span>
@@ -444,30 +444,30 @@
 
       <button
         class="cqa-act cqa-act--success"
-        (click)="confirmarCambioEstado('Completada')"
-        [disabled]="citaActiva.estado === 'Completada'">
+        (click)="confirmarCambioEstado('COMPLETADA')"
+        [disabled]="citaActiva.estado_cita === 'COMPLETADA'">
         <div class="cqa-act-icon"><ion-icon name="checkmark-circle-outline"></ion-icon></div>
         <span class="cqa-act-label">Marcar como completada</span>
       </button>
 
       <button
         class="cqa-act cqa-act--warning"
-        (click)="confirmarCambioEstado('No asistió')"
-        [disabled]="citaActiva.estado === 'No asistió'">
+        (click)="confirmarCambioEstado('NO_ASISTIO')"
+        [disabled]="citaActiva.estado_cita === 'NO_ASISTIO'">
         <div class="cqa-act-icon"><ion-icon name="person-remove-outline"></ion-icon></div>
         <span class="cqa-act-label">No asistió</span>
       </button>
 
       <button
         class="cqa-act cqa-act--danger"
-        (click)="confirmarCambioEstado('Cancelada')"
-        [disabled]="citaActiva.estado === 'Cancelada'">
+        (click)="confirmarCambioEstado('CANCELADA')"
+        [disabled]="citaActiva.estado_cita === 'CANCELADA'">
         <div class="cqa-act-icon"><ion-icon name="close-circle-outline"></ion-icon></div>
         <span class="cqa-act-label">Cancelar cita</span>
       </button>
 
       <!-- Crear sesión: solo si completada y sin sesión -->
-      <ng-container *ngIf="citaActiva.estado === 'Completada' && !citaActiva.tiene_sesion">
+      <ng-container *ngIf="citaActiva.estado_cita === 'COMPLETADA' && !citaActiva.tiene_sesion">
         <div class="cqa-sep"></div>
         <button class="cqa-act cqa-act--purple" (click)="accionCrearSesion()">
           <div class="cqa-act-icon"><ion-icon name="pulse-outline"></ion-icon></div>

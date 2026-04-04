@@ -1,6 +1,4 @@
 <div class="cc-card" (click)="ver.emit(cita)" role="button" tabindex="0">
-
-  <!-- Header -->
   <div class="cc-header">
     <div class="cc-patient">
       <div class="cc-avatar">{{ iniciales }}</div>
@@ -9,26 +7,24 @@
         <span class="cc-patient__motivo">{{ cita.motivo }}</span>
       </div>
     </div>
-    <app-estado-badge [estado]="cita.estado"></app-estado-badge>
+    <app-estado-badge [estado]="cita.estado_cita"></app-estado-badge>
   </div>
 
-  <!-- Meta -->
   <div class="cc-meta">
     <div class="cc-meta__item">
       <ion-icon name="calendar-outline"></ion-icon>
-      <span>{{ formatFecha(cita.fecha) }}</span>
+      <span>{{ formatFecha(cita.fecha_inicio) }}</span>
     </div>
     <div class="cc-meta__item">
       <ion-icon name="time-outline"></ion-icon>
-      <span>{{ cita.hora_inicio }} – {{ cita.hora_fin }}</span>
+      <span>{{ horaInicio }} - {{ horaFin }}</span>
     </div>
     <div class="cc-meta__item">
       <ion-icon name="hourglass-outline"></ion-icon>
-      <span>{{ cita.duracion }} min</span>
+      <span>{{ duracion }} min</span>
     </div>
   </div>
 
-  <!-- Footer -->
   <div class="cc-footer">
     <app-pago-badge [estado]="cita.estado_pago"></app-pago-badge>
     <span class="cc-monto">{{ formatMonto(cita.monto) }}</span>
@@ -49,5 +45,4 @@
       </button>
     </div>
   </div>
-
 </div>

@@ -1,16 +1,25 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
-import { formatFecha as formatFechaUtil } from '../../shared/utils/date.utils';
-import { CitasMockService } from './citas.service.mock';
-import { CitaDto, FiltroCitas } from './models/cita.model';
 import { CitaCardComponent } from './components/cita-card/cita-card.component';
 import { CitaFiltrosComponent } from './components/cita-filtros/cita-filtros.component';
-import { CitaFormModalComponent, CitaFormData } from '../../shared/components/cita-form-modal/cita-form-modal.component';
+import {
+  CitaFormData,
+  CitaFormModalComponent,
+} from '../../shared/components/cita-form-modal/cita-form-modal.component';
 import { EstadoBadgeComponent } from './components/estado-badge/estado-badge.component';
 import { PagoBadgeComponent } from './components/pago-badge/pago-badge.component';
+import { CitasApiService } from './citas-api.service';
+import {
+  CitaDto,
+  CitaUpsertRequest,
+  FiltroCitas,
+  toDatePart,
+  toTimePart,
+} from './models/cita.model';
+import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
 
 @Component({
   selector: 'app-citas',
@@ -18,9 +27,14 @@ import { PagoBadgeComponent } from './components/pago-badge/pago-badge.component
   styleUrls: ['./citas.page.scss'],
   standalone: true,
   imports: [
-    IonicModule, CommonModule, FormsModule,
-    CitaCardComponent, CitaFiltrosComponent, CitaFormModalComponent,
-    EstadoBadgeComponent, PagoBadgeComponent,
+    IonicModule,
+    CommonModule,
+    FormsModule,
+    CitaCardComponent,
+    CitaFiltrosComponent,
+    CitaFormModalComponent,
+    EstadoBadgeComponent,
+    PagoBadgeComponent,
   ],
 })
 export class CitasPage implements OnInit, OnDestroy {
@@ -28,29 +42,44 @@ export class CitasPage implements OnInit, OnDestroy {
   showFormModal = false;
   citaEditando: CitaDto | null = null;
 
-  constructor(private router: Router, private svc: CitasMockService) {}
+  totalCitas = 0;
+  currentPage = 0;
+  pageSize = 20;
+  totalPages = 0;
+  isLastPage = true;
+
+  loading = false;
+  loadingMore = false;
+  saving = false;
+  errorMessage = '';
+
+  filtrosActuales: FiltroCitas = {
+    busqueda: '',
+    estado: 'todos',
+    estado_pago: 'todos',
+    fecha_desde: '',
+    fecha_hasta: '',
+    id_paciente: null,
+  };
+
+  constructor(
+    private router: Router,
+    private svc: CitasApiService
+  ) {}
 
   ngOnInit() {
-    this.aplicarFiltros({ busqueda: '', estado: 'todos', estado_pago: 'todos', fecha_desde: '', fecha_hasta: '' });
+    this.aplicarFiltros(this.filtrosActuales);
   }
 
-  get totalCitas(): number { return this.svc.getCitas().length; }
+  aplicarFiltros(filtros: FiltroCitas) {
+    this.filtrosActuales = { ...filtros };
+    void this.cargar(true);
+  }
 
-  aplicarFiltros(f: FiltroCitas) {
-    let r = this.svc.getCitas();
-    if (f.busqueda.trim()) {
-      const q = f.busqueda.toLowerCase();
-      r = r.filter(c =>
-        c.nombre_paciente.toLowerCase().includes(q) ||
-        c.apellido_paciente.toLowerCase().includes(q) ||
-        c.motivo.toLowerCase().includes(q)
-      );
-    }
-    if (f.estado !== 'todos') r = r.filter(c => c.estado === f.estado);
-    if (f.estado_pago !== 'todos') r = r.filter(c => c.estado_pago === f.estado_pago);
-    if (f.fecha_desde) r = r.filter(c => c.fecha >= f.fecha_desde);
-    if (f.fecha_hasta) r = r.filter(c => c.fecha <= f.fecha_hasta);
-    this.citasFiltradas = r;
+  cargarMas() {
+    if (this.isLastPage || this.loadingMore) return;
+    this.currentPage++;
+    void this.cargar(false);
   }
 
   verDetalle(cita: CitaDto) {
@@ -64,6 +93,7 @@ export class CitasPage implements OnInit, OnDestroy {
   }
 
   abrirEditar(cita: CitaDto) {
+    if (!this.puedeEditar(cita)) return;
     this.citaEditando = cita;
     this.showFormModal = true;
     document.body.classList.add('modal-open');
@@ -74,25 +104,105 @@ export class CitasPage implements OnInit, OnDestroy {
     document.body.classList.remove('modal-open');
   }
 
-  onGuardado(data: CitaFormData) {
-    if (this.citaEditando) {
-      this.svc.updateCita({ ...this.citaEditando, ...data });
-    } else {
-      this.svc.createCita({ ...data, tiene_sesion: false });
-    }
-    this.cerrarModal();
-    this.aplicarFiltros({ busqueda: '', estado: 'todos', estado_pago: 'todos', fecha_desde: '', fecha_hasta: '' });
-  }
+  async onGuardado(data: CitaFormData) {
+    this.saving = true;
+    this.errorMessage = '';
 
-  formatFecha(iso: string): string {
-    return formatFechaUtil(iso);
+    try {
+      const body = this.mapFormToRequest(data);
+      if (this.citaEditando) {
+        await this.svc.update(this.citaEditando.id_cita, body);
+      } else {
+        await this.svc.create(body);
+      }
+
+      this.cerrarModal();
+      await this.cargar(true);
+    } catch (err) {
+      this.errorMessage = mapApiError(err).userMessage;
+    } finally {
+      this.saving = false;
+    }
   }
 
   ngOnDestroy() {
     document.body.classList.remove('modal-open');
   }
 
+  formatFecha(isoDateTime: string): string {
+    const date = toDatePart(isoDateTime);
+    if (!date) return '-';
+    const [y, m, d] = date.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  formatHora(isoDateTime: string): string {
+    return toTimePart(isoDateTime) || '-';
+  }
+
   formatMonto(n: number): string {
-    return `€${n.toFixed(2)}`;
+    const safe = Number.isFinite(n) ? n : 0;
+    return `€${safe.toFixed(2)}`;
+  }
+
+  puedeEditar(cita: CitaDto): boolean {
+    return !['COMPLETADA', 'CANCELADA', 'NO_ASISTIO'].includes(cita.estado_cita);
+  }
+
+  private async cargar(reset: boolean) {
+    if (reset) {
+      this.currentPage = 0;
+      this.loading = true;
+      this.errorMessage = '';
+    } else {
+      this.loadingMore = true;
+    }
+
+    try {
+      const page = await this.svc.getAll({
+        search: this.filtrosActuales.busqueda.trim() || undefined,
+        estado: this.filtrosActuales.estado === 'todos' ? undefined : this.filtrosActuales.estado,
+        estadoPago: this.filtrosActuales.estado_pago === 'todos' ? undefined : this.filtrosActuales.estado_pago,
+        pacienteId: this.filtrosActuales.id_paciente ?? undefined,
+        fechaDesde: this.toBoundaryDateTime(this.filtrosActuales.fecha_desde, false),
+        fechaHasta: this.toBoundaryDateTime(this.filtrosActuales.fecha_hasta, true),
+        page: this.currentPage,
+        size: this.pageSize,
+        sort: 'fecha_inicio,desc',
+      });
+
+      if (reset) {
+        this.citasFiltradas = page.content;
+      } else {
+        this.citasFiltradas = [...this.citasFiltradas, ...page.content];
+      }
+
+      this.totalCitas = page.total_elements;
+      this.totalPages = page.total_pages;
+      this.isLastPage = page.last;
+    } catch (err) {
+      if (reset) this.citasFiltradas = [];
+      this.errorMessage = mapApiError(err).userMessage;
+    } finally {
+      this.loading = false;
+      this.loadingMore = false;
+    }
+  }
+
+  private mapFormToRequest(data: CitaFormData): CitaUpsertRequest {
+    return {
+      id_paciente: data.id_paciente,
+      fecha_inicio: data.fecha_inicio,
+      fecha_fin: data.fecha_fin,
+      motivo: data.motivo?.trim() || undefined,
+      notas_internas: data.notas_internas?.trim() || null,
+      observaciones: data.observaciones?.trim() || null,
+      monto: data.monto,
+    };
+  }
+
+  private toBoundaryDateTime(dateIso: string, endOfDay: boolean): string | undefined {
+    if (!dateIso) return undefined;
+    return `${dateIso}T${endOfDay ? '23:59:59' : '00:00:00'}`;
   }
 }

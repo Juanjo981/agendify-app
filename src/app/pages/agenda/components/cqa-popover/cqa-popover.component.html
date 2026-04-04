@@ -12,13 +12,13 @@
 
 <!-- ─── Badges ───────────────────────────────────────────────────────────── -->
 <div class="cpop-badges">
-  <span class="cpop-badge" [ngClass]="estadoClaseMap[citaActiva.estado]">
-    {{ citaActiva.estado }}
+  <span class="cpop-badge" [ngClass]="estadoClaseMap[citaActiva.estado_cita]">
+    {{ citaActiva.estado ?? citaActiva.estado_cita }}
   </span>
   <span class="cpop-badge cpop-badge--pago"
-    [class.cpop-badge--pago-ok]="citaActiva.estado_pago === 'Pagado'"
-    [class.cpop-badge--pago-pend]="citaActiva.estado_pago === 'Pendiente'"
-    [class.cpop-badge--pago-parcial]="citaActiva.estado_pago === 'Parcial'">
+    [class.cpop-badge--pago-ok]="citaActiva.estado_pago === 'PAGADO'"
+    [class.cpop-badge--pago-pend]="citaActiva.estado_pago === 'PENDIENTE'"
+    [class.cpop-badge--pago-parcial]="citaActiva.estado_pago === 'PARCIAL'">
     <ion-icon name="cash-outline"></ion-icon>
     {{ citaActiva.estado_pago }}&nbsp;·&nbsp;€{{ citaActiva.monto_pagado }}/{{ citaActiva.monto }}
   </span>

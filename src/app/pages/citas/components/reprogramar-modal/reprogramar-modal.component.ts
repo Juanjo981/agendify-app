@@ -1,8 +1,10 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';import { AgfDatePickerComponent } from '../../../../shared/components/agf-date-picker/agf-date-picker.component';
-import { AgfTimePickerComponent } from '../../../../shared/components/agf-time-picker/agf-time-picker.component';import { CitaDto } from '../../models/cita.model';
+import { IonicModule } from '@ionic/angular';
+import { AgfDatePickerComponent } from '../../../../shared/components/agf-date-picker/agf-date-picker.component';
+import { AgfTimePickerComponent } from '../../../../shared/components/agf-time-picker/agf-time-picker.component';
+import { CitaDto, toDatePart, toTimePart } from '../../models/cita.model';
 
 export interface ReprogramarData {
   fecha: string;
@@ -28,9 +30,9 @@ export class ReprogramarModalComponent implements OnInit {
   errores: Record<string, string> = {};
 
   ngOnInit() {
-    this.fecha = this.cita.fecha;
-    this.hora_inicio = this.cita.hora_inicio;
-    this.hora_fin = this.cita.hora_fin;
+    this.fecha = toDatePart(this.cita.fecha_inicio);
+    this.hora_inicio = toTimePart(this.cita.fecha_inicio);
+    this.hora_fin = toTimePart(this.cita.fecha_fin);
   }
 
   get duracionPreview(): number {

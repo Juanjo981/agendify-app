@@ -1,7 +1,7 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
-import { CitaDto } from '../../models/cita.model';
+import { CitaDto, durationInMinutes, toDatePart, toTimePart } from '../../models/cita.model';
 import { EstadoBadgeComponent } from '../estado-badge/estado-badge.component';
 import { PagoBadgeComponent } from '../pago-badge/pago-badge.component';
 
@@ -25,14 +25,27 @@ export class CitaCardComponent {
     return `${this.cita.apellido_paciente.charAt(0)}${this.cita.nombre_paciente.charAt(0)}`.toUpperCase();
   }
 
-  formatFecha(iso: string): string {
-    if (!iso) return '—';
+  get horaInicio(): string {
+    return toTimePart(this.cita.fecha_inicio);
+  }
+
+  get horaFin(): string {
+    return toTimePart(this.cita.fecha_fin);
+  }
+
+  get duracion(): number {
+    return durationInMinutes(this.cita.fecha_inicio, this.cita.fecha_fin);
+  }
+
+  formatFecha(isoDateTime: string): string {
+    const iso = toDatePart(isoDateTime);
+    if (!iso) return '-';
     const [, m, d] = iso.split('-');
-    const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-    return `${parseInt(d)} ${meses[parseInt(m) - 1]}`;
+    const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    return `${parseInt(d, 10)} ${meses[parseInt(m, 10) - 1]}`;
   }
 
   formatMonto(n: number): string {
-    return `€${n.toFixed(2)}`;
+    return `€${Number(n || 0).toFixed(2)}`;
   }
 }

@@ -3,15 +3,29 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CitasMockService } from '../citas.service.mock';
-import { SesionesMockService } from '../../sesiones/sesiones.service.mock';
-import { CitaDto, EstadoCita, EstadoPago, MetodoPago } from '../models/cita.model';
 import { EstadoBadgeComponent } from '../components/estado-badge/estado-badge.component';
 import { PagoBadgeComponent } from '../components/pago-badge/pago-badge.component';
-import { CitaFormModalComponent, CitaFormData } from '../../../shared/components/cita-form-modal/cita-form-modal.component';
-import { ReprogramarModalComponent, ReprogramarData } from '../components/reprogramar-modal/reprogramar-modal.component';
-import { SesionFormComponent } from '../../sesiones/components/sesion-form/sesion-form.component';
+import {
+  CitaFormData,
+  CitaFormModalComponent,
+} from '../../../shared/components/cita-form-modal/cita-form-modal.component';
+import {
+  ReprogramarData,
+  ReprogramarModalComponent,
+} from '../components/reprogramar-modal/reprogramar-modal.component';
 import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../../shared/confirm-dialog/confirm-dialog.component';
+import { CitasApiService } from '../citas-api.service';
+import {
+  CitaDto,
+  CitaUpsertRequest,
+  EstadoCita,
+  EstadoPago,
+  durationInMinutes,
+  toDatePart,
+  toIsoDateTime,
+  toTimePart,
+} from '../models/cita.model';
+import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
 
 @Component({
   selector: 'app-detalle-cita',
@@ -19,28 +33,33 @@ import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../../shared/con
   styleUrls: ['./detalle-cita.page.scss'],
   standalone: true,
   imports: [
-    IonicModule, CommonModule, FormsModule,
-    EstadoBadgeComponent, PagoBadgeComponent,
-    CitaFormModalComponent, ReprogramarModalComponent,
-    SesionFormComponent, ConfirmDialogComponent,
+    IonicModule,
+    CommonModule,
+    FormsModule,
+    EstadoBadgeComponent,
+    PagoBadgeComponent,
+    CitaFormModalComponent,
+    ReprogramarModalComponent,
+    ConfirmDialogComponent,
   ],
 })
 export class DetalleCitaPage implements OnInit {
   cita: CitaDto | null = null;
+  citaId = 0;
+
+  loading = false;
+  saving = false;
+  errorMessage = '';
 
   showEditarModal = false;
   showReprogramarModal = false;
-  showSesionForm = false;
   showPagoForm = false;
 
-  pagoForm: { estado_pago: EstadoPago; monto_pagado: number; metodo_pago: MetodoPago | '' } = {
-    estado_pago: 'Pendiente',
-    monto_pagado: 0,
-    metodo_pago: '',
+  pagoForm: { estado_pago: EstadoPago; monto: number } = {
+    estado_pago: 'PENDIENTE',
+    monto: 0,
   };
   pagoError = '';
-
-  readonly metodoPagoOpts: MetodoPago[] = ['Efectivo', 'Transferencia', 'Tarjeta', 'Otro'];
 
   confirmConfig: ConfirmDialogConfig | null = null;
   private confirmCallback: (() => void) | null = null;
@@ -48,29 +67,32 @@ export class DetalleCitaPage implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private citasSvc: CitasMockService,
-    private sesionesSvc: SesionesMockService,
+    private citasSvc: CitasApiService,
   ) {}
 
   ngOnInit() {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    this.recargar(id);
+    this.citaId = Number(this.route.snapshot.paramMap.get('id'));
+    void this.recargar();
   }
 
-  private recargar(id = this.cita?.id_cita ?? 0) {
-    this.cita = this.citasSvc.getCitaById(id) ?? null;
+  volver() {
+    this.router.navigate(['/dashboard/citas']);
   }
 
-  volver() { this.router.navigate(['/dashboard/citas']); }
-
-  // ─── Helpers ──────────────────────────────────────────────────────────────
-  formatFecha(iso: string): string {
-    if (!iso) return '—';
-    const [y, m, d] = iso.split('-');
+  formatFecha(isoDateTime: string): string {
+    const date = toDatePart(isoDateTime);
+    if (!date) return '-';
+    const [y, m, d] = date.split('-');
     return `${d}/${m}/${y}`;
   }
 
-  formatMonto(n: number): string { return `€${n.toFixed(2)}`; }
+  formatHora(isoDateTime: string): string {
+    return toTimePart(isoDateTime) || '-';
+  }
+
+  formatMonto(n: number): string {
+    return `€${Number(n || 0).toFixed(2)}`;
+  }
 
   get iniciales(): string {
     if (!this.cita) return '';
@@ -78,103 +100,167 @@ export class DetalleCitaPage implements OnInit {
   }
 
   get duracionLabel(): string {
-    if (!this.cita) return '—';
-    const h = Math.floor(this.cita.duracion / 60);
-    const m = this.cita.duracion % 60;
-    if (h === 0) return `${m} min`;
+    if (!this.cita) return '-';
+    const mins = durationInMinutes(this.cita.fecha_inicio, this.cita.fecha_fin);
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h <= 0) return `${m} min`;
     return m === 0 ? `${h} h` : `${h} h ${m} min`;
   }
 
-  get puedeCrearSesion(): boolean {
-    return !!this.cita && this.cita.estado === 'Completada' && !this.cita.tiene_sesion;
+  get puedeEditar(): boolean {
+    if (!this.cita) return false;
+    return !['COMPLETADA', 'CANCELADA', 'NO_ASISTIO'].includes(this.cita.estado_cita);
   }
 
-  get sesionExistente() {
-    if (!this.cita) return null;
-    return this.sesionesSvc.getSesionByCita(this.cita.id_cita) ?? null;
+  get puedeReprogramar(): boolean {
+    if (!this.cita) return false;
+    return ['PENDIENTE', 'CONFIRMADA'].includes(this.cita.estado_cita);
   }
 
-  // ─── Acciones de estado ───────────────────────────────────────────────────
-  cambiarEstado(estado: EstadoCita, label: string) {
+  get puedeCancelar(): boolean {
+    if (!this.cita) return false;
+    return ['PENDIENTE', 'CONFIRMADA', 'REPROGRAMADA'].includes(this.cita.estado_cita);
+  }
+
+  get puedeConfirmar(): boolean {
+    if (!this.cita) return false;
+    return ['PENDIENTE', 'REPROGRAMADA'].includes(this.cita.estado_cita);
+  }
+
+  get puedeCompletar(): boolean {
+    if (!this.cita) return false;
+    return this.cita.estado_cita === 'CONFIRMADA';
+  }
+
+  get puedeMarcarNoAsistio(): boolean {
+    if (!this.cita) return false;
+    return ['PENDIENTE', 'CONFIRMADA'].includes(this.cita.estado_cita);
+  }
+
+  cambiarEstado(estado: EstadoCita, title: string) {
     this.openConfirm(
       {
-        title: label,
+        title,
         message: `¿Confirmas cambiar el estado de la cita a "${estado}"?`,
         confirmLabel: 'Confirmar',
         variant: 'primary',
         icon: 'checkmark-circle-outline',
       },
       () => {
-        this.citasSvc.updateEstado(this.cita!.id_cita, estado);
-        this.recargar();
+        void this.ejecutarCambioEstado(estado);
       }
     );
   }
 
-  // ─── Editar ───────────────────────────────────────────────────────────────
-  onCitaEditada(data: CitaFormData) {
+  async onCitaEditada(data: CitaFormData) {
     if (!this.cita) return;
-    this.citasSvc.updateCita({ ...this.cita, ...data });
-    this.recargar();
-    this.showEditarModal = false;
+    this.saving = true;
+    this.errorMessage = '';
+    try {
+      const body = this.mapToUpsertRequest(data);
+      this.cita = await this.citasSvc.update(this.cita.id_cita, body);
+      this.showEditarModal = false;
+    } catch (err) {
+      this.errorMessage = mapApiError(err).userMessage;
+    } finally {
+      this.saving = false;
+    }
   }
 
-  // ─── Reprogramar ──────────────────────────────────────────────────────────
-  onReprogramado(data: ReprogramarData) {
+  async onReprogramado(data: ReprogramarData) {
     if (!this.cita) return;
-    this.citasSvc.reprogramarCita(this.cita.id_cita, data.fecha, data.hora_inicio, data.hora_fin);
-    this.recargar();
-    this.showReprogramarModal = false;
+    this.saving = true;
+    this.errorMessage = '';
+    try {
+      const body: CitaUpsertRequest = {
+        id_paciente: this.cita.id_paciente,
+        fecha_inicio: toIsoDateTime(data.fecha, data.hora_inicio),
+        fecha_fin: toIsoDateTime(data.fecha, data.hora_fin),
+        motivo: this.cita.motivo,
+        notas_internas: this.cita.notas_internas ?? null,
+        observaciones: this.cita.observaciones ?? null,
+        monto: this.cita.monto,
+      };
+      this.cita = await this.citasSvc.update(this.cita.id_cita, body);
+      this.showReprogramarModal = false;
+    } catch (err) {
+      this.errorMessage = mapApiError(err).userMessage;
+    } finally {
+      this.saving = false;
+    }
   }
 
-  // ─── Registrar pago ───────────────────────────────────────────────────────
   abrirPagoForm() {
     if (!this.cita) return;
     this.pagoForm = {
       estado_pago: this.cita.estado_pago,
-      monto_pagado: this.cita.monto_pagado,
-      metodo_pago: this.cita.metodo_pago,
+      monto: Number(this.cita.monto || 0),
     };
     this.pagoError = '';
     this.showPagoForm = true;
   }
 
-  guardarPago() {
+  async guardarPago() {
     if (!this.cita) return;
-    if (!this.pagoForm.estado_pago) { this.pagoError = 'Selecciona un estado de pago'; return; }
-    this.citasSvc.updatePago(
-      this.cita.id_cita,
-      this.pagoForm.estado_pago,
-      this.pagoForm.monto_pagado,
-      this.pagoForm.metodo_pago,
-    );
-    this.recargar();
-    this.showPagoForm = false;
+    if (!this.pagoForm.estado_pago) {
+      this.pagoError = 'Selecciona un estado de pago';
+      return;
+    }
+
+    this.saving = true;
+    this.errorMessage = '';
+    try {
+      this.cita = await this.citasSvc.updatePago(this.cita.id_cita, {
+        estado_pago: this.pagoForm.estado_pago,
+        monto: Number(this.pagoForm.monto || 0),
+      });
+      this.showPagoForm = false;
+    } catch (err) {
+      this.pagoError = mapApiError(err).userMessage;
+    } finally {
+      this.saving = false;
+    }
   }
 
-  // ─── Crear sesión ─────────────────────────────────────────────────────────
-  onSesionGuardada(data: { notas: string; adjunto?: any }) {
+  private async recargar() {
+    this.loading = true;
+    this.errorMessage = '';
+    try {
+      this.cita = await this.citasSvc.getById(this.citaId);
+    } catch (err) {
+      this.cita = null;
+      this.errorMessage = mapApiError(err).userMessage;
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  private async ejecutarCambioEstado(estado: EstadoCita) {
     if (!this.cita) return;
-    this.sesionesSvc.createSesion({
-      id_cita: this.cita.id_cita,
-      id_paciente: this.cita.id_paciente,
-      nombre_paciente: this.cita.nombre_paciente,
-      apellido_paciente: this.cita.apellido_paciente,
-      fecha_cita: this.cita.fecha,
-      notas: data.notas,
-      adjunto: data.adjunto,
-    });
-    this.citasSvc.marcarConSesion(this.cita.id_cita);
-    this.recargar();
-    this.showSesionForm = false;
+    this.saving = true;
+    this.errorMessage = '';
+    try {
+      this.cita = await this.citasSvc.cambiarEstado(this.cita.id_cita, estado);
+    } catch (err) {
+      this.errorMessage = mapApiError(err).userMessage;
+    } finally {
+      this.saving = false;
+    }
   }
 
-  verSesion() {
-    const sesion = this.sesionExistente;
-    if (sesion) this.router.navigate(['/dashboard/sesiones', sesion.id_sesion]);
+  private mapToUpsertRequest(data: CitaFormData): CitaUpsertRequest {
+    return {
+      id_paciente: data.id_paciente,
+      fecha_inicio: data.fecha_inicio,
+      fecha_fin: data.fecha_fin,
+      motivo: data.motivo?.trim() || undefined,
+      notas_internas: data.notas_internas?.trim() || null,
+      observaciones: data.observaciones?.trim() || null,
+      monto: Number(data.monto || 0),
+    };
   }
 
-  // ─── Confirm dialog ───────────────────────────────────────────────────────
   private openConfirm(config: ConfirmDialogConfig, onConfirm: () => void) {
     this.confirmConfig = config;
     this.confirmCallback = onConfirm;

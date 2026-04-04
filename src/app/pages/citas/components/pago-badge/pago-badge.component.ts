@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { EstadoPago } from '../../models/cita.model';
+import { EstadoPago, estadoPagoToLabel } from '../../models/cita.model';
 
 @Component({
   selector: 'app-pago-badge',
@@ -14,10 +14,16 @@ export class PagoBadgeComponent {
 
   get colorClass(): string {
     const map: Record<EstadoPago, string> = {
-      'Pendiente': 'pb--pending',
-      'Parcial':   'pb--partial',
-      'Pagado':    'pb--paid',
+      PENDIENTE: 'pb--pending',
+      PARCIAL: 'pb--partial',
+      PAGADO: 'pb--paid',
+      NO_APLICA: 'pb--na',
+      REEMBOLSADO: 'pb--refund',
     };
     return map[this.estado] ?? 'pb--pending';
+  }
+
+  get label(): string {
+    return estadoPagoToLabel(this.estado);
   }
 }

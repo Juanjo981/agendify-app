@@ -225,29 +225,29 @@ export class AgendaPage implements OnInit, OnDestroy {
   private cqaConfirmFn: (() => void) | null = null;
 
   readonly estadoClaseMap: Record<string, string> = {
-    'Confirmada': 'cqa-estado--confirmada',
-    'Completada': 'cqa-estado--completada',
-    'Pendiente':  'cqa-estado--pendiente',
-    'Cancelada':  'cqa-estado--cancelada',
-    'No asistió': 'cqa-estado--no-asistio',
-    'Pospuesta':  'cqa-estado--pospuesta',
+    CONFIRMADA: 'cqa-estado--confirmada',
+    COMPLETADA: 'cqa-estado--completada',
+    PENDIENTE:  'cqa-estado--pendiente',
+    CANCELADA:  'cqa-estado--cancelada',
+    NO_ASISTIO: 'cqa-estado--no-asistio',
+    REPROGRAMADA:  'cqa-estado--pospuesta',
   };
   // ─────────────────────────────────────────────────────────────────────────────
 
   // ─── Map CitaDto → CalendarEvent ───────────────────────────────────────────────────
   private mapCitaToEvent(c: CitaDto): CalendarEvent {
     const colorMap: Record<string, string> = {
-      'Confirmada': '#6366f1',
-      'Completada': '#10b981',
-      'Pendiente':  '#f59e0b',
-      'Cancelada':  '#ef4444',
-      'No asistió': '#64748b',
-      'Pospuesta':  '#8b5cf6',
+      CONFIRMADA: '#6366f1',
+      COMPLETADA: '#10b981',
+      PENDIENTE:  '#f59e0b',
+      CANCELADA:  '#ef4444',
+      NO_ASISTIO: '#64748b',
+      REPROGRAMADA:  '#8b5cf6',
     };
     return {
       title: `${c.nombre_paciente} ${c.apellido_paciente}`,
-      time: c.hora_inicio,
-      color: colorMap[c.estado] ?? '#94a3b8',
+      time: c.hora_inicio ?? c.fecha_inicio.substring(11, 16),
+      color: colorMap[c.estado_cita] ?? '#94a3b8',
       status: c.estado as any,
       cita: c,
     };
@@ -340,9 +340,10 @@ export class AgendaPage implements OnInit, OnDestroy {
     // Build date → citas map
     const citasByDate = new Map<string, CitaDto[]>();
     for (const c of this.citasSvc.getCitas()) {
-      const list = citasByDate.get(c.fecha) ?? [];
+      const fecha = c.fecha ?? c.fecha_inicio.substring(0, 10);
+      const list = citasByDate.get(fecha) ?? [];
       list.push(c);
-      citasByDate.set(c.fecha, list);
+      citasByDate.set(fecha, list);
     }
 
     // Días del mes actual
@@ -652,9 +653,9 @@ export class AgendaPage implements OnInit, OnDestroy {
       case 'verDetalle':  this.accionVerDetalle(); break;
       case 'paciente':    this.accionAbrirPaciente(); break;
       case 'reprogramar': this.accionReprogramar(); break;
-      case 'completada':  this.confirmarCambioEstado('Completada'); break;
-      case 'noAsistio':   this.confirmarCambioEstado('No asistió'); break;
-      case 'cancelar':    this.confirmarCambioEstado('Cancelada'); break;
+      case 'completada':  this.confirmarCambioEstado('COMPLETADA'); break;
+      case 'noAsistio':   this.confirmarCambioEstado('NO_ASISTIO'); break;
+      case 'cancelar':    this.confirmarCambioEstado('CANCELADA'); break;
       case 'crearSesion': this.accionCrearSesion(); break;
     }
   }
@@ -692,7 +693,7 @@ export class AgendaPage implements OnInit, OnDestroy {
     if (!this.citaActiva) return;
     const nombre = `${this.citaActiva.nombre_paciente} ${this.citaActiva.apellido_paciente}`;
     const configs: Partial<Record<EstadoCita, ConfirmDialogConfig>> = {
-      'Completada': {
+      COMPLETADA: {
         title: 'Marcar como completada',
         message: '¿La cita con este paciente fue realizada?',
         subject: nombre,
@@ -701,7 +702,7 @@ export class AgendaPage implements OnInit, OnDestroy {
         icon: 'checkmark-circle-outline',
         variant: 'primary',
       },
-      'No asistió': {
+      NO_ASISTIO: {
         title: 'Registrar inasistencia',
         message: 'El paciente no se presentó a la cita con',
         subject: nombre,
@@ -710,7 +711,7 @@ export class AgendaPage implements OnInit, OnDestroy {
         variant: 'danger',
         icon: 'person-remove-outline',
       },
-      'Cancelada': {
+      CANCELADA: {
         title: 'Cancelar cita',
         message: 'Se cancelará la cita de',
         subject: nombre,
@@ -754,7 +755,7 @@ export class AgendaPage implements OnInit, OnDestroy {
 
   cambiarEstadoCita(estado: EstadoCita) {
     if (!this.citaActiva) return;
-    this.citasSvc.updateCita({ ...this.citaActiva, estado });
+    this.citasSvc.updateEstado(this.citaActiva.id_cita, estado);
     this.cerrarQuickActions();
     this.generateCalendar();
   }

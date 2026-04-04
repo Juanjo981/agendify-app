@@ -447,8 +447,8 @@ Con Pacientes integrado, la Fase 4 (Citas) podrá referenciar pacientes reales a
 - Integrar `buscar-paciente-modal` con búsqueda real de pacientes
 - Integrar `cita-form-modal` con creación y edición real
 - Conectar endpoint de disponibilidad para mostrar slots libres
-- Implementar máquina de estados (Pendiente → Confirmada → Completada / Cancelada / No asistió / Pospuesta)
-- Integrar flujo de pagos (PATCH de estado_pago, metodo_pago, monto_pagado)
+- Implementar máquina de estados real (PENDIENTE → CONFIRMADA → COMPLETADA / CANCELADA / NO_ASISTIO / REPROGRAMADA)
+- Integrar flujo de pagos real (PATCH de `estado_pago` + `monto`)
 
 **Pantallas afectadas:**
 - `citas.page.ts` — listado, filtros, modal de crear/editar
@@ -458,24 +458,28 @@ Con Pacientes integrado, la Fase 4 (Citas) podrá referenciar pacientes reales a
 
 **Servicios involucrados:**
 - `pages/citas/citas.service.mock.ts` — servicio actual a reemplazar
-- Nuevo: `pages/citas/citas.service.api.ts`
+- Nuevo: `pages/citas/citas-api.service.ts`
 - `pages/pacientes/pacientes.service.api.ts` — ya creado en Fase 3, usado por `buscar-paciente-modal`
 
 **Endpoints involucrados:**
 | Método | Ruta | Propósito |
 |--------|------|-----------|
-| `GET` | `/api/citas` | Lista filtrable. Params: `fecha_desde`, `fecha_hasta`, `estado`, `estado_pago`, `id_paciente`, `busqueda`, `page`, `size` |
+| `GET` | `/api/citas` | Lista filtrable. Params soportados: `search`, `estado`, `estadoPago/estado_pago`, `pacienteId`, `fechaDesde`, `fechaHasta`, `page`, `size`, `sort` |
 | `POST` | `/api/citas` | Crear cita |
 | `GET` | `/api/citas/{id}` | Detalle completo |
 | `PUT` | `/api/citas/{id}` | Actualizar cita |
-| `PATCH` | `/api/citas/{id}/estado` | Cambiar estado |
+| `PATCH` | `/api/citas/{id}/confirmar` | Cambiar estado a CONFIRMADA |
+| `PATCH` | `/api/citas/{id}/completar` | Cambiar estado a COMPLETADA |
+| `PATCH` | `/api/citas/{id}/cancelar` | Cambiar estado a CANCELADA |
+| `PATCH` | `/api/citas/{id}/no-asistio` | Cambiar estado a NO_ASISTIO |
+| `PATCH` | `/api/citas/{id}/estado` | Fallback para estados no cubiertos por acciones dedicadas |
 | `PATCH` | `/api/citas/{id}/pago` | Actualizar pago |
 | `DELETE` | `/api/citas/{id}` | Eliminar cita |
-| `GET` | `/api/citas/disponibilidad` | Slots libres. Params: `fecha`, `duracion_min` |
+| `GET` | `/api/citas/disponibilidad` | Slots libres. Params: `fecha`, `duracion_min` (con normalizaciÃ³n de variantes) |
 
 **Modelos involucrados:**
 - `CitaDto` — el modelo principal, verificar contra respuesta real
-- `EstadoCita`, `EstadoPago`, `MetodoPago` — types ya definidos
+- `EstadoCita`, `EstadoPago` — enums reales del backend (UPPERCASE)
 - `FiltroCitas` — adaptar a query params del backend
 - `PageResponse<CitaDto>` — para listado paginado
 - Nuevo: `DisponibilidadSlot` — `{ hora_inicio: string, hora_fin: string }`
@@ -489,7 +493,7 @@ Con Pacientes integrado, la Fase 4 (Citas) podrá referenciar pacientes reales a
 4. Conectar `cita-form-modal` con creación y edición real
 5. Implementar disponibilidad: al seleccionar una fecha en el form, mostrar slots libres
 6. Implementar cambio de estado con confirmación y validación de transición válida
-7. Implementar flujo de pago: modal/form para registrar monto, método y estado
+7. Implementar flujo de pago: modal/form para registrar `monto` y `estado_pago` (sin `metodo_pago`)
 8. `tiene_sesion` debe venir del backend como campo derivado en el DTO
 9. `nombre_paciente` y `apellido_paciente` deben venir del backend vía JOIN
 10. Loading, error y empty states en listado y detalle
@@ -501,17 +505,17 @@ Con Pacientes integrado, la Fase 4 (Citas) podrá referenciar pacientes reales a
 - El filtro `busqueda` podría no buscar por nombre de paciente en el backend (requiere JOIN)
 
 **Criterios de terminado:**
-- [ ] Listado de citas carga desde la API con paginación y filtros
-- [ ] Crear cita funciona con validaciones de backend (incluida disponibilidad)
-- [ ] Editar cita funciona
-- [ ] Cambiar estado de cita funciona con transiciones válidas
-- [ ] Registrar pago funciona
-- [ ] Eliminar cita funciona
-- [ ] Disponibilidad muestra slots libres al seleccionar fecha
-- [ ] `buscar-paciente-modal` busca pacientes reales
-- [ ] Detalle de cita muestra datos reales
-- [ ] Loading, error y empty states funcionan
-- [ ] `CitasMockService` ya no se inyecta
+- [x] Listado de citas carga desde la API con paginación y filtros
+- [x] Crear cita funciona con validaciones de backend (incluida disponibilidad)
+- [x] Editar cita funciona
+- [x] Cambiar estado de cita funciona con transiciones válidas
+- [x] Registrar pago funciona
+- [ ] Eliminar cita se difiere (no estaba en alcance de Fase 4)
+- [x] Disponibilidad muestra slots libres al seleccionar fecha
+- [x] `buscar-paciente-modal` busca pacientes reales
+- [x] Detalle de cita muestra datos reales
+- [x] Loading, error y empty states funcionan
+- [x] `CitasMockService` ya no se inyecta en el módulo Citas (se mantiene sólo para Agenda/Fase 5)
 
 **Qué NO tocar todavía:**
 - No integrar la vista de Agenda/Calendario (Fase 5)  
@@ -526,12 +530,23 @@ Con Pacientes integrado, la Fase 4 (Citas) podrá referenciar pacientes reales a
 
 **Entregables concretos de la fase:**
 1. `CitasApiService` funcional con todos los endpoints
-2. Listado, detalle, CRUD, estados y pagos funcionando con API real
+2. Listado, detalle, crear/editar, estados y pagos funcionando con API real
 3. Selector de pacientes conectado a datos reales
 4. Disponibilidad de slots integrada
 
 **Preparación para la siguiente fase:**
 Con Citas integrado, la Fase 5 (Agenda) puede mostrar citas reales en el calendario y usar disponibilidad real para la creación rápida de citas desde la vista de agenda.
+
+> **✅ Fase 4 cerrada — 4 de abril de 2026**
+>
+> Cambios realizados:
+> - `CitasApiService` creado (`src/app/pages/citas/citas-api.service.ts`) y conectado a listado, detalle, crear, editar, estados y pago.
+> - `CitaDto` y enums migrados al contrato real (`fecha_inicio`/`fecha_fin`, `estado_cita`, `estado_pago`) con helpers de compatibilidad legacy.
+> - `cita-form-modal` integrado con disponibilidad real (`GET /api/citas/disponibilidad`) y validación de slot.
+> - `buscar-paciente-modal` migrado a búsqueda real con `PacientesApiService`.
+> - `CitasPage` y `DetalleCitaPage` con loading/error/empty states reales.
+> - `CitasMockService` queda **deprecado** y fuera de inyección en módulo Citas; se conserva temporalmente para Agenda (Fase 5).
+> - Verificación técnica: `npx tsc -p tsconfig.app.json --noEmit` sin errores.
 
 ---
 
@@ -551,7 +566,7 @@ Con Citas integrado, la Fase 5 (Agenda) puede mostrar citas reales en el calenda
 
 **Servicios involucrados:**
 - Nuevo: `pages/agenda/agenda.service.api.ts` (o usar `CitasApiService` ampliado + `BloqueosApiService`)
-- `pages/citas/citas.service.api.ts` — reutilizado para crear citas desde agenda
+- `pages/citas/citas-api.service.ts` — reutilizado para crear citas desde agenda
 - Nuevo: `services/bloqueos.service.api.ts`
 
 **Endpoints involucrados:**
@@ -720,7 +735,7 @@ Con Sesiones integradas, todos los módulos core del ciclo de vida de la consult
 - `pages/citas/solicitud-reprogramacion.service.mock.ts` — reemplazar
 - Nuevo: `services/solicitudes.service.api.ts`
 - Nuevo: `services/notificaciones.service.api.ts`
-- `pages/citas/citas.service.api.ts` — para citas de hoy (o endpoint dedicado)
+- `pages/citas/citas-api.service.ts` — para citas de hoy (o endpoint dedicado)
 
 **Endpoints involucrados:**
 | Método | Ruta | Propósito |
@@ -1305,7 +1320,7 @@ Estas reglas aplican a **cada fase** cuando se implemente:
 **Estado:** ⬜ Pendiente — La interfaz completa debe reescribirse a snake_case. Además cambió la estructura interna (ver Hallazgo 29 en BACKEND_CHANGES).
 
 ### 9.2. ~~Conflicto de `CitaDto` resuelto pero verificar~~ → CONFIRMADO COMO PROBLEMA MAYOR
-**Estado:** ⬜ Pendiente — `CitaDto` necesita reestructuración completa. Los campos `fecha`, `hora_inicio`, `hora_fin`, `duracion` ya no existen. Ahora son `fecha_inicio`/`fecha_fin` (datetime ISO). El campo `estado` se llama `estado_cita`. Ver Hallazgo 23.
+**Estado:** ✅ Resuelto en Fase 4 (módulo Citas). Se mantiene compatibilidad legacy temporal para Agenda/Fase 5.
 
 ### 9.3. ~~Endpoint de registro no coincide~~ → ✅ RESUELTO
 **Estado:** ✅ — El backend usa `POST /api/usuarios/registro`. El frontend debe ajustar la URL.
@@ -1332,10 +1347,12 @@ El frontend envía `{ usuario, contrasena }` pero el backend espera `{ username,
 ### 9.10. NUEVA — Todos los enums de estado son UPPERCASE
 **Severidad:** 🔴 Crítica — Afecta TODA la app.
 `EstadoCita` y `EstadoPago` usan valores UPPERCASE en el backend (`PENDIENTE`, `NO_ASISTIO`, `REPROGRAMADA`). El frontend usa Title Case (`Pendiente`, `No asistió`, `Pospuesta`). Ver Hallazgo 24.
+**Estado:** ✅ Resuelto en módulo Citas (Fase 4). Agenda mensual y flujo público se validan en Fases 5 y 12.
 
 ### 9.11. NUEVA — CitaDto usa datetimes combinados
 **Severidad:** 🔴 Mayor — Afecta todo el módulo de citas y agenda.
 El backend envía `fecha_inicio`/`fecha_fin` como datetimes ISO (`2026-04-10T10:00:00`), NO campos separados de fecha y hora. Ver Hallazgo 23.
+**Estado:** ✅ Resuelto en módulo Citas (Fase 4). Agenda completa queda para Fase 5.
 
 ### 9.12. NUEVA — Endpoints públicos sin prefijo `/api`
 **Severidad:** 🟠 Media — El interceptor debe excluir `/public/*` además de las URLs actuales.
@@ -1382,12 +1399,12 @@ Path real: `/public/citas/gestion/{token}`. Métodos: PATCH (no POST) para confi
 
 ## 11. Matriz Resumen de Fases
 
-| Fase | Prioridad | Complejidad | Dependencias | Riesgo | Impacto funcional | ¿Rompe mocks? | ¿Requiere backend estable? | Estado inicial |
+| Fase | Prioridad | Complejidad | Dependencias | Riesgo | Impacto funcional | ¿Rompe mocks? | ¿Requiere backend estable? | Estado |
 |------|-----------|-------------|-------------|--------|-------------------|----------------|---------------------------|----------------|
-| 1 — Fundaciones | Crítica | Baja | Ninguna | Bajo | Infraestructura | No | No | ⬜ Pendiente |
-| 2 — Auth y Sesión | Crítica | Media | Fase 1 | Medio | Login/Registro/Sesión | Parcial (SessionMock) | Sí (auth) | ⬜ Pendiente |
-| 3 — Pacientes | Alta | Media | Fase 2 | Bajo | CRUD Pacientes | Sí (PacientesMock) | Sí | ⬜ Pendiente |
-| 4 — Citas | Alta | Alta | Fase 3 | Medio | CRUD Citas, Estados, Pagos | Sí (CitasMock) | Sí | ⬜ Pendiente |
+| 1 — Fundaciones | Crítica | Baja | Ninguna | Bajo | Infraestructura | No | No | ✅ Completada |
+| 2 — Auth y Sesión | Crítica | Media | Fase 1 | Medio | Login/Registro/Sesión | Parcial (SessionMock) | Sí (auth) | ✅ Completada |
+| 3 — Pacientes | Alta | Media | Fase 2 | Bajo | CRUD Pacientes | Sí (PacientesMock) | Sí | ✅ Completada |
+| 4 — Citas | Alta | Alta | Fase 3 | Medio | CRUD Citas, Estados, Pagos | Sí (CitasMock) | Sí | ✅ Completada (módulo Citas; Agenda en Fase 5) |
 | 5 — Agenda/Bloqueos | Alta | Alta | Fase 4 | Alto | Calendario, Bloqueos | Parcial | Sí | ⬜ Pendiente |
 | 6 — Sesiones/Adjuntos | Alta | Alta | Fase 4 | Alto | Sesiones, Upload archivos | Sí (SesionesMock) | Sí + Storage | ⬜ Pendiente |
 | 7 — Dashboard | Media | Media | Fases 3-6 | Medio | Resumen, KPIs | Parcial | Sí | ⬜ Pendiente |
@@ -1503,5 +1520,5 @@ Path real: `/public/citas/gestion/{token}`. Métodos: PATCH (no POST) para confi
 
 ---
 
-*Documento actualizado el 03/04/2026 — Post-auditoría con FRONTEND_API_REFERENCE.md*  
+*Documento actualizado el 04/04/2026 — Cierre Fase 4 (Citas) con API real.*  
 *Se actualizará conforme avancemos fase por fase.*

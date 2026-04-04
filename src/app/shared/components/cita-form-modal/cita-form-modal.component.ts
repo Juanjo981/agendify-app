@@ -1,22 +1,60 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnInit,
+  Output,
+  SimpleChanges,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
-import { CitaDto, EstadoCita } from '../../../pages/citas/models/cita.model';
 import { PacienteDto } from '../../../pages/pacientes/models/paciente.model';
 import { getAvatarColor as avatarColorUtil } from '../../utils/avatar.utils';
 import { BuscarPacienteModalComponent } from '../../../pages/citas/components/buscar-paciente-modal/buscar-paciente-modal.component';
-import { CitasMockService } from '../../../pages/citas/citas.service.mock';
 import { DatePickerFieldComponent } from '../date-picker-field/date-picker-field.component';
 import { AgfTimePickerComponent } from '../agf-time-picker/agf-time-picker.component';
+import {
+  CitaDto,
+  DisponibilidadSlot,
+  durationInMinutes,
+  toDatePart,
+  toIsoDateTime,
+  toTimePart,
+} from '../../../pages/citas/models/cita.model';
+import { CitasApiService } from '../../../pages/citas/citas-api.service';
+import { mapApiError } from '../../utils/api-error.mapper';
 
-export type CitaFormData = Omit<CitaDto, 'id_cita' | 'tiene_sesion'>;
+export interface CitaFormData {
+  id_paciente: number;
+  nombre_paciente: string;
+  apellido_paciente: string;
+  fecha_inicio: string;
+  fecha_fin: string;
+  motivo: string;
+  notas_internas: string;
+  observaciones: string;
+  monto: number;
+}
 
-/** All data the parent needs to pre-fill from calendar context */
 export interface CitaFormContext {
   fecha?: string;
   horaInicio?: string;
   horaFin?: string;
+}
+
+interface CitaFormInternal {
+  id_paciente: number;
+  nombre_paciente: string;
+  apellido_paciente: string;
+  fecha: string;
+  hora_inicio: string;
+  hora_fin: string;
+  motivo: string;
+  notas_internas: string;
+  observaciones: string;
+  monto: number;
 }
 
 @Component({
@@ -24,99 +62,84 @@ export interface CitaFormContext {
   templateUrl: './cita-form-modal.component.html',
   styleUrls: ['./cita-form-modal.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule, BuscarPacienteModalComponent, DatePickerFieldComponent, AgfTimePickerComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    IonicModule,
+    BuscarPacienteModalComponent,
+    DatePickerFieldComponent,
+    AgfTimePickerComponent,
+  ],
 })
 export class CitaFormModalComponent implements OnInit, OnChanges {
-  /**
-   * 'citas'  → renders a fixed overlay backdrop (centered modal).
-   * 'agenda' → renders inner content only; the parent provides the outer container.
-   */
   @Input() context: 'citas' | 'agenda' = 'citas';
-
-  /** Pass a CitaDto to enter edit mode; null/undefined = create mode. */
   @Input() cita: CitaDto | null = null;
-
-  /** Pre-fill values (used when context = 'agenda' and a calendar slot is known) */
   @Input() prefill: CitaFormContext = {};
-
-  /** Whether this instance is "from calendar context" — shows the context banner */
   @Input() showContextBanner = false;
-
-  /** Human-readable label for the context banner (e.g. "Mié 11/03/2026") */
   @Input() contextDateLabel = '';
+  @Input() saving = false;
 
-  @Output() saved    = new EventEmitter<CitaFormData>();
+  @Output() saved = new EventEmitter<CitaFormData>();
   @Output() cancelled = new EventEmitter<void>();
 
-  // ─────────────────────────────────────────────────────────────
-  // Computed
-  // ─────────────────────────────────────────────────────────────
-  get modo(): 'crear' | 'editar' { return this.cita ? 'editar' : 'crear'; }
-  get titulo(): string { return this.modo === 'crear' ? 'Nueva cita' : 'Editar cita'; }
-  get subtitleText(): string {
-    if (this.context === 'agenda') return 'Creando cita desde Agenda';
-    return 'Completa los datos de la cita';
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // Form state
-  // ─────────────────────────────────────────────────────────────
-  form: CitaFormData = this.emptyForm();
+  form: CitaFormInternal = this.emptyForm();
   errores: Record<string, string> = {};
 
   pacienteSeleccionado: PacienteDto | null = null;
   mostrarBuscador = false;
 
-  slotSugerido: { hora_inicio: string; hora_fin: string } | null = null;
+  slotsDisponibles: DisponibilidadSlot[] = [];
+  slotSugerido: DisponibilidadSlot | null = null;
+  loadingSlots = false;
+  slotsError = '';
   hayConflicto = false;
 
-  readonly estadoOpts: EstadoCita[] = [
-    'Pendiente', 'Confirmada', 'Completada', 'Cancelada', 'No asistió', 'Pospuesta',
-  ];
-
-  constructor(private citasService: CitasMockService) {}
-
-  get mostrarSugerencia(): boolean {
-    if (this.modo !== 'crear' || !this.form.fecha) return false;
-    return !this.form.hora_inicio || !this.form.hora_fin || this.hayConflicto;
+  get modo(): 'crear' | 'editar' {
+    return this.cita ? 'editar' : 'crear';
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Lifecycle
-  // ─────────────────────────────────────────────────────────────
+  get titulo(): string {
+    return this.modo === 'crear' ? 'Nueva cita' : 'Editar cita';
+  }
+
+  get subtitleText(): string {
+    if (this.context === 'agenda') return 'Creando cita desde Agenda';
+    return 'Completa los datos de la cita';
+  }
+
+  get mostrarSugerencia(): boolean {
+    if (!this.form.fecha) return false;
+    return this.loadingSlots || !!this.slotSugerido || !!this.slotsError || this.hayConflicto;
+  }
+
+  get duracionActual(): number {
+    if (!this.form.hora_inicio || !this.form.hora_fin) return 60;
+    const duration = this.diffMinutes(this.form.hora_inicio, this.form.hora_fin);
+    return duration > 0 ? duration : 60;
+  }
+
+  constructor(private citasService: CitasApiService) {}
+
   ngOnInit() {
-    if (this.cita) {
-      const { id_cita, tiene_sesion, ...rest } = this.cita;
-      this.form = { ...rest };
-    } else {
-      this.form = this.emptyForm();
-      if (this.prefill.fecha)       { this.form.fecha       = this.prefill.fecha; }
-      if (this.prefill.horaInicio)  { this.form.hora_inicio = this.prefill.horaInicio; }
-      if (this.prefill.horaFin)     { this.form.hora_fin    = this.prefill.horaFin; }
-      if (this.form.hora_inicio && this.form.hora_fin) { this.actualizarDuracion(); }
-      if (this.form.fecha) { this.calcularSiguienteSlot(); }
-    }
+    this.bootstrapForm();
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['prefill'] && !changes['prefill'].firstChange) {
-      if (this.modo === 'crear') {
-        const p = this.prefill;
-        if (p.fecha)      { this.form.fecha       = p.fecha; }
-        if (p.horaInicio) { this.form.hora_inicio = p.horaInicio; }
-        if (p.horaFin)    { this.form.hora_fin    = p.horaFin; }
-        if (this.form.fecha) { this.calcularSiguienteSlot(); }
-      }
+    if (changes['cita'] && !changes['cita'].firstChange) {
+      this.bootstrapForm();
+      return;
+    }
+
+    if (changes['prefill'] && !changes['prefill'].firstChange && this.modo === 'crear') {
+      this.applyPrefill();
+      this.onFechaChange();
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Patient selection
-  // ─────────────────────────────────────────────────────────────
   onPacienteSeleccionado(p: PacienteDto) {
     this.pacienteSeleccionado = p;
-    this.form.id_paciente     = p.id_paciente;
-    this.form.nombre_paciente  = p.nombre;
+    this.form.id_paciente = p.id_paciente;
+    this.form.nombre_paciente = p.nombre;
     this.form.apellido_paciente = p.apellido;
     this.mostrarBuscador = false;
     delete this.errores['paciente'];
@@ -130,116 +153,168 @@ export class CitaFormModalComponent implements OnInit, OnChanges {
     return avatarColorUtil(nombre);
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Date / time handlers
-  // ─────────────────────────────────────────────────────────────
   onFechaChange() {
-    this.calcularSiguienteSlot();
-    if (this.form.hora_inicio && this.form.hora_fin) { this.detectarConflicto(); }
     delete this.errores['fecha'];
+    void this.cargarDisponibilidad();
   }
 
   onHoraChange() {
-    this.actualizarDuracion();
-    if (this.form.fecha && this.form.hora_inicio && this.form.hora_fin) { this.detectarConflicto(); }
-  }
-
-  actualizarDuracion() {
-    if (!this.form.hora_inicio || !this.form.hora_fin) return;
-    const diff = this.toMin(this.form.hora_fin) - this.toMin(this.form.hora_inicio);
-    if (diff > 0) this.form.duracion = diff;
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // Smart slot suggestion
-  // ─────────────────────────────────────────────────────────────
-  calcularSiguienteSlot() {
-    this.slotSugerido = null;
-    if (!this.form.fecha) return;
-
-    const citasDelDia = this.citasService.getCitas()
-      .filter(c => c.fecha === this.form.fecha && c.estado !== 'Cancelada');
-
-    const duracion = this.form.duracion > 0 ? this.form.duracion : 60;
-    const ocupados = citasDelDia
-      .map(c => ({ inicio: this.toMin(c.hora_inicio), fin: this.toMin(c.hora_fin) }))
-      .sort((a, b) => a.inicio - b.inicio);
-
-    let cursor = 8 * 60;
-    for (const bloque of ocupados) {
-      if (cursor + duracion <= bloque.inicio) {
-        this.slotSugerido = { hora_inicio: this.toTime(cursor), hora_fin: this.toTime(cursor + duracion) };
-        return;
-      }
-      if (bloque.fin > cursor) { cursor = bloque.fin; }
+    delete this.errores['hora_inicio'];
+    delete this.errores['hora_fin'];
+    this.validarConflictoHorario();
+    if (this.form.fecha) {
+      void this.cargarDisponibilidad();
     }
-    if (cursor + duracion <= 20 * 60) {
-      this.slotSugerido = { hora_inicio: this.toTime(cursor), hora_fin: this.toTime(cursor + duracion) };
-    }
-  }
-
-  detectarConflicto() {
-    this.hayConflicto = false;
-    if (!this.form.fecha || !this.form.hora_inicio || !this.form.hora_fin) return;
-    const inicio = this.toMin(this.form.hora_inicio);
-    const fin    = this.toMin(this.form.hora_fin);
-    this.hayConflicto = this.citasService.getCitas()
-      .filter(c => c.fecha === this.form.fecha && c.estado !== 'Cancelada')
-      .some(c => inicio < this.toMin(c.hora_fin) && fin > this.toMin(c.hora_inicio));
   }
 
   usarSugerencia() {
     if (!this.slotSugerido) return;
     this.form.hora_inicio = this.slotSugerido.hora_inicio;
-    this.form.hora_fin    = this.slotSugerido.hora_fin;
-    this.hayConflicto     = false;
-    this.actualizarDuracion();
-    delete this.errores['hora_inicio'];
-    delete this.errores['hora_fin'];
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // Validation & submit
-  // ─────────────────────────────────────────────────────────────
-  validar(): boolean {
-    this.errores = {};
-    if (!this.pacienteSeleccionado && this.modo === 'crear') {
-      this.errores['paciente'] = 'Selecciona un paciente';
-    }
-    if (!this.form.fecha)        { this.errores['fecha'] = 'Fecha requerida'; }
-    if (!this.form.hora_inicio)  { this.errores['hora_inicio'] = 'Hora inicio requerida'; }
-    if (!this.form.hora_fin)     { this.errores['hora_fin'] = 'Hora fin requerida'; }
-    if (this.form.hora_inicio && this.form.hora_fin &&
-        this.form.hora_fin <= this.form.hora_inicio) {
-      this.errores['hora_fin'] = 'Debe ser posterior a la hora inicio';
-    }
-    if (!this.form.motivo.trim()) { this.errores['motivo'] = 'Motivo requerido'; }
-    return Object.keys(this.errores).length === 0;
+    this.form.hora_fin = this.slotSugerido.hora_fin;
+    this.hayConflicto = false;
   }
 
   guardar() {
     if (!this.validar()) return;
-    this.saved.emit({ ...this.form });
+
+    this.saved.emit({
+      id_paciente: this.form.id_paciente,
+      nombre_paciente: this.form.nombre_paciente,
+      apellido_paciente: this.form.apellido_paciente,
+      fecha_inicio: toIsoDateTime(this.form.fecha, this.form.hora_inicio),
+      fecha_fin: toIsoDateTime(this.form.fecha, this.form.hora_fin),
+      motivo: this.form.motivo.trim(),
+      notas_internas: this.form.notas_internas.trim(),
+      observaciones: this.form.observaciones.trim(),
+      monto: Number(this.form.monto || 0),
+    });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Helpers
-  // ─────────────────────────────────────────────────────────────
-  private emptyForm(): CitaFormData {
+  private bootstrapForm() {
+    if (this.cita) {
+      this.form = {
+        id_paciente: this.cita.id_paciente,
+        nombre_paciente: this.cita.nombre_paciente,
+        apellido_paciente: this.cita.apellido_paciente,
+        fecha: toDatePart(this.cita.fecha_inicio),
+        hora_inicio: toTimePart(this.cita.fecha_inicio),
+        hora_fin: toTimePart(this.cita.fecha_fin),
+        motivo: this.cita.motivo ?? '',
+        notas_internas: this.cita.notas_internas ?? '',
+        observaciones: this.cita.observaciones ?? '',
+        monto: Number(this.cita.monto ?? 0),
+      };
+    } else {
+      this.form = this.emptyForm();
+      this.applyPrefill();
+    }
+
+    this.errores = {};
+    this.hayConflicto = false;
+    this.slotsDisponibles = [];
+    this.slotSugerido = null;
+    this.slotsError = '';
+
+    if (this.form.fecha) {
+      void this.cargarDisponibilidad();
+    }
+  }
+
+  private applyPrefill() {
+    if (this.prefill.fecha) this.form.fecha = this.prefill.fecha;
+    if (this.prefill.horaInicio) this.form.hora_inicio = this.prefill.horaInicio;
+    if (this.prefill.horaFin) this.form.hora_fin = this.prefill.horaFin;
+  }
+
+  private emptyForm(): CitaFormInternal {
     return {
-      id_paciente: 0, nombre_paciente: '', apellido_paciente: '',
-      fecha: '', hora_inicio: '', hora_fin: '', duracion: 60,
-      motivo: '', notas_rapidas: '', estado: 'Pendiente',
-      estado_pago: 'Pendiente', metodo_pago: '', monto: 0, monto_pagado: 0,
+      id_paciente: 0,
+      nombre_paciente: '',
+      apellido_paciente: '',
+      fecha: '',
+      hora_inicio: '',
+      hora_fin: '',
+      motivo: '',
+      notas_internas: '',
+      observaciones: '',
+      monto: 0,
     };
   }
 
-  private toMin(t: string): number {
-    const [h, m] = t.split(':').map(Number);
-    return h * 60 + m;
+  private validar(): boolean {
+    this.errores = {};
+
+    if (this.modo === 'crear' && !this.form.id_paciente) {
+      this.errores['paciente'] = 'Selecciona un paciente';
+    }
+    if (!this.form.fecha) this.errores['fecha'] = 'Fecha requerida';
+    if (!this.form.hora_inicio) this.errores['hora_inicio'] = 'Hora inicio requerida';
+    if (!this.form.hora_fin) this.errores['hora_fin'] = 'Hora fin requerida';
+    if (!this.form.motivo.trim()) this.errores['motivo'] = 'Motivo requerido';
+    if (this.form.monto < 0) this.errores['monto'] = 'El monto no puede ser negativo';
+
+    if (this.form.hora_inicio && this.form.hora_fin) {
+      const diff = this.diffMinutes(this.form.hora_inicio, this.form.hora_fin);
+      if (diff <= 0) this.errores['hora_fin'] = 'Debe ser posterior a la hora inicio';
+    }
+
+    this.validarConflictoHorario();
+    if (this.hayConflicto) {
+      this.errores['hora_inicio'] = 'Horario no disponible para esta fecha';
+    }
+
+    return Object.keys(this.errores).length === 0;
   }
 
-  private toTime(min: number): string {
-    return `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
+  private async cargarDisponibilidad() {
+    if (!this.form.fecha) return;
+
+    this.loadingSlots = true;
+    this.slotsError = '';
+
+    try {
+      const response = await this.citasService.getDisponibilidad({
+        fecha: this.form.fecha,
+        duracionMinutos: this.duracionActual,
+        citaIdExcluir: this.cita?.id_cita,
+      });
+      this.slotsDisponibles = response.slots ?? [];
+      this.slotSugerido = this.slotsDisponibles[0] ?? null;
+      this.validarConflictoHorario();
+    } catch (err) {
+      this.slotsDisponibles = [];
+      this.slotSugerido = null;
+      this.slotsError = mapApiError(err).userMessage;
+      this.hayConflicto = false;
+    } finally {
+      this.loadingSlots = false;
+    }
+  }
+
+  private validarConflictoHorario() {
+    this.hayConflicto = false;
+    if (!this.form.hora_inicio || !this.form.hora_fin || this.slotsDisponibles.length === 0) return;
+
+    const selectedStart = this.normalizeHour(this.form.hora_inicio);
+    const selectedEnd = this.normalizeHour(this.form.hora_fin);
+
+    const exists = this.slotsDisponibles.some(
+      slot =>
+        this.normalizeHour(slot.hora_inicio) === selectedStart &&
+        this.normalizeHour(slot.hora_fin) === selectedEnd
+    );
+
+    this.hayConflicto = !exists;
+  }
+
+  private diffMinutes(start: string, end: string): number {
+    const startIso = toIsoDateTime('2000-01-01', this.normalizeHour(start));
+    const endIso = toIsoDateTime('2000-01-01', this.normalizeHour(end));
+    return durationInMinutes(startIso, endIso);
+  }
+
+  private normalizeHour(hour: string): string {
+    if (!hour) return '';
+    return hour.length >= 5 ? hour.substring(0, 5) : hour;
   }
 }
