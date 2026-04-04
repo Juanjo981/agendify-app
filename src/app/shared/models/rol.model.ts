@@ -1,14 +1,16 @@
 /**
  * Roles de usuario en Agendify.
- * Los valores numéricos coinciden con los idRol usados en el backend.
+ * Los valores numéricos coinciden con los id_rol del backend (GET /api/roles).
  */
 export enum RolUsuario {
-  PROFESIONAL   = 3,
-  RECEPCIONISTA = 4,
+  ADMIN         = 1,
+  PROFESIONAL   = 2,
+  RECEPCIONISTA = 3,
 }
 
 /** Etiqueta legible por rol */
 export const ROL_LABEL: Record<RolUsuario, string> = {
+  [RolUsuario.ADMIN]:         'Administrador',
   [RolUsuario.PROFESIONAL]:   'Profesional',
   [RolUsuario.RECEPCIONISTA]: 'Recepcionista',
 };

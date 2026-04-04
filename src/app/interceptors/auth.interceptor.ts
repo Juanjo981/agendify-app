@@ -42,12 +42,26 @@ const PUBLIC_URLS: ReadonlyArray<string> = [
   '/api/auth/login',
   '/api/auth/refresh',
   '/api/auth/logout',
-  '/api/usuarios/registro',
   '/api/auth/forgot-password',
+  '/api/auth/reset-password',
+  '/api/usuarios/registro',
+  '/public/citas/gestion/',
 ];
 
 function isPublicUrl(url: string): boolean {
-  return PUBLIC_URLS.some(fragment => url.includes(fragment));
+  // Fragmentos conocidos de rutas públicas/auth del backend
+  if (PUBLIC_URLS.some(fragment => url.includes(fragment))) {
+    return true;
+  }
+  // Cualquier ruta bajo /public/ es pública por convención del backend
+  if (url.includes('/public/')) {
+    return true;
+  }
+  // URLs externas (ej: signed URLs de storage para upload/download de adjuntos)
+  if (!url.startsWith('/') && !url.includes('localhost') && !url.includes('agendify.com')) {
+    return true;
+  }
+  return false;
 }
 
 function withBearerToken<T>(req: HttpRequest<T>, token: string): HttpRequest<T> {

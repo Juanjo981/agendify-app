@@ -4,12 +4,12 @@ import { CqaPopoverComponent, CqaAction } from './components/cqa-popover/cqa-pop
 import { SolicitudReprogramacionModalComponent } from '../../shared/components/solicitud-reprogramacion-modal/solicitud-reprogramacion-modal.component';
 import { SolicitudReprogramacionService } from '../citas/solicitud-reprogramacion.service.mock';
 import { SolicitudReprogramacion } from '../../shared/models/solicitud-reprogramacion.model';
-import { Component, HostListener, OnDestroy } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule, PopoverController, createAnimation } from '@ionic/angular';
 import { Router } from '@angular/router';
-import { PacientesMockService } from '../pacientes/pacientes.service.mock';
+import { PacientesApiService } from '../pacientes/pacientes-api.service';
 import { CitasMockService } from '../citas/citas.service.mock';
 import { CitaDto, EstadoCita } from '../citas/models/cita.model';
 
@@ -39,7 +39,7 @@ interface CalendarDay {
   standalone: true,
   styleUrls: ['./agenda.page.scss'],
 })
-export class AgendaPage implements OnDestroy {
+export class AgendaPage implements OnInit, OnDestroy {
 
   nombreUsuario = 'Juan José';
   showNewAppointmentPanel = false;
@@ -127,13 +127,19 @@ export class AgendaPage implements OnDestroy {
   private dragCurrentY = 0;
   private isDragging = false;
 
-  constructor(private pacientesSvc: PacientesMockService, private router: Router, private citasSvc: CitasMockService, private popoverCtrl: PopoverController, private solicitudSvc: SolicitudReprogramacionService) {
-    this.pacientes = this.pacientesSvc.getAll().map(p => ({
-      id: p.id_paciente,
-      nombre: `${p.nombre} ${p.apellido}`,
-    }));
+  constructor(private pacientesSvc: PacientesApiService, private router: Router, private citasSvc: CitasMockService, private popoverCtrl: PopoverController, private solicitudSvc: SolicitudReprogramacionService) {
     this.generateCalendar();
     this.updateHeaderInfo();
+  }
+
+  async ngOnInit() {
+    try {
+      const page = await this.pacientesSvc.getAll({ activo: true, size: 500 });
+      this.pacientes = page.content.map(p => ({
+        id: p.id_paciente,
+        nombre: `${p.nombre} ${p.apellido}`,
+      }));
+    } catch { /* silent */ }
   }
 
 

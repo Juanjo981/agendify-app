@@ -1,7 +1,23 @@
 <ion-content class="det-content">
 
+  <!-- ══════════════ LOADING ══════════════ -->
+  <div *ngIf="loading" class="det-loading">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Cargando paciente…</p>
+  </div>
+
+  <!-- ══════════════ ERROR ══════════════ -->
+  <div *ngIf="!loading && errorMessage && !paciente" class="det-not-found">
+    <ion-icon name="alert-circle-outline"></ion-icon>
+    <p>{{ errorMessage }}</p>
+    <button class="det-btn-ghost" (click)="volver()">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+      Volver a Pacientes
+    </button>
+  </div>
+
   <!-- ══════════════ NOT FOUND ══════════════ -->
-  <div *ngIf="!paciente" class="det-not-found">
+  <div *ngIf="!loading && !errorMessage && !paciente" class="det-not-found">
     <ion-icon name="person-outline"></ion-icon>
     <p>Paciente no encontrado</p>
     <button class="det-btn-ghost" (click)="volver()">
@@ -32,11 +48,11 @@
               <ion-icon [name]="paciente.activo ? 'checkmark-circle-outline' : 'close-circle-outline'"></ion-icon>
               {{ paciente.activo ? 'Activo' : 'Inactivo' }}
             </span>
-            <span class="det-chip det-chip--blue" *ngIf="paciente.citas.length > 0">
+            <span class="det-chip det-chip--blue" *ngIf="resumen && resumen.total_citas > 0">
               <ion-icon name="calendar-outline"></ion-icon>
-              {{ paciente.citas.length }} cita{{ paciente.citas.length !== 1 ? 's' : '' }}
+              {{ resumen.total_citas }} cita{{ resumen.total_citas !== 1 ? 's' : '' }}
             </span>
-            <span class="det-chip det-chip--gray" *ngIf="paciente.citas.length === 0">
+            <span class="det-chip det-chip--gray" *ngIf="resumen && resumen.total_citas === 0">
               Sin citas
             </span>
             <span class="det-chip det-chip--purple" *ngIf="paciente.fecha_nacimiento">
@@ -74,7 +90,7 @@
         <!-- Ficha de contacto -->
         <div class="det-info-grid">
 
-          <div class="det-data-card">
+          <div class="det-data-card" *ngIf="paciente.email">
             <div class="det-data-card__icon" style="background: rgba(99,102,241,0.10); color: #6366f1;">
               <ion-icon name="mail-outline"></ion-icon>
             </div>
@@ -90,8 +106,8 @@
             </div>
             <div class="det-data-card__body">
               <span class="det-data-label">Teléfono</span>
-              <a class="det-data-value det-link" *ngIf="paciente.telefono" href="tel:{{ paciente.telefono }}">{{ paciente.telefono }}</a>
-              <span class="det-data-value det-muted" *ngIf="!paciente.telefono">—</span>
+              <a class="det-data-value det-link" *ngIf="paciente.numero_telefono" href="tel:{{ paciente.numero_telefono }}">{{ paciente.numero_telefono }}</a>
+              <span class="det-data-value det-muted" *ngIf="!paciente.numero_telefono">—</span>
             </div>
           </div>
 
@@ -127,18 +143,114 @@
 
         </div>
 
-        <!-- Alertas -->
-        <div class="det-alert-card" *ngIf="paciente.alertas && paciente.alertas.length > 0">
-          <div class="det-alert-card__header">
-            <ion-icon name="warning-outline"></ion-icon>
-            <span>Alertas clínicas</span>
+        <!-- Contacto de emergencia -->
+        <div class="det-info-grid" *ngIf="paciente.contacto_emergencia_nombre || paciente.contacto_emergencia_telefono">
+          <div class="det-data-card" *ngIf="paciente.contacto_emergencia_nombre">
+            <div class="det-data-card__icon" style="background: rgba(239,68,68,0.10); color: #ef4444;">
+              <ion-icon name="people-outline"></ion-icon>
+            </div>
+            <div class="det-data-card__body">
+              <span class="det-data-label">Contacto de emergencia</span>
+              <span class="det-data-value">{{ paciente.contacto_emergencia_nombre }}</span>
+            </div>
           </div>
-          <ul class="det-alert-list">
-            <li *ngFor="let alerta of paciente.alertas" class="det-alert-item">
-              <ion-icon name="alert-circle-outline"></ion-icon>
-              {{ alerta }}
+          <div class="det-data-card" *ngIf="paciente.contacto_emergencia_telefono">
+            <div class="det-data-card__icon" style="background: rgba(239,68,68,0.10); color: #ef4444;">
+              <ion-icon name="call-outline"></ion-icon>
+            </div>
+            <div class="det-data-card__body">
+              <span class="det-data-label">Teléfono de emergencia</span>
+              <a class="det-data-value det-link" href="tel:{{ paciente.contacto_emergencia_telefono }}">{{ paciente.contacto_emergencia_telefono }}</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sexo -->
+        <div class="det-info-grid" *ngIf="paciente.sexo">
+          <div class="det-data-card">
+            <div class="det-data-card__icon" style="background: rgba(99,102,241,0.10); color: #6366f1;">
+              <ion-icon name="person-outline"></ion-icon>
+            </div>
+            <div class="det-data-card__body">
+              <span class="det-data-label">Sexo</span>
+              <span class="det-data-value">{{ paciente.sexo }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alertas clínicas (entity-based) -->
+        <div class="det-alert-card">
+          <div class="det-alert-card__header">
+            <div>
+              <ion-icon name="warning-outline"></ion-icon>
+              <span>Alertas clínicas</span>
+              <span class="det-alert-count" *ngIf="alertas.length > 0">({{ alertas.length }})</span>
+            </div>
+            <button class="det-btn-sm" (click)="abrirAlertaForm()">
+              <ion-icon name="add-outline"></ion-icon>
+              Agregar
+            </button>
+          </div>
+
+          <ion-spinner *ngIf="loadingAlertas" name="crescent" class="det-section-spinner"></ion-spinner>
+
+          <div *ngIf="!loadingAlertas && alertas.length === 0" class="det-empty-inline">
+            <p>Sin alertas registradas</p>
+          </div>
+
+          <ul class="det-alert-list" *ngIf="!loadingAlertas && alertas.length > 0">
+            <li *ngFor="let alerta of alertas" class="det-alert-entity" [class.det-alert-entity--inactive]="!alerta.activa">
+              <div class="det-alert-entity__body">
+                <ion-icon name="alert-circle-outline"></ion-icon>
+                <div>
+                  <strong>{{ alerta.titulo }}</strong>
+                  <span *ngIf="alerta.tipo_alerta" class="det-alert-entity__tipo">{{ alerta.tipo_alerta }}</span>
+                  <p *ngIf="alerta.descripcion" class="det-alert-entity__desc">{{ alerta.descripcion }}</p>
+                </div>
+              </div>
+              <div class="det-alert-entity__actions">
+                <button class="det-nota-edit-btn" (click)="toggleAlerta(alerta)" [title]="alerta.activa ? 'Desactivar' : 'Activar'">
+                  <ion-icon [name]="alerta.activa ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+                </button>
+                <button class="det-nota-edit-btn" (click)="abrirAlertaForm(alerta)" title="Editar">
+                  <ion-icon name="pencil-outline"></ion-icon>
+                </button>
+                <button class="det-nota-delete-btn" (click)="confirmarEliminarAlerta(alerta)" title="Eliminar">
+                  <ion-icon name="trash-outline"></ion-icon>
+                </button>
+              </div>
             </li>
           </ul>
+        </div>
+
+        <!-- Alerta form (inline) -->
+        <div *ngIf="showAlertaForm" class="det-inline-form">
+          <div class="pac-form-row">
+            <div class="pac-field">
+              <label>Tipo</label>
+              <select [(ngModel)]="alertaForm.tipo_alerta" class="pac-select pac-select--field">
+                <option value="CLINICA">Clínica</option>
+                <option value="ALERGIA">Alergia</option>
+                <option value="MEDICAMENTO">Medicamento</option>
+                <option value="OTRO">Otro</option>
+              </select>
+            </div>
+            <div class="pac-field">
+              <label>Título *</label>
+              <input type="text" [(ngModel)]="alertaForm.titulo" placeholder="Ej. Alergia a la penicilina" />
+            </div>
+          </div>
+          <div class="pac-field">
+            <label>Descripción</label>
+            <input type="text" [(ngModel)]="alertaForm.descripcion" placeholder="Detalles adicionales (opcional)" />
+          </div>
+          <div class="det-inline-form__actions">
+            <button class="pac-btn-ghost" (click)="cerrarAlertaForm()" [disabled]="saving">Cancelar</button>
+            <button class="det-btn-primary" (click)="guardarAlerta()" [disabled]="saving || !alertaForm.titulo.trim()">
+              <ion-spinner *ngIf="saving" name="crescent" class="pac-spinner-inline"></ion-spinner>
+              {{ alertaEditandoId ? 'Guardar' : 'Agregar' }}
+            </button>
+          </div>
         </div>
 
         <!-- Notas generales -->
@@ -170,7 +282,7 @@
         <div class="det-notas-topbar">
           <div class="det-notas-topbar__info">
             <ion-icon name="document-text-outline"></ion-icon>
-            <span>{{ paciente.notas.length }} nota{{ paciente.notas.length !== 1 ? 's' : '' }} clínica{{ paciente.notas.length !== 1 ? 's' : '' }}</span>
+            <span>{{ totalNotas }} nota{{ totalNotas !== 1 ? 's' : '' }} clínica{{ totalNotas !== 1 ? 's' : '' }}</span>
           </div>
           <button class="det-btn-primary" (click)="abrirNotaModal()">
             <ion-icon name="add-outline"></ion-icon>
@@ -178,7 +290,12 @@
           </button>
         </div>
 
-        <div *ngIf="paciente.notas.length === 0" class="det-empty">
+        <!-- Loading -->
+        <div *ngIf="loadingNotas" class="det-section-loading">
+          <ion-spinner name="crescent"></ion-spinner>
+        </div>
+
+        <div *ngIf="!loadingNotas && notas.length === 0" class="det-empty">
           <ion-icon name="document-text-outline"></ion-icon>
           <p>Sin notas clínicas</p>
           <span>Registra la primera nota clínica del paciente</span>
@@ -188,37 +305,34 @@
           </button>
         </div>
 
-        <div class="det-nota-list" *ngIf="paciente.notas.length > 0">
-          <div *ngFor="let nota of paciente.notas" class="det-nota-item">
+        <div class="det-nota-list" *ngIf="!loadingNotas && notas.length > 0">
+          <div *ngFor="let nota of notas" class="det-nota-item">
             <div class="det-nota-item__header">
               <span class="det-nota-item__fecha">
                 <ion-icon name="time-outline"></ion-icon>
-                {{ formatFecha(nota.fecha) }}
+                {{ formatFecha(nota.created_at) }}
               </span>
+              <span class="det-nota-item__tipo" *ngIf="nota.tipo_nota">{{ nota.tipo_nota }}</span>
               <div class="det-nota-item__actions">
                 <button class="det-nota-edit-btn" (click)="abrirNotaModal(nota)" title="Editar nota">
                   <ion-icon name="pencil-outline"></ion-icon>
                 </button>
-                <button class="det-nota-delete-btn" (click)="eliminarNota(nota)" title="Eliminar nota">
+                <button class="det-nota-delete-btn" (click)="confirmarEliminarNota(nota)" title="Eliminar nota">
                   <ion-icon name="trash-outline"></ion-icon>
                 </button>
               </div>
             </div>
+            <p class="det-nota-item__titulo" *ngIf="nota.titulo"><strong>{{ nota.titulo }}</strong></p>
             <p class="det-nota-item__text" *ngIf="nota.contenido">{{ nota.contenido }}</p>
-            <p class="det-nota-item__text det-nota-empty-text" *ngIf="!nota.contenido">(Sin texto)</p>
-            <div *ngIf="nota.adjunto" class="det-nota-adjunto">
-              <div class="det-adjunto-chip">
-                <ion-icon [name]="getFileIcon(nota.adjunto.type)" class="det-adjunto-chip__icon"></ion-icon>
-                <span class="det-adjunto-chip__name">{{ nota.adjunto.name }}</span>
-                <span class="det-adjunto-chip__size">{{ formatFileSize(nota.adjunto.size) }}</span>
-                <button class="det-adjunto-chip__btn" (click)="verAdjunto(nota.adjunto)" title="Ver adjunto">
-                  <ion-icon name="eye-outline"></ion-icon>
-                </button>
-                <button class="det-adjunto-chip__btn det-adjunto-chip__btn--download" (click)="descargarAdjunto(nota.adjunto)" title="Descargar adjunto">
-                  <ion-icon name="download-outline"></ion-icon>
-                </button>
-              </div>
-            </div>
+            <p class="det-nota-item__text det-nota-empty-text" *ngIf="!nota.contenido">(Sin contenido)</p>
+            <span class="det-nota-item__visible" *ngIf="nota.visible_en_resumen">
+              <ion-icon name="eye-outline"></ion-icon> Visible en resumen
+            </span>
+          </div>
+
+          <!-- Load more -->
+          <div *ngIf="!notasIsLastPage" class="det-load-more">
+            <button class="det-btn-outline" (click)="cargarMasNotas()">Cargar más</button>
           </div>
         </div>
       </div>
@@ -226,60 +340,55 @@
       <!-- ════ SECCIÓN: SESIONES ════ -->
       <div *ngIf="seccionActiva === 'sesiones'" class="det-sesiones">
 
+        <!-- Loading -->
+        <div *ngIf="loadingSesiones" class="det-section-loading">
+          <ion-spinner name="crescent"></ion-spinner>
+        </div>
+
         <!-- Stats row -->
-        <div class="det-ses-stats" *ngIf="sesionesData.length > 0">
+        <div class="det-ses-stats" *ngIf="!loadingSesiones && sesiones.length > 0">
           <div class="det-ses-stat">
-            <strong>{{ sesionesData.length }}</strong>
+            <strong>{{ totalSesiones }}</strong>
             <span>Sesiones</span>
           </div>
           <div class="det-ses-stat det-ses-stat--divider"></div>
           <div class="det-ses-stat">
-            <strong>{{ formatFecha(sesionesData[0].fecha) }}</strong>
+            <strong>{{ formatFecha(sesiones[0].fecha_sesion) }}</strong>
             <span>Última sesión</span>
           </div>
           <div class="det-ses-stat det-ses-stat--divider"></div>
           <div class="det-ses-stat">
-            <strong>{{ sesionesData[0].tipo }}</strong>
+            <strong>{{ sesiones[0].tipo_sesion }}</strong>
             <span>Tipo de última sesión</span>
           </div>
         </div>
 
         <!-- Session cards -->
-        <div class="det-ses-list" *ngIf="sesionesData.length > 0">
-          <div *ngFor="let ses of sesionesData" class="det-ses-card">
+        <div class="det-ses-list" *ngIf="!loadingSesiones && sesiones.length > 0">
+          <div *ngFor="let ses of sesiones" class="det-ses-card">
             <div class="det-ses-card__header">
               <div class="det-ses-card__meta">
                 <span class="det-ses-card__date">
                   <ion-icon name="calendar-outline"></ion-icon>
-                  {{ formatFecha(ses.fecha) }}
+                  {{ formatFecha(ses.fecha_sesion) }}
                 </span>
-                <span class="det-ses-card__hour">{{ ses.hora }}</span>
-                <span class="det-ses-card__dur">
-                  <ion-icon name="timer-outline"></ion-icon>
-                  {{ ses.duracion_min }} min
+                <span class="det-ses-card__tipo-badge" [class]="'det-ses-estatus--' + ses.estatus.toLowerCase()">
+                  {{ ses.estatus }}
                 </span>
               </div>
-              <span class="det-ses-card__tipo">{{ ses.tipo }}</span>
+              <span class="det-ses-card__tipo">{{ ses.tipo_sesion }}</span>
             </div>
             <p class="det-ses-card__resumen" *ngIf="ses.resumen">{{ ses.resumen }}</p>
-            <div class="det-ses-card__footer" *ngIf="ses.adjunto">
-              <div class="det-adjunto-chip">
-                <ion-icon [name]="getFileIcon(ses.adjunto.type)" class="det-adjunto-chip__icon"></ion-icon>
-                <span class="det-adjunto-chip__name">{{ ses.adjunto.name }}</span>
-                <span class="det-adjunto-chip__size">{{ formatFileSize(ses.adjunto.size) }}</span>
-                <button class="det-adjunto-chip__btn" (click)="verAdjunto(ses.adjunto)" title="Ver adjunto">
-                  <ion-icon name="eye-outline"></ion-icon>
-                </button>
-                <button class="det-adjunto-chip__btn det-adjunto-chip__btn--download" (click)="descargarAdjunto(ses.adjunto)" title="Descargar adjunto">
-                  <ion-icon name="download-outline"></ion-icon>
-                </button>
-              </div>
-            </div>
+          </div>
+
+          <!-- Load more -->
+          <div *ngIf="!sesionesIsLastPage" class="det-load-more">
+            <button class="det-btn-outline" (click)="cargarMasSesiones()">Cargar más</button>
           </div>
         </div>
 
         <!-- Empty -->
-        <div *ngIf="sesionesData.length === 0" class="det-empty">
+        <div *ngIf="!loadingSesiones && sesiones.length === 0" class="det-empty">
           <ion-icon name="pulse-outline"></ion-icon>
           <p>Sin sesiones registradas</p>
           <span>Las sesiones clínicas registradas del paciente aparecerán aquí</span>
@@ -289,6 +398,13 @@
 
       <!-- ════ SECCIÓN: HISTORIAL ════ -->
       <div *ngIf="seccionActiva === 'historial'" class="det-historial">
+
+        <!-- Loading -->
+        <div *ngIf="loadingHistorial" class="det-section-loading">
+          <ion-spinner name="crescent"></ion-spinner>
+        </div>
+
+        <ng-container *ngIf="!loadingHistorial">
 
         <!-- Topbar with export button -->
         <div class="det-hist-topbar">
@@ -330,27 +446,23 @@
           </div>
         </div>
 
-        <!-- Summary bar -->
-        <div class="det-hist-summary">
-          <div class="det-hist-summary-item det-hist-summary-item--green">
-            <strong>{{ estadoCount.confirmadas }}</strong>
-            <span>Confirmadas</span>
-          </div>
-          <div class="det-hist-summary-item det-hist-summary-item--yellow">
-            <strong>{{ estadoCount.pendientes }}</strong>
-            <span>Pendientes</span>
-          </div>
-          <div class="det-hist-summary-item det-hist-summary-item--red">
-            <strong>{{ estadoCount.canceladas }}</strong>
-            <span>Canceladas</span>
+        <!-- Summary bar (using resumen/historial counts) -->
+        <div class="det-hist-summary" *ngIf="resumen">
+          <div class="det-hist-summary-item det-hist-summary-item--blue">
+            <strong>{{ resumen.total_citas }}</strong>
+            <span>Citas</span>
           </div>
           <div class="det-hist-summary-item det-hist-summary-item--purple">
-            <strong>{{ sesionesData.length }}</strong>
+            <strong>{{ resumen.total_sesiones }}</strong>
             <span>Sesiones</span>
           </div>
           <div class="det-hist-summary-item det-hist-summary-item--slate">
-            <strong>{{ paciente.notas.length }}</strong>
+            <strong>{{ resumen.total_notas_clinicas }}</strong>
             <span>Notas</span>
+          </div>
+          <div class="det-hist-summary-item det-hist-summary-item--yellow">
+            <strong>{{ resumen.total_alertas_activas }}</strong>
+            <span>Alertas activas</span>
           </div>
         </div>
 
@@ -396,6 +508,8 @@
           </div>
         </div>
 
+        </ng-container>
+
       </div>
 
     </div><!-- .det-tab-content -->
@@ -412,6 +526,12 @@
       </button>
     </div>
     <div class="pac-modal__body">
+      <!-- General error -->
+      <div class="pac-field__error pac-field__error--general" *ngIf="formErrores['_general']">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        {{ formErrores['_general'] }}
+      </div>
+
       <div class="pac-form-row">
         <div class="pac-field" [class.has-error]="formErrores['nombre']">
           <label>Nombre *</label>
@@ -425,14 +545,15 @@
         </div>
       </div>
       <div class="pac-field" [class.has-error]="formErrores['email']">
-        <label>Email *</label>
+        <label>Email</label>
         <input type="email" [(ngModel)]="formPaciente.email" />
         <span class="pac-field__error" *ngIf="formErrores['email']">{{ formErrores['email'] }}</span>
       </div>
       <div class="pac-form-row">
-        <div class="pac-field">
+        <div class="pac-field" [class.has-error]="formErrores['numero_telefono']">
           <label>Teléfono</label>
-          <input type="tel" [(ngModel)]="formPaciente.telefono" />
+          <input type="tel" [(ngModel)]="formPaciente.numero_telefono" />
+          <span class="pac-field__error" *ngIf="formErrores['numero_telefono']">{{ formErrores['numero_telefono'] }}</span>
         </div>
         <div class="pac-field">
           <label>Fecha de nacimiento</label>
@@ -443,52 +564,41 @@
           ></agf-date-picker>
         </div>
       </div>
+      <div class="pac-form-row">
+        <div class="pac-field">
+          <label>Sexo</label>
+          <select [(ngModel)]="formPaciente.sexo" class="pac-select pac-select--field">
+            <option value="">Sin especificar</option>
+            <option value="Masculino">Masculino</option>
+            <option value="Femenino">Femenino</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="pac-field">
+          <label>Dirección</label>
+          <input type="text" [(ngModel)]="formPaciente.direccion" />
+        </div>
+      </div>
+      <div class="pac-form-row">
+        <div class="pac-field">
+          <label>Contacto de emergencia</label>
+          <input type="text" [(ngModel)]="formPaciente.contacto_emergencia_nombre" placeholder="Nombre" />
+        </div>
+        <div class="pac-field">
+          <label>Teléfono de emergencia</label>
+          <input type="tel" [(ngModel)]="formPaciente.contacto_emergencia_telefono" />
+        </div>
+      </div>
       <div class="pac-field">
         <label>Notas generales</label>
         <textarea [(ngModel)]="formPaciente.notas_generales" rows="3"></textarea>
       </div>
-
-      <div class="pac-field">
-        <label>Alertas clínicas</label>
-        <div class="pac-alertas-section">
-          <div class="pac-alerta-input-row">
-            <input
-              type="text"
-              class="pac-alerta-input"
-              placeholder="Ej. Alergia a la penicilina…"
-              [(ngModel)]="alertaEditInput"
-              (keydown.enter)="$event.preventDefault(); agregarAlertaEditar()"
-              maxlength="80"
-            />
-            <button type="button" class="pac-alerta-add-btn" (click)="agregarAlertaEditar()">
-              <ion-icon name="add-outline"></ion-icon>
-              Agregar
-            </button>
-          </div>
-          <div class="pac-alertas-chips" *ngIf="alertasEditForm.length > 0">
-            <span *ngFor="let alerta of alertasEditForm; let i = index" class="pac-alerta-chip">
-              <ion-icon name="alert-circle-outline" class="pac-alerta-chip__icon"></ion-icon>
-              <span class="pac-alerta-chip__text">{{ alerta }}</span>
-              <button type="button" class="pac-alerta-chip__remove" (click)="eliminarAlertaEditar(i)" title="Eliminar alerta">
-                <ion-icon name="close-outline"></ion-icon>
-              </button>
-            </span>
-          </div>
-          <p class="pac-alertas-hint" *ngIf="alertasEditForm.length === 0">Sin alertas registradas</p>
-        </div>
-      </div>
-
-      <div class="pac-field pac-field--toggle">
-        <label>Paciente activo</label>
-        <button class="pac-toggle" [class.on]="formPaciente.activo" (click)="formPaciente.activo = !formPaciente.activo" type="button">
-          <span class="pac-toggle__knob"></span>
-        </button>
-      </div>
     </div>
     <div class="pac-modal__footer">
-      <button class="pac-btn-ghost" (click)="cerrarEditarModal()">Cancelar</button>
-      <button class="det-btn-primary" (click)="guardarEdicion()">
-        <ion-icon name="checkmark-outline"></ion-icon>
+      <button class="pac-btn-ghost" (click)="cerrarEditarModal()" [disabled]="saving">Cancelar</button>
+      <button class="det-btn-primary" (click)="guardarEdicion()" [disabled]="saving">
+        <ion-spinner *ngIf="saving" name="crescent" class="pac-spinner-inline"></ion-spinner>
+        <ion-icon *ngIf="!saving" name="checkmark-outline"></ion-icon>
         Guardar cambios
       </button>
     </div>
@@ -505,71 +615,39 @@
       </button>
     </div>
     <div class="pac-modal__body">
-
-      <!-- Textarea -->
       <div class="pac-field">
-        <label>Contenido</label>
-        <textarea [(ngModel)]="nuevaNotaTexto" rows="4" placeholder="Escribe aquí la nota clínica…"></textarea>
+        <label>Título</label>
+        <input type="text" [(ngModel)]="notaForm.titulo" placeholder="Título de la nota (opcional)" />
       </div>
-
-      <!-- File picker section -->
-      <div class="det-adjunto-section">
-        <p class="det-adjunto-label">Archivo adjunto <span>(opcional)</span></p>
-
-        <!-- Input oculto -->
-        <input
-          #fileInput
-          type="file"
-          class="det-adjunto-input"
-          [accept]="ALLOWED_EXT.join(',')"
-          (change)="onFileSelected($event)"
-          aria-hidden="true"
-        />
-
-        <!-- Zona / botón cuando NO hay archivo -->
-        <div *ngIf="!notaAdjunto" class="det-adjunto-zone" (click)="triggerFilePicker()">
-          <ion-icon name="cloud-upload-outline" class="det-adjunto-zone__icon"></ion-icon>
-          <span class="det-adjunto-zone__text">Adjuntar archivo</span>
-          <span class="det-adjunto-zone__hint">{{ ALLOWED_EXT.join(' · ') }}</span>
-        </div>
-
-        <!-- Card preview cuando hay archivo -->
-        <div *ngIf="notaAdjunto" class="det-adjunto-preview-card">
-
-          <!-- Mini imagen -->
-          <img
-            *ngIf="notaAdjunto.previewUrl"
-            [src]="notaAdjunto.previewUrl"
-            class="det-adjunto-preview-img"
-            alt="Preview"
-          />
-
-          <div class="det-adjunto-preview-info">
-            <ion-icon [name]="getFileIcon(notaAdjunto.type)" class="det-adjunto-preview-icon"></ion-icon>
-            <div class="det-adjunto-preview-meta">
-              <span class="det-adjunto-preview-name">{{ notaAdjunto.name }}</span>
-              <span class="det-adjunto-preview-size">{{ formatFileSize(notaAdjunto.size) }}</span>
-            </div>
-          </div>
-
-          <div class="det-adjunto-preview-actions">
-            <button class="det-adjunto-replace-btn" (click)="triggerFilePicker()" title="Reemplazar">
-              <ion-icon name="swap-horizontal-outline"></ion-icon>
-            </button>
-            <button class="det-adjunto-remove-btn" (click)="quitarAdjunto()" title="Quitar adjunto">
-              <ion-icon name="close-outline"></ion-icon>
-            </button>
-          </div>
-        </div>
-
+      <div class="pac-field">
+        <label>Contenido *</label>
+        <textarea [(ngModel)]="notaForm.contenido" rows="4" placeholder="Escribe aquí la nota clínica…"></textarea>
       </div>
-
+      <div class="pac-form-row">
+        <div class="pac-field">
+          <label>Tipo de nota</label>
+          <select [(ngModel)]="notaForm.tipo_nota" class="pac-select pac-select--field">
+            <option value="GENERAL">General</option>
+            <option value="DIAGNOSTICO">Diagnóstico</option>
+            <option value="TRATAMIENTO">Tratamiento</option>
+            <option value="SEGUIMIENTO">Seguimiento</option>
+            <option value="OTRO">Otro</option>
+          </select>
+        </div>
+        <div class="pac-field pac-field--toggle">
+          <label>Visible en resumen</label>
+          <button class="pac-toggle" [class.on]="notaForm.visible_en_resumen" (click)="notaForm.visible_en_resumen = !notaForm.visible_en_resumen" type="button">
+            <span class="pac-toggle__knob"></span>
+          </button>
+        </div>
+      </div>
       <span class="pac-field__error" *ngIf="notaError">{{ notaError }}</span>
     </div>
     <div class="pac-modal__footer">
-      <button class="pac-btn-ghost" (click)="cerrarNotaModal()">Cancelar</button>
-      <button class="det-btn-primary" (click)="guardarNota()">
-        <ion-icon name="checkmark-outline"></ion-icon>
+      <button class="pac-btn-ghost" (click)="cerrarNotaModal()" [disabled]="saving">Cancelar</button>
+      <button class="det-btn-primary" (click)="guardarNota()" [disabled]="saving">
+        <ion-spinner *ngIf="saving" name="crescent" class="pac-spinner-inline"></ion-spinner>
+        <ion-icon *ngIf="!saving" name="checkmark-outline"></ion-icon>
         {{ notaEditandoId !== null ? 'Guardar cambios' : 'Guardar nota' }}
       </button>
     </div>

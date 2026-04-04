@@ -2,7 +2,7 @@ import { Component, Output, EventEmitter, OnInit, OnDestroy, ElementRef } from '
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
-import { PacientesMockService } from '../../../pacientes/pacientes.service.mock';
+import { PacientesApiService } from '../../../pacientes/pacientes-api.service';
 import { PacienteDto } from '../../../pacientes/models/paciente.model';
 import { getAvatarColor as avatarColorUtil } from '../../../../shared/utils/avatar.utils';
 
@@ -22,13 +22,16 @@ export class BuscarPacienteModalComponent implements OnInit, OnDestroy {
   filtrados: PacienteDto[] = [];
 
   constructor(
-    private pacientesSvc: PacientesMockService,
+    private pacientesSvc: PacientesApiService,
     private el: ElementRef<HTMLElement>,
   ) {}
 
-  ngOnInit() {
-    this.todos = this.pacientesSvc.getAll().filter(p => p.activo);
-    this.filtrados = [...this.todos];
+  async ngOnInit() {
+    try {
+      const page = await this.pacientesSvc.getAll({ activo: true, size: 500 });
+      this.todos = page.content;
+      this.filtrados = [...this.todos];
+    } catch { /* silent */ }
 
     // Portal to <body> so position:fixed escapes any ancestor stacking context
     // (e.g. backdrop-filter / transform on .new-appointment-panel in Agenda).

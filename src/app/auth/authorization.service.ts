@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { SessionMockService } from '../services/session.service.mock';
+import { SessionService } from '../services/session.service';
 import { Permiso, Modulo } from './permission.types';
 import { MODULO_PERMISO, SEGMENTO_MODULO, RUTA_MODULO } from './permission.maps';
 
@@ -10,7 +10,7 @@ import { MODULO_PERMISO, SEGMENTO_MODULO, RUTA_MODULO } from './permission.maps'
  *  Single source of truth for WHAT the current user can do.
  *
  *  Separation of concerns:
- *    SessionMockService  → WHO the user is  (identity / session state)
+ *    SessionService       → WHO the user is  (identity / session state)
  *    AuthorizationService → WHAT they can do (policy evaluation)
  *
  *  Public API:
@@ -25,19 +25,14 @@ import { MODULO_PERMISO, SEGMENTO_MODULO, RUTA_MODULO } from './permission.maps'
  *    constructor(public authSvc: AuthorizationService) {}
  *    authSvc.canAccessModule('citas')
  *
- *  Usage in templates (via pipelined helper or structural directive):
+ *  Usage in templates (via structural directive):
  *    *appHasPermission="'citas'"
- *
- *  REAL PHASE:
- *    Replace SessionMockService with the real AuthService / JWT decoder.
- *    The rest of the app consumes only this service's public API and
- *    requires no changes.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 @Injectable({ providedIn: 'root' })
 export class AuthorizationService {
 
-  constructor(private session: SessionMockService) {}
+  constructor(private session: SessionService) {}
 
   // ─── Role queries ────────────────────────────────────────────────────────────
 
@@ -51,20 +46,17 @@ export class AuthorizationService {
 
   /** Returns the display name of the current user. */
   getNombreUsuario(): string {
-    return this.session.getNombre();
+    return this.session.getNombreCompleto() || this.session.getUsername();
   }
 
   // ─── Permission queries ───────────────────────────────────────────────────────
 
   /**
    * Returns true if the current user holds the given permission.
-   * PROFESIONAL always returns true regardless of the permission.
-   *
-   * @example authSvc.hasPermission(Permiso.AGENDA)
+   * PROFESIONAL/ADMIN always returns true regardless of the permission.
    */
   hasPermission(permiso: Permiso): boolean {
-    if (this.isProfesional()) return true;
-    return this.session.getCurrentUser().permisos?.[permiso] ?? false;
+    return this.session.hasPermission(permiso);
   }
 
   // ─── Module queries ───────────────────────────────────────────────────────────

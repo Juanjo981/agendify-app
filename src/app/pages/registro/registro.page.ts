@@ -96,7 +96,7 @@ export class RegistroPage {
       fecha_nacimiento:   fv.fecha_nacimiento,
       domicilio:          fv.domicilio?.trim() ?? '',
       numero_telefono:    fv.numero_telefono.trim(),
-      id_rol:             rol as 1 | 2,
+      id_rol:             rol as 2 | 3,
       especialidad:       rol === ROL_REGISTRO.PROFESIONAL ? (fv.especialidad?.trim() || null) : null,
       codigo_beta:        rol === ROL_REGISTRO.PROFESIONAL ? (fv.codigoInvitacion?.trim() || null) : null,
       codigo_vinculacion: rol === ROL_REGISTRO.RECEPCIONISTA ? (fv.codigoVinculacion?.trim() || null) : null,

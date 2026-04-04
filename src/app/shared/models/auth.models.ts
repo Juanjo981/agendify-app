@@ -13,16 +13,52 @@ export interface LoginRequest {
   contrasena: string;
 }
 
-/** Usuario reducido que devuelve el backend en el login y en /auth/me */
-export interface Usuario {
+/** Usuario que devuelve el backend en el login response */
+export interface LoginUsuario {
   id_usuario: number;
+  id_rol:     number;
+  nombre:     string;
+  apellido:   string;
+  email:      string;
   username:   string;
+  activo:     boolean;
+  bloqueado:  boolean;
 }
 
 export interface LoginResponse {
   access_token:  string;
   refresh_token: string;
-  usuario:       Usuario;
+  usuario:       LoginUsuario;
+}
+
+// ── /auth/me ──────────────────────────────────────────────────────────────────
+
+/** Datos del profesional embebidos en la respuesta de /auth/me */
+export interface ProfesionalInfo {
+  id_profesional:   number;
+  especialidad:     string;
+  nombre_consulta:  string;
+  codigo_vinculacion: string;
+}
+
+/**
+ * Respuesta completa de GET /api/auth/me (AuthMeResponseDto).
+ * Incluye datos del usuario, extensión profesional (si aplica) y permisos (si recepcionista).
+ */
+export interface AuthMeResponse {
+  id_usuario:       number;
+  username:         string;
+  nombre:           string;
+  apellido:         string;
+  email:            string;
+  id_rol:           number;
+  nombre_rol:       string;
+  activo:           boolean;
+  fecha_nacimiento: string;
+  domicilio:        string;
+  numero_telefono:  string;
+  profesional:      ProfesionalInfo | null;
+  permisos:         Record<string, boolean> | null;
 }
 
 // ── Refresh token ─────────────────────────────────────────────────────────────
@@ -46,13 +82,12 @@ export interface LogoutRequest {
 
 /**
  * id_rol que espera el endpoint POST /api/usuarios/registro.
- * IMPORTANTE: estos valores son DISTINTOS del enum RolUsuario usado en
- * la capa de permisos internos de la app (que tiene otros valores numéricos).
+ * Valores alineados con el catálogo real del backend (GET /api/roles).
  */
 export const ROL_REGISTRO = {
-  PROFESIONAL:   1,
-  RECEPCIONISTA: 2,
-  ADMIN:         3,
+  ADMIN:         1,
+  PROFESIONAL:   2,
+  RECEPCIONISTA: 3,
 } as const;
 
 export type RolRegistroId = (typeof ROL_REGISTRO)[keyof typeof ROL_REGISTRO];

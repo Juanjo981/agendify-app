@@ -22,7 +22,7 @@
           type="text"
           placeholder="Buscar por nombre, email o teléfono…"
           [(ngModel)]="busqueda"
-          (ngModelChange)="filtrar()"
+          (ngModelChange)="onBusquedaChange()"
         />
         <button *ngIf="busqueda" class="pac-search__clear" (click)="clearBusqueda()">
           <ion-icon name="close-outline"></ion-icon>
@@ -31,14 +31,14 @@
 
       <div class="pac-filter-row">
         <div class="pac-chip-group">
-          <button class="pac-chip" [class.active]="filtroCitas === 'todos'" (click)="setFiltroCitas('todos')">Todos</button>
-          <button class="pac-chip" [class.active]="filtroCitas === 'con-citas'" (click)="setFiltroCitas('con-citas')">Con citas</button>
-          <button class="pac-chip" [class.active]="filtroCitas === 'sin-citas'" (click)="setFiltroCitas('sin-citas')">Sin citas</button>
+          <button class="pac-chip" [class.active]="filtroActivo === 'todos'" (click)="setFiltroActivo('todos')">Todos</button>
+          <button class="pac-chip" [class.active]="filtroActivo === 'activos'" (click)="setFiltroActivo('activos')">Activos</button>
+          <button class="pac-chip" [class.active]="filtroActivo === 'inactivos'" (click)="setFiltroActivo('inactivos')">Inactivos</button>
         </div>
 
         <div class="pac-select-wrap">
           <ion-icon name="swap-vertical-outline"></ion-icon>
-          <select class="pac-select" [(ngModel)]="ordenamiento" (ngModelChange)="filtrar()">
+          <select class="pac-select" [(ngModel)]="ordenamiento" (ngModelChange)="onOrdenamientoChange()">
             <option value="az">Apellido A → Z</option>
             <option value="za">Apellido Z → A</option>
             <option value="recientes">Más jóvenes</option>
@@ -49,12 +49,28 @@
     </div>
 
     <!-- ══════════════════════════════ COUNTER ══════════════════════════════════ -->
-    <p class="pac-counter">
+    <p class="pac-counter" *ngIf="!loading">
       Mostrando <strong>{{ pacientesFiltrados.length }}</strong> de <strong>{{ totalPacientes }}</strong> pacientes
     </p>
 
+    <!-- ══════════════════════════════ ERROR STATE ══════════════════════════════ -->
+    <div *ngIf="errorMessage && !loading" class="pac-error">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      <p>{{ errorMessage }}</p>
+      <button class="pac-btn-primary" (click)="cargar()">
+        <ion-icon name="refresh-outline"></ion-icon>
+        Reintentar
+      </button>
+    </div>
+
+    <!-- ══════════════════════════════ LOADING STATE ════════════════════════════ -->
+    <div *ngIf="loading" class="pac-loading">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Cargando pacientes…</p>
+    </div>
+
     <!-- ══════════════════════════════ TABLE ════════════════════════════════════ -->
-    <div class="pac-table-wrapper">
+    <div class="pac-table-wrapper" *ngIf="!loading">
 
       <!-- Table head (desktop only) -->
       <div class="pac-table-head">
@@ -62,13 +78,12 @@
         <div class="pac-col pac-col--email">Email</div>
         <div class="pac-col pac-col--telefono">Teléfono</div>
         <div class="pac-col pac-col--edad">Edad</div>
-        <div class="pac-col pac-col--ultima">Última cita</div>
         <div class="pac-col pac-col--estado">Estado</div>
         <div class="pac-col pac-col--acciones">Acciones</div>
       </div>
 
       <!-- Empty state -->
-      <div *ngIf="pacientesFiltrados.length === 0" class="pac-empty">
+      <div *ngIf="pacientesFiltrados.length === 0 && !errorMessage" class="pac-empty">
         <ion-icon name="people-outline"></ion-icon>
         <p>No se encontraron pacientes</p>
         <span>Prueba con otros filtros o crea un nuevo paciente</span>
@@ -90,7 +105,6 @@
             </div>
             <div class="pac-patient__info">
               <span class="pac-patient__name">{{ p.apellido }}, {{ p.nombre }}</span>
-              <span class="pac-patient__meta">{{ p.citas.length }} cita{{ p.citas.length !== 1 ? 's' : '' }}</span>
             </div>
           </div>
         </div>
@@ -98,25 +112,20 @@
         <!-- Email -->
         <div class="pac-col pac-col--email" (click)="$event.stopPropagation()">
           <span class="pac-data-label">Email</span>
-          <a class="pac-link" href="mailto:{{ p.email }}">{{ p.email }}</a>
+          <a *ngIf="p.email" class="pac-link" href="mailto:{{ p.email }}">{{ p.email }}</a>
+          <span *ngIf="!p.email">—</span>
         </div>
 
         <!-- Teléfono -->
         <div class="pac-col pac-col--telefono">
           <span class="pac-data-label">Teléfono</span>
-          <span>{{ p.telefono || '—' }}</span>
+          <span>{{ p.numero_telefono || '—' }}</span>
         </div>
 
         <!-- Edad -->
         <div class="pac-col pac-col--edad">
           <span class="pac-data-label">Edad</span>
           <span>{{ p.fecha_nacimiento ? calcularEdad(p.fecha_nacimiento) + ' años' : '—' }}</span>
-        </div>
-
-        <!-- Última cita -->
-        <div class="pac-col pac-col--ultima">
-          <span class="pac-data-label">Última cita</span>
-          <span>{{ formatFecha(ultimaCita(p)) }}</span>
         </div>
 
         <!-- Estado -->
@@ -137,11 +146,26 @@
             <button class="pac-action-btn pac-action-btn--edit" (click)="abrirEditarModal(p, $event)" title="Editar">
               <ion-icon name="pencil-outline"></ion-icon>
             </button>
-            <button class="pac-action-btn pac-action-btn--delete" (click)="confirmarEliminar(p, $event)" title="Eliminar">
-              <ion-icon name="trash-outline"></ion-icon>
+            <button
+              class="pac-action-btn"
+              [class.pac-action-btn--delete]="p.activo"
+              [class.pac-action-btn--view]="!p.activo"
+              (click)="toggleActivo(p, $event)"
+              [title]="p.activo ? 'Desactivar' : 'Activar'"
+            >
+              <ion-icon [name]="p.activo ? 'close-circle-outline' : 'checkmark-circle-outline'"></ion-icon>
             </button>
           </div>
         </div>
+      </div>
+
+      <!-- Load more -->
+      <div *ngIf="!isLastPage" class="pac-load-more">
+        <button class="pac-btn-outline" (click)="cargarMas()" [disabled]="loadingMore">
+          <ion-spinner *ngIf="loadingMore" name="crescent" class="pac-spinner-inline"></ion-spinner>
+          <span *ngIf="!loadingMore">Cargar más</span>
+          <span *ngIf="loadingMore">Cargando…</span>
+        </button>
       </div>
 
     </div><!-- .pac-table-wrapper -->
@@ -159,6 +183,12 @@
     </div>
 
     <div class="pac-modal__body">
+      <!-- General error -->
+      <div class="pac-field__error pac-field__error--general" *ngIf="formErrores['_general']">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        {{ formErrores['_general'] }}
+      </div>
+
       <div class="pac-form-row">
         <div class="pac-field" [class.has-error]="formErrores['nombre']">
           <label>Nombre *</label>
@@ -173,15 +203,16 @@
       </div>
 
       <div class="pac-field" [class.has-error]="formErrores['email']">
-        <label>Email *</label>
+        <label>Email</label>
         <input type="email" [(ngModel)]="formPaciente.email" placeholder="correo@ejemplo.com" autocomplete="email" />
         <span class="pac-field__error" *ngIf="formErrores['email']">{{ formErrores['email'] }}</span>
       </div>
 
       <div class="pac-form-row">
-        <div class="pac-field">
+        <div class="pac-field" [class.has-error]="formErrores['numero_telefono']">
           <label>Teléfono</label>
-          <input type="tel" [(ngModel)]="formPaciente.telefono" placeholder="+34 600 000 000" autocomplete="tel" />
+          <input type="tel" [(ngModel)]="formPaciente.numero_telefono" placeholder="+34 600 000 000" autocomplete="tel" />
+          <span class="pac-field__error" *ngIf="formErrores['numero_telefono']">{{ formErrores['numero_telefono'] }}</span>
         </div>
         <div class="pac-field">
           <label>Fecha de nacimiento</label>
@@ -193,53 +224,44 @@
         </div>
       </div>
 
+      <div class="pac-form-row">
+        <div class="pac-field">
+          <label>Sexo</label>
+          <select [(ngModel)]="formPaciente.sexo" class="pac-select pac-select--field">
+            <option value="">Sin especificar</option>
+            <option value="Masculino">Masculino</option>
+            <option value="Femenino">Femenino</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="pac-field">
+          <label>Dirección</label>
+          <input type="text" [(ngModel)]="formPaciente.direccion" placeholder="Calle, ciudad…" />
+        </div>
+      </div>
+
+      <div class="pac-form-row">
+        <div class="pac-field">
+          <label>Contacto de emergencia</label>
+          <input type="text" [(ngModel)]="formPaciente.contacto_emergencia_nombre" placeholder="Nombre" />
+        </div>
+        <div class="pac-field">
+          <label>Teléfono de emergencia</label>
+          <input type="tel" [(ngModel)]="formPaciente.contacto_emergencia_telefono" placeholder="+34 600 000 000" />
+        </div>
+      </div>
+
       <div class="pac-field">
         <label>Notas generales</label>
         <textarea [(ngModel)]="formPaciente.notas_generales" rows="3" placeholder="Alergias, antecedentes, observaciones…"></textarea>
       </div>
-
-      <div class="pac-field">
-        <label>Alertas clínicas</label>
-        <div class="pac-alertas-section">
-          <div class="pac-alerta-input-row">
-            <input
-              type="text"
-              class="pac-alerta-input"
-              placeholder="Ej. Alergia a la penicilina…"
-              [(ngModel)]="alertaInput"
-              (keydown.enter)="$event.preventDefault(); agregarAlerta()"
-              maxlength="80"
-            />
-            <button type="button" class="pac-alerta-add-btn" (click)="agregarAlerta()">
-              <ion-icon name="add-outline"></ion-icon>
-              Agregar
-            </button>
-          </div>
-          <div class="pac-alertas-chips" *ngIf="alertasForm.length > 0">
-            <span *ngFor="let alerta of alertasForm; let i = index" class="pac-alerta-chip">
-              <ion-icon name="alert-circle-outline" class="pac-alerta-chip__icon"></ion-icon>
-              <span class="pac-alerta-chip__text">{{ alerta }}</span>
-              <button type="button" class="pac-alerta-chip__remove" (click)="eliminarAlerta(i)" title="Eliminar alerta">
-                <ion-icon name="close-outline"></ion-icon>
-              </button>
-            </span>
-          </div>
-          <p class="pac-alertas-hint" *ngIf="alertasForm.length === 0">Sin alertas — opcional</p>
-        </div>
-      </div>
-
-      <div class="pac-field pac-field--toggle">
-        <label>Paciente activo</label>
-        <button class="pac-toggle" [class.on]="formPaciente.activo" (click)="formPaciente.activo = !formPaciente.activo" type="button" [attr.aria-pressed]="formPaciente.activo">
-          <span class="pac-toggle__knob"></span>
-        </button>
-      </div>
     </div>
 
     <div class="pac-modal__footer">
-      <button class="pac-btn-ghost" (click)="cerrarFormModal()">Cancelar</button>
-      <button class="pac-btn-primary" (click)="guardarPaciente()">
-        <ion-icon name="checkmark-outline"></ion-icon>
+      <button class="pac-btn-ghost" (click)="cerrarFormModal()" [disabled]="saving">Cancelar</button>
+      <button class="pac-btn-primary" (click)="guardarPaciente()" [disabled]="saving">
+        <ion-spinner *ngIf="saving" name="crescent" class="pac-spinner-inline"></ion-spinner>
+        <ion-icon *ngIf="!saving" name="checkmark-outline"></ion-icon>
         {{ modoModal === 'crear' ? 'Crear paciente' : 'Guardar cambios' }}
       </button>
     </div>

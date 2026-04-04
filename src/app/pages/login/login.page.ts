@@ -48,13 +48,10 @@ export class LoginPage implements OnInit {
       // 1. Autenticar → guarda access_token y refresh_token
       await this.authService.login(usuario, contrasena);
 
-      // 2. Obtener perfil verificado desde /api/auth/me
-      const user = await this.authService.getCurrentUser();
+      // 2. Obtener perfil completo desde /api/auth/me → pobla SessionService
+      await this.authService.getCurrentUser();
 
-      // 3. Persistir usuario en localStorage
-      this.authService.saveUser(user);
-
-      // 4. Navegar al dashboard
+      // 3. Navegar al dashboard
       this.navCtrl.navigateRoot('/dashboard');
     } catch (err) {
       this.errorLogin = mapApiError(err).userMessage;

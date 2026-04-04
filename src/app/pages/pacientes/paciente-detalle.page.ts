@@ -1,15 +1,23 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AlertController, IonicModule } from '@ionic/angular';
+import { IonicModule } from '@ionic/angular';
 import { AgfDatePickerComponent } from '../../shared/components/agf-date-picker/agf-date-picker.component';
 import { ActivatedRoute, Router } from '@angular/router';
-import { PacientesMockService } from './pacientes.service.mock';
-import { PacienteDto, CitaResumenDto, NotaDto, AdjuntoMeta, SesionPaciente, HistorialEvento, HistorialTipoEvento } from './models/paciente.model';
+import { PacientesApiService } from './pacientes-api.service';
+import {
+  PacienteDto, PacienteRequest, ResumenPacienteDto,
+  AlertaPacienteDto, AlertaPacienteRequest,
+  NotaClinicaDto, NotaClinicaRequest,
+  SesionPacienteDto,
+  HistorialPacienteResponse, HistorialEvento, HistorialTipoEvento,
+  mapHistorialEventoApi,
+} from './models/paciente.model';
 import { getAvatarColor as avatarColorUtil } from '../../shared/utils/avatar.utils';
 import { formatFecha as formatFechaUtil } from '../../shared/utils/date.utils';
 import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../shared/confirm-dialog/confirm-dialog.component';
 import { PacienteSubmenuComponent, SeccionPaciente } from './components/paciente-submenu/paciente-submenu.component';
+import { mapApiError } from '../../shared/utils/api-error.mapper';
 import html2pdf from 'html2pdf.js';
 
 @Component({
@@ -20,62 +28,92 @@ import html2pdf from 'html2pdf.js';
   imports: [IonicModule, CommonModule, FormsModule, ConfirmDialogComponent, PacienteSubmenuComponent, AgfDatePickerComponent],
 })
 export class PacienteDetallePage implements OnInit {
-  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   paciente: PacienteDto | null = null;
+  resumen: ResumenPacienteDto | null = null;
+
+  // ─── Loading / error ───────────────────────────────────────────────────────
+  loading = true;
+  errorMessage = '';
+  saving = false;
 
   // ─── Secciones ─────────────────────────────────────────────────────────────
   seccionActiva: SeccionPaciente = 'informacion';
 
-  // ─── Sesiones ───────────────────────────────────────────────────────────────
-  sesionesData: SesionPaciente[] = [];
+  // ─── Alertas ───────────────────────────────────────────────────────────────
+  alertas: AlertaPacienteDto[] = [];
+  loadingAlertas = false;
+  alertasLoaded = false;
+  showAlertaForm = false;
+  alertaForm = { tipo_alerta: 'CLINICA', titulo: '', descripcion: '' };
+  alertaEditandoId: number | null = null;
 
-  // ─── Citas filter ──────────────────────────────────────────────────────────
-  filtroCitas: 'todos' | 'Confirmada' | 'Pendiente' | 'Cancelada' = 'todos';
-  // ─── Historial search & filter ────────────────────────────────────────────
+  // ─── Notas clínicas ────────────────────────────────────────────────────────
+  notas: NotaClinicaDto[] = [];
+  loadingNotas = false;
+  notasLoaded = false;
+  totalNotas = 0;
+  notasPage = 0;
+  notasIsLastPage = true;
+
+  showNotaModal = false;
+  notaForm = { titulo: '', contenido: '', tipo_nota: 'GENERAL', visible_en_resumen: false };
+  notaEditandoId: number | null = null;
+  notaError = '';
+
+  // ─── Sesiones ──────────────────────────────────────────────────────────────
+  sesiones: SesionPacienteDto[] = [];
+  loadingSesiones = false;
+  sesionesLoaded = false;
+  totalSesiones = 0;
+  sesionesPage = 0;
+  sesionesIsLastPage = true;
+
+  // ─── Historial ─────────────────────────────────────────────────────────────
+  historial: HistorialPacienteResponse | null = null;
+  historialEventos: HistorialEvento[] = [];
+  loadingHistorial = false;
+  historialLoaded = false;
   histBusqueda = '';
   histFiltroTipo: 'todos' | 'citas' | 'sesiones' | 'notas' = 'todos';
-  // ─── Export ───────────────────────────────────────────────────────────
   exportandoPDF = false;
+
   // ─── Edit modal ────────────────────────────────────────────────────────────
   showEditarModal = false;
-  formPaciente: any = {};
+  formPaciente = this.emptyForm();
   formErrores: Record<string, string> = {};
-
-  // ─── Alertas clínicas (edit modal) ──────────────────────────────────────
-  alertasEditForm: string[] = [];
-  alertaEditInput = '';
 
   // ─── Confirm dialog ────────────────────────────────────────────────────────
   confirmConfig: ConfirmDialogConfig | null = null;
   private confirmCallback: (() => void) | null = null;
 
-  // ─── Add nota modal ────────────────────────────────────────────────────────
-  showNotaModal = false;
-  nuevaNotaTexto = '';
-  notaError = '';
-  notaAdjunto: AdjuntoMeta | null = null;
-  private notaFile: File | null = null;
-  notaEditandoId: number | null = null;
-
-  readonly ALLOWED_MIME = new Set([
-    'text/plain',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'image/jpeg', 'image/png', 'image/webp',
-  ]);
-  readonly ALLOWED_EXT = ['.txt', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.webp'];
-
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private svc: PacientesMockService,
-    private alertCtrl: AlertController,
+    private svc: PacientesApiService,
   ) {}
 
-  ngOnInit() {
+  async ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
-    this.paciente = this.svc.getById(id) ?? null;
-    this.sesionesData = this.svc.getSesiones(id);
+    await this.cargarPaciente(id);
+  }
+
+  async cargarPaciente(id: number) {
+    this.loading = true;
+    this.errorMessage = '';
+    try {
+      const [paciente, resumen] = await Promise.all([
+        this.svc.getById(id),
+        this.svc.getResumen(id),
+      ]);
+      this.paciente = paciente;
+      this.resumen = resumen;
+      await this.cargarAlertas();
+    } catch (err) {
+      const mapped = mapApiError(err);
+      this.errorMessage = mapped.userMessage;
+    } finally {
+      this.loading = false;
+    }
   }
 
   volver() {
@@ -83,6 +121,14 @@ export class PacienteDetallePage implements OnInit {
   }
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
+  emptyForm() {
+    return {
+      nombre: '', apellido: '', email: '', numero_telefono: '',
+      fecha_nacimiento: '', notas_generales: '', sexo: '',
+      direccion: '', contacto_emergencia_nombre: '', contacto_emergencia_telefono: '',
+    };
+  }
+
   calcularEdad(fecha: string): number {
     const hoy = new Date();
     const nac = new Date(fecha);
@@ -105,71 +151,264 @@ export class PacienteDetallePage implements OnInit {
     return formatFechaUtil(iso);
   }
 
-  get citasFiltradas(): CitaResumenDto[] {
-    if (!this.paciente) return [];
-    if (this.filtroCitas === 'todos') return this.paciente.citas;
-    return this.paciente.citas.filter(c => c.estado === this.filtroCitas);
-  }
-
-  get estadoCount() {
-    const citas = this.paciente?.citas ?? [];
-    return {
-      confirmadas: citas.filter(c => c.estado === 'Confirmada').length,
-      pendientes: citas.filter(c => c.estado === 'Pendiente').length,
-      canceladas: citas.filter(c => c.estado === 'Cancelada').length,
-    };
-  }
-
+  // ─── Section switching with lazy load ──────────────────────────────────────
   setSeccion(sec: SeccionPaciente) {
     this.seccionActiva = sec;
+    if (sec === 'notas' && !this.notasLoaded) this.cargarNotas();
+    if (sec === 'sesiones' && !this.sesionesLoaded) this.cargarSesiones();
+    if (sec === 'historial' && !this.historialLoaded) this.cargarHistorial();
+  }
+
+  // ─── Alertas ───────────────────────────────────────────────────────────────
+  async cargarAlertas() {
+    if (!this.paciente) return;
+    this.loadingAlertas = true;
+    try {
+      this.alertas = await this.svc.getAlertas(this.paciente.id_paciente);
+      this.alertasLoaded = true;
+    } catch { /* silent */ } finally {
+      this.loadingAlertas = false;
+    }
+  }
+
+  abrirAlertaForm(alerta?: AlertaPacienteDto) {
+    this.alertaForm = {
+      tipo_alerta: alerta?.tipo_alerta ?? 'CLINICA',
+      titulo: alerta?.titulo ?? '',
+      descripcion: alerta?.descripcion ?? '',
+    };
+    this.alertaEditandoId = alerta?.id_alerta_paciente ?? null;
+    this.showAlertaForm = true;
+  }
+
+  cerrarAlertaForm() {
+    this.showAlertaForm = false;
+    this.alertaEditandoId = null;
+  }
+
+  async guardarAlerta() {
+    if (!this.paciente || !this.alertaForm.titulo.trim()) return;
+    this.saving = true;
+    try {
+      const body: AlertaPacienteRequest = {
+        tipo_alerta: this.alertaForm.tipo_alerta,
+        titulo: this.alertaForm.titulo.trim(),
+        descripcion: this.alertaForm.descripcion.trim() || undefined,
+      };
+      if (this.alertaEditandoId) {
+        await this.svc.updateAlerta(this.paciente.id_paciente, this.alertaEditandoId, body);
+      } else {
+        await this.svc.createAlerta(this.paciente.id_paciente, body);
+      }
+      this.showAlertaForm = false;
+      this.alertaEditandoId = null;
+      await this.cargarAlertas();
+      this.resumen = await this.svc.getResumen(this.paciente.id_paciente);
+    } catch (err) {
+      const mapped = mapApiError(err);
+      this.errorMessage = mapped.userMessage;
+    } finally {
+      this.saving = false;
+    }
+  }
+
+  async toggleAlerta(alerta: AlertaPacienteDto) {
+    if (!this.paciente) return;
+    try {
+      await this.svc.toggleAlerta(this.paciente.id_paciente, alerta.id_alerta_paciente, !alerta.activa);
+      await this.cargarAlertas();
+      this.resumen = await this.svc.getResumen(this.paciente.id_paciente);
+    } catch (err) {
+      const mapped = mapApiError(err);
+      this.errorMessage = mapped.userMessage;
+    }
+  }
+
+  confirmarEliminarAlerta(alerta: AlertaPacienteDto) {
+    this.openConfirm(
+      {
+        title: 'Eliminar alerta',
+        message: `¿Deseas eliminar la alerta "${alerta.titulo}"?`,
+        confirmLabel: 'Eliminar',
+        variant: 'danger',
+        icon: 'trash-outline',
+      },
+      async () => {
+        try {
+          await this.svc.deleteAlerta(this.paciente!.id_paciente, alerta.id_alerta_paciente);
+          await this.cargarAlertas();
+          this.resumen = await this.svc.getResumen(this.paciente!.id_paciente);
+        } catch (err) {
+          const mapped = mapApiError(err);
+          this.errorMessage = mapped.userMessage;
+        }
+      }
+    );
+  }
+
+  // ─── Notas clínicas ───────────────────────────────────────────────────────
+  async cargarNotas(reset = true) {
+    if (!this.paciente) return;
+    if (reset) {
+      this.notasPage = 0;
+      this.loadingNotas = true;
+    }
+    try {
+      const page = await this.svc.getNotasByPaciente(this.paciente.id_paciente, {
+        page: this.notasPage,
+        size: 20,
+      });
+      if (reset) {
+        this.notas = page.content;
+      } else {
+        this.notas = [...this.notas, ...page.content];
+      }
+      this.totalNotas = page.total_elements;
+      this.notasIsLastPage = page.last;
+      this.notasLoaded = true;
+    } catch { /* silent */ } finally {
+      this.loadingNotas = false;
+    }
+  }
+
+  cargarMasNotas() {
+    if (this.notasIsLastPage) return;
+    this.notasPage++;
+    this.cargarNotas(false);
+  }
+
+  abrirNotaModal(nota?: NotaClinicaDto) {
+    this.notaForm = {
+      titulo: nota?.titulo ?? '',
+      contenido: nota?.contenido ?? '',
+      tipo_nota: nota?.tipo_nota ?? 'GENERAL',
+      visible_en_resumen: nota?.visible_en_resumen ?? false,
+    };
+    this.notaEditandoId = nota?.id_nota_clinica ?? null;
+    this.notaError = '';
+    this.showNotaModal = true;
+  }
+
+  cerrarNotaModal() {
+    if (this.notaForm.titulo.trim() || this.notaForm.contenido.trim()) {
+      this.openConfirm(
+        {
+          title: 'Descartar nota',
+          message: 'Tienes cambios sin guardar. ¿Deseas salir sin guardar?',
+          confirmLabel: 'Salir sin guardar',
+          cancelLabel: 'Seguir editando',
+          variant: 'danger',
+          icon: 'alert-circle-outline',
+        },
+        () => { this.showNotaModal = false; this.notaEditandoId = null; }
+      );
+      return;
+    }
+    this.showNotaModal = false;
+    this.notaEditandoId = null;
+  }
+
+  async guardarNota() {
+    if (!this.paciente) return;
+    if (!this.notaForm.contenido.trim()) {
+      this.notaError = 'El contenido es requerido.';
+      return;
+    }
+    this.saving = true;
+    try {
+      if (this.notaEditandoId) {
+        await this.svc.updateNota(this.notaEditandoId, {
+          id_paciente: this.paciente.id_paciente,
+          titulo: this.notaForm.titulo.trim(),
+          contenido: this.notaForm.contenido.trim(),
+          tipo_nota: this.notaForm.tipo_nota,
+          visible_en_resumen: this.notaForm.visible_en_resumen,
+        });
+      } else {
+        await this.svc.createNota({
+          id_paciente: this.paciente.id_paciente,
+          titulo: this.notaForm.titulo.trim(),
+          contenido: this.notaForm.contenido.trim(),
+          tipo_nota: this.notaForm.tipo_nota,
+          visible_en_resumen: this.notaForm.visible_en_resumen,
+        });
+      }
+      this.showNotaModal = false;
+      this.notaEditandoId = null;
+      await this.cargarNotas();
+      this.resumen = await this.svc.getResumen(this.paciente.id_paciente);
+    } catch (err) {
+      const mapped = mapApiError(err);
+      this.notaError = mapped.userMessage;
+    } finally {
+      this.saving = false;
+    }
+  }
+
+  confirmarEliminarNota(nota: NotaClinicaDto) {
+    this.openConfirm(
+      {
+        title: 'Eliminar nota',
+        message: '¿Deseas eliminar esta nota clínica?',
+        confirmLabel: 'Eliminar',
+        variant: 'danger',
+        icon: 'trash-outline',
+      },
+      async () => {
+        try {
+          await this.svc.deleteNota(nota.id_nota_clinica);
+          await this.cargarNotas();
+          this.resumen = await this.svc.getResumen(this.paciente!.id_paciente);
+        } catch (err) {
+          const mapped = mapApiError(err);
+          this.errorMessage = mapped.userMessage;
+        }
+      }
+    );
+  }
+
+  // ─── Sesiones ──────────────────────────────────────────────────────────────
+  async cargarSesiones(reset = true) {
+    if (!this.paciente) return;
+    if (reset) {
+      this.sesionesPage = 0;
+      this.loadingSesiones = true;
+    }
+    try {
+      const page = await this.svc.getSesionesByPaciente(this.paciente.id_paciente, {
+        page: this.sesionesPage,
+        size: 20,
+      });
+      if (reset) {
+        this.sesiones = page.content;
+      } else {
+        this.sesiones = [...this.sesiones, ...page.content];
+      }
+      this.totalSesiones = page.total_elements;
+      this.sesionesIsLastPage = page.last;
+      this.sesionesLoaded = true;
+    } catch { /* silent */ } finally {
+      this.loadingSesiones = false;
+    }
+  }
+
+  cargarMasSesiones() {
+    if (this.sesionesIsLastPage) return;
+    this.sesionesPage++;
+    this.cargarSesiones(false);
   }
 
   // ─── Historial ─────────────────────────────────────────────────────────────
-  get historialEventos(): HistorialEvento[] {
-    if (!this.paciente) return [];
-    const eventos: HistorialEvento[] = [];
-
-    for (const cita of this.paciente.citas) {
-      const tipo: HistorialTipoEvento =
-        cita.estado === 'Confirmada' ? 'cita_confirmada'
-        : cita.estado === 'Cancelada' ? 'cita_cancelada'
-        : 'cita_pendiente';
-      eventos.push({
-        id: `cita-${cita.id_cita}`,
-        fecha: cita.fecha,
-        hora: cita.hora,
-        tipo,
-        descripcion: cita.tipo,
-        detalle: cita.notas,
-      });
+  async cargarHistorial() {
+    if (!this.paciente) return;
+    this.loadingHistorial = true;
+    try {
+      this.historial = await this.svc.getHistorial(this.paciente.id_paciente);
+      this.historialEventos = this.historial.eventos.map(mapHistorialEventoApi);
+      this.historialLoaded = true;
+    } catch { /* silent */ } finally {
+      this.loadingHistorial = false;
     }
-
-    for (const ses of this.sesionesData) {
-      eventos.push({
-        id: `sesion-${ses.id_sesion}`,
-        fecha: ses.fecha,
-        hora: ses.hora,
-        tipo: 'sesion_registrada',
-        descripcion: ses.tipo,
-        detalle: ses.resumen,
-      });
-    }
-
-    for (const nota of this.paciente.notas) {
-      eventos.push({
-        id: `nota-${nota.id_nota}`,
-        fecha: nota.fecha,
-        tipo: 'nota_agregada',
-        descripcion: 'Nota clínica registrada',
-        detalle: nota.contenido,
-      });
-    }
-
-    return eventos.sort((a, b) => {
-      const d = b.fecha.localeCompare(a.fecha);
-      if (d !== 0) return d;
-      return (b.hora ?? '').localeCompare(a.hora ?? '');
-    });
   }
 
   get historialFiltrado(): HistorialEvento[] {
@@ -178,7 +417,7 @@ export class PacienteDetallePage implements OnInit {
       'cita_pendiente', 'cita_pospuesta', 'no_asistio',
       'reprogramacion', 'pago_registrado', 'pago_pendiente',
     ]);
-    let eventos = this.historialEventos;
+    let eventos = [...this.historialEventos];
     if (this.histFiltroTipo === 'citas') {
       eventos = eventos.filter(ev => TIPOS_CITAS.has(ev.tipo));
     } else if (this.histFiltroTipo === 'sesiones') {
@@ -198,7 +437,7 @@ export class PacienteDetallePage implements OnInit {
   }
 
   getEventoIcon(tipo: HistorialTipoEvento): string {
-    const map: Record<HistorialTipoEvento, string> = {
+    const map: Record<string, string> = {
       cita_confirmada:  'checkmark-circle-outline',
       cita_completada:  'checkmark-done-circle-outline',
       cita_cancelada:   'close-circle-outline',
@@ -215,7 +454,7 @@ export class PacienteDetallePage implements OnInit {
   }
 
   getEventoLabel(tipo: HistorialTipoEvento): string {
-    const map: Record<HistorialTipoEvento, string> = {
+    const map: Record<string, string> = {
       cita_confirmada:  'Cita confirmada',
       cita_completada:  'Cita completada',
       cita_cancelada:   'Cita cancelada',
@@ -232,7 +471,7 @@ export class PacienteDetallePage implements OnInit {
   }
 
   getEventoColorClass(tipo: HistorialTipoEvento): string {
-    const map: Record<HistorialTipoEvento, string> = {
+    const map: Record<string, string> = {
       cita_confirmada:  'ev--green',
       cita_completada:  'ev--green',
       cita_cancelada:   'ev--red',
@@ -247,7 +486,8 @@ export class PacienteDetallePage implements OnInit {
     };
     return map[tipo] ?? 'ev--slate';
   }
-  // ─── Exportar PDF ────────────────────────────────────────────────────
+
+  // ─── Exportar PDF ──────────────────────────────────────────────────────────
   async exportarHistorialPDF() {
     if (!this.paciente || this.exportandoPDF) return;
     this.exportandoPDF = true;
@@ -259,10 +499,11 @@ export class PacienteDetallePage implements OnInit {
     const nombreArchivo = `historial-${(p.nombre + '-' + p.apellido).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')}.pdf`;
     const fechaGeneracion = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
 
-    const alertasHTML = p.alertas && p.alertas.length > 0
+    const alertasActivas = this.alertas.filter(a => a.activa);
+    const alertasHTML = alertasActivas.length > 0
       ? `<div class="pdf-section">
           <div class="pdf-section-title">Alertas cl\u00ednicas</div>
-          <ul class="pdf-alerts">${p.alertas.map(a => `<li>&#9888;&#xFE0E; ${a}</li>`).join('')}</ul>
+          <ul class="pdf-alerts">${alertasActivas.map(a => `<li>&#9888;&#xFE0E; ${a.titulo}${a.descripcion ? ': ' + a.descripcion : ''}</li>`).join('')}</ul>
         </div>`
       : '';
 
@@ -291,8 +532,6 @@ export class PacienteDetallePage implements OnInit {
 
     const html = `
       <div style="font-family: 'Helvetica Neue', Arial, sans-serif; color: #1e293b; padding: 32px 40px; max-width: 700px; margin: 0 auto;">
-
-        <!-- Header -->
         <div class="pdf-header">
           <div class="pdf-logo">Agendify</div>
           <div class="pdf-header-meta">
@@ -300,39 +539,27 @@ export class PacienteDetallePage implements OnInit {
             <span>${fechaGeneracion}</span>
           </div>
         </div>
-
         <hr class="pdf-divider" />
-
-        <!-- Informaci\u00f3n del paciente -->
         <div class="pdf-section">
           <div class="pdf-section-title">Informaci\u00f3n del paciente</div>
           <div class="pdf-patient-grid">
             <div class="pdf-data-item"><span class="pdf-label">Nombre completo</span><span class="pdf-value">${p.nombre} ${p.apellido}</span></div>
             ${edad !== null ? `<div class="pdf-data-item"><span class="pdf-label">Edad</span><span class="pdf-value">${edad} a\u00f1os</span></div>` : ''}
-            <div class="pdf-data-item"><span class="pdf-label">Email</span><span class="pdf-value">${p.email}</span></div>
-            ${p.telefono ? `<div class="pdf-data-item"><span class="pdf-label">Tel\u00e9fono</span><span class="pdf-value">${p.telefono}</span></div>` : ''}
+            ${p.email ? `<div class="pdf-data-item"><span class="pdf-label">Email</span><span class="pdf-value">${p.email}</span></div>` : ''}
+            ${p.numero_telefono ? `<div class="pdf-data-item"><span class="pdf-label">Tel\u00e9fono</span><span class="pdf-value">${p.numero_telefono}</span></div>` : ''}
             ${p.fecha_nacimiento ? `<div class="pdf-data-item"><span class="pdf-label">Fecha de nacimiento</span><span class="pdf-value">${fechaNac}</span></div>` : ''}
             ${p.notas_generales ? `<div class="pdf-data-item pdf-data-item--full"><span class="pdf-label">Notas generales</span><span class="pdf-value">${p.notas_generales}</span></div>` : ''}
           </div>
         </div>
-
         ${alertasHTML}
-
         <hr class="pdf-divider" />
-
-        <!-- Historial -->
         <div class="pdf-section">
           <div class="pdf-section-title">Historial cronol\u00f3gico
             <span class="pdf-count">${eventos.length} evento${eventos.length !== 1 ? 's' : ''}</span>
           </div>
           ${eventos.length > 0 ? `<div class="pdf-events">${eventosHTML}</div>` : '<p class="pdf-empty">Sin eventos registrados.</p>'}
         </div>
-
-        <!-- Footer -->
-        <div class="pdf-footer">
-          Generado por Agendify &middot; ${fechaGeneracion}
-        </div>
-
+        <div class="pdf-footer">Generado por Agendify &middot; ${fechaGeneracion}</div>
         <style>
           * { box-sizing: border-box; }
           .pdf-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px; }
@@ -383,13 +610,23 @@ export class PacienteDetallePage implements OnInit {
       this.exportandoPDF = false;
     }
   }
-  // ─── Editar ────────────────────────────────────────────────────────────────
+
+  // ─── Editar paciente ───────────────────────────────────────────────────────
   abrirEditarModal() {
     if (!this.paciente) return;
-    this.formPaciente = { ...this.paciente };
+    this.formPaciente = {
+      nombre: this.paciente.nombre,
+      apellido: this.paciente.apellido,
+      email: this.paciente.email ?? '',
+      numero_telefono: this.paciente.numero_telefono ?? '',
+      fecha_nacimiento: this.paciente.fecha_nacimiento ?? '',
+      notas_generales: this.paciente.notas_generales ?? '',
+      sexo: this.paciente.sexo ?? '',
+      direccion: this.paciente.direccion ?? '',
+      contacto_emergencia_nombre: this.paciente.contacto_emergencia_nombre ?? '',
+      contacto_emergencia_telefono: this.paciente.contacto_emergencia_telefono ?? '',
+    };
     this.formErrores = {};
-    this.alertasEditForm = [...(this.paciente.alertas ?? [])];
-    this.alertaEditInput = '';
     this.showEditarModal = true;
   }
 
@@ -413,19 +650,24 @@ export class PacienteDetallePage implements OnInit {
 
   private editFormHasChanges(): boolean {
     if (!this.paciente) return false;
-    const fields = ['nombre', 'apellido', 'email', 'telefono', 'fecha_nacimiento', 'notas_generales', 'activo'] as const;
-    const fieldsChanged = fields.some(k => this.formPaciente[k] !== (this.paciente as any)[k]);
-    const alertasChanged = JSON.stringify(this.alertasEditForm) !== JSON.stringify(this.paciente.alertas ?? []);
-    return fieldsChanged || alertasChanged;
+    const p = this.paciente;
+    return this.formPaciente.nombre !== p.nombre
+      || this.formPaciente.apellido !== p.apellido
+      || this.formPaciente.email !== (p.email ?? '')
+      || this.formPaciente.numero_telefono !== (p.numero_telefono ?? '')
+      || this.formPaciente.fecha_nacimiento !== (p.fecha_nacimiento ?? '')
+      || this.formPaciente.notas_generales !== (p.notas_generales ?? '')
+      || this.formPaciente.sexo !== (p.sexo ?? '')
+      || this.formPaciente.direccion !== (p.direccion ?? '')
+      || this.formPaciente.contacto_emergencia_nombre !== (p.contacto_emergencia_nombre ?? '')
+      || this.formPaciente.contacto_emergencia_telefono !== (p.contacto_emergencia_telefono ?? '');
   }
 
   validarForm(): boolean {
     this.formErrores = {};
     if (!this.formPaciente.nombre?.trim()) this.formErrores['nombre'] = 'El nombre es requerido';
     if (!this.formPaciente.apellido?.trim()) this.formErrores['apellido'] = 'El apellido es requerido';
-    if (!this.formPaciente.email?.trim()) {
-      this.formErrores['email'] = 'El email es requerido';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.formPaciente.email)) {
+    if (this.formPaciente.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.formPaciente.email)) {
       this.formErrores['email'] = 'Formato de email inválido';
     }
     return Object.keys(this.formErrores).length === 0;
@@ -441,188 +683,44 @@ export class PacienteDetallePage implements OnInit {
         icon: 'checkmark-circle-outline',
         variant: 'primary',
       },
-      () => {
-        this.svc.update({ ...this.paciente!, ...this.formPaciente, alertas: [...this.alertasEditForm] });
-        this.paciente = this.svc.getById(this.paciente!.id_paciente) ?? null;
-        this.showEditarModal = false;
-      }
+      () => this.ejecutarGuardarEdicion()
     );
   }
 
-  agregarAlertaEditar() {
-    const t = this.alertaEditInput.trim();
-    if (!t) return;
-    this.alertasEditForm = [...this.alertasEditForm, t];
-    this.alertaEditInput = '';
-  }
-
-  eliminarAlertaEditar(i: number) {
-    this.alertasEditForm = this.alertasEditForm.filter((_, idx) => idx !== i);
-  }
-
-  // ─── Notas ─────────────────────────────────────────────────────────────────
-  abrirNotaModal(nota?: NotaDto) {
-    this.nuevaNotaTexto = nota?.contenido ?? '';
-    this.notaError = '';
-    this.notaAdjunto = nota?.adjunto ? { ...nota.adjunto } : null;
-    this.notaFile = null;
-    this.notaEditandoId = nota?.id_nota ?? null;
-    this.showNotaModal = true;
-  }
-
-  cerrarNotaModal() {
-    if (this.nuevaNotaTexto.trim() || this.notaFile) {
-      this.openConfirm(
-        {
-          title: 'Descartar nota',
-          message: 'Tienes cambios sin guardar. ¿Deseas salir sin guardar?',
-          confirmLabel: 'Salir sin guardar',
-          cancelLabel: 'Seguir editando',
-          variant: 'danger',
-          icon: 'alert-circle-outline',
-        },
-        () => this.resetNotaModal()
-      );
-      return;
-    }
-    this.resetNotaModal();
-  }
-
-  private resetNotaModal() {
-    if (this.notaAdjunto?.previewUrl && this.notaFile) {
-      URL.revokeObjectURL(this.notaAdjunto.previewUrl);
-    }
-    this.showNotaModal = false;
-    this.nuevaNotaTexto = '';
-    this.notaError = '';
-    this.notaAdjunto = null;
-    this.notaFile = null;
-    this.notaEditandoId = null;
-  }
-
-  // ─── File handling ───────────────────────────────────────────────────────
-  triggerFilePicker() {
-    this.fileInput?.nativeElement.click();
-  }
-
-  onFileSelected(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
-
-    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
-    if (!this.ALLOWED_MIME.has(file.type) && !this.ALLOWED_EXT.includes(ext)) {
-      this.notaError = `Formato no permitido. Usa: ${this.ALLOWED_EXT.join(', ')}`;
-      input.value = '';
-      return;
-    }
-    this.notaError = '';
-
-    // Revoke previous preview to avoid memory leak
-    if (this.notaAdjunto?.previewUrl && this.notaFile) {
-      URL.revokeObjectURL(this.notaAdjunto.previewUrl);
-    }
-
-    const isImage = file.type.startsWith('image/');
-    this.notaFile = file;
-    this.notaAdjunto = {
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      previewUrl: isImage ? URL.createObjectURL(file) : undefined,
-    };
-    input.value = '';
-  }
-
-  quitarAdjunto() {
-    if (this.notaAdjunto?.previewUrl && this.notaFile) {
-      URL.revokeObjectURL(this.notaAdjunto.previewUrl);
-    }
-    this.notaAdjunto = null;
-    this.notaFile = null;
-  }
-
-  formatFileSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-
-  getFileIcon(type: string): string {
-    if (type.startsWith('image/')) return 'image-outline';
-    if (type === 'text/plain') return 'document-text-outline';
-    return 'document-outline';
-  }
-
-  async verAdjunto(adjunto: AdjuntoMeta) {
-    if (adjunto.previewUrl) {
-      window.open(adjunto.previewUrl, '_blank');
-    } else {
-      const alert = await this.alertCtrl.create({
-        header: 'Vista previa',
-        message: `Vista previa no disponible para <strong>${adjunto.name}</strong>.<br><br>Este formato requiere una aplicación externa. Usa el botón de descarga para obtener el archivo.`,
-        buttons: [{ text: 'Entendido', role: 'cancel' }],
-        cssClass: 'agendify-alert',
-      });
-      await alert.present();
-    }
-  }
-
-  async descargarAdjunto(adjunto: AdjuntoMeta) {
-    if (adjunto.previewUrl) {
-      const link = document.createElement('a');
-      link.href = adjunto.previewUrl;
-      link.download = adjunto.name;
-      link.click();
-    } else {
-      const alert = await this.alertCtrl.create({
-        header: 'Descarga simulada',
-        message: `En producción, el archivo <strong>${adjunto.name}</strong> se descargaría desde el servidor. Esta es una vista de demostración.`,
-        buttons: [{ text: 'Entendido', role: 'cancel' }],
-        cssClass: 'agendify-alert',
-      });
-      await alert.present();
-    }
-  }
-
-  get notaModalHasContent(): boolean {
-    return !!(this.nuevaNotaTexto.trim() || this.notaFile);
-  }
-
-  guardarNota() {
-    const texto = this.nuevaNotaTexto.trim();
-    if (!texto && !this.notaAdjunto) {
-      this.notaError = 'Escribe algo o adjunta un archivo.';
-      return;
-    }
+  private async ejecutarGuardarEdicion() {
     if (!this.paciente) return;
-
-    const nota: NotaDto = {
-      id_nota: this.notaEditandoId ?? Date.now(),
-      fecha: new Date().toISOString().split('T')[0],
-      contenido: texto,
-      ...(this.notaAdjunto ? { adjunto: { ...this.notaAdjunto } } : {}),
+    this.saving = true;
+    this.formErrores = {};
+    const body: PacienteRequest = {
+      nombre: this.formPaciente.nombre.trim(),
+      apellido: this.formPaciente.apellido.trim(),
+      email: this.formPaciente.email.trim() || undefined,
+      numero_telefono: this.formPaciente.numero_telefono.trim() || undefined,
+      fecha_nacimiento: this.formPaciente.fecha_nacimiento || undefined,
+      notas_generales: this.formPaciente.notas_generales.trim() || undefined,
+      sexo: this.formPaciente.sexo.trim() || undefined,
+      direccion: this.formPaciente.direccion.trim() || undefined,
+      contacto_emergencia_nombre: this.formPaciente.contacto_emergencia_nombre.trim() || undefined,
+      contacto_emergencia_telefono: this.formPaciente.contacto_emergencia_telefono.trim() || undefined,
     };
 
-    if (this.notaEditandoId !== null) {
-      this.svc.updateNota(this.paciente.id_paciente, nota);
-    } else {
-      this.svc.addNota(this.paciente.id_paciente, nota);
+    try {
+      this.paciente = await this.svc.update(this.paciente.id_paciente, body);
+      this.resumen = await this.svc.getResumen(this.paciente.id_paciente);
+      this.showEditarModal = false;
+    } catch (err) {
+      const mapped = mapApiError(err);
+      if (mapped.fieldErrors) {
+        for (const [k, v] of Object.entries(mapped.fieldErrors)) {
+          this.formErrores[k] = v;
+        }
+      }
+      if (!mapped.fieldErrors || Object.keys(mapped.fieldErrors).length === 0) {
+        this.formErrores['_general'] = mapped.userMessage;
+      }
+    } finally {
+      this.saving = false;
     }
-    this.paciente = this.svc.getById(this.paciente.id_paciente) ?? null;
-    // Don't revoke previewUrl — it lives in the nota object now
-    this.notaFile = null;
-    this.showNotaModal = false;
-    this.nuevaNotaTexto = '';
-    this.notaError = '';
-    this.notaAdjunto = null;
-    this.notaEditandoId = null;
-  }
-
-  eliminarNota(nota: NotaDto) {
-    if (!this.paciente) return;
-    this.svc.deleteNota(this.paciente.id_paciente, nota.id_nota);
-    this.paciente = this.svc.getById(this.paciente.id_paciente) ?? null;
   }
 
   irANuevaCita() {

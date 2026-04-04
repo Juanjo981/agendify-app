@@ -20,6 +20,7 @@ export const API_ERROR_CODES = {
   EMAIL_DUPLICADO:             'EMAIL_DUPLICADO',
   USUARIO_DUPLICADO:           'USUARIO_DUPLICADO',
   DATA_INTEGRITY:              'DATA_INTEGRITY',
+  DATA_INTEGRITY_ERROR:        'DATA_INTEGRITY_ERROR',
   ILLEGAL_STATE:               'ILLEGAL_STATE',
   BUSINESS_ERROR:              'BUSINESS_ERROR',
   INTERNAL_ERROR:              'INTERNAL_ERROR',
@@ -220,6 +221,7 @@ export function mapApiError(err: unknown): MappedApiError {
 
     // ── Conflict / integrity ────────────────────────────────────────────────
     case API_ERROR_CODES.DATA_INTEGRITY:
+    case API_ERROR_CODES.DATA_INTEGRITY_ERROR:
     case API_ERROR_CODES.ILLEGAL_STATE:
       return {
         userMessage: message ?? 'Conflicto de datos. Intenta de nuevo.',

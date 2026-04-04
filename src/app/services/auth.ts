@@ -7,8 +7,9 @@ import { Router } from '@angular/router';
 import { environment } from 'src/environments/environment';
 import {
   LoginRequest, LoginResponse, RefreshTokenResponse,
-  RegisterRequest, RegisterResponse, Usuario,
+  RegisterRequest, RegisterResponse, AuthMeResponse,
 } from '../shared/models/auth.models';
+import { SessionService } from './session.service';
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
@@ -36,30 +37,36 @@ export class AuthService {
   private static readonly USER_KEY          = 'usuario';
 
   constructor(
-    private http:   HttpClient,
-    private router: Router,
+    private http:    HttpClient,
+    private router:  Router,
+    private session: SessionService,
   ) {}
 
   // ── Core auth ──────────────────────────────────────────────────────────────
 
   /**
-   * Autentica al usuario. Guarda access_token y refresh_token en localStorage.
+   * Autentica al usuario. Guarda tokens y pobla la sesión desde /auth/me.
    */
-  login(usuario: string, contrasena: string): Promise<LoginResponse> {
+  async login(usuario: string, contrasena: string): Promise<LoginResponse> {
     const payload: LoginRequest = { usuario, contrasena };
-    return firstValueFrom(
+    const res = await firstValueFrom(
       this.http.post<LoginResponse>(`${this.baseUrl}/auth/login`, payload)
-    ).then((res) => {
-      this.saveTokens(res.access_token, res.refresh_token);
-      return res;
-    });
+    );
+    this.saveTokens(res.access_token, res.refresh_token);
+    return res;
   }
 
-  /** GET /api/auth/me — el token se inyecta automáticamente por el interceptor. */
-  getCurrentUser(): Promise<Usuario> {
-    return firstValueFrom(
-      this.http.get<Usuario>(`${this.baseUrl}/auth/me`)
+  /**
+   * GET /api/auth/me — obtiene el perfil completo del usuario autenticado.
+   * Pobla automáticamente el SessionService con los datos recibidos.
+   */
+  async getCurrentUser(): Promise<AuthMeResponse> {
+    const user = await firstValueFrom(
+      this.http.get<AuthMeResponse>(`${this.baseUrl}/auth/me`)
     );
+    this.session.setUser(user);
+    this.saveUser(user);
+    return user;
   }
 
   /**
@@ -101,6 +108,7 @@ export class AuthService {
       }
     }
     this.clearSession();
+    this.session.clearSession();
     this.router.navigateByUrl('/login');
   }
 
@@ -110,6 +118,7 @@ export class AuthService {
    */
   forceLogout(): void {
     this.clearSession();
+    this.session.clearSession();
   }
 
   // ── Token management ──────────────────────────────────────────────────────
@@ -129,13 +138,13 @@ export class AuthService {
 
   // ── User storage ──────────────────────────────────────────────────────────
 
-  saveUser(usuario: Usuario): void {
+  saveUser(usuario: AuthMeResponse): void {
     localStorage.setItem(AuthService.USER_KEY, JSON.stringify(usuario));
   }
 
-  getStoredUser(): Usuario | null {
+  getStoredUser(): AuthMeResponse | null {
     const raw = localStorage.getItem(AuthService.USER_KEY);
-    return raw ? (JSON.parse(raw) as Usuario) : null;
+    return raw ? (JSON.parse(raw) as AuthMeResponse) : null;
   }
 
   clearSession(): void {
@@ -152,20 +161,30 @@ export class AuthService {
 
   /**
    * Restaura la sesión al arrancar la app.
-   * Si el access_token expiró, el interceptor intentará refrescarlo
-   * transparentemente antes de que esta Promise resuelva.
-   * Si todo falla, el interceptor limpia la sesión y navega a /login.
+   *
+   * 1. Si hay un usuario guardado en localStorage, lo carga
+   *    inmediatamente en SessionService (evita flash de UI vacía).
+   * 2. Llama a /auth/me para refrescar los datos y validar el token.
+   *    Si todo ok, SessionService queda actualizado con datos frescos.
+   * 3. Si el token expiró, el interceptor intentará refrescarlo
+   *    transparentemente. Si todo falla, la sesión se limpia.
    */
   async restoreSession(): Promise<boolean> {
     if (!this.isAuthenticated()) return false;
+
+    // Carga inmediata desde localStorage para evitar flash
+    const stored = this.getStoredUser();
+    if (stored) {
+      this.session.setUser(stored);
+    }
+
     try {
-      const user = await this.getCurrentUser();
-      this.saveUser(user);
+      // getCurrentUser() ya llama a session.setUser() internamente
+      await this.getCurrentUser();
       return true;
     } catch {
-      // El interceptor ya limpió la sesión si fue un fallo de refresh.
-      // Garantizamos limpieza también aquí.
       this.clearSession();
+      this.session.clearSession();
       return false;
     }
   }
@@ -177,9 +196,9 @@ export class AuthService {
     return this.isAuthenticated();
   }
 
-  /** @deprecated Usar getStoredUser()?.username */
+  /** @deprecated Usar session.getNombre() */
   getNombre(): string {
-    return this.getStoredUser()?.username ?? '';
+    return this.session.getNombre();
   }
 
   forgotPassword(email: string): Promise<any> {
