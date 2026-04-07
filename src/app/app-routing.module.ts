@@ -90,7 +90,7 @@ const routes: Routes = [
       },
       {
         path: 'actividad',
-        loadComponent: () => import('./pages/actividad/actividad.page').then(m => m.ActividadPage)
+        loadComponent: () => import('./pages/actividad/actividad.page.integrated').then(m => m.ActividadPageIntegrated)
       },
     ]
   },

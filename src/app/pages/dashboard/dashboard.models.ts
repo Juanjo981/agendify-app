@@ -50,6 +50,10 @@ export interface NotificacionDto {
   mensaje_resumen?: string | null;
   fecha_programada?: string | null;
   estado_envio?: string | null;
+  estado?: string | null;
+  leida?: boolean | null;
+  fecha_leida?: string | null;
+  read_at?: string | null;
   created_at: string;
 }
 

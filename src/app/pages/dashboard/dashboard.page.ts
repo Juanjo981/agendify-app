@@ -194,20 +194,24 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.notificacionesLoading = false;
   }
 
-  abrirNotificacion(item: DashboardNotificationItem) {
+  async abrirNotificacion(item: DashboardNotificationItem) {
     this.notificacionesAbiertas = false;
 
+    if (item.pendiente) {
+      await this.marcarNotificacionLeida(item);
+    }
+
     if (item.idCita) {
-      this.router.navigate(['/dashboard/citas', item.idCita]);
+      await this.router.navigate(['/dashboard/citas', item.idCita]);
       return;
     }
 
     if (item.idPaciente) {
-      this.router.navigate(['/dashboard/pacientes', item.idPaciente]);
+      await this.router.navigate(['/dashboard/pacientes', item.idPaciente]);
       return;
     }
 
-    this.router.navigate(['/dashboard/actividad']);
+    await this.router.navigate(['/dashboard/actividad']);
   }
 
   cerrarMenuUsuario() {
@@ -270,10 +274,36 @@ export class DashboardPage implements OnInit, OnDestroy {
       titulo,
       descripcion,
       tiempo: tiempoRelativo(item.created_at),
-      pendiente: item.estado_envio === 'PENDIENTE',
+      pendiente: this.isNotificacionPendiente(item),
       idCita: item.id_cita,
       idPaciente: item.id_paciente,
     };
+  }
+
+  private isNotificacionPendiente(item: NotificacionDto): boolean {
+    const estado = (item.estado ?? item.estado_envio ?? '').toUpperCase();
+    const explicitamenteLeida =
+      item.leida === true ||
+      !!item.fecha_leida ||
+      !!item.read_at ||
+      estado === 'LEIDA' ||
+      estado === 'READ';
+
+    if (explicitamenteLeida) {
+      return false;
+    }
+
+    return estado === 'PENDIENTE';
+  }
+
+  private async marcarNotificacionLeida(item: DashboardNotificationItem): Promise<void> {
+    try {
+      await this.notificacionesApi.markAsRead(item.id);
+      item.pendiente = false;
+      this.notificacionesPendientesCount = Math.max(0, this.notificacionesPendientesCount - 1);
+    } catch {
+      // El endpoint de lectura todavía no está documentado de forma canónica.
+    }
   }
 
   private mapTipo(tipo: string): 'agenda' | 'equipo' | 'sistema' {

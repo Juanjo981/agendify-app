@@ -43,4 +43,40 @@ export class NotificacionesApiService {
       this.http.get<PageResponse<NotificacionDto>>(this.base, { params: query })
     );
   }
+
+  async markAsRead(id: number): Promise<void> {
+    await this.runFallback([
+      () => firstValueFrom(this.http.patch<void>(`${this.base}/${id}/leida`, {})),
+      () => firstValueFrom(this.http.post<void>(`${this.base}/${id}/leida`, {})),
+    ]);
+  }
+
+  async markAllAsRead(): Promise<void> {
+    await this.runFallback([
+      () => firstValueFrom(this.http.post<void>(`${this.base}/marcar-todas-leidas`, {})),
+      () => firstValueFrom(this.http.patch<void>(`${this.base}/marcar-todas-leidas`, {})),
+    ]);
+  }
+
+  private async runFallback<T>(attempts: Array<() => Promise<T>>): Promise<T> {
+    let lastError: unknown;
+
+    for (const attempt of attempts) {
+      try {
+        return await attempt();
+      } catch (error) {
+        lastError = error;
+        if (!this.isContractMismatch(error)) {
+          throw error;
+        }
+      }
+    }
+
+    throw lastError;
+  }
+
+  private isContractMismatch(error: unknown): boolean {
+    const status = (error as { status?: number } | null)?.status;
+    return status === 404 || status === 405;
+  }
 }
