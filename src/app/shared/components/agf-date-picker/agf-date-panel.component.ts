@@ -25,6 +25,9 @@ export class AgfDatePanelComponent implements OnInit, OnChanges {
   @Input() min       = '';
   @Input() max       = '';
   @Input() allowPast = true;
+  @Input() showMonthYearSelectors = false;
+  @Input() yearRangeStart: number | null = null;
+  @Input() yearRangeEnd: number | null = null;
 
   @Output() valueChange = new EventEmitter<string>();
 
@@ -37,9 +40,25 @@ export class AgfDatePanelComponent implements OnInit, OnChanges {
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
   ];
+  readonly monthOptions = this.monthNames.map((label, value) => ({ label, value }));
 
   get monthLabel(): string {
     return `${this.monthNames[this.viewMonth]} ${this.viewYear}`;
+  }
+
+  get yearOptions(): number[] {
+    const currentYear = new Date().getFullYear();
+    const end = this.yearRangeEnd ?? currentYear;
+    const start = this.yearRangeStart ?? Math.max(1900, end - 120);
+    const safeStart = Math.min(start, end);
+    const safeEnd = Math.max(start, end);
+    const years: number[] = [];
+
+    for (let year = safeEnd; year >= safeStart; year--) {
+      years.push(year);
+    }
+
+    return years;
   }
 
   ngOnInit(): void {
@@ -64,6 +83,16 @@ export class AgfDatePanelComponent implements OnInit, OnChanges {
   nextMonth(): void {
     if (this.viewMonth === 11) { this.viewMonth = 0; this.viewYear++; }
     else { this.viewMonth++; }
+    this.build();
+  }
+
+  onMonthChange(month: string | number): void {
+    this.viewMonth = Number(month);
+    this.build();
+  }
+
+  onYearChange(year: string | number): void {
+    this.viewYear = Number(year);
     this.build();
   }
 

@@ -1,133 +1,188 @@
-import { CitaFormModalComponent, CitaFormContext, CitaFormData } from '../../shared/components/cita-form-modal/cita-form-modal.component';
-import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../shared/confirm-dialog/confirm-dialog.component';
-import { CqaPopoverComponent, CqaAction } from './components/cqa-popover/cqa-popover.component';
+﻿import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { IonicModule, PopoverController, createAnimation } from '@ionic/angular';
+import {
+  CitaFormContext,
+  CitaFormData,
+  CitaFormModalComponent,
+} from '../../shared/components/cita-form-modal/cita-form-modal.component';
+import {
+  ConfirmDialogComponent,
+  ConfirmDialogConfig,
+} from '../../shared/confirm-dialog/confirm-dialog.component';
+import {
+  CqaAction,
+  CqaPopoverComponent,
+} from './components/cqa-popover/cqa-popover.component';
 import { SolicitudReprogramacionModalComponent } from '../../shared/components/solicitud-reprogramacion-modal/solicitud-reprogramacion-modal.component';
 import { SolicitudReprogramacionService } from '../citas/solicitud-reprogramacion.service.mock';
 import { SolicitudReprogramacion } from '../../shared/models/solicitud-reprogramacion.model';
-import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { IonicModule, PopoverController, createAnimation } from '@ionic/angular';
-import { Router } from '@angular/router';
 import { PacientesApiService } from '../pacientes/pacientes-api.service';
-import { CitasMockService } from '../citas/citas.service.mock';
-import { CitaDto, EstadoCita } from '../citas/models/cita.model';
+import { CitasApiService } from '../citas/citas-api.service';
+import {
+  CitaDto,
+  CitaUpsertRequest,
+  EstadoCita,
+} from '../citas/models/cita.model';
+import { mapApiError } from '../../shared/utils/api-error.mapper';
+import { AgendaApiService } from './agenda-api.service';
+import {
+  AgendaResponseDto,
+  BloqueoHorarioDto,
+  BloqueoHorarioUpsertRequest,
+  ConfiguracionJornadaDto,
+} from './agenda.models';
 
 interface CalendarEvent {
   title: string;
   time: string;
   color: string;
-  status?: 'Confirmada' | 'Pendiente' | 'Cancelada';
+  kind: 'cita' | 'bloqueo';
+  status?: string;
   cita?: CitaDto;
+  bloqueo?: BloqueoHorarioDto;
 }
 
 interface CalendarDay {
-  date: Date,
-  number: number,
-  inCurrentMonth: boolean,
-  isToday: boolean,
-  fullDate: string,
-  events: CalendarEvent[],
-  citas: number,
-  colorCitas: string
+  date: Date;
+  number: number;
+  inCurrentMonth: boolean;
+  isToday: boolean;
+  fullDate: string;
+  events: CalendarEvent[];
+  citas: number;
+  colorCitas: string;
 }
 
 @Component({
   selector: 'app-agenda',
   templateUrl: './agenda.page.html',
-  imports: [IonicModule, CommonModule, FormsModule, CitaFormModalComponent, ConfirmDialogComponent, CqaPopoverComponent, SolicitudReprogramacionModalComponent],
+  imports: [
+    IonicModule,
+    CommonModule,
+    FormsModule,
+    CitaFormModalComponent,
+    ConfirmDialogComponent,
+    SolicitudReprogramacionModalComponent,
+  ],
   standalone: true,
   styleUrls: ['./agenda.page.scss'],
 })
 export class AgendaPage implements OnInit, OnDestroy {
-
-  nombreUsuario = 'Juan José';
+  nombreUsuario = 'Juan Jose';
   showNewAppointmentPanel = false;
 
   currentDate = new Date();
   currentMonth = this.currentDate.getMonth();
   currentYear = this.currentDate.getFullYear();
 
-  weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  weekDays = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
   monthNames = [
     'Enero', 'Febrero', 'Marzo', 'Abril',
     'Mayo', 'Junio', 'Julio', 'Agosto',
-    'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
   ];
 
-  // Objeto de nueva cita
-  newAppointment: any = {
-    id_profesional: null,
-    id_paciente: null,
-    fecha_inicio: null,        // solo fecha (string ISO)
-    fecha_fin: null,           // solo fecha
-    hora_inicio: null,         // string: "11:00 AM"
-    hora_fin: null,            // string
-    tipo: null,
-    estado: null,
-    notas: ''
-  };
-
   maxCitasPorDia = 8;
+  loading = false;
+  saving = false;
+  deletingBlockId: number | null = null;
+  errorMessage = '';
+  successMessage = '';
 
-
-  // Datos de ejemplo
-  profesionales = [{ id: 1, nombre: 'Dr. Pérez' }, { id: 2, nombre: 'Dra. López' }];
   pacientes: { id: number; nombre: string }[] = [];
+  selectedPaciente: { id: number; nombre: string } | null = null;
 
-  tiposCita = [{ id: 1, nombre: 'Consulta' }, { id: 2, nombre: 'Terapia' }];
-  estadosCita = [{ id: 1, nombre: 'Pendiente' }, { id: 2, nombre: 'Confirmada' }];
-
-  recommendedDate: Date = new Date();
-  nextAvailableDate: Date = new Date(new Date().getTime() + 60 * 60 * 1000); // +1h
+  agendaResponse: AgendaResponseDto | null = null;
+  configuracionJornada: ConfiguracionJornadaDto | null = null;
+  citasMes: CitaDto[] = [];
+  bloqueosMes: BloqueoHorarioDto[] = [];
 
   calendarDays: CalendarDay[] = [];
   selectedDay: CalendarDay | null = null;
 
-  dayName: string = '';
-  fullDate: string = '';
-  eventsToday: number = 0;
+  dayName = '';
+  fullDate = '';
+  eventsToday = 0;
 
   showDateModal = false;
   activeDateField: 'inicio' | 'fin' | null = null;
-
   monthName = '';
+
   showHourModal = false;
-
-  horas: string[] = [
-    '08:00 AM', '08:30 AM',
-    '09:00 AM', '09:30 AM',
-    '10:00 AM', '10:30 AM',
-    '11:00 AM', '11:30 AM',
-    '12:00 PM', '12:30 PM',
-    '01:00 PM', '01:30 PM',
-    '02:00 PM', '02:30 PM',
-    '03:00 PM', '03:30 PM',
-    '04:00 PM', '04:30 PM',
-    '05:00 PM', '05:30 PM',
-    '06:00 PM'
-  ];
-  selectedHour: string | null = null;
+  horas: string[] = [];
   selectingHourFor: 'inicio' | 'fin' | null = null;
+  selectingHourForBlock: 'block-inicio' | 'block-fin' | null = null;
 
-  // Eventos de prueba
-  exampleEvents: CalendarEvent[] = [
-    { title: 'Cita con Ana', time: '09:00 AM', color: '#ef4444', status: 'Confirmada' },
-    { title: 'Terapia Luis', time: '11:00 AM', color: '#3b82f6', status: 'Confirmada' },
-    { title: 'Evaluación María', time: '02:00 PM', color: '#facc15', status: 'Pendiente' },
-    { title: 'Seguimiento Carlos', time: '04:00 PM', color: '#22c55e', status: 'Confirmada' },
+  showBuscarPacienteModal = false;
+  buscarModo: 'seleccionar' | 'toolbar' = 'toolbar';
+  buscarBusqueda = '';
+  buscarFiltrados: { id: number; nombre: string }[] = [];
+  private pendingNavUrl: string | null = null;
 
+  apptPrefill: CitaFormContext = {};
+  apptShowBanner = false;
+  apptContextLabel = '';
 
+  citaActiva: CitaDto | null = null;
+  showQuickActions = false;
+  private openPopover: HTMLIonPopoverElement | null = null;
 
+  solicitudSeleccionada: SolicitudReprogramacion | null = null;
+  showSolicitudModal = false;
 
+  showCqaConfirm = false;
+  cqaConfirmConfig: ConfirmDialogConfig | null = null;
+  private cqaConfirmFn: (() => void) | null = null;
+
+  readonly estadoClaseMap: Record<string, string> = {
+    CONFIRMADA: 'cqa-estado--confirmada',
+    COMPLETADA: 'cqa-estado--completada',
+    PENDIENTE: 'cqa-estado--pendiente',
+    CANCELADA: 'cqa-estado--cancelada',
+    NO_ASISTIO: 'cqa-estado--no-asistio',
+    REPROGRAMADA: 'cqa-estado--pospuesta',
+  };
+
+  showBlockModal = false;
+  editingBlock: BloqueoHorarioDto | null = null;
+  blockDateMode = false;
+
+  blockForm = {
+    fecha: null as string | null,
+    allDay: true,
+    horaInicio: null as string | null,
+    horaFin: null as string | null,
+    motivo: '',
+    repeat: 'none' as 'none' | 'daily' | 'weekly' | 'monthly',
+    createdAt: null as string | null,
+  };
+
+  blockErrors: { fecha?: string; rango?: string } = {};
+
+  readonly blockChips = ['Comida', 'Vacaciones', 'Reunion', 'Urgencia', 'Capacitacion', 'Personal'];
+  readonly repeatOptions = [
+    { value: 'none' as const, label: 'No repetir' },
+    { value: 'daily' as const, label: 'Diario' },
+    { value: 'weekly' as const, label: 'Semanal' },
+    { value: 'monthly' as const, label: 'Mensual' },
   ];
 
-  // ---- Drag para cerrar en móvil ----
   private dragStartY = 0;
   private dragCurrentY = 0;
   private isDragging = false;
 
-  constructor(private pacientesSvc: PacientesApiService, private router: Router, private citasSvc: CitasMockService, private popoverCtrl: PopoverController, private solicitudSvc: SolicitudReprogramacionService) {
+  constructor(
+    private pacientesSvc: PacientesApiService,
+    private router: Router,
+    private citasSvc: CitasApiService,
+    private agendaApi: AgendaApiService,
+    private popoverCtrl: PopoverController,
+    private solicitudSvc: SolicitudReprogramacionService
+  ) {
+    this.horas = this.buildHourOptions();
     this.generateCalendar();
     this.updateHeaderInfo();
   }
@@ -139,36 +194,27 @@ export class AgendaPage implements OnInit, OnDestroy {
         id: p.id_paciente,
         nombre: `${p.nombre} ${p.apellido}`,
       }));
-    } catch { /* silent */ }
+    } catch {
+      this.pacientes = [];
+    }
+
+    await this.loadAgendaForCurrentMonth();
   }
 
+  ngOnDestroy() {
+    this.cerrarModales();
+  }
 
-  showPacienteModal = false;
-  pacientesFiltrados = [...this.pacientes];
-  busquedaPaciente = '';
+  ionViewWillLeave() {
+    this.cerrarModales();
+  }
 
-  // --- Buscar Paciente (modal desde toolbar) ---
-  showBuscarPacienteModal = false;
-  buscarModo: 'seleccionar' | 'toolbar' = 'toolbar';
-  buscarBusqueda = '';
-  buscarFiltrados: { id: number; nombre: string }[] = [];
+  get jornadaResumen(): string {
+    if (!this.configuracionJornada) return '';
+    const intervalo = this.configuracionJornada.intervalo_minutos ?? this.configuracionJornada.intervalo ?? 30;
+    return `Jornada ${this.toDisplayHour(this.configuracionJornada.hora_inicio)}-${this.toDisplayHour(this.configuracionJornada.hora_fin)} · intervalo ${intervalo} min`;
+  }
 
-  selectedPaciente: any = null;
-
-  // ─── Nueva cita — prefill context for CitaFormModalComponent ─────────────
-  apptPrefill: CitaFormContext = {};
-  apptShowBanner = false;
-  apptContextLabel = '';
-  // ─── Quick Actions Sheet ────────────────────────────────────────────────────
-  citaActiva: CitaDto | null = null;
-  showQuickActions = false;
-  private openPopover: HTMLIonPopoverElement | null = null;
-
-  // ─── Solicitud de reprogramación ─────────────────────────────────────────
-  solicitudSeleccionada: SolicitudReprogramacion | null = null;
-  showSolicitudModal = false;
-
-  /** Returns the pending solicitud for a given cita, or undefined. */
   getSolicitudPendiente(idCita: number | undefined): SolicitudReprogramacion | undefined {
     if (!idCita) return undefined;
     return this.solicitudSvc.getByCita(idCita);
@@ -176,29 +222,32 @@ export class AgendaPage implements OnInit, OnDestroy {
 
   abrirSolicitudDesdeAgenda(ev: CalendarEvent): void {
     if (!ev.cita) return;
-    const s = this.solicitudSvc.getByCita(ev.cita.id_cita);
-    if (!s) return;
-    this.solicitudSeleccionada = s;
+    const solicitud = this.solicitudSvc.getByCita(ev.cita.id_cita);
+    if (!solicitud) return;
+    this.solicitudSeleccionada = solicitud;
     this.showSolicitudModal = true;
   }
 
   onSolicitudAceptada(): void {
     if (!this.solicitudSeleccionada) return;
+
     this.solicitudSvc.aceptar(this.solicitudSeleccionada.idSolicitud);
-    // Pre-fill the cita form so the professional can set the new slot
-    const cita = this.citasSvc.getCitas().find(c => c.id_cita === this.solicitudSeleccionada!.idCita);
+    const cita = this.citasMes.find(c => c.id_cita === this.solicitudSeleccionada?.idCita);
     if (cita) {
       this.citaActiva = cita;
-      this.apptPrefill = { fecha: cita.fecha, horaInicio: cita.hora_inicio, horaFin: cita.hora_fin };
+      this.apptPrefill = {
+        fecha: cita.fecha,
+        horaInicio: cita.hora_inicio,
+        horaFin: cita.hora_fin,
+      };
       this.apptShowBanner = true;
       this.apptContextLabel = 'Reprogramando cita aceptada';
-    }
-    this.showSolicitudModal = false;
-    this.solicitudSeleccionada = null;
-    if (cita) {
       document.body.classList.add('modal-open');
       this.showNewAppointmentPanel = true;
     }
+
+    this.showSolicitudModal = false;
+    this.solicitudSeleccionada = null;
   }
 
   onSolicitudRechazada(_motivo: string): void {
@@ -218,144 +267,118 @@ export class AgendaPage implements OnInit, OnDestroy {
     this.showSolicitudModal = false;
     this.solicitudSeleccionada = null;
   }
-
-  // ─── Confirm dialog (inline over the QA sheet) ───────────────────────────
-  showCqaConfirm = false;
-  cqaConfirmConfig: ConfirmDialogConfig | null = null;
-  private cqaConfirmFn: (() => void) | null = null;
-
-  readonly estadoClaseMap: Record<string, string> = {
-    CONFIRMADA: 'cqa-estado--confirmada',
-    COMPLETADA: 'cqa-estado--completada',
-    PENDIENTE:  'cqa-estado--pendiente',
-    CANCELADA:  'cqa-estado--cancelada',
-    NO_ASISTIO: 'cqa-estado--no-asistio',
-    REPROGRAMADA:  'cqa-estado--pospuesta',
-  };
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  // ─── Map CitaDto → CalendarEvent ───────────────────────────────────────────────────
-  private mapCitaToEvent(c: CitaDto): CalendarEvent {
-    const colorMap: Record<string, string> = {
-      CONFIRMADA: '#6366f1',
-      COMPLETADA: '#10b981',
-      PENDIENTE:  '#f59e0b',
-      CANCELADA:  '#ef4444',
-      NO_ASISTIO: '#64748b',
-      REPROGRAMADA:  '#8b5cf6',
-    };
-    return {
-      title: `${c.nombre_paciente} ${c.apellido_paciente}`,
-      time: c.hora_inicio ?? c.fecha_inicio.substring(11, 16),
-      color: colorMap[c.estado_cita] ?? '#94a3b8',
-      status: c.estado as any,
-      cita: c,
-    };
-  }
-
-  getColorForDay(citas: number): string {
-    if (citas >= this.maxCitasPorDia) {
-      return '#ffe4e1'; // lleno
-    } else if (citas >= this.maxCitasPorDia / 2) {
-      return '#fcfcda'; // medio
-    } else {
-      return '#d8f8e1'; // bajo
-    }
-  }
-
-
-  openHourModal(field: 'inicio' | 'fin') {
-  this.selectingHourFor = field;
-  this.showHourModal = true;
-}
-
-
-  closeHourModal() {
-    this.showHourModal = false;
-  }
-
-  selectHour(h: string) {
-    // Block modal hour fields
-    if (this.selectingHourForBlock === 'block-inicio') {
-      this.blockForm.horaInicio = h;
-      this.blockErrors.rango = undefined;
-      this.selectingHourForBlock = null;
-      this.showHourModal = false;
-      return;
-    }
-    if (this.selectingHourForBlock === 'block-fin') {
-      this.blockForm.horaFin = h;
-      this.blockErrors.rango = undefined;
-      this.selectingHourForBlock = null;
-      this.showHourModal = false;
-      return;
-    }
-    // Nueva cita hour fields
-    if (this.selectingHourFor === 'inicio') {
-      this.newAppointment.hora_inicio = h;
-    } else if (this.selectingHourFor === 'fin') {
-      this.newAppointment.hora_fin = h;
-    }
-    this.selectingHourFor = null;
-    this.showHourModal = false;
-  }
-
-  // Encabezado (Hoy ...)
   updateHeaderInfo() {
     const today = new Date();
-    const weekNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const weekNames = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
     this.dayName = weekNames[today.getDay()];
-
-    const day = today.getDate();
-    const month = this.monthNames[today.getMonth()];
-    const year = today.getFullYear();
-    this.fullDate = `${day} de ${month} de ${year}`;
+    this.fullDate = `${today.getDate()} de ${this.monthNames[today.getMonth()]} de ${today.getFullYear()}`;
 
     const todayStr = this.formatDateLocal(today);
     const todayCalendarDay = this.calendarDays.find(d => d.fullDate === todayStr);
     this.eventsToday = todayCalendarDay?.events.length || 0;
   }
 
-  // ----------------------------------------
-  // GENERAR CALENDARIO MENSUAL
-  // ----------------------------------------
+  private async loadAgendaForCurrentMonth() {
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    try {
+      const agenda = await this.agendaApi.getAgendaMes(this.currentMonth + 1, this.currentYear);
+      this.agendaResponse = agenda;
+      this.citasMes = agenda.citas ?? [];
+      this.bloqueosMes = agenda.bloqueos ?? [];
+      this.configuracionJornada = agenda.configuracion_jornada ?? null;
+      this.horas = this.buildHourOptions(this.configuracionJornada ?? undefined);
+      this.generateCalendar();
+      this.updateHeaderInfo();
+    } catch (err) {
+      this.errorMessage = mapApiError(err).userMessage;
+      this.agendaResponse = null;
+      this.citasMes = [];
+      this.bloqueosMes = [];
+      this.configuracionJornada = null;
+      this.horas = this.buildHourOptions();
+      this.generateCalendar();
+      this.updateHeaderInfo();
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  private mapCitaToEvent(cita: CitaDto): CalendarEvent {
+    const colorMap: Record<string, string> = {
+      CONFIRMADA: '#6366f1',
+      COMPLETADA: '#10b981',
+      PENDIENTE: '#f59e0b',
+      CANCELADA: '#ef4444',
+      NO_ASISTIO: '#64748b',
+      REPROGRAMADA: '#8b5cf6',
+    };
+
+    return {
+      title: `${cita.nombre_paciente} ${cita.apellido_paciente}`,
+      time: cita.hora_inicio ?? this.toTimePart(cita.fecha_inicio),
+      color: colorMap[cita.estado_cita] ?? '#94a3b8',
+      kind: 'cita',
+      status: cita.estado ?? cita.estado_cita,
+      cita,
+    };
+  }
+
+  private mapBloqueoToEvent(bloqueo: BloqueoHorarioDto): CalendarEvent {
+    const start = bloqueo.hora_inicio || this.toTimePart(bloqueo.fecha_inicio);
+    const end = bloqueo.hora_fin || this.toTimePart(bloqueo.fecha_fin);
+
+    return {
+      title: bloqueo.motivo || bloqueo.motivo_bloqueo || 'Bloqueo horario',
+      time: bloqueo.todo_el_dia ? 'Todo el dia' : `${start || '--:--'}-${end || '--:--'}`,
+      color: '#334155',
+      kind: 'bloqueo',
+      status: bloqueo.tipo_bloqueo || 'BLOQUEADO',
+      bloqueo,
+    };
+  }
+
   generateCalendar() {
     this.monthName = this.monthNames[this.currentMonth];
     this.calendarDays = [];
 
     const firstOfMonth = new Date(this.currentYear, this.currentMonth, 1);
-    const rawStart = firstOfMonth.getDay();
-    const startIndex = (rawStart + 6) % 7;
-
+    const startIndex = (firstOfMonth.getDay() + 6) % 7;
     const daysInMonth = new Date(this.currentYear, this.currentMonth + 1, 0).getDate();
     const daysInPrevMonth = new Date(this.currentYear, this.currentMonth, 0).getDate();
 
-    // Días del mes anterior (relleno)
     for (let i = startIndex - 1; i >= 0; i--) {
       const dayNum = daysInPrevMonth - i;
-      const d = new Date(this.currentYear, this.currentMonth - 1, dayNum);
-      this.calendarDays.push(this.buildDay(d, false));
+      const day = new Date(this.currentYear, this.currentMonth - 1, dayNum);
+      this.calendarDays.push(this.buildDay(day, false));
     }
 
-    // Build date → citas map
-    const citasByDate = new Map<string, CitaDto[]>();
-    for (const c of this.citasSvc.getCitas()) {
-      const fecha = c.fecha ?? c.fecha_inicio.substring(0, 10);
-      const list = citasByDate.get(fecha) ?? [];
-      list.push(c);
-      citasByDate.set(fecha, list);
+    const eventsByDate = new Map<string, CalendarEvent[]>();
+
+    for (const cita of this.citasMes) {
+      const fecha = cita.fecha ?? this.toDatePart(cita.fecha_inicio);
+      const list = eventsByDate.get(fecha) ?? [];
+      list.push(this.mapCitaToEvent(cita));
+      eventsByDate.set(fecha, list);
     }
 
-    // Días del mes actual
+    for (const bloqueo of this.bloqueosMes) {
+      const fecha = bloqueo.fecha || this.toDatePart(bloqueo.fecha_inicio);
+      if (!fecha) continue;
+      const list = eventsByDate.get(fecha) ?? [];
+      list.push(this.mapBloqueoToEvent(bloqueo));
+      eventsByDate.set(fecha, list);
+    }
+
     for (let i = 1; i <= daysInMonth; i++) {
-      const d = new Date(this.currentYear, this.currentMonth, i);
-      const isoDate = this.formatDateLocal(d);
-      const citasDelDia = citasByDate.get(isoDate) ?? [];
-      const events = citasDelDia.map(c => this.mapCitaToEvent(c));
-      this.calendarDays.push(this.buildDay(d, true, events));
+      const day = new Date(this.currentYear, this.currentMonth, i);
+      const isoDate = this.formatDateLocal(day);
+      const events = [...(eventsByDate.get(isoDate) ?? [])].sort((a, b) => this.getSortTime(a).localeCompare(this.getSortTime(b)));
+      this.calendarDays.push(this.buildDay(day, true, events));
     }
 
-    // Relleno hasta completar 42 días (6 filas)
     while (this.calendarDays.length < 42) {
       const last = this.calendarDays[this.calendarDays.length - 1].date;
       const next = new Date(last);
@@ -363,18 +386,14 @@ export class AgendaPage implements OnInit, OnDestroy {
       this.calendarDays.push(this.buildDay(next, false));
     }
 
-    // Mantener seleccionado el mismo día si existe
     if (this.selectedDay) {
-      const fd = this.selectedDay.fullDate;
-      this.selectedDay = this.calendarDays.find(d => d.fullDate === fd) || null;
+      const fullDate = this.selectedDay.fullDate;
+      this.selectedDay = this.calendarDays.find(d => d.fullDate === fullDate) || null;
     }
   }
 
-  // Crear objeto día
   buildDay(date: Date, inMonth: boolean, events: CalendarEvent[] = []): CalendarDay {
-
-    const citas = events.length || 0;
-
+    const citas = events.filter(e => e.kind === 'cita').length;
     return {
       date,
       number: date.getDate(),
@@ -383,13 +402,23 @@ export class AgendaPage implements OnInit, OnDestroy {
       fullDate: this.formatDateLocal(date),
       events,
       citas,
-      colorCitas: this.getColorForDay(citas) // 👈 color dinámico
+      colorCitas: this.getColorForDay(citas),
     };
   }
 
-  // ----------------------------------------
-  // NAVEGACIÓN ENTRE MESES
-  // ----------------------------------------
+  private getSortTime(event: CalendarEvent): string {
+    if (event.kind === 'cita') {
+      return event.cita?.hora_inicio || '99:99';
+    }
+    return event.bloqueo?.hora_inicio || this.toTimePart(event.bloqueo?.fecha_inicio) || '99:99';
+  }
+
+  getColorForDay(citas: number): string {
+    if (citas >= this.maxCitasPorDia) return '#ffe4e1';
+    if (citas >= this.maxCitasPorDia / 2) return '#fcfcda';
+    return '#d8f8e1';
+  }
+
   prevMonth() {
     if (this.currentMonth === 0) {
       this.currentMonth = 11;
@@ -398,7 +427,7 @@ export class AgendaPage implements OnInit, OnDestroy {
       this.currentMonth--;
     }
     this.selectedDay = null;
-    this.generateCalendar();
+    void this.loadAgendaForCurrentMonth();
   }
 
   nextMonth() {
@@ -409,7 +438,7 @@ export class AgendaPage implements OnInit, OnDestroy {
       this.currentMonth++;
     }
     this.selectedDay = null;
-    this.generateCalendar();
+    void this.loadAgendaForCurrentMonth();
   }
 
   goToday() {
@@ -417,93 +446,43 @@ export class AgendaPage implements OnInit, OnDestroy {
     this.currentMonth = this.currentDate.getMonth();
     this.currentYear = this.currentDate.getFullYear();
     this.selectedDay = null;
-    this.generateCalendar();
+    void this.loadAgendaForCurrentMonth();
   }
 
-  // ----------------------------------------
-  // SELECCIÓN DE DÍA
-  // ----------------------------------------
   selectDay(day: CalendarDay) {
     this.selectedDay = day;
   }
 
-  // ----------------------------------------
-  // UTILIDADES
-  // ----------------------------------------
-  isToday(d: Date) {
+  abrirAccionesEvento(ev: CalendarEvent, mouseEvent?: MouseEvent) {
+    if (ev.kind === 'bloqueo') {
+      this.editarBloqueo(ev);
+      return;
+    }
+    void this.abrirQuickActions(ev, mouseEvent);
+  }
+
+  isToday(date: Date) {
     const today = new Date();
-    return (
-      d.getDate() === today.getDate() &&
-      d.getMonth() === today.getMonth() &&
-      d.getFullYear() === today.getFullYear()
-    );
+    return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
   }
 
-  formatDateLocal(d: Date): string {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+  formatDateLocal(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
-
-  // ----------------------------------------
-  // ACCIONES (botones superiores)
-  // ----------------------------------------
-  buscarPaciente() {
-    console.log('🔍 Buscar paciente');
-  }
-
   bloquearHorario() {
     this.openBlockModal();
   }
 
-  // ----------------------------------------
-  // BLOQUEAR HORARIO
-  // ----------------------------------------
-  showBlockModal = false;
-
-  blockForm: {
-    fecha: string | null;
-    allDay: boolean;
-    horaInicio: string | null;
-    horaFin: string | null;
-    motivo: string;
-    repeat: 'none' | 'daily' | 'weekly' | 'monthly';
-    createdAt: string | null;
-  } = {
-    fecha: null,
-    allDay: true,
-    horaInicio: null,
-    horaFin: null,
-    motivo: '',
-    repeat: 'none',
-    createdAt: null,
-  };
-
-  blockErrors: { fecha?: string; rango?: string } = {};
-
-  // Selector de hora para bloqueo reutiliza the existing hour modal
-  // We extend selectingHourFor to accept block-specific fields
-  selectingHourForBlock: 'block-inicio' | 'block-fin' | null = null;
-
-  readonly blockChips = [
-    'Comida', 'Vacaciones', 'Reunión', 'Urgencia', 'Capacitación', 'Personal'
-  ];
-
-  readonly repeatOptions: { value: 'none' | 'daily' | 'weekly' | 'monthly'; label: string }[] = [
-    { value: 'none',    label: 'No repetir'  },
-    { value: 'daily',   label: 'Diario'      },
-    { value: 'weekly',  label: 'Semanal'     },
-    { value: 'monthly', label: 'Mensual'     },
-  ];
-
   openBlockModal() {
-    const today = this.formatDateLocal(new Date());
+    this.editingBlock = null;
     this.blockForm = {
-      fecha: today,
+      fecha: this.selectedDay?.fullDate ?? this.formatDateLocal(new Date()),
       allDay: true,
-      horaInicio: null,
-      horaFin: null,
+      horaInicio: this.toDisplayHour(this.configuracionJornada?.hora_inicio || '09:00'),
+      horaFin: this.toDisplayHour(this.configuracionJornada?.hora_fin || '18:00'),
       motivo: '',
       repeat: 'none',
       createdAt: null,
@@ -514,20 +493,36 @@ export class AgendaPage implements OnInit, OnDestroy {
 
   closeBlockModal() {
     this.showBlockModal = false;
+    this.editingBlock = null;
     this.selectingHourForBlock = null;
   }
 
+  editarBloqueo(ev: CalendarEvent) {
+    if (!ev.bloqueo) return;
+    const bloqueo = ev.bloqueo;
+    this.editingBlock = bloqueo;
+    this.blockForm = {
+      fecha: bloqueo.fecha || this.toDatePart(bloqueo.fecha_inicio),
+      allDay: Boolean(bloqueo.todo_el_dia),
+      horaInicio: this.toDisplayHour(bloqueo.hora_inicio || this.toTimePart(bloqueo.fecha_inicio)),
+      horaFin: this.toDisplayHour(bloqueo.hora_fin || this.toTimePart(bloqueo.fecha_fin)),
+      motivo: bloqueo.motivo || bloqueo.motivo_bloqueo || '',
+      repeat: 'none',
+      createdAt: null,
+    };
+    this.blockErrors = {};
+    this.showBlockModal = true;
+  }
+
   openBlockDatePicker() {
-    this.activeDateField = 'inicio'; // reuse modal, we intercept via blockDateMode
+    this.activeDateField = 'inicio';
     this.blockDateMode = true;
     this.showDateModal = true;
   }
 
-  blockDateMode = false;
-
   openBlockHourModal(field: 'block-inicio' | 'block-fin') {
     this.selectingHourForBlock = field;
-    this.selectingHourFor = null; // ensure regular modal doesn’t interfere
+    this.selectingHourFor = null;
     this.showHourModal = true;
   }
 
@@ -536,19 +531,13 @@ export class AgendaPage implements OnInit, OnDestroy {
   }
 
   get blockSummary(): string {
-    if (!this.blockForm.fecha) return '—';
-
+    if (!this.blockForm.fecha) return '-';
     const [y, m, d] = this.blockForm.fecha.split('-').map(Number);
-    const dateObj = new Date(y, m - 1, d);
-    const weekNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-    const dow = weekNames[dateObj.getDay()];
-    const label = `${dow} ${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`;
-
-    const timeLabel = this.blockForm.allDay
-      ? 'Todo el día'
-      : `${this.blockForm.horaInicio ?? '?'} – ${this.blockForm.horaFin ?? '?'}`;
-
-    const motivo = this.blockForm.motivo ? ` — ${this.blockForm.motivo}` : '';
+    const date = new Date(y, m - 1, d);
+    const days = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
+    const label = `${days[date.getDay()]} ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
+    const timeLabel = this.blockForm.allDay ? 'Todo el dia' : `${this.blockForm.horaInicio ?? '?'}-${this.blockForm.horaFin ?? '?'}`;
+    const motivo = this.blockForm.motivo ? ` · ${this.blockForm.motivo}` : '';
     return `${label} · ${timeLabel}${motivo}`;
   }
 
@@ -560,29 +549,81 @@ export class AgendaPage implements OnInit, OnDestroy {
     if (!this.blockForm.allDay) {
       if (!this.blockForm.horaInicio || !this.blockForm.horaFin) {
         this.blockErrors.rango = 'Indica la hora de inicio y fin.';
-      } else if (this.blockForm.horaInicio >= this.blockForm.horaFin) {
-        this.blockErrors.rango = '“Hasta” debe ser posterior a “Desde”.';
+      } else if (this.to24Hour(this.blockForm.horaInicio) >= this.to24Hour(this.blockForm.horaFin)) {
+        this.blockErrors.rango = 'Hasta debe ser posterior a Desde.';
       }
     }
     return Object.keys(this.blockErrors).length === 0;
   }
 
-  saveBlock() {
-    if (!this.validateBlock()) return;
-    const bloqueo = {
-      ...this.blockForm,
-      createdAt: new Date().toISOString(),
-    };
-    console.log('Bloqueo creado', bloqueo);
-    this.closeBlockModal();
+  async saveBlock() {
+    if (!this.validateBlock() || !this.blockForm.fecha) return;
+    this.saving = true;
+    this.errorMessage = '';
+
+    try {
+      const body = this.mapBlockFormToRequest();
+      if (this.editingBlock?.id_bloqueo_horario) {
+        await this.agendaApi.updateBloqueo(this.editingBlock.id_bloqueo_horario, body);
+        this.successMessage = 'Bloqueo actualizado correctamente.';
+      } else {
+        await this.agendaApi.createBloqueo(body);
+        this.successMessage = 'Bloqueo creado correctamente.';
+      }
+      this.closeBlockModal();
+      await this.loadAgendaForCurrentMonth();
+    } catch (err) {
+      this.errorMessage = mapApiError(err).userMessage;
+    } finally {
+      this.saving = false;
+    }
   }
 
-  // Kept for backward compat — delegates to quick actions
-  verCita(ev: CalendarEvent) {
-    this.abrirQuickActions(ev);
+  async eliminarBloqueo(ev: CalendarEvent) {
+    const id = ev.bloqueo?.id_bloqueo_horario;
+    if (!id) return;
+    const confirmed = window.confirm('Se eliminara este bloqueo horario. Deseas continuar?');
+    if (!confirmed) return;
+
+    this.deletingBlockId = id;
+    this.errorMessage = '';
+    try {
+      await this.agendaApi.deleteBloqueo(id);
+      this.successMessage = 'Bloqueo eliminado correctamente.';
+      await this.loadAgendaForCurrentMonth();
+    } catch (err) {
+      this.errorMessage = mapApiError(err).userMessage;
+    } finally {
+      this.deletingBlockId = null;
+    }
   }
 
-  // ─── Quick Actions ───────────────────────────────────────────────────────
+  openHourModal(field: 'inicio' | 'fin') {
+    this.selectingHourFor = field;
+    this.showHourModal = true;
+  }
+
+  closeHourModal() {
+    this.showHourModal = false;
+    this.selectingHourFor = null;
+    this.selectingHourForBlock = null;
+  }
+
+  selectHour(hour: string) {
+    if (this.selectingHourForBlock === 'block-inicio') {
+      this.blockForm.horaInicio = hour;
+      this.blockErrors.rango = undefined;
+      this.closeHourModal();
+      return;
+    }
+    if (this.selectingHourForBlock === 'block-fin') {
+      this.blockForm.horaFin = hour;
+      this.blockErrors.rango = undefined;
+      this.closeHourModal();
+      return;
+    }
+    this.closeHourModal();
+  }
 
   @HostListener('window:resize')
   onWindowResize() {
@@ -596,34 +637,26 @@ export class AgendaPage implements OnInit, OnDestroy {
     if (!ev.cita) return;
 
     if (window.innerWidth >= 768 && mouseEvent) {
-      // Capture the real button rect synchronously (before any await).
       const anchor = (mouseEvent.currentTarget ?? mouseEvent.target) as HTMLElement;
       const rect = anchor.getBoundingClientRect();
-
-      // Clamp horizontal position so the 340px popover never overflows the
-      // viewport edges (left or right) and keeps a 24px safe margin.
-      const POPOVER_W = 340;
-      const MARGIN    = 24;
-      const vw        = window.innerWidth;
-      const clampedLeft = Math.max(MARGIN, Math.min(rect.left, vw - POPOVER_W - MARGIN));
-
-      // Synthetic anchor: same vertical position as the real button but with
-      // the clamped horizontal position, so Ionic anchors correctly to it.
+      const width = 340;
+      const margin = 24;
+      const viewportWidth = window.innerWidth;
+      const clampedLeft = Math.max(margin, Math.min(rect.left, viewportWidth - width - margin));
       const syntheticAnchor = {
         getBoundingClientRect: (): DOMRect => ({
-          top:    rect.top,
-          left:   clampedLeft,
-          right:  clampedLeft + rect.width,
+          top: rect.top,
+          left: clampedLeft,
+          right: clampedLeft + rect.width,
           bottom: rect.bottom,
-          width:  rect.width,
+          width: rect.width,
           height: rect.height,
-          x:      clampedLeft,
-          y:      rect.top,
+          x: clampedLeft,
+          y: rect.top,
           toJSON() { return {}; },
         } as DOMRect),
       };
 
-      // ── Desktop: Ionic PopoverController anchored to the synthetic element ──
       const popover = await this.popoverCtrl.create({
         component: CqaPopoverComponent,
         event: { target: syntheticAnchor } as unknown as Event,
@@ -634,6 +667,7 @@ export class AgendaPage implements OnInit, OnDestroy {
         side: 'bottom',
         alignment: 'start',
       });
+
       this.openPopover = popover;
       await popover.present();
       const { data } = await popover.onWillDismiss<{ action: CqaAction }>();
@@ -642,7 +676,6 @@ export class AgendaPage implements OnInit, OnDestroy {
       return;
     }
 
-    // ── Mobile: bottom sheet ──────────────────────────────────────────────────
     this.citaActiva = ev.cita;
     requestAnimationFrame(() => { this.showQuickActions = true; });
   }
@@ -650,24 +683,20 @@ export class AgendaPage implements OnInit, OnDestroy {
   private handlePopoverAction(cita: CitaDto, action: CqaAction) {
     this.citaActiva = cita;
     switch (action) {
-      case 'verDetalle':  this.accionVerDetalle(); break;
-      case 'paciente':    this.accionAbrirPaciente(); break;
+      case 'verDetalle': this.accionVerDetalle(); break;
+      case 'paciente': this.accionAbrirPaciente(); break;
       case 'reprogramar': this.accionReprogramar(); break;
-      case 'completada':  this.confirmarCambioEstado('COMPLETADA'); break;
-      case 'noAsistio':   this.confirmarCambioEstado('NO_ASISTIO'); break;
-      case 'cancelar':    this.confirmarCambioEstado('CANCELADA'); break;
+      case 'completada': this.confirmarCambioEstado('COMPLETADA'); break;
+      case 'noAsistio': this.confirmarCambioEstado('NO_ASISTIO'); break;
+      case 'cancelar': this.confirmarCambioEstado('CANCELADA'); break;
       case 'crearSesion': this.accionCrearSesion(); break;
     }
   }
 
   cerrarQuickActions() {
     this.showQuickActions = false;
-    // Keep citaActiva alive long enough for the close animation to finish
-    // (mobile: 300ms slide-down; desktop: 200ms fade-out)
     setTimeout(() => { this.citaActiva = null; }, 320);
   }
-
-  // ─── Inline confirm logic ────────────────────────────────────────────────
 
   pedirConfirmacion(config: ConfirmDialogConfig, fn: () => void) {
     this.cqaConfirmConfig = config;
@@ -687,24 +716,22 @@ export class AgendaPage implements OnInit, OnDestroy {
     this.cqaConfirmFn = null;
     this.cqaConfirmConfig = null;
   }
-
-  /** Asks for confirmation before calling cambiarEstadoCita */
   confirmarCambioEstado(estado: EstadoCita) {
     if (!this.citaActiva) return;
     const nombre = `${this.citaActiva.nombre_paciente} ${this.citaActiva.apellido_paciente}`;
     const configs: Partial<Record<EstadoCita, ConfirmDialogConfig>> = {
       COMPLETADA: {
         title: 'Marcar como completada',
-        message: '¿La cita con este paciente fue realizada?',
+        message: 'La cita fue realizada con',
         subject: nombre,
-        confirmLabel: 'Sí, completada',
+        confirmLabel: 'Si, completada',
         cancelLabel: 'Volver',
         icon: 'checkmark-circle-outline',
         variant: 'primary',
       },
       NO_ASISTIO: {
         title: 'Registrar inasistencia',
-        message: 'El paciente no se presentó a la cita con',
+        message: 'El paciente no se presento a la cita con',
         subject: nombre,
         confirmLabel: 'Confirmar',
         cancelLabel: 'Volver',
@@ -713,7 +740,7 @@ export class AgendaPage implements OnInit, OnDestroy {
       },
       CANCELADA: {
         title: 'Cancelar cita',
-        message: 'Se cancelará la cita de',
+        message: 'Se cancelara la cita de',
         subject: nombre,
         confirmLabel: 'Cancelar cita',
         cancelLabel: 'Volver',
@@ -721,12 +748,12 @@ export class AgendaPage implements OnInit, OnDestroy {
         icon: 'close-circle-outline',
       },
     };
-    const cfg = configs[estado];
-    if (cfg) {
-      this.pedirConfirmacion(cfg, () => this.cambiarEstadoCita(estado));
-    } else {
-      this.cambiarEstadoCita(estado);
+    const config = configs[estado];
+    if (config) {
+      this.pedirConfirmacion(config, () => { void this.persistirCambioEstado(estado); });
+      return;
     }
+    void this.persistirCambioEstado(estado);
   }
 
   accionVerDetalle() {
@@ -742,9 +769,9 @@ export class AgendaPage implements OnInit, OnDestroy {
   accionReprogramar() {
     if (!this.citaActiva) return;
     this.apptPrefill = {
-      fecha:      this.citaActiva.fecha,
+      fecha: this.citaActiva.fecha,
       horaInicio: this.citaActiva.hora_inicio,
-      horaFin:    this.citaActiva.hora_fin,
+      horaFin: this.citaActiva.hora_fin,
     };
     this.apptShowBanner = true;
     this.apptContextLabel = 'Reprogramando cita';
@@ -753,36 +780,35 @@ export class AgendaPage implements OnInit, OnDestroy {
     this.showNewAppointmentPanel = true;
   }
 
-  cambiarEstadoCita(estado: EstadoCita) {
-    if (!this.citaActiva) return;
-    this.citasSvc.updateEstado(this.citaActiva.id_cita, estado);
-    this.cerrarQuickActions();
-    this.generateCalendar();
-  }
-
   accionCrearSesion() {
-    if (!this.citaActiva) return;
-    // Navigate to sesiones with context — extend when sesiones module supports it
     this.router.navigate(['/dashboard/sesiones']);
   }
 
-  // ────────────────────────────────────────────────────────
-  // ACCIONES (Nueva cita)
-  // ────────────────────────────────────────────────────────
-  nuevaCita() {
-    const fecha = this.selectedDay
-      ? this.selectedDay.fullDate
-      : this.formatDateLocal(new Date());
+  private async persistirCambioEstado(estado: EstadoCita) {
+    if (!this.citaActiva) return;
+    try {
+      await this.citasSvc.cambiarEstado(this.citaActiva.id_cita, estado);
+      this.successMessage = 'Estado de cita actualizado.';
+      this.cerrarQuickActions();
+      await this.loadAgendaForCurrentMonth();
+    } catch (err) {
+      this.errorMessage = mapApiError(err).userMessage;
+    }
+  }
 
+  nuevaCita() {
+    const fecha = this.selectedDay?.fullDate ?? this.formatDateLocal(new Date());
     this.apptPrefill = { fecha };
     this.apptShowBanner = !!this.selectedDay;
+
     if (this.selectedDay) {
       const [y, m, d] = fecha.split('-').map(Number);
-      const dow = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][new Date(y, m - 1, d).getDay()];
-      this.apptContextLabel = `${dow} ${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`;
+      const days = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
+      this.apptContextLabel = `${days[new Date(y, m - 1, d).getDay()]} ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
     } else {
       this.apptContextLabel = '';
     }
+
     document.body.classList.add('modal-open');
     this.showNewAppointmentPanel = true;
   }
@@ -796,13 +822,38 @@ export class AgendaPage implements OnInit, OnDestroy {
     this.isDragging = false;
   }
 
-  onCitaGuardadaDesdeAgenda(_data: CitaFormData) {
-    this.closeNewAppointmentPanel();
-  }
+  async onCitaGuardadaDesdeAgenda(data: CitaFormData) {
+    this.saving = true;
+    this.errorMessage = '';
 
-  // ─── Ionic lifecycle: cerrar todo al salir de la página ─────────────────
-  ionViewWillLeave() {
-    this.cerrarModales();
+    try {
+      const body: CitaUpsertRequest = {
+        id_paciente: data.id_paciente,
+        fecha_inicio: data.fecha_inicio,
+        fecha_fin: data.fecha_fin,
+        motivo: data.motivo?.trim() || undefined,
+        notas_internas: data.notas_internas?.trim() || null,
+        observaciones: data.observaciones?.trim() || null,
+        monto: data.monto,
+      };
+
+      if (this.citaActiva?.id_cita) {
+        await this.citasSvc.update(this.citaActiva.id_cita, body);
+      } else {
+        await this.citasSvc.create(body);
+      }
+
+      this.successMessage = 'Cita guardada correctamente.';
+      this.citaActiva = null;
+      this.apptPrefill = {};
+      this.apptShowBanner = false;
+      this.closeNewAppointmentPanel();
+      await this.loadAgendaForCurrentMonth();
+    } catch (err) {
+      this.errorMessage = mapApiError(err).userMessage;
+    } finally {
+      this.saving = false;
+    }
   }
 
   cerrarModales() {
@@ -810,12 +861,13 @@ export class AgendaPage implements OnInit, OnDestroy {
     this.showNewAppointmentPanel = false;
     this.showDateModal = false;
     this.showHourModal = false;
-    this.showPacienteModal = false;
     this.showBuscarPacienteModal = false;
     this.showQuickActions = false;
     this.showCqaConfirm = false;
     this.showBlockModal = false;
+    this.showSolicitudModal = false;
     this.citaActiva = null;
+    this.solicitudSeleccionada = null;
     this.cqaConfirmConfig = null;
     this.cqaConfirmFn = null;
     document.body.classList.remove('modal-open');
@@ -825,43 +877,23 @@ export class AgendaPage implements OnInit, OnDestroy {
     }
   }
 
-  ngOnDestroy() {
-    this.cerrarModales();
-  }
-
-  // ----------------------------------------
-  // DATE PICKER MODAL
-  // ----------------------------------------
   openDatePicker(field: 'inicio' | 'fin') {
     this.activeDateField = field;
     this.showDateModal = true;
-
-    // Esperar a que el modal cree el ion-datetime
     setTimeout(() => {
-      const datetime: any = document.querySelector('ion-datetime');
-      if (datetime) {
-        this.applyCalendarColors(datetime);
-      }
+      const datetime = document.querySelector('ion-datetime') as any;
+      if (datetime) this.applyCalendarColors(datetime);
     }, 150);
   }
-
 
   applyCalendarColors(datetimeEl: HTMLElement) {
     const shadow = datetimeEl.shadowRoot;
     if (!shadow) return;
-
     this.calendarDays.forEach(day => {
       if (!day.inCurrentMonth) return;
-
-      // Mes real para ion-datetime (1–12)
-      const realMonth = this.currentMonth + 1;
-
-      const selector = `button.calendar-day[data-day="${day.number}"][data-month="${realMonth}"][data-year="${this.currentYear}"]`;
-
+      const month = this.currentMonth + 1;
+      const selector = `button.calendar-day[data-day="${day.number}"][data-month="${month}"][data-year="${this.currentYear}"]`;
       const dayEl = shadow.querySelector(selector) as HTMLElement;
-
-      console.log("Pintando:", selector, "=>", dayEl);
-
       if (dayEl) {
         dayEl.style.setProperty('--day-bg-color', day.colorCitas);
         dayEl.style.borderRadius = '50%';
@@ -870,54 +902,22 @@ export class AgendaPage implements OnInit, OnDestroy {
     });
   }
 
-
-
-  assignColorsToDays() {
-    this.calendarDays.forEach(day => {
-      const count = (day.events?.length || 0);
-
-      if (count >= this.maxCitasPorDia) {
-        day.colorCitas = '#fcb7af';       // rojo suave
-      } else if (count >= this.maxCitasPorDia / 2) {
-        day.colorCitas = '#fdf9c4';       // amarillo
-      } else {
-        day.colorCitas = '#d8f8e1';       // verde (incluye cero citas)
-      }
-    });
-  }
-
-
-
-
   closeDateModal() {
     this.showDateModal = false;
     this.activeDateField = null;
+    this.blockDateMode = false;
   }
 
   selectDate(event: any) {
     const value = event.detail.value;
-
     if (this.blockDateMode) {
       this.blockForm.fecha = value?.split('T')[0] ?? value;
       this.blockErrors.fecha = undefined;
-      this.blockDateMode = false;
       this.closeDateModal();
       return;
     }
-
-    if (this.activeDateField === 'inicio') {
-      this.newAppointment.fecha_inicio = value;
-    }
-    if (this.activeDateField === 'fin') {
-      this.newAppointment.fecha_fin = value;
-    }
-
     this.closeDateModal();
   }
-
-  // ----------------------------------------
-  // DRAG PARA CERRAR EN MÓVIL
-  // ----------------------------------------
   private isMobile(): boolean {
     return window.innerWidth <= 600;
   }
@@ -928,7 +928,6 @@ export class AgendaPage implements OnInit, OnDestroy {
 
   startDrag(event: TouchEvent) {
     if (!this.isMobile() || !this.showNewAppointmentPanel) return;
-
     this.dragStartY = event.touches[0].clientY;
     this.dragCurrentY = this.dragStartY;
     this.isDragging = true;
@@ -936,103 +935,32 @@ export class AgendaPage implements OnInit, OnDestroy {
 
   onDrag(event: TouchEvent) {
     if (!this.isMobile() || !this.isDragging) return;
-
     this.dragCurrentY = event.touches[0].clientY;
     const diff = this.dragCurrentY - this.dragStartY;
-
-    // Solo permitimos arrastrar hacia abajo
     if (diff <= 0) return;
-
     const panel = this.getPanelElement();
-    if (panel) {
-      panel.style.transform = `translate(-50%, ${diff}px)`;
-    }
+    if (panel) panel.style.transform = `translate(-50%, ${diff}px)`;
   }
 
   endDrag(_event: TouchEvent) {
     if (!this.isMobile() || !this.isDragging) return;
-
     const diff = this.dragCurrentY - this.dragStartY;
     const panel = this.getPanelElement();
-
     this.isDragging = false;
-
-    const threshold = 120; // px para cerrar
-
-    if (diff > threshold) {
-      // cerrar
+    if (diff > 120) {
       this.closeNewAppointmentPanel();
-    } else {
-      // regresar a su posición original (CSS se encarga)
-      if (panel) {
-        panel.style.transform = '';
-      }
+    } else if (panel) {
+      panel.style.transform = '';
     }
-
     this.dragStartY = 0;
     this.dragCurrentY = 0;
   }
 
   private resetPanelTransform() {
     const panel = this.getPanelElement();
-    if (panel) {
-      panel.style.transform = '';
-    }
+    if (panel) panel.style.transform = '';
   }
 
-  usarFechaRecomendada() {
-    const fecha = this.recommendedDate;
-
-    this.newAppointment.fecha_inicio = fecha;
-    this.newAppointment.hora_inicio = this.formatHour(fecha);
-  }
-
-  usarSiguienteDisponible() {
-    const fecha = this.nextAvailableDate;
-
-    this.newAppointment.fecha_fin = fecha;
-    this.newAppointment.hora_fin = this.formatHour(fecha);
-  }
-
-  formatHour(date: Date): string {
-    let h = date.getHours();
-    let m = date.getMinutes();
-
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-
-    const mm = m.toString().padStart(2, '0');
-
-    return `${h}:${mm} ${ampm}`;
-  }
-
-  openPacienteModal() {
-    this.pacientesFiltrados = [...this.pacientes];
-    this.busquedaPaciente = '';
-    this.showPacienteModal = true;
-  }
-
-  closePacienteModal() {
-    this.showPacienteModal = false;
-  }
-
-  filtrarPacientes() {
-    const term = this.busquedaPaciente.toLowerCase();
-
-    this.pacientesFiltrados = this.pacientes.filter(p =>
-      p.nombre.toLowerCase().includes(term)
-    );
-  }
-
-  selectPaciente(paciente: any) {
-    this.selectedPaciente = paciente;
-    this.newAppointment.id_paciente = paciente.id;
-    this.closePacienteModal();
-  }
-
-  // ----------------------------------------
-  // BUSCAR PACIENTE (modal toolbar)
-  // ----------------------------------------
   openBuscarPacienteModal(modo: 'seleccionar' | 'toolbar' = 'toolbar') {
     this.buscarModo = modo;
     this.buscarBusqueda = '';
@@ -1051,13 +979,7 @@ export class AgendaPage implements OnInit, OnDestroy {
       : [...this.pacientes];
   }
 
-  private pendingNavUrl: string | null = null;
-
-  verPaciente(p: any) {
-    this.verPacienteDesdeAgenda(p);
-  }
-
-  verPacienteDesdeAgenda(paciente: { id: number; nombre: string }) {
+  verPaciente(paciente: { id: number; nombre: string }) {
     this.pendingNavUrl = `/dashboard/pacientes/${paciente.id}`;
     this.closeBuscarPacienteModal();
   }
@@ -1071,39 +993,106 @@ export class AgendaPage implements OnInit, OnDestroy {
     }
   }
 
-  seleccionarPacienteDesdeBusqueda(p: any) {
-    this.selectedPaciente = p;
+  seleccionarPacienteDesdeBusqueda(paciente: { id: number; nombre: string }) {
+    this.selectedPaciente = paciente;
     this.closeBuscarPacienteModal();
   }
 
-  nuevaCitaConPaciente(p: any) {
+  nuevaCitaConPaciente(paciente: { id: number; nombre: string }) {
+    this.selectedPaciente = paciente;
+    this.apptPrefill = { fecha: this.selectedDay?.fullDate ?? this.formatDateLocal(new Date()) };
     this.closeBuscarPacienteModal();
-    this.selectedPaciente = p;
-    this.newAppointment.id_paciente = p.id;
     this.nuevaCita();
   }
 
   modalEnterAnimation(baseEl: HTMLElement) {
     const root = baseEl.shadowRoot || baseEl;
-
     const backdropAnimation = createAnimation()
       .addElement(root.querySelector('ion-backdrop')!)
       .fromTo('opacity', '0', '0.45');
-
-    const wrapper = root.querySelector('.ion-overlay-wrapper')!;
     const wrapperAnimation = createAnimation()
-      .addElement(wrapper)
+      .addElement(root.querySelector('.ion-overlay-wrapper')!)
       .keyframes([
         { offset: 0, opacity: '0', transform: 'scale(0.9)' },
-        { offset: 1, opacity: '1', transform: 'scale(1)' }
+        { offset: 1, opacity: '1', transform: 'scale(1)' },
       ])
       .duration(200)
       .easing('ease-out');
-
-    return createAnimation()
-      .addAnimation([backdropAnimation, wrapperAnimation]);
+    return createAnimation().addAnimation([backdropAnimation, wrapperAnimation]);
   }
 
+  private mapBlockFormToRequest(): BloqueoHorarioUpsertRequest {
+    const horaInicio = this.blockForm.allDay ? '00:00:00' : `${this.to24Hour(this.blockForm.horaInicio)}:00`;
+    const horaFin = this.blockForm.allDay ? '23:59:00' : `${this.to24Hour(this.blockForm.horaFin)}:00`;
+    return {
+      fecha: this.blockForm.fecha!,
+      hora_inicio: horaInicio,
+      hora_fin: horaFin,
+      motivo: this.blockForm.motivo.trim() || undefined,
+      tipo_bloqueo: 'PERSONAL',
+    };
+  }
 
+  private buildHourOptions(config?: ConfiguracionJornadaDto): string[] {
+    const intervalo = config?.intervalo_minutos ?? config?.intervalo ?? 30;
+    const start = this.hourToMinutes(this.normalizeHour(config?.hora_inicio ?? '08:00'));
+    const end = this.hourToMinutes(this.normalizeHour(config?.hora_fin ?? '18:00'));
+    const options: string[] = [];
+    for (let current = start; current <= end; current += intervalo || 30) {
+      options.push(this.toDisplayHour(this.minutesToHour(current)));
+    }
+    return options;
+  }
 
+  private to24Hour(value: string | null | undefined): string {
+    if (!value) return '';
+    const trimmed = value.trim();
+    const match = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!match) return this.normalizeHour(trimmed);
+    let hh = Number(match[1]);
+    const mm = match[2];
+    const suffix = match[3].toUpperCase();
+    if (suffix === 'AM') {
+      hh = hh === 12 ? 0 : hh;
+    } else if (hh !== 12) {
+      hh += 12;
+    }
+    return `${String(hh).padStart(2, '0')}:${mm}`;
+  }
+
+  private toDisplayHour(value: string | null | undefined): string {
+    const normalized = this.normalizeHour(value);
+    if (!normalized) return '';
+    let [hh, mm] = normalized.split(':').map(Number);
+    const suffix = hh >= 12 ? 'PM' : 'AM';
+    hh = hh % 12 || 12;
+    return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')} ${suffix}`;
+  }
+
+  private normalizeHour(value: string | null | undefined): string {
+    if (!value) return '';
+    const raw = String(value);
+    return raw.length >= 5 ? raw.substring(0, 5) : raw;
+  }
+
+  private hourToMinutes(hour: string): number {
+    const [hh, mm] = hour.split(':').map(Number);
+    return (hh * 60) + mm;
+  }
+
+  private minutesToHour(minutes: number): string {
+    const hh = Math.floor(minutes / 60);
+    const mm = minutes % 60;
+    return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+  }
+
+  private toDatePart(value?: string): string {
+    if (!value) return '';
+    return String(value).substring(0, 10);
+  }
+
+  private toTimePart(value?: string): string {
+    if (!value) return '';
+    return this.normalizeHour(String(value).substring(11, 19));
+  }
 }

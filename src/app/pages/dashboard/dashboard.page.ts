@@ -1,30 +1,41 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
-import { IonicModule, NavController, Platform } from '@ionic/angular';
+﻿import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { IonicModule, NavController } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { AuthService } from 'src/app/services/auth';
-import { Router, RouterModule, NavigationEnd } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { filter } from 'rxjs/operators';
+import { Router, RouterModule } from '@angular/router';
 import { AuthorizationService } from 'src/app/auth/authorization.service';
 import { HasPermissionDirective } from 'src/app/auth/has-permission.directive';
 import { ConfirmDialogComponent, ConfirmDialogConfig } from 'src/app/shared/confirm-dialog/confirm-dialog.component';
-import { SolicitudReprogramacionService } from '../citas/solicitud-reprogramacion.service.mock';
-import { SolicitudReprogramacion } from 'src/app/shared/models/solicitud-reprogramacion.model';
-import { tiempoRelativo, formatFechaLarga } from '../../shared/utils/date.utils';
-import { SolicitudReprogramacionModalComponent } from 'src/app/shared/components/solicitud-reprogramacion-modal/solicitud-reprogramacion-modal.component';
+import { tiempoRelativo } from '../../shared/utils/date.utils';
+import { DashboardApiService } from 'src/app/services/dashboard-api.service';
+import { NotificacionesApiService } from 'src/app/services/notificaciones.service.api';
+import { NotificacionDto } from './dashboard.models';
+import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
+
+interface DashboardNotificationItem {
+  id: number;
+  tipo: 'agenda' | 'equipo' | 'sistema';
+  icono: string;
+  titulo: string;
+  descripcion: string;
+  tiempo: string;
+  pendiente: boolean;
+  idCita?: number | null;
+  idPaciente?: number | null;
+}
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [IonicModule, CommonModule, RouterModule, HasPermissionDirective, ConfirmDialogComponent, SolicitudReprogramacionModalComponent],
+  imports: [IonicModule, CommonModule, RouterModule, HasPermissionDirective, ConfirmDialogComponent],
   templateUrl: './dashboard.page.html',
   styleUrls: ['./dashboard.page.scss'],
 })
 export class DashboardPage implements OnInit, OnDestroy {
   nombreUsuario = '';
-  menuAbierto: boolean = false;
-  mostrarBotonMenu: boolean = false;
-  isMobile: boolean = false;          // true when viewport < 1025px
+  menuAbierto = false;
+  mostrarBotonMenu = false;
+  isMobile = false;
   sidebarWidth = 220;
   private resizing = false;
   private minSidebarWidth = 160;
@@ -33,65 +44,12 @@ export class DashboardPage implements OnInit, OnDestroy {
   notificacionesAbiertas = false;
   menuInferiorAbierto = false;
 
-  // ─── Solicitudes de reprogramación ────────────────────────────────────────
-  solicitudSeleccionada: SolicitudReprogramacion | null = null;
-  showSolicitudModal = false;
+  notificaciones: DashboardNotificationItem[] = [];
+  notificacionesLoading = false;
+  notificacionesError = '';
+  solicitudesPendientesCount = 0;
+  notificacionesPendientesCount = 0;
 
-  notificaciones: {
-    tipo: 'agenda' | 'equipo' | 'sistema' | 'reprogramar';
-    icono: string;
-    titulo: string;
-    descripcion: string;
-    tiempo: string;
-    leida: boolean;
-    solicitudId?: number;
-  }[] = [
-    {
-      tipo: 'agenda',
-      icono: 'calendar-outline',
-      titulo: 'Cita próxima',
-      descripcion: 'Tienes una cita con Carlos Méndez hoy a las 4:00 PM.',
-      tiempo: 'Hace 10 min',
-      leida: false,
-    },
-    {
-      tipo: 'agenda',
-      icono: 'calendar-outline',
-      titulo: 'Nueva cita registrada',
-      descripcion: 'Se agendó una consulta para María López el 15 de marzo.',
-      tiempo: 'Hace 1 hora',
-      leida: false,
-    },
-    {
-      tipo: 'agenda',
-      icono: 'refresh-outline',
-      titulo: 'Cita reprogramada',
-      descripcion: 'La cita de Pedro García fue movida al 18 de marzo a las 11:00 AM.',
-      tiempo: 'Ayer',
-      leida: false,
-    },
-    {
-      tipo: 'equipo',
-      icono: 'people-outline',
-      titulo: 'Recepcionista vinculado',
-      descripcion: 'Laura Torres se unió al consultorio como recepcionista.',
-      tiempo: 'Hace 2 días',
-      leida: true,
-    },
-    {
-      tipo: 'sistema',
-      icono: 'settings-outline',
-      titulo: 'Configuración actualizada',
-      descripcion: 'Los horarios del consultorio fueron actualizados correctamente.',
-      tiempo: 'Hace 3 días',
-      leida: true,
-    },
-  ];
-
-  
-
-
-  // ── Logout confirmation dialog state ──────────────────────────────────────
   logoutConfirmAbierto = false;
   readonly logoutConfirmConfig: ConfirmDialogConfig = {
     title: 'Cerrar sesión',
@@ -105,11 +63,11 @@ export class DashboardPage implements OnInit, OnDestroy {
   constructor(
     private navCtrl: NavController,
     private authService: AuthService,
-    private platform: Platform,
     private router: Router,
     public authSvc: AuthorizationService,
-    private solicitudSvc: SolicitudReprogramacionService,
-  ) { }
+    private dashboardApi: DashboardApiService,
+    private notificacionesApi: NotificacionesApiService,
+  ) {}
 
   startResizing(event: MouseEvent) {
     this.resizing = true;
@@ -128,21 +86,21 @@ export class DashboardPage implements OnInit, OnDestroy {
     document.addEventListener('mouseup', stopResize);
   }
 
-  cantidadSinLeer(): number {
-    return this.notificaciones.filter(n => !n.leida).length;
-  }
-
-  marcarLeida(index: number) {
-    this.notificaciones[index].leida = true;
+  cantidadPendientes(): number {
+    return this.notificacionesPendientesCount;
   }
 
   totalNotificaciones() {
-    return this.cantidadSinLeer();
+    return this.cantidadPendientes();
   }
 
-  toggleNotificaciones() {
+  async toggleNotificaciones() {
     this.notificacionesAbiertas = !this.notificacionesAbiertas;
     this.menuAbierto = false;
+
+    if (this.notificacionesAbiertas && this.notificaciones.length === 0 && !this.notificacionesLoading) {
+      await this.cargarDatosHeader();
+    }
   }
 
   cerrarNotificaciones() {
@@ -154,12 +112,10 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.navCtrl.navigateForward('dashboard/actividad');
   }
 
-  // ─── Responsive: actualiza isMobile al redimensionar el viewport ────────
   @HostListener('window:resize')
   onWindowResize() {
     this.isMobile = window.innerWidth < 1025;
     this.mostrarBotonMenu = this.isMobile;
-    // Cierra el menú inferior si el usuario amplía la ventana a desktop
     if (!this.isMobile) {
       this.menuInferiorAbierto = false;
     }
@@ -167,12 +123,8 @@ export class DashboardPage implements OnInit, OnDestroy {
 
   toggleSidebar() {
     this.sidebarContraido = !this.sidebarContraido;
-
-    // Cambia el ancho del sidebar con alguna lógica (tú ya tienes sidebarWidth)
     this.sidebarWidth = this.sidebarContraido ? 72 : 220;
   }
-
-  private routerSub?: Subscription;
 
   toggleMenuInferior() {
     this.menuInferiorAbierto = !this.menuInferiorAbierto;
@@ -188,25 +140,19 @@ export class DashboardPage implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    // Redirigir si no ha iniciado sesión
     if (!this.authService.isLoggedIn()) {
       this.navCtrl.navigateRoot('/login');
       return;
     }
 
     this.nombreUsuario = this.authService.getNombre();
-
-    // Estado inicial basado en el ancho actual
     this.isMobile = window.innerWidth < 1025;
     this.mostrarBotonMenu = this.isMobile;
-
-    // Prepend solicitudes pendientes al panel de notificaciones
-    this.cargarSolicitudesEnNotificaciones();
+    void this.cargarDatosHeader();
   }
 
   ngOnDestroy() {
-    this.routerSub?.unsubscribe();
-    // HostListener se limpia automáticamente por Angular, nada extra necesario
+    // no-op
   }
 
   toggleMenu() {
@@ -214,82 +160,62 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.notificacionesAbiertas = false;
   }
 
-  // ─── Solicitudes de reprogramación ───────────────────────────────────────
+  async cargarDatosHeader() {
+    this.notificacionesLoading = true;
+    this.notificacionesError = '';
 
-  private cargarSolicitudesEnNotificaciones(): void {
-    const solicitudes = this.solicitudSvc.getPendientes();
-    const nuevas = solicitudes.map(s => ({
-      tipo:       'reprogramar' as const,
-      icono:      'swap-horizontal-outline',
-      titulo:     'Solicitud de reprogramación',
-      descripcion: `${s.pacienteNombre} quiere cambiar su cita del ${formatFechaLarga(s.fechaCita)} • ${s.horaCita}`,
-      tiempo:     tiempoRelativo(s.fechaSolicitud),
-      leida:      false,
-      solicitudId: s.idSolicitud,
-    }));
-    // Solicitudes always appear first, before regular notifications
-    this.notificaciones = [...nuevas, ...this.notificaciones];
+    const [consolidadoResult, notificacionesResult] = await Promise.all([
+      this.wrapResult(this.dashboardApi.getConsolidado()),
+      this.wrapResult(this.notificacionesApi.getAll({ size: 8, sort: 'created_at,desc' })),
+    ]);
+
+    if (consolidadoResult.ok) {
+      this.solicitudesPendientesCount = consolidadoResult.value.solicitudes_pendientes_count ?? 0;
+      this.notificacionesPendientesCount = consolidadoResult.value.notificaciones_pendientes_count ?? 0;
+    }
+
+    if (notificacionesResult.ok) {
+      const content = notificacionesResult.value.content ?? [];
+      this.notificaciones = content.map((item: NotificacionDto) => this.mapNotificacion(item));
+      if (!consolidadoResult.ok) {
+        this.notificacionesPendientesCount = this.notificaciones.filter(item => item.pendiente).length;
+      }
+    } else {
+      this.notificacionesError = mapApiError(notificacionesResult.error).userMessage;
+      if (!consolidadoResult.ok) {
+        this.notificaciones = [];
+      }
+    }
+
+    if (!consolidadoResult.ok && !this.notificacionesError) {
+      this.notificacionesError = mapApiError(consolidadoResult.error).userMessage;
+    }
+
+    this.notificacionesLoading = false;
   }
 
-  abrirSolicitud(solicitudId: number): void {
-    const s = this.solicitudSvc.getById(solicitudId);
-    if (!s) return;
-    this.solicitudSeleccionada = s;
-    this.showSolicitudModal = true;
+  abrirNotificacion(item: DashboardNotificationItem) {
     this.notificacionesAbiertas = false;
-  }
 
-  onSolicitudAceptada(): void {
-    if (!this.solicitudSeleccionada) return;
-    this.solicitudSvc.aceptar(this.solicitudSeleccionada.idSolicitud);
-    this.eliminarNotificacionSolicitud(this.solicitudSeleccionada.idSolicitud);
-    this.showSolicitudModal = false;
-    this.solicitudSeleccionada = null;
-    // Open the agenda so the professional can adjust the appointment
-    this.router.navigate(['/dashboard/agenda']);
-  }
+    if (item.idCita) {
+      this.router.navigate(['/dashboard/citas', item.idCita]);
+      return;
+    }
 
-  onSolicitudRechazada(motivo: string): void {
-    if (!this.solicitudSeleccionada) return;
-    this.solicitudSvc.rechazar(this.solicitudSeleccionada.idSolicitud);
-    this.eliminarNotificacionSolicitud(this.solicitudSeleccionada.idSolicitud);
-    this.showSolicitudModal = false;
-    this.solicitudSeleccionada = null;
-  }
+    if (item.idPaciente) {
+      this.router.navigate(['/dashboard/pacientes', item.idPaciente]);
+      return;
+    }
 
-  onVerAgendaDesdeModal(): void {
-    this.showSolicitudModal = false;
-    this.solicitudSeleccionada = null;
-    this.router.navigate(['/dashboard/agenda']);
-  }
-
-  cerrarSolicitudModal(): void {
-    this.showSolicitudModal = false;
-    this.solicitudSeleccionada = null;
-  }
-
-  private eliminarNotificacionSolicitud(solicitudId: number): void {
-    this.notificaciones = this.notificaciones.filter(n => n.solicitudId !== solicitudId);
-  }
-
-  private tiempoRelativo(isoDate: string): string {
-    return tiempoRelativo(isoDate);
-  }
-
-  private formatFechaCita(fecha: string): string {
-    return formatFechaLarga(fecha);
+    this.router.navigate(['/dashboard/actividad']);
   }
 
   cerrarMenuUsuario() {
     this.menuAbierto = false;
   }
 
-  irAAgenda() {
-    if (this.router.url.startsWith('/dashboard/agenda')) {
-      document.querySelector('ion-content')?.scrollToTop(300);
-    } else {
-      this.router.navigate(['/dashboard/agenda']);
-    }
+  irAInicio() {
+    this.router.navigate(['/dashboard/inicio']);
   }
 
   irAMiPerfil() {
@@ -331,4 +257,77 @@ export class DashboardPage implements OnInit, OnDestroy {
   cancelarLogout() {
     this.logoutConfirmAbierto = false;
   }
+
+  private mapNotificacion(item: NotificacionDto): DashboardNotificationItem {
+    const tipo = this.mapTipo(item.tipo_notificacion);
+    const titulo = item.asunto?.trim() || this.getTipoLabel(item.tipo_notificacion);
+    const descripcion = item.mensaje_resumen?.trim() || item.destinatario?.trim() || 'Notificación del sistema';
+
+    return {
+      id: item.id_notificacion,
+      tipo,
+      icono: this.getTipoIcon(item.tipo_notificacion),
+      titulo,
+      descripcion,
+      tiempo: tiempoRelativo(item.created_at),
+      pendiente: item.estado_envio === 'PENDIENTE',
+      idCita: item.id_cita,
+      idPaciente: item.id_paciente,
+    };
+  }
+
+  private mapTipo(tipo: string): 'agenda' | 'equipo' | 'sistema' {
+    if (['RECORDATORIO', 'CONFIRMACION_PACIENTE', 'CANCELACION_PACIENTE', 'SOLICITUD_REPROGRAMACION'].includes(tipo)) {
+      return 'agenda';
+    }
+
+    if (tipo === 'VINCULACION_RECEPCIONISTA') {
+      return 'equipo';
+    }
+
+    return 'sistema';
+  }
+
+  private getTipoIcon(tipo: string): string {
+    switch (tipo) {
+      case 'CONFIRMACION_PACIENTE':
+        return 'checkmark-circle-outline';
+      case 'CANCELACION_PACIENTE':
+        return 'close-circle-outline';
+      case 'SOLICITUD_REPROGRAMACION':
+        return 'swap-horizontal-outline';
+      case 'VINCULACION_RECEPCIONISTA':
+        return 'people-outline';
+      case 'RECORDATORIO':
+        return 'calendar-outline';
+      default:
+        return 'notifications-outline';
+    }
+  }
+
+  private getTipoLabel(tipo: string): string {
+    switch (tipo) {
+      case 'CONFIRMACION_PACIENTE':
+        return 'Confirmación de paciente';
+      case 'CANCELACION_PACIENTE':
+        return 'Cancelación de paciente';
+      case 'SOLICITUD_REPROGRAMACION':
+        return 'Solicitud de reprogramación';
+      case 'VINCULACION_RECEPCIONISTA':
+        return 'Nuevo recepcionista vinculado';
+      case 'RECORDATORIO':
+        return 'Recordatorio';
+      default:
+        return 'Notificación';
+    }
+  }
+
+  private async wrapResult<T>(promise: Promise<T>): Promise<{ ok: true; value: T } | { ok: false; error: unknown }> {
+    try {
+      return { ok: true, value: await promise };
+    } catch (error) {
+      return { ok: false, error };
+    }
+  }
 }
+

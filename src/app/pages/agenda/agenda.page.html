@@ -11,7 +11,14 @@
       <p class="header-day-info">
         {{ dayName }}, {{ fullDate }} - {{ eventsToday }} citas hoy
       </p>
+      <p class="header-day-info" *ngIf="jornadaResumen">{{ jornadaResumen }}</p>
     </div>
+  </div>
+
+  <div class="agenda-feedback" *ngIf="loading || errorMessage || successMessage">
+    <p *ngIf="loading">Cargando agenda real del periodo visible...</p>
+    <p *ngIf="errorMessage && !loading">{{ errorMessage }}</p>
+    <p *ngIf="successMessage && !loading && !errorMessage">{{ successMessage }}</p>
   </div>
 
   <!-- ========================================================= -->
@@ -102,12 +109,13 @@
         <div class="right-section">
           <div class="status"
             [class.confirmed]="ev.cita?.estado_cita === 'CONFIRMADA'"
-            [class.pending]="ev.cita?.estado_cita === 'PENDIENTE'"
+            [class.pending]="ev.cita?.estado_cita === 'PENDIENTE' || ev.kind === 'bloqueo'"
             [class.completada]="ev.cita?.estado_cita === 'COMPLETADA'"
             [class.cancelada]="ev.cita?.estado_cita === 'CANCELADA' || ev.cita?.estado_cita === 'NO_ASISTIO'"
             [class.pospuesta]="ev.cita?.estado_cita === 'REPROGRAMADA'">
             <ion-icon
-              [name]="ev.cita?.estado_cita === 'COMPLETADA' ? 'checkmark-done-circle'
+              [name]="ev.kind === 'bloqueo' ? 'lock-closed-outline'
+                    : ev.cita?.estado_cita === 'COMPLETADA' ? 'checkmark-done-circle'
                     : ev.cita?.estado_cita === 'CANCELADA'  ? 'close-circle'
                     : ev.cita?.estado_cita === 'NO_ASISTIO' ? 'person-remove'
                     : ev.cita?.estado_cita === 'CONFIRMADA' ? 'checkmark-circle'
@@ -117,9 +125,18 @@
             <span>{{ ev.cita?.estado ?? ev.cita?.estado_cita ?? ev.status }}</span>
           </div>
 
-          <button class="view-btn" (click)="$event.stopPropagation(); abrirQuickActions(ev, $event)">
+          <button class="view-btn" (click)="$event.stopPropagation(); abrirAccionesEvento(ev, $event)">
             <ion-icon name="flash-outline"></ion-icon>
-            Acciones
+            {{ ev.kind === 'bloqueo' ? 'Editar' : 'Acciones' }}
+          </button>
+
+          <button
+            *ngIf="ev.kind === 'bloqueo'"
+            class="view-btn"
+            [disabled]="deletingBlockId === ev.bloqueo?.id_bloqueo_horario"
+            (click)="$event.stopPropagation(); eliminarBloqueo(ev)">
+            <ion-icon name="trash-outline"></ion-icon>
+            {{ deletingBlockId === ev.bloqueo?.id_bloqueo_horario ? 'Eliminando' : 'Eliminar' }}
           </button>
         </div>
 
@@ -142,6 +159,7 @@
       [prefill]="apptPrefill"
       [showContextBanner]="apptShowBanner"
       [contextDateLabel]="apptContextLabel"
+      [saving]="saving"
       (saved)="onCitaGuardadaDesdeAgenda($event)"
       (cancelled)="closeNewAppointmentPanel()"
     ></app-cita-form-modal>
@@ -167,7 +185,7 @@
           <div class="blk-header-inner">
             <div class="blk-title-group">
               <ion-icon name="lock-closed-outline" class="blk-title-icon"></ion-icon>
-              <h2 class="blk-title">Bloquear horario</h2>
+              <h2 class="blk-title">{{ editingBlock ? 'Editar bloqueo' : 'Bloquear horario' }}</h2>
             </div>
             <button class="blk-close-btn" (click)="closeBlockModal()" aria-label="Cerrar">
               <ion-icon name="close-outline"></ion-icon>
@@ -269,7 +287,7 @@
           <button class="blk-btn blk-btn--ghost" (click)="closeBlockModal()">Cancelar</button>
           <button class="blk-btn blk-btn--solid" (click)="saveBlock()">
             <ion-icon name="lock-closed-outline"></ion-icon>
-            Guardar bloqueo
+            {{ saving ? 'Guardando...' : (editingBlock ? 'Actualizar bloqueo' : 'Guardar bloqueo') }}
           </button>
         </div>
 

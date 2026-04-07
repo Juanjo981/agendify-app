@@ -10,7 +10,7 @@ import { AgfDatePanelComponent } from './agf-date-panel.component';
 import { AgfPickerRegistryService } from '../agf-picker-registry.service';
 
 const PANEL_W = 280;
-const PANEL_H = 340;
+const PANEL_H = 392;
 
 /**
  * agf-date-picker
@@ -46,6 +46,9 @@ export class AgfDatePickerComponent implements ControlValueAccessor, OnChanges, 
   @Input() allowPast   = true;
   @Input() hasError    = false;
   @Input() errorMsg    = '';
+  @Input() showMonthYearSelectors = false;
+  @Input() yearRangeStart: number | null = null;
+  @Input() yearRangeEnd: number | null = null;
 
   /** Emitted when the user picks a date — same signature as a native (change) event. */
   @Output() change = new EventEmitter<string>();
@@ -104,6 +107,9 @@ export class AgfDatePickerComponent implements ControlValueAccessor, OnChanges, 
       if (c['min'])   this.panelRef.setInput('min',   this.min);
       if (c['max'])   this.panelRef.setInput('max',   this.max);
       if (c['value']) this.panelRef.setInput('value', this.value);
+      if (c['showMonthYearSelectors']) this.panelRef.setInput('showMonthYearSelectors', this.showMonthYearSelectors);
+      if (c['yearRangeStart']) this.panelRef.setInput('yearRangeStart', this.yearRangeStart);
+      if (c['yearRangeEnd']) this.panelRef.setInput('yearRangeEnd', this.yearRangeEnd);
     }
   }
 
@@ -125,6 +131,9 @@ export class AgfDatePickerComponent implements ControlValueAccessor, OnChanges, 
     this.panelRef.setInput('min',       this.min);
     this.panelRef.setInput('max',       this.max);
     this.panelRef.setInput('allowPast', this.allowPast);
+    this.panelRef.setInput('showMonthYearSelectors', this.showMonthYearSelectors);
+    this.panelRef.setInput('yearRangeStart', this.yearRangeStart);
+    this.panelRef.setInput('yearRangeEnd', this.yearRangeEnd);
 
     this.panelRef.instance.valueChange.subscribe((iso: string) => {
       this.value = iso;

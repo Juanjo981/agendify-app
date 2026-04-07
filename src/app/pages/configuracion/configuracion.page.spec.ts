@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ConfiguracionPage } from './configuracion.page';
+import { ConfiguracionPage } from './configuracion.page.integrated';
 
 describe('ConfiguracionPage', () => {
   let component: ConfiguracionPage;

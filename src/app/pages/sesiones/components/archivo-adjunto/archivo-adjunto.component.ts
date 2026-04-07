@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
-import { SesionAdjunto } from '../../models/sesion.model';
+import { SesionArchivoLocal } from '../../models/sesion.model';
 
 const ALLOWED_MIME = new Set([
   'text/plain',
@@ -21,8 +21,8 @@ const ALLOWED_EXT = ['.txt', '.doc', '.docx', '.pdf', '.jpg', '.jpeg', '.png', '
 })
 export class ArchivoAdjuntoComponent {
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
-  @Input() adjunto?: SesionAdjunto;
-  @Output() archivoSeleccionado = new EventEmitter<SesionAdjunto>();
+  @Input() adjunto?: SesionArchivoLocal;
+  @Output() archivoSeleccionado = new EventEmitter<SesionArchivoLocal>();
   @Output() archivoEliminado = new EventEmitter<void>();
 
   error = '';
@@ -53,7 +53,8 @@ export class ArchivoAdjuntoComponent {
     }
     this.error = '';
     const isImage = file.type.startsWith('image/');
-    const adjunto: SesionAdjunto = {
+    const adjunto: SesionArchivoLocal = {
+      file,
       name: file.name,
       type: file.type,
       size: file.size,

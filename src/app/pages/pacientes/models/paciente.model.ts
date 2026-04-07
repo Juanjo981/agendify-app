@@ -1,5 +1,54 @@
 // ─── Paciente (alineado al backend PacienteDto) ──────────────────────────────
 
+export const PACIENTE_SEXO_OPTIONS = [
+  { label: 'Masculino', value: 'MASCULINO' },
+  { label: 'Femenino', value: 'FEMENINO' },
+  { label: 'No binario', value: 'NO_BINARIO' },
+  { label: 'Prefiero no decir', value: 'PREFIERO_NO_DECIR' },
+  { label: 'Otro', value: 'OTRO' },
+] as const;
+
+export type SexoPaciente = (typeof PACIENTE_SEXO_OPTIONS)[number]['value'];
+
+const PACIENTE_SEXO_VALUES = new Set<string>(PACIENTE_SEXO_OPTIONS.map(option => option.value));
+
+export function normalizeSexoPaciente(value?: string | null): SexoPaciente | '' {
+  if (!value) return '';
+
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (PACIENTE_SEXO_VALUES.has(trimmed)) return trimmed as SexoPaciente;
+
+  const normalized = trimmed
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toUpperCase();
+
+  switch (normalized) {
+    case 'MASCULINO':
+      return 'MASCULINO';
+    case 'FEMENINO':
+      return 'FEMENINO';
+    case 'NO_BINARIO':
+    case 'NOBINARIO':
+      return 'NO_BINARIO';
+    case 'PREFIERO_NO_DECIR':
+    case 'PREFIERO_NODECIR':
+      return 'PREFIERO_NO_DECIR';
+    case 'OTRO':
+      return 'OTRO';
+    default:
+      return '';
+  }
+}
+
+export function isSexoPaciente(value?: string | null): value is SexoPaciente {
+  return !!value && PACIENTE_SEXO_VALUES.has(value);
+}
+
 export interface PacienteDto {
   id_paciente:                   number;
   id_profesional?:               number;
@@ -8,7 +57,7 @@ export interface PacienteDto {
   email:                         string;
   numero_telefono:               string;
   fecha_nacimiento:              string;   // 'YYYY-MM-DD'
-  sexo?:                         string;
+  sexo?:                         SexoPaciente;
   direccion?:                    string;
   contacto_emergencia_nombre?:   string;
   contacto_emergencia_telefono?: string;
@@ -29,7 +78,7 @@ export interface PacienteRequest {
   email?:                        string;
   numero_telefono?:              string;
   fecha_nacimiento?:             string;
-  sexo?:                         string;
+  sexo?:                         SexoPaciente;
   direccion?:                    string;
   contacto_emergencia_nombre?:   string;
   contacto_emergencia_telefono?: string;
@@ -45,7 +94,7 @@ export interface ResumenPacienteDto {
   email:                  string;
   numero_telefono:        string;
   fecha_nacimiento:       string;
-  sexo:                   string;
+  sexo:                   SexoPaciente | '';
   activo:                 boolean;
   notas_generales:        string;
   total_citas:            number;

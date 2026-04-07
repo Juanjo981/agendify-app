@@ -1,13 +1,15 @@
-import { Component, Input, Output, EventEmitter, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
-import { SesionAdjunto } from '../../models/sesion.model';
+import { SesionArchivoLocal } from '../../models/sesion.model';
 import { ArchivoAdjuntoComponent } from '../archivo-adjunto/archivo-adjunto.component';
 
 export interface SesionFormData {
-  notas: string;
-  adjunto?: SesionAdjunto;
+  fecha_sesion: string;
+  tipo_sesion: string;
+  resumen: string;
+  adjunto?: SesionArchivoLocal;
 }
 
 @Component({
@@ -18,23 +20,31 @@ export interface SesionFormData {
   imports: [CommonModule, FormsModule, IonicModule, ArchivoAdjuntoComponent],
 })
 export class SesionFormComponent implements OnInit {
-  @Input() citaId?: number;
-  @Input() notasIniciales = '';
-  @Input() adjuntoInicial?: SesionAdjunto;
+  @Input() fechaSesionInicial = '';
+  @Input() tipoSesionInicial = 'INDIVIDUAL';
+  @Input() resumenInicial = '';
+  @Input() adjuntoInicial?: SesionArchivoLocal;
+  @Input() saving = false;
+  @Input() errorMessage = '';
   @Output() guardado = new EventEmitter<SesionFormData>();
   @Output() cancelado = new EventEmitter<void>();
 
-  notas = '';
-  adjunto: SesionAdjunto | undefined = undefined;
-  notasError = '';
+  fechaSesion = '';
+  tipoSesion = 'INDIVIDUAL';
+  resumen = '';
+  adjunto: SesionArchivoLocal | undefined = undefined;
+  fechaError = '';
+  resumenError = '';
 
   ngOnInit() {
-    this.notas = this.notasIniciales;
+    this.fechaSesion = this.fechaSesionInicial;
+    this.tipoSesion = this.tipoSesionInicial || 'INDIVIDUAL';
+    this.resumen = this.resumenInicial;
     this.adjunto = this.adjuntoInicial;
   }
 
-  onArchivoSeleccionado(a: SesionAdjunto) {
-    this.adjunto = a;
+  onArchivoSeleccionado(adjunto: SesionArchivoLocal) {
+    this.adjunto = adjunto;
   }
 
   onArchivoEliminado() {
@@ -42,16 +52,30 @@ export class SesionFormComponent implements OnInit {
   }
 
   validar(): boolean {
-    this.notasError = '';
-    if (!this.notas.trim() && !this.adjunto) {
-      this.notasError = 'Escribe notas o adjunta un archivo para guardar la sesiÃ³n.';
+    this.fechaError = '';
+    this.resumenError = '';
+
+    if (!this.fechaSesion.trim()) {
+      this.fechaError = 'Indica la fecha y hora de la sesión.';
       return false;
     }
+
+    if (!this.resumen.trim() && !this.adjunto) {
+      this.resumenError = 'Escribe un resumen o adjunta un archivo para guardar la sesión.';
+      return false;
+    }
+
     return true;
   }
 
   guardar() {
-    if (!this.validar()) return;
-    this.guardado.emit({ notas: this.notas.trim(), adjunto: this.adjunto });
+    if (this.saving || !this.validar()) return;
+
+    this.guardado.emit({
+      fecha_sesion: this.fechaSesion,
+      tipo_sesion: this.tipoSesion.trim() || 'INDIVIDUAL',
+      resumen: this.resumen.trim(),
+      adjunto: this.adjunto,
+    });
   }
 }

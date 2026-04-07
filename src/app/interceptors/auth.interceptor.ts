@@ -46,6 +46,8 @@ const PUBLIC_URLS: ReadonlyArray<string> = [
   '/api/auth/reset-password',
   '/api/usuarios/registro',
   '/public/citas/gestion/',
+  'storage.googleapis.com',
+  'storage.cloud.google.com',
 ];
 
 function isPublicUrl(url: string): boolean {

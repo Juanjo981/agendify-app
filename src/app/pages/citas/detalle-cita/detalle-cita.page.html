@@ -190,6 +190,17 @@
             <ion-icon name="cash-outline"></ion-icon>
             Registrar pago
           </button>
+
+          <button
+            class="dct-action-btn dct-action-btn--complete"
+            *ngIf="puedeGestionarSesion"
+            (click)="resolverSesion()"
+            [disabled]="saving || sesionActionLoading"
+          >
+            <ion-spinner *ngIf="sesionActionLoading" name="crescent"></ion-spinner>
+            <ion-icon *ngIf="!sesionActionLoading" [name]="sesionRelacionadaId ? 'eye-outline' : 'document-text-outline'"></ion-icon>
+            {{ sesionButtonLabel }}
+          </button>
         </div>
       </div>
     </ng-container>

@@ -1,108 +1,116 @@
 <ion-content class="dse-content">
   <div class="dse-wrapper">
-
-    <!-- Volver -->
     <button class="dse-back" (click)="volver()">
       <ion-icon name="arrow-back-outline"></ion-icon>
-      <span>Volver a citas</span>
+      <span>Volver a sesiones</span>
     </button>
 
-    <!-- Not found -->
-    <div *ngIf="!sesion" class="dse-not-found">
-      <ion-icon name="document-text-outline"></ion-icon>
-      <p>Sesión no encontrada</p>
+    <div *ngIf="loading" class="dse-not-found">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Cargando sesi�n...</p>
     </div>
 
-    <ng-container *ngIf="sesion">
+    <div *ngIf="errorMessage && !loading" class="dse-not-found">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      <p>{{ errorMessage }}</p>
+    </div>
 
-      <!-- ════════════ HERO ════════════ -->
+    <div *ngIf="!loading && !sesion && !errorMessage" class="dse-not-found">
+      <ion-icon name="document-text-outline"></ion-icon>
+      <p>Sesi�n no encontrada</p>
+    </div>
+
+    <ng-container *ngIf="sesion && !loading">
       <div class="dse-hero">
         <div class="dse-hero__left">
           <div class="dse-avatar">{{ iniciales }}</div>
           <div class="dse-hero__info">
-            <span class="dse-hero__label">Sesión clínica</span>
+            <span class="dse-hero__label">Sesi�n cl�nica {{ sesion.estatus }}</span>
             <h1 class="dse-hero__name">{{ sesion.apellido_paciente }}, {{ sesion.nombre_paciente }}</h1>
             <div class="dse-hero__meta">
               <span class="dse-meta-item">
                 <ion-icon name="calendar-outline"></ion-icon>
-                Cita: {{ formatFecha(sesion.fecha_cita) }}
+                Sesi�n: {{ formatFecha(sesion.fecha_sesion) }}
+              </span>
+              <span class="dse-meta-item">
+                <ion-icon name="albums-outline"></ion-icon>
+                Tipo: {{ sesion.tipo_sesion || 'Sin definir' }}
               </span>
               <span class="dse-meta-item">
                 <ion-icon name="time-outline"></ion-icon>
-                Creada el {{ formatCreacion(sesion.fecha_creacion) }}
+                Creada el {{ formatCreacion(sesion.created_at) }}
               </span>
             </div>
           </div>
         </div>
-        <button class="dse-btn-edit" (click)="showEditarModal = true">
+        <button class="dse-btn-edit" (click)="showEditarModal = true" [disabled]="!puedeEditar || saving">
           <ion-icon name="pencil-outline"></ion-icon>
           <span>Editar</span>
         </button>
       </div>
 
-      <!-- ════════════ NOTAS ════════════ -->
       <div class="dse-card">
-        <p class="dse-card__title">Notas de la sesión</p>
-        <div class="dse-notas" *ngIf="sesion.notas; else sinNotas">
-          {{ sesion.notas }}
+        <p class="dse-card__title">Resumen cl�nico</p>
+        <div class="dse-notas" *ngIf="resumenSesion; else sinNotas">
+          {{ resumenSesion }}
         </div>
         <ng-template #sinNotas>
-          <p class="dse-empty-text">Sin notas registradas.</p>
+          <p class="dse-empty-text">Sin resumen registrado.</p>
         </ng-template>
       </div>
 
-      <!-- ════════════ ADJUNTO ════════════ -->
       <div class="dse-card">
         <div class="dse-card__header">
-          <p class="dse-card__title">Archivo adjunto</p>
-          <button
-            *ngIf="sesion.adjunto"
-            class="dse-card__action dse-card__action--danger"
-            (click)="eliminarAdjunto()"
-          >
-            <ion-icon name="trash-outline"></ion-icon>
-            Eliminar
-          </button>
+          <p class="dse-card__title">Archivos adjuntos</p>
         </div>
 
-        <!-- Adjunto existente -->
-        <div *ngIf="sesion.adjunto; else sinAdjunto" class="dse-adjunto">
-          <div class="dse-adjunto__icon">
-            <ion-icon [name]="sesion.adjunto.type.startsWith('image/') ? 'image-outline' : sesion.adjunto.type === 'application/pdf' ? 'document-outline' : 'document-text-outline'"></ion-icon>
-          </div>
-          <div class="dse-adjunto__info">
-            <span class="dse-adjunto__name">{{ sesion.adjunto.name }}</span>
-            <span class="dse-adjunto__size">{{ formatFileSize(sesion.adjunto.size) }}</span>
-          </div>
-          <div class="dse-adjunto__actions">
-            <button class="dse-adjunto__action dse-adjunto__action--view" (click)="verAdjunto()" title="Ver archivo">
-              <ion-icon name="eye-outline"></ion-icon>
-            </button>
-            <button class="dse-adjunto__action dse-adjunto__action--download" (click)="descargarAdjunto()" title="Descargar">
-              <ion-icon name="download-outline"></ion-icon>
-            </button>
-          </div>
-        </div>
+        <div *ngIf="adjuntosLoading" class="dse-empty-text">Cargando adjuntos...</div>
 
-        <ng-template #sinAdjunto>
-          <p class="dse-empty-text">No hay archivo adjunto.</p>
-        </ng-template>
+        <ng-container *ngIf="!adjuntosLoading">
+          <div *ngFor="let adjunto of adjuntos" class="dse-adjunto">
+            <div class="dse-adjunto__icon">
+              <ion-icon [name]="getFileIcon(adjunto.mime_type)"></ion-icon>
+            </div>
+            <div class="dse-adjunto__info">
+              <span class="dse-adjunto__name">{{ adjunto.nombre_original }}</span>
+              <span class="dse-adjunto__size">{{ formatFileSize(adjunto.tamano_bytes) }}</span>
+            </div>
+            <div class="dse-adjunto__actions">
+              <button class="dse-adjunto__action dse-adjunto__action--view" (click)="verAdjunto(adjunto)" title="Ver archivo">
+                <ion-icon name="eye-outline"></ion-icon>
+              </button>
+              <button class="dse-adjunto__action dse-adjunto__action--download" (click)="descargarAdjunto(adjunto)" title="Descargar">
+                <ion-icon name="download-outline"></ion-icon>
+              </button>
+              <button
+                class="dse-adjunto__action dse-card__action--danger"
+                *ngIf="puedeEditar"
+                (click)="eliminarAdjunto(adjunto)"
+                title="Eliminar adjunto"
+              >
+                <ion-icon name="trash-outline"></ion-icon>
+              </button>
+            </div>
+          </div>
+
+          <p *ngIf="adjuntos.length === 0" class="dse-empty-text">No hay archivos adjuntos registrados.</p>
+        </ng-container>
       </div>
-
     </ng-container>
   </div>
 </ion-content>
 
-<!-- Editar sesión -->
 <app-sesion-form
   *ngIf="showEditarModal && sesion"
-  [notasIniciales]="sesion.notas"
-  [adjuntoInicial]="sesion.adjunto"
+  [fechaSesionInicial]="sesion.fecha_sesion.slice(0, 16)"
+  [tipoSesionInicial]="sesion.tipo_sesion || 'INDIVIDUAL'"
+  [resumenInicial]="resumenSesion"
+  [saving]="saving"
+  [errorMessage]="formErrorMessage"
   (guardado)="onSesionEditada($event)"
   (cancelado)="showEditarModal = false"
 ></app-sesion-form>
 
-<!-- Confirm dialog -->
 <app-confirm-dialog
   *ngIf="confirmConfig"
   [config]="confirmConfig"

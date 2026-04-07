@@ -1,26 +1,23 @@
 <ion-content class="ses-content">
   <div class="ses-wrapper">
-
-    <!-- ════════════════════════ PAGE HEADER ════════════════════════ -->
     <div class="ses-page-header">
       <div class="ses-page-header__text">
         <h1 class="ses-title">Sesiones</h1>
-        <p class="ses-subtitle">Registro clínico de sesiones realizadas</p>
+        <p class="ses-subtitle">Registro cl�nico de sesiones realizadas</p>
       </div>
     </div>
 
-    <!-- ════════════════════════ FILTROS ════════════════════════════ -->
     <div class="sf-bar">
       <div class="sf-search">
         <ion-icon name="search-outline" class="sf-search__icon"></ion-icon>
         <input
           class="sf-search__input"
           type="text"
-          placeholder="Buscar por paciente o notas…"
+          placeholder="Buscar por paciente, tipo o resumen..."
           [(ngModel)]="filtros.busqueda"
-          (ngModelChange)="filtrar()"
+          (ngModelChange)="aplicarFiltrosLocales()"
         />
-        <button *ngIf="filtros.busqueda" class="sf-search__clear" (click)="filtros.busqueda = ''; filtrar()">
+        <button *ngIf="filtros.busqueda" class="sf-search__clear" (click)="filtros.busqueda = ''; aplicarFiltrosLocales()">
           <ion-icon name="close-outline"></ion-icon>
         </button>
       </div>
@@ -29,20 +26,20 @@
         <agf-date-picker
           class="sf-date-picker"
           [(ngModel)]="filtros.fecha_desde"
-          (ngModelChange)="filtrar()"
+          (ngModelChange)="onDateFiltersChanged()"
           placeholder="Desde"
         ></agf-date-picker>
 
         <agf-date-picker
           class="sf-date-picker"
           [(ngModel)]="filtros.fecha_hasta"
-          (ngModelChange)="filtrar()"
+          (ngModelChange)="onDateFiltersChanged()"
           placeholder="Hasta"
         ></agf-date-picker>
 
         <div class="sf-select-wrap">
           <ion-icon name="attach-outline"></ion-icon>
-          <select class="sf-select" [(ngModel)]="filtros.con_adjunto" (ngModelChange)="filtrar()">
+          <select class="sf-select" [(ngModel)]="filtros.con_adjunto" (ngModelChange)="aplicarFiltrosLocales()">
             <option value="todos">Todos los adjuntos</option>
             <option value="con">Con adjunto</option>
             <option value="sin">Sin adjunto</option>
@@ -56,125 +53,121 @@
       </div>
     </div>
 
-    <!-- ════════════════════════ CONTADOR ═══════════════════════════ -->
     <p class="ses-counter">
       Mostrando <strong>{{ sesionesFiltradas.length }}</strong> de <strong>{{ totalSesiones }}</strong> sesiones
+      <span *ngIf="cargandoAdjuntos"> � verificando adjuntos...</span>
     </p>
 
-    <!-- ════════════════════════ LISTA DESKTOP ══════════════════════ -->
-    <div class="ses-table-wrapper">
+    <div *ngIf="loading" class="ses-empty">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Cargando sesiones...</p>
+    </div>
 
-      <div class="ses-table-head">
-        <div class="ses-col ses-col--paciente">Paciente</div>
-        <div class="ses-col ses-col--fecha">Fecha cita</div>
-        <div class="ses-col ses-col--notas">Notas</div>
-        <div class="ses-col ses-col--adj">Adjunto</div>
-        <div class="ses-col ses-col--creada">Registrada</div>
-        <div class="ses-col ses-col--acciones">Acciones</div>
-      </div>
+    <div *ngIf="errorMessage && !loading" class="ses-empty">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      <p>{{ errorMessage }}</p>
+      <button class="sf-clear" (click)="cargarSesiones()">Reintentar</button>
+    </div>
 
-      <div *ngIf="sesionesFiltradas.length === 0" class="ses-empty">
-        <ion-icon name="journal-outline"></ion-icon>
-        <p>No se encontraron sesiones</p>
-        <span *ngIf="tieneActivos">Prueba con otros filtros</span>
-      </div>
+    <ng-container *ngIf="!loading && !errorMessage">
+      <div class="ses-table-wrapper">
+        <div class="ses-table-head">
+          <div class="ses-col ses-col--paciente">Paciente</div>
+          <div class="ses-col ses-col--fecha">Fecha sesi�n</div>
+          <div class="ses-col ses-col--notas">Resumen</div>
+          <div class="ses-col ses-col--adj">Adjunto</div>
+          <div class="ses-col ses-col--creada">Registrada</div>
+          <div class="ses-col ses-col--acciones">Acciones</div>
+        </div>
 
-      <div
-        *ngFor="let s of sesionesFiltradas"
-        class="ses-row"
-        (click)="verDetalle(s)"
-        role="row"
-      >
-        <!-- Paciente -->
-        <div class="ses-col ses-col--paciente">
-          <span class="ses-data-label">Paciente</span>
-          <div class="ses-patient">
-            <div class="ses-avatar" [style.background]="getAvatarColor(s.nombre_paciente)">{{ getIniciales(s) }}</div>
-            <div class="ses-patient__info">
-              <span class="ses-patient__name">{{ s.apellido_paciente }}, {{ s.nombre_paciente }}</span>
+        <div *ngIf="sesionesFiltradas.length === 0" class="ses-empty">
+          <ion-icon name="journal-outline"></ion-icon>
+          <p>No se encontraron sesiones</p>
+          <span *ngIf="tieneActivos">Prueba con otros filtros</span>
+        </div>
+
+        <div
+          *ngFor="let s of sesionesFiltradas"
+          class="ses-row"
+          (click)="verDetalle(s)"
+          role="row"
+        >
+          <div class="ses-col ses-col--paciente">
+            <span class="ses-data-label">Paciente</span>
+            <div class="ses-patient">
+              <div class="ses-avatar" [style.background]="getAvatarColor(s.nombre_paciente)">{{ getIniciales(s) }}</div>
+              <div class="ses-patient__info">
+                <span class="ses-patient__name">{{ s.apellido_paciente }}, {{ s.nombre_paciente }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="ses-col ses-col--fecha">
+            <span class="ses-data-label">Fecha sesi�n</span>
+            <span class="ses-cell-text">{{ formatFecha(s.fecha_sesion) }}</span>
+          </div>
+
+          <div class="ses-col ses-col--notas">
+            <span class="ses-data-label">Resumen</span>
+            <p class="ses-notas-cell">{{ getResumen(s) || 'Sin resumen cl�nico registrado.' }}</p>
+          </div>
+
+          <div class="ses-col ses-col--adj">
+            <span class="ses-data-label">Adjunto</span>
+            <span class="ses-adj-badge ses-adj-badge--con" *ngIf="getAdjuntoPrincipal(s.id_sesion) as adjunto">
+              <ion-icon [name]="getFileIcon(adjunto.mime_type)"></ion-icon>
+              <span class="ses-adj-name">{{ adjunto.nombre_original }}</span>
+            </span>
+            <span class="ses-adj-no" *ngIf="!hasAdjunto(s.id_sesion)">-</span>
+          </div>
+
+          <div class="ses-col ses-col--creada">
+            <span class="ses-data-label">Registrada</span>
+            <span class="ses-cell-text">{{ formatCreacion(s.created_at) }}</span>
+          </div>
+
+          <div class="ses-col ses-col--acciones" (click)="$event.stopPropagation()">
+            <span class="ses-data-label">Acciones</span>
+            <div class="ses-actions">
+              <button class="ses-action-btn ses-action-btn--view" (click)="verDetalle(s)" title="Ver detalle">
+                <ion-icon name="eye-outline"></ion-icon>
+              </button>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Fecha cita -->
-        <div class="ses-col ses-col--fecha">
-          <span class="ses-data-label">Fecha cita</span>
-          <span class="ses-cell-text">{{ formatFecha(s.fecha_cita) }}</span>
+      <div class="ses-cards-grid">
+        <div *ngIf="sesionesFiltradas.length === 0" class="ses-empty-mobile">
+          <ion-icon name="journal-outline"></ion-icon>
+          <p>No se encontraron sesiones</p>
         </div>
 
-        <!-- Notas: pasa el texto completo, CSS hace el clamp -->
-        <div class="ses-col ses-col--notas">
-          <span class="ses-data-label">Notas</span>
-          <p class="ses-notas-cell">{{ s.notas }}</p>
-        </div>
+        <div *ngFor="let s of sesionesFiltradas" class="ses-card" (click)="verDetalle(s)">
+          <div class="ses-card__head">
+            <div class="ses-avatar ses-avatar--md" [style.background]="getAvatarColor(s.nombre_paciente)">{{ getIniciales(s) }}</div>
+            <div class="ses-card__info">
+              <span class="ses-card__nombre">{{ s.apellido_paciente }}, {{ s.nombre_paciente }}</span>
+              <span class="ses-card__fecha">
+                <ion-icon name="calendar-outline"></ion-icon>
+                {{ formatFecha(s.fecha_sesion) }}
+              </span>
+            </div>
+            <span class="ses-card__adj-dot" *ngIf="hasAdjunto(s.id_sesion)">
+              <ion-icon name="attach-outline"></ion-icon>
+            </span>
+          </div>
 
-        <!-- Adjunto -->
-        <div class="ses-col ses-col--adj">
-          <span class="ses-data-label">Adjunto</span>
-          <span class="ses-adj-badge ses-adj-badge--con" *ngIf="s.adjunto">
-            <ion-icon [name]="getFileIcon(s.adjunto.type)"></ion-icon>
-            <span class="ses-adj-name">{{ s.adjunto.name }}</span>
-          </span>
-          <span class="ses-adj-no" *ngIf="!s.adjunto">—</span>
-        </div>
+          <p class="ses-card__notas">{{ resumenNotas(getResumen(s) || 'Sin resumen cl�nico registrado.') }}</p>
 
-        <!-- Registrada -->
-        <div class="ses-col ses-col--creada">
-          <span class="ses-data-label">Registrada</span>
-          <span class="ses-cell-text">{{ formatCreacion(s.fecha_creacion) }}</span>
-        </div>
-
-        <!-- Acciones -->
-        <div class="ses-col ses-col--acciones" (click)="$event.stopPropagation()">
-          <span class="ses-data-label">Acciones</span>
-          <div class="ses-actions">
-            <button class="ses-action-btn ses-action-btn--view" (click)="verDetalle(s)" title="Ver detalle">
+          <div class="ses-card__foot">
+            <span class="ses-card__meta">Registrada {{ formatCreacion(s.created_at) }}</span>
+            <button class="ses-action-btn ses-action-btn--view" (click)="$event.stopPropagation(); verDetalle(s)">
               <ion-icon name="eye-outline"></ion-icon>
             </button>
           </div>
         </div>
       </div>
-
-    </div>
-
-    <!-- ════════════════════════ CARDS MÓVIL ════════════════════════ -->
-    <div class="ses-cards-grid">
-
-      <div *ngIf="sesionesFiltradas.length === 0" class="ses-empty-mobile">
-        <ion-icon name="journal-outline"></ion-icon>
-        <p>No se encontraron sesiones</p>
-      </div>
-
-      <div
-        *ngFor="let s of sesionesFiltradas"
-        class="ses-card"
-        (click)="verDetalle(s)"
-      >
-        <div class="ses-card__head">
-          <div class="ses-avatar ses-avatar--md" [style.background]="getAvatarColor(s.nombre_paciente)">{{ getIniciales(s) }}</div>
-          <div class="ses-card__info">
-            <span class="ses-card__nombre">{{ s.apellido_paciente }}, {{ s.nombre_paciente }}</span>
-            <span class="ses-card__fecha">
-              <ion-icon name="calendar-outline"></ion-icon>
-              {{ formatFecha(s.fecha_cita) }}
-            </span>
-          </div>
-          <span class="ses-card__adj-dot" *ngIf="s.adjunto">
-            <ion-icon name="attach-outline"></ion-icon>
-          </span>
-        </div>
-
-        <p class="ses-card__notas">{{ resumenNotas(s.notas) }}</p>
-
-        <div class="ses-card__foot">
-          <span class="ses-card__meta">Registrada {{ formatCreacion(s.fecha_creacion) }}</span>
-          <button class="ses-action-btn ses-action-btn--view" (click)="$event.stopPropagation(); verDetalle(s)">
-            <ion-icon name="eye-outline"></ion-icon>
-          </button>
-        </div>
-      </div>
-
-    </div>
-
+    </ng-container>
   </div>
 </ion-content>

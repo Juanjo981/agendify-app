@@ -5,7 +5,23 @@
     <button class="adp-nav__btn" type="button" (click)="prevMonth()" aria-label="Mes anterior">
       <ion-icon name="chevron-back-outline"></ion-icon>
     </button>
-    <span class="adp-nav__label">{{ monthLabel }}</span>
+    <ng-container *ngIf="showMonthYearSelectors; else defaultMonthLabel">
+      <div class="adp-nav__selectors">
+        <label class="adp-nav__select-wrap" aria-label="Mes">
+          <select class="adp-nav__select" [value]="viewMonth" (change)="onMonthChange($any($event.target).value)">
+            <option *ngFor="let month of monthOptions" [value]="month.value">{{ month.label }}</option>
+          </select>
+        </label>
+        <label class="adp-nav__select-wrap adp-nav__select-wrap--year" aria-label="Año">
+          <select class="adp-nav__select" [value]="viewYear" (change)="onYearChange($any($event.target).value)">
+            <option *ngFor="let year of yearOptions" [value]="year">{{ year }}</option>
+          </select>
+        </label>
+      </div>
+    </ng-container>
+    <ng-template #defaultMonthLabel>
+      <span class="adp-nav__label">{{ monthLabel }}</span>
+    </ng-template>
     <button class="adp-nav__btn" type="button" (click)="nextMonth()" aria-label="Mes siguiente">
       <ion-icon name="chevron-forward-outline"></ion-icon>
     </button>

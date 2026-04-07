@@ -26,6 +26,7 @@ import {
   toTimePart,
 } from '../models/cita.model';
 import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
+import { SesionesApiService } from '../../sesiones/sesiones-api.service';
 
 @Component({
   selector: 'app-detalle-cita',
@@ -46,10 +47,12 @@ import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
 export class DetalleCitaPage implements OnInit {
   cita: CitaDto | null = null;
   citaId = 0;
+  sesionRelacionadaId: number | null = null;
 
   loading = false;
   saving = false;
   errorMessage = '';
+  sesionActionLoading = false;
 
   showEditarModal = false;
   showReprogramarModal = false;
@@ -68,6 +71,7 @@ export class DetalleCitaPage implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private citasSvc: CitasApiService,
+    private sesionesSvc: SesionesApiService,
   ) {}
 
   ngOnInit() {
@@ -91,7 +95,7 @@ export class DetalleCitaPage implements OnInit {
   }
 
   formatMonto(n: number): string {
-    return `â‚¬${Number(n || 0).toFixed(2)}`;
+    return `€${Number(n || 0).toFixed(2)}`;
   }
 
   get iniciales(): string {
@@ -138,11 +142,20 @@ export class DetalleCitaPage implements OnInit {
     return ['PENDIENTE', 'CONFIRMADA'].includes(this.cita.estado_cita);
   }
 
+  get puedeGestionarSesion(): boolean {
+    if (!this.cita) return false;
+    return this.cita.estado_cita === 'COMPLETADA';
+  }
+
+  get sesionButtonLabel(): string {
+    return this.sesionRelacionadaId ? 'Ver sesión' : 'Crear sesión';
+  }
+
   cambiarEstado(estado: EstadoCita, title: string) {
     this.openConfirm(
       {
         title,
-        message: `Â¿Confirmas cambiar el estado de la cita a "${estado}"?`,
+        message: `¿Confirmas cambiar el estado de la cita a "${estado}"?`,
         confirmLabel: 'Confirmar',
         variant: 'primary',
         icon: 'checkmark-circle-outline',
@@ -161,6 +174,7 @@ export class DetalleCitaPage implements OnInit {
       const body = this.mapToUpsertRequest(data);
       this.cita = await this.citasSvc.update(this.cita.id_cita, body);
       this.showEditarModal = false;
+      await this.cargarSesionRelacionada();
     } catch (err) {
       this.errorMessage = mapApiError(err).userMessage;
     } finally {
@@ -184,6 +198,7 @@ export class DetalleCitaPage implements OnInit {
       };
       this.cita = await this.citasSvc.update(this.cita.id_cita, body);
       this.showReprogramarModal = false;
+      await this.cargarSesionRelacionada();
     } catch (err) {
       this.errorMessage = mapApiError(err).userMessage;
     } finally {
@@ -223,11 +238,50 @@ export class DetalleCitaPage implements OnInit {
     }
   }
 
+  async resolverSesion() {
+    if (!this.cita || !this.puedeGestionarSesion || this.sesionActionLoading) return;
+
+    this.sesionActionLoading = true;
+    this.errorMessage = '';
+
+    try {
+      if (this.sesionRelacionadaId) {
+        this.router.navigate(['/dashboard/sesiones', this.sesionRelacionadaId]);
+        return;
+      }
+
+      const sesion = await this.sesionesSvc.create({ id_cita: this.cita.id_cita });
+      this.sesionRelacionadaId = sesion.id_sesion;
+      this.cita = { ...this.cita, tiene_sesion: true };
+      this.router.navigate(['/dashboard/sesiones', sesion.id_sesion]);
+    } catch (err) {
+      const apiError = mapApiError(err);
+
+      if (apiError.status === 409) {
+        try {
+          const sesionExistente = await this.sesionesSvc.getByCitaId(this.cita.id_cita);
+          this.sesionRelacionadaId = sesionExistente.id_sesion;
+          this.cita = { ...this.cita, tiene_sesion: true };
+          this.router.navigate(['/dashboard/sesiones', sesionExistente.id_sesion]);
+          return;
+        } catch (lookupErr) {
+          this.errorMessage = mapApiError(lookupErr).userMessage;
+          return;
+        }
+      }
+
+      this.errorMessage = apiError.userMessage;
+    } finally {
+      this.sesionActionLoading = false;
+    }
+  }
+
   private async recargar() {
     this.loading = true;
     this.errorMessage = '';
     try {
       this.cita = await this.citasSvc.getById(this.citaId);
+      await this.cargarSesionRelacionada();
     } catch (err) {
       this.cita = null;
       this.errorMessage = mapApiError(err).userMessage;
@@ -242,10 +296,38 @@ export class DetalleCitaPage implements OnInit {
     this.errorMessage = '';
     try {
       this.cita = await this.citasSvc.cambiarEstado(this.cita.id_cita, estado);
+      await this.cargarSesionRelacionada();
     } catch (err) {
       this.errorMessage = mapApiError(err).userMessage;
     } finally {
       this.saving = false;
+    }
+  }
+
+  private async cargarSesionRelacionada() {
+    if (!this.cita) {
+      this.sesionRelacionadaId = null;
+      return;
+    }
+
+    if (!this.cita.tiene_sesion && this.cita.estado_cita !== 'COMPLETADA') {
+      this.sesionRelacionadaId = null;
+      return;
+    }
+
+    try {
+      const sesion = await this.sesionesSvc.getByCitaId(this.cita.id_cita);
+      this.sesionRelacionadaId = sesion.id_sesion;
+      this.cita = { ...this.cita, tiene_sesion: true };
+    } catch (err) {
+      const apiError = mapApiError(err);
+      if (apiError.status === 404) {
+        this.sesionRelacionadaId = null;
+        this.cita = { ...this.cita, tiene_sesion: false };
+        return;
+      }
+
+      this.errorMessage = apiError.userMessage;
     }
   }
 

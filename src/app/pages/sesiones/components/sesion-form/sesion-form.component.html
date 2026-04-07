@@ -1,41 +1,57 @@
 <div class="sf-overlay" (click)="cancelado.emit()">
   <div class="sf-modal" (click)="$event.stopPropagation()">
-
-    <!-- Header -->
     <div class="sf-header">
       <div class="sf-header__icon">
         <ion-icon name="document-text-outline"></ion-icon>
       </div>
       <div class="sf-header__text">
-        <h3 class="sf-header__title">Registrar sesiÃ³n</h3>
-        <p class="sf-header__sub">Completa las notas de la atenciÃ³n</p>
+        <h3 class="sf-header__title">Editar sesión</h3>
+        <p class="sf-header__sub">Actualiza el resumen clínico y adjunta archivos reales</p>
       </div>
-      <button class="sf-close" (click)="cancelado.emit()">
+      <button class="sf-close" (click)="cancelado.emit()" [disabled]="saving">
         <ion-icon name="close-outline"></ion-icon>
       </button>
     </div>
 
-    <!-- Body -->
     <div class="sf-body">
-
-      <!-- Notas -->
       <div class="sf-field">
-        <label class="sf-label">Notas de la sesiÃ³n</label>
+        <label class="sf-label">Fecha y hora de la sesión</label>
+        <input
+          class="sf-input"
+          type="datetime-local"
+          [(ngModel)]="fechaSesion"
+          (ngModelChange)="fechaError = ''"
+        />
+        <span *ngIf="fechaError" class="sf-error">{{ fechaError }}</span>
+      </div>
+
+      <div class="sf-field">
+        <label class="sf-label">Tipo de sesión</label>
+        <select class="sf-select" [(ngModel)]="tipoSesion">
+          <option value="INDIVIDUAL">Individual</option>
+          <option value="PAREJA">Pareja</option>
+          <option value="FAMILIAR">Familiar</option>
+          <option value="GRUPAL">Grupal</option>
+          <option value="SEGUIMIENTO">Seguimiento</option>
+        </select>
+      </div>
+
+      <div class="sf-field">
+        <label class="sf-label">Resumen clínico</label>
         <textarea
           class="sf-textarea"
           rows="6"
-          placeholder="Escribe las notas clÃ­nicas, observaciones y evoluciÃ³n del pacienteâ€¦"
-          [(ngModel)]="notas"
-          (ngModelChange)="notasError = ''"
-          [class.sf-textarea--error]="notasError"
+          placeholder="Escribe observaciones, evolución y acuerdos de la sesión..."
+          [(ngModel)]="resumen"
+          (ngModelChange)="resumenError = ''"
+          [class.sf-textarea--error]="resumenError"
         ></textarea>
-        <span *ngIf="notasError" class="sf-error">{{ notasError }}</span>
-        <span class="sf-hint">{{ notas.length }} caracteres</span>
+        <span *ngIf="resumenError" class="sf-error">{{ resumenError }}</span>
+        <span class="sf-hint">{{ resumen.length }} caracteres</span>
       </div>
 
-      <!-- Archivo adjunto -->
       <div class="sf-field">
-        <label class="sf-label">Archivo adjunto <span class="sf-optional">(opcional)</span></label>
+        <label class="sf-label">Adjuntar archivo <span class="sf-optional">(opcional)</span></label>
         <app-archivo-adjunto
           [adjunto]="adjunto"
           (archivoSeleccionado)="onArchivoSeleccionado($event)"
@@ -43,16 +59,16 @@
         ></app-archivo-adjunto>
       </div>
 
+      <p *ngIf="errorMessage" class="sf-error">{{ errorMessage }}</p>
     </div>
 
-    <!-- Footer -->
     <div class="sf-footer">
-      <button class="sf-btn sf-btn--cancel" (click)="cancelado.emit()">Cancelar</button>
-      <button class="sf-btn sf-btn--save" (click)="guardar()">
-        <ion-icon name="checkmark-circle-outline"></ion-icon>
-        Guardar sesiÃ³n
+      <button class="sf-btn sf-btn--cancel" (click)="cancelado.emit()" [disabled]="saving">Cancelar</button>
+      <button class="sf-btn sf-btn--save" (click)="guardar()" [disabled]="saving">
+        <ion-spinner *ngIf="saving" name="crescent"></ion-spinner>
+        <ion-icon *ngIf="!saving" name="checkmark-circle-outline"></ion-icon>
+        Guardar sesión
       </button>
     </div>
-
   </div>
 </div>

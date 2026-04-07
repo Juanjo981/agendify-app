@@ -219,20 +219,24 @@
           <agf-date-picker
             [(ngModel)]="formPaciente.fecha_nacimiento"
             [allowPast]="true"
+            [showMonthYearSelectors]="true"
+            [yearRangeStart]="1900"
+            [yearRangeEnd]="birthDateMaxYear"
+            [hasError]="!!formErrores['fecha_nacimiento']"
+            [errorMsg]="formErrores['fecha_nacimiento']"
             placeholder="Seleccionar fecha"
           ></agf-date-picker>
         </div>
       </div>
 
       <div class="pac-form-row">
-        <div class="pac-field">
+        <div class="pac-field" [class.has-error]="formErrores['sexo']">
           <label>Sexo</label>
           <select [(ngModel)]="formPaciente.sexo" class="pac-select pac-select--field">
             <option value="">Sin especificar</option>
-            <option value="Masculino">Masculino</option>
-            <option value="Femenino">Femenino</option>
-            <option value="Otro">Otro</option>
+            <option *ngFor="let option of sexoOptions" [value]="option.value">{{ option.label }}</option>
           </select>
+          <span class="pac-field__error" *ngIf="formErrores['sexo']">{{ formErrores['sexo'] }}</span>
         </div>
         <div class="pac-field">
           <label>Dirección</label>

@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 
-import { ConfiguracionPage } from './configuracion.page';
+import { ConfiguracionPage } from './configuracion.page.integrated';
 
 const routes: Routes = [
   {

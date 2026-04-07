@@ -22,8 +22,12 @@ const routes: Routes = [
     children: [
       {
         path: '',
-        redirectTo: 'agenda',
+        redirectTo: 'inicio',
         pathMatch: 'full'
+      },
+      {
+        path: 'inicio',
+        loadComponent: () => import('./pages/dashboard/home/dashboard-home.page').then(m => m.DashboardHomePage)
       },
       {
         path: 'agenda',
@@ -33,7 +37,7 @@ const routes: Routes = [
       },
       {
         path: 'perfil',
-        loadComponent: () => import('./pages/perfil/perfil.page').then(m => m.PerfilPage)
+        loadComponent: () => import('./pages/perfil/perfil.page.integrated').then(m => m.PerfilPage)
       },
       {
         path: 'pacientes',
@@ -48,7 +52,7 @@ const routes: Routes = [
       {
         path: 'configuracion',
         canActivate: [permisosGuard],
-        loadComponent: () => import('./pages/configuracion/configuracion.page').then(m => m.ConfiguracionPage)
+        loadComponent: () => import('./pages/configuracion/configuracion.page.integrated').then(m => m.ConfiguracionPage)
       },
       {
         path: 'citas',

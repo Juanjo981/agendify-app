@@ -5,9 +5,11 @@ import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { getAvatarColor as avatarColorUtil } from '../../shared/utils/avatar.utils';
 import { formatFecha as formatFechaUtil } from '../../shared/utils/date.utils';
-import { SesionesMockService } from './sesiones.service.mock';
-import { SesionDto } from './models/sesion.model';
 import { AgfDatePickerComponent } from '../../shared/components/agf-date-picker/agf-date-picker.component';
+import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
+import { AdjuntosServiceApi } from 'src/app/services/adjuntos.service.api';
+import { SesionesApiService } from './sesiones-api.service';
+import { ArchivoAdjuntoDto, SesionDto, getSessionSummary } from './models/sesion.model';
 
 interface FiltrosSesiones {
   busqueda: string;
@@ -24,7 +26,13 @@ interface FiltrosSesiones {
   imports: [IonicModule, CommonModule, FormsModule, AgfDatePickerComponent],
 })
 export class SesionesPage implements OnInit {
+  sesiones: SesionDto[] = [];
   sesionesFiltradas: SesionDto[] = [];
+  totalSesiones = 0;
+  loading = false;
+  errorMessage = '';
+  cargandoAdjuntos = false;
+  private readonly adjuntosPorSesion = new Map<number, ArchivoAdjuntoDto | null>();
 
   filtros: FiltrosSesiones = {
     busqueda: '',
@@ -33,32 +41,73 @@ export class SesionesPage implements OnInit {
     con_adjunto: 'todos',
   };
 
-  constructor(private svc: SesionesMockService, private router: Router) {}
+  constructor(
+    private sesionesApi: SesionesApiService,
+    private adjuntosApi: AdjuntosServiceApi,
+    private router: Router,
+  ) {}
 
-  ngOnInit() { this.filtrar(); }
+  ngOnInit() {
+    void this.cargarSesiones();
+  }
 
-  get totalSesiones(): number { return this.svc.getAllSesiones().length; }
+  async cargarSesiones() {
+    this.loading = true;
+    this.errorMessage = '';
 
-  filtrar() {
-    let r = this.svc.getAllSesiones();
-    const q = this.filtros.busqueda.trim().toLowerCase();
-    if (q) {
-      r = r.filter(s =>
-        s.nombre_paciente.toLowerCase().includes(q) ||
-        s.apellido_paciente.toLowerCase().includes(q) ||
-        s.notas.toLowerCase().includes(q)
-      );
+    try {
+      const page = await this.sesionesApi.getAll({
+        fechaDesde: this.filtros.fecha_desde ? `${this.filtros.fecha_desde}T00:00:00` : undefined,
+        fechaHasta: this.filtros.fecha_hasta ? `${this.filtros.fecha_hasta}T23:59:59` : undefined,
+        size: 50,
+        sort: 'fecha_sesion,desc',
+      });
+
+      this.sesiones = page.content ?? [];
+      this.totalSesiones = page.total_elements ?? this.sesiones.length;
+      await this.cargarResumenAdjuntos(this.sesiones);
+      this.aplicarFiltrosLocales();
+    } catch (err) {
+      this.sesiones = [];
+      this.sesionesFiltradas = [];
+      this.totalSesiones = 0;
+      this.errorMessage = mapApiError(err).userMessage;
+    } finally {
+      this.loading = false;
     }
-    if (this.filtros.fecha_desde) r = r.filter(s => s.fecha_cita >= this.filtros.fecha_desde);
-    if (this.filtros.fecha_hasta) r = r.filter(s => s.fecha_cita <= this.filtros.fecha_hasta);
-    if (this.filtros.con_adjunto === 'con') r = r.filter(s => !!s.adjunto);
-    if (this.filtros.con_adjunto === 'sin') r = r.filter(s => !s.adjunto);
-    this.sesionesFiltradas = r;
+  }
+
+  aplicarFiltrosLocales() {
+    let resultado = [...this.sesiones];
+    const query = this.filtros.busqueda.trim().toLowerCase();
+
+    if (query) {
+      resultado = resultado.filter(sesion => {
+        const paciente = `${sesion.nombre_paciente} ${sesion.apellido_paciente}`.toLowerCase();
+        const resumen = getSessionSummary(sesion).toLowerCase();
+        const tipo = (sesion.tipo_sesion ?? '').toLowerCase();
+        return paciente.includes(query) || resumen.includes(query) || tipo.includes(query);
+      });
+    }
+
+    if (this.filtros.con_adjunto === 'con') {
+      resultado = resultado.filter(sesion => this.hasAdjunto(sesion.id_sesion));
+    }
+
+    if (this.filtros.con_adjunto === 'sin') {
+      resultado = resultado.filter(sesion => !this.hasAdjunto(sesion.id_sesion));
+    }
+
+    this.sesionesFiltradas = resultado;
+  }
+
+  onDateFiltersChanged() {
+    void this.cargarSesiones();
   }
 
   limpiarFiltros() {
     this.filtros = { busqueda: '', fecha_desde: '', fecha_hasta: '', con_adjunto: 'todos' };
-    this.filtrar();
+    void this.cargarSesiones();
   }
 
   get tieneActivos(): boolean {
@@ -70,8 +119,8 @@ export class SesionesPage implements OnInit {
     );
   }
 
-  verDetalle(s: SesionDto) {
-    this.router.navigate(['/dashboard/sesiones', s.id_sesion]);
+  verDetalle(sesion: SesionDto) {
+    this.router.navigate(['/dashboard/sesiones', sesion.id_sesion]);
   }
 
   formatFecha(iso: string): string {
@@ -79,26 +128,61 @@ export class SesionesPage implements OnInit {
   }
 
   formatCreacion(iso: string): string {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!iso) return '-';
+    const date = new Date(iso);
+    return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
-  resumenNotas(notas: string): string {
-    return notas.length > 90 ? notas.slice(0, 87) + '…' : notas;
+  resumenNotas(resumen: string): string {
+    return resumen.length > 90 ? `${resumen.slice(0, 87)}...` : resumen;
   }
 
-  getIniciales(s: SesionDto): string {
-    return `${s.apellido_paciente.charAt(0)}${s.nombre_paciente.charAt(0)}`.toUpperCase();
+  getIniciales(sesion: SesionDto): string {
+    return `${sesion.apellido_paciente.charAt(0)}${sesion.nombre_paciente.charAt(0)}`.toUpperCase();
   }
 
   getAvatarColor(nombre: string): string {
     return avatarColorUtil(nombre);
   }
 
-  getFileIcon(type: string): string {
-    if (type.startsWith('image/')) return 'image-outline';
-    if (type === 'application/pdf') return 'document-outline';
+  getResumen(sesion: SesionDto): string {
+    return getSessionSummary(sesion);
+  }
+
+  getAdjuntoPrincipal(sesionId: number): ArchivoAdjuntoDto | null {
+    return this.adjuntosPorSesion.get(sesionId) ?? null;
+  }
+
+  hasAdjunto(sesionId: number): boolean {
+    return !!this.getAdjuntoPrincipal(sesionId);
+  }
+
+  getFileIcon(mimeType?: string | null): string {
+    if (!mimeType) return 'attach-outline';
+    if (mimeType.startsWith('image/')) return 'image-outline';
+    if (mimeType === 'application/pdf') return 'document-outline';
     return 'document-text-outline';
+  }
+
+  private async cargarResumenAdjuntos(sesiones: SesionDto[]) {
+    this.cargandoAdjuntos = true;
+
+    const resultados = await Promise.all(
+      sesiones.map(async sesion => {
+        try {
+          const page = await this.adjuntosApi.getBySesionId(sesion.id_sesion, { size: 1 });
+          return [sesion.id_sesion, page.content?.[0] ?? null] as const;
+        } catch {
+          return [sesion.id_sesion, null] as const;
+        }
+      })
+    );
+
+    this.adjuntosPorSesion.clear();
+    resultados.forEach(([sesionId, archivo]) => {
+      this.adjuntosPorSesion.set(sesionId, archivo);
+    });
+
+    this.cargandoAdjuntos = false;
   }
 }

@@ -11,6 +11,7 @@ import {
   NotaClinicaDto, NotaClinicaRequest,
   SesionPacienteDto,
   HistorialPacienteResponse, HistorialEvento, HistorialTipoEvento,
+  PACIENTE_SEXO_OPTIONS, SexoPaciente, isSexoPaciente, normalizeSexoPaciente,
   mapHistorialEventoApi,
 } from './models/paciente.model';
 import { getAvatarColor as avatarColorUtil } from '../../shared/utils/avatar.utils';
@@ -28,6 +29,7 @@ import html2pdf from 'html2pdf.js';
   imports: [IonicModule, CommonModule, FormsModule, ConfirmDialogComponent, PacienteSubmenuComponent, AgfDatePickerComponent],
 })
 export class PacienteDetallePage implements OnInit {
+  readonly sexoOptions = PACIENTE_SEXO_OPTIONS;
   paciente: PacienteDto | null = null;
   resumen: ResumenPacienteDto | null = null;
 
@@ -124,7 +126,7 @@ export class PacienteDetallePage implements OnInit {
   emptyForm() {
     return {
       nombre: '', apellido: '', email: '', numero_telefono: '',
-      fecha_nacimiento: '', notas_generales: '', sexo: '',
+      fecha_nacimiento: '', notas_generales: '', sexo: '' as SexoPaciente | '',
       direccion: '', contacto_emergencia_nombre: '', contacto_emergencia_telefono: '',
     };
   }
@@ -621,7 +623,7 @@ export class PacienteDetallePage implements OnInit {
       numero_telefono: this.paciente.numero_telefono ?? '',
       fecha_nacimiento: this.paciente.fecha_nacimiento ?? '',
       notas_generales: this.paciente.notas_generales ?? '',
-      sexo: this.paciente.sexo ?? '',
+      sexo: normalizeSexoPaciente(this.paciente.sexo),
       direccion: this.paciente.direccion ?? '',
       contacto_emergencia_nombre: this.paciente.contacto_emergencia_nombre ?? '',
       contacto_emergencia_telefono: this.paciente.contacto_emergencia_telefono ?? '',
@@ -657,7 +659,7 @@ export class PacienteDetallePage implements OnInit {
       || this.formPaciente.numero_telefono !== (p.numero_telefono ?? '')
       || this.formPaciente.fecha_nacimiento !== (p.fecha_nacimiento ?? '')
       || this.formPaciente.notas_generales !== (p.notas_generales ?? '')
-      || this.formPaciente.sexo !== (p.sexo ?? '')
+      || this.formPaciente.sexo !== normalizeSexoPaciente(p.sexo)
       || this.formPaciente.direccion !== (p.direccion ?? '')
       || this.formPaciente.contacto_emergencia_nombre !== (p.contacto_emergencia_nombre ?? '')
       || this.formPaciente.contacto_emergencia_telefono !== (p.contacto_emergencia_telefono ?? '');
@@ -669,6 +671,9 @@ export class PacienteDetallePage implements OnInit {
     if (!this.formPaciente.apellido?.trim()) this.formErrores['apellido'] = 'El apellido es requerido';
     if (this.formPaciente.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.formPaciente.email)) {
       this.formErrores['email'] = 'Formato de email inválido';
+    }
+    if (this.formPaciente.sexo && !isSexoPaciente(this.formPaciente.sexo)) {
+      this.formErrores['sexo'] = 'Selecciona una opción válida';
     }
     return Object.keys(this.formErrores).length === 0;
   }
@@ -698,7 +703,7 @@ export class PacienteDetallePage implements OnInit {
       numero_telefono: this.formPaciente.numero_telefono.trim() || undefined,
       fecha_nacimiento: this.formPaciente.fecha_nacimiento || undefined,
       notas_generales: this.formPaciente.notas_generales.trim() || undefined,
-      sexo: this.formPaciente.sexo.trim() || undefined,
+      sexo: this.formPaciente.sexo || undefined,
       direccion: this.formPaciente.direccion.trim() || undefined,
       contacto_emergencia_nombre: this.formPaciente.contacto_emergencia_nombre.trim() || undefined,
       contacto_emergencia_telefono: this.formPaciente.contacto_emergencia_telefono.trim() || undefined,

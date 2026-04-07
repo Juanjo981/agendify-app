@@ -6,8 +6,12 @@ import { DashboardPage } from './dashboard.page';
 const routes: Routes = [
   {
     path: '',
-    redirectTo: 'agenda',
+    redirectTo: 'inicio',
     pathMatch: 'full'
+  },
+  {
+    path: 'inicio',
+    loadComponent: () => import('./home/dashboard-home.page').then(m => m.DashboardHomePage)
   },
   {
     path: 'agenda',
@@ -15,11 +19,11 @@ const routes: Routes = [
   },
   {
     path: 'perfil',
-    loadComponent: () => import('../perfil/perfil.page').then(m => m.PerfilPage)
+    loadComponent: () => import('../perfil/perfil.page.integrated').then(m => m.PerfilPage)
   },
   {
     path: 'configuracion',
-    loadComponent: () => import('../configuracion/configuracion.page').then(m => m.ConfiguracionPage)
+    loadComponent: () => import('../configuracion/configuracion.page.integrated').then(m => m.ConfiguracionPage)
   },
   {
     path: 'pacientes',

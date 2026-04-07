@@ -1,26 +1,20 @@
-<!-- Header superior fijo -->
+﻿<!-- Header superior fijo -->
 <ion-header class="dashboard-header">
   <ion-toolbar class="toolbar-custom">
     <div class="toolbar-content">
-
-
-      <!-- Logo a la izquierda -->
-      <button class="logo-full" (click)="irAAgenda()" aria-label="Ir a Agenda">
+      <button class="logo-full" (click)="irAInicio()" aria-label="Ir al dashboard">
         <img src="assets/img/logo-barra.png" alt="Agendify logo" />
       </button>
 
-      <!-- Contenedor derecho -->
       <div class="toolbar-right">
         <div class="notification-wrapper" (click)="toggleNotificaciones()">
           <div class="notif-icon-container">
             <ion-icon name="notifications-outline"></ion-icon>
-
             <div *ngIf="totalNotificaciones() > 0" class="notification-badge">
               {{ totalNotificaciones() }}
             </div>
           </div>
         </div>
-
 
         <div class="user-menu" (click)="toggleMenu()">
           <span class="username">{{ nombreUsuario }}</span>
@@ -30,236 +24,202 @@
     </div>
   </ion-toolbar>
 
-  <!-- Menú desplegable de usuario estilo premium -->
   <div *ngIf="menuAbierto" class="user-dropdown-overlay" (click)="cerrarMenuUsuario()">
-  <div class="user-dropdown" role="menu" (click)="$event.stopPropagation()">
+    <div class="user-dropdown" role="menu" (click)="$event.stopPropagation()">
+      <div class="user-header">
+        <div class="avatar-wrapper">
+          <img src="assets/img/default-avatar.jpg" alt="avatar" class="avatar" />
+        </div>
 
-    <!-- HEADER DEL PERFIL -->
-    <div class="user-header">
-      <div class="avatar-wrapper">
-        <img src="assets/img/default-avatar.jpg" alt="avatar" class="avatar" />
+        <div class="user-info">
+          <h3>{{ nombreUsuario }}</h3>
+          <p>Profesional de la salud</p>
+          <span class="user-brand">Agendify</span>
+        </div>
       </div>
 
-      <div class="user-info">
-        <h3>{{ nombreUsuario }}</h3>
-        <p>Profesional de la salud</p>
-        <span class="user-brand">Agendify</span>
+      <div class="user-dropdown-content">
+        <div class="section">
+          <label class="section-title">MI CUENTA</label>
+
+          <div class="section-item" (click)="irAMiPerfil()">
+            <ion-icon name="person-outline"></ion-icon>
+            <span>Mi perfil</span>
+            <ion-icon name="chevron-forward-outline" class="section-item__chevron"></ion-icon>
+          </div>
+
+          <div *appHasPermission="'configuracion'" class="section-item" (click)="irAConfiguracion()">
+            <ion-icon name="settings-outline"></ion-icon>
+            <span>Configuración</span>
+            <ion-icon name="chevron-forward-outline" class="section-item__chevron"></ion-icon>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <div class="section">
+          <label class="section-title">ORGANIZACIÓN</label>
+
+          <div class="section-item" (click)="irAEquipo()">
+            <ion-icon name="people-outline"></ion-icon>
+            <span>Equipo de trabajo</span>
+            <ion-icon name="chevron-forward-outline" class="section-item__chevron"></ion-icon>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <div class="section menu-section--last">
+          <label class="section-title">SISTEMA</label>
+
+          <div class="section-item" (click)="irAAyuda()">
+            <ion-icon name="help-circle-outline"></ion-icon>
+            <span>Ayuda / soporte</span>
+            <ion-icon name="chevron-forward-outline" class="section-item__chevron"></ion-icon>
+          </div>
+
+          <div class="section-item section-item--logout" (click)="confirmarSalir()">
+            <ion-icon name="log-out-outline"></ion-icon>
+            <span>Cerrar sesión</span>
+          </div>
+        </div>
       </div>
     </div>
-
-    <!-- CONTENIDO DE SECCIONES -->
-    <div class="user-dropdown-content">
-
-      <!-- SECCIÓN: MI CUENTA -->
-      <div class="section">
-        <label class="section-title">MI CUENTA</label>
-
-        <div class="section-item" (click)="irAMiPerfil()">
-          <ion-icon name="person-outline"></ion-icon>
-          <span>Mi perfil</span>
-          <ion-icon name="chevron-forward-outline" class="section-item__chevron"></ion-icon>
-        </div>
-
-        <div *appHasPermission="'configuracion'" class="section-item" (click)="irAConfiguracion()">
-          <ion-icon name="settings-outline"></ion-icon>
-          <span>Configuración</span>
-          <ion-icon name="chevron-forward-outline" class="section-item__chevron"></ion-icon>
-        </div>
-      </div>
-
-      <div class="section-divider"></div>
-
-      <!-- SECCIÓN: ORGANIZACIÓN -->
-      <div class="section">
-        <label class="section-title">ORGANIZACIÓN</label>
-
-        <!--
-        <div class="section-item" (click)="irAConsultorio()">
-          <ion-icon name="business-outline"></ion-icon>
-          <span>Consultorio</span>
-          <ion-icon name="chevron-forward-outline" class="section-item__chevron"></ion-icon>
-        </div>
-        -->
-
-        <div class="section-item" (click)="irAEquipo()">
-          <ion-icon name="people-outline"></ion-icon>
-          <span>Equipo de trabajo</span>
-          <ion-icon name="chevron-forward-outline" class="section-item__chevron"></ion-icon>
-        </div>
-      </div>
-
-      <div class="section-divider"></div>
-
-      <!-- SECCIÓN: SISTEMA -->
-      <div class="section menu-section--last">
-        <label class="section-title">SISTEMA</label>
-
-        <div class="section-item" (click)="irAAyuda()">
-          <ion-icon name="help-circle-outline"></ion-icon>
-          <span>Ayuda / soporte</span>
-          <ion-icon name="chevron-forward-outline" class="section-item__chevron"></ion-icon>
-        </div>
-
-        <div class="section-item section-item--logout" (click)="confirmarSalir()">
-          <ion-icon name="log-out-outline"></ion-icon>
-          <span>Cerrar sesión</span>
-        </div>
-      </div>
-
-    </div>
-
-  </div>
   </div>
 
-
-  <!-- NOTIFICACIONES -->
   <div *ngIf="notificacionesAbiertas" class="notification-overlay" (click)="cerrarNotificaciones()">
-  <div class="notification-panel" (click)="$event.stopPropagation()">
+    <div class="notification-panel" (click)="$event.stopPropagation()">
+      <div class="notif-header">
+        <h2>Notificaciones</h2>
+        <p>Tienes {{ cantidadPendientes() }} pendientes</p>
+      </div>
 
-    <div class="notif-header">
-      <h2>Notificaciones</h2>
-      <p>Tienes {{ cantidadSinLeer() }} sin leer</p>
-    </div>
-
-    <!-- Lista única de actividad reciente -->
-    <div class="notif-list">
-
-      <div
-        *ngFor="let item of notificaciones; let i = index"
-        class="notif-row"
-        [class.notif-row--leida]="item.leida"
-        [class.notif-row--cta]="!!item.solicitudId"
-        (click)="item.solicitudId ? abrirSolicitud(item.solicitudId) : null"
-      >
-        <div class="notif-icon-wrap" [ngClass]="'notif-icon--' + item.tipo">
-          <ion-icon [name]="item.icono"></ion-icon>
+      <div class="notif-list">
+        <div *ngIf="notificacionesLoading" class="notif-empty">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p>Cargando notificaciones...</p>
         </div>
 
-        <div class="notif-content">
-          <p class="notif-title">{{ item.titulo }}</p>
-          <p class="notif-desc">{{ item.descripcion }}</p>
-          <span class="notif-time">{{ item.tiempo }}</span>
+        <div *ngIf="notificacionesError && !notificacionesLoading" class="notif-empty notif-empty--error">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          <p>{{ notificacionesError }}</p>
+          <button class="notif-footer-btn" (click)="cargarDatosHeader()">Reintentar</button>
         </div>
 
-        <div class="notif-actions">
-          <span *ngIf="!item.leida" class="notif-unread-dot"></span>
-          <!-- Solicitud CTA: opens the modal -->
-          <button class="notif-cta-btn"
-                  *ngIf="item.solicitudId"
-                  (click)="$event.stopPropagation(); abrirSolicitud(item.solicitudId!)"
-                  title="Ver solicitud">
-            Ver solicitud
-          </button>
-          <!-- Standard mark-read button for regular notifications -->
-          <button class="notif-read-btn" (click)="$event.stopPropagation(); marcarLeida(i)"
-                  *ngIf="!item.leida && !item.solicitudId" title="Marcar como leída">
-            <ion-icon name="checkmark-outline"></ion-icon>
-          </button>
+        <div
+          *ngFor="let item of notificaciones"
+          class="notif-row"
+          [class.notif-row--leida]="!item.pendiente"
+          [class.notif-row--cta]="!!item.idCita || !!item.idPaciente"
+          (click)="abrirNotificacion(item)"
+        >
+          <div class="notif-icon-wrap" [ngClass]="'notif-icon--' + item.tipo">
+            <ion-icon [name]="item.icono"></ion-icon>
+          </div>
+
+          <div class="notif-content">
+            <p class="notif-title">{{ item.titulo }}</p>
+            <p class="notif-desc">{{ item.descripcion }}</p>
+            <span class="notif-time">{{ item.tiempo }}</span>
+          </div>
+
+          <div class="notif-actions">
+            <span *ngIf="item.pendiente" class="notif-unread-dot"></span>
+            <button
+              class="notif-cta-btn"
+              *ngIf="item.idCita || item.idPaciente"
+              (click)="$event.stopPropagation(); abrirNotificacion(item)"
+              title="Ver detalle"
+            >
+              Ver detalle
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="!notificacionesLoading && !notificacionesError && notificaciones.length === 0" class="notif-empty">
+          <ion-icon name="checkmark-circle-outline"></ion-icon>
+          <p>Sin notificaciones recientes</p>
         </div>
       </div>
 
-      <div *ngIf="notificaciones.length === 0" class="notif-empty">
-        <ion-icon name="checkmark-circle-outline"></ion-icon>
-        <p>Sin notificaciones pendientes</p>
+      <div class="notif-footer">
+        <button (click)="verTodasNotificaciones()">Ver toda la actividad</button>
       </div>
-
     </div>
-
-    <div class="notif-footer">
-      <button (click)="verTodasNotificaciones()">Ver toda la actividad</button>
-    </div>
-
   </div>
-  </div>
-
-
-
 </ion-header>
 
-<!-- Layout general: menú lateral + contenido -->
 <div class="dashboard-layout">
-
-  <!-- Menú lateral con ancho dinámico -->
   <aside class="sidebar" [style.width.px]="sidebarWidth">
     <ion-list>
+      <ion-item button routerLink="/dashboard/inicio" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
+        <ion-icon slot="start" name="grid-outline"></ion-icon>
+        <ion-label>Inicio</ion-label>
+      </ion-item>
 
-      <ion-item button routerLink="/dashboard/agenda" routerLinkActive="activo"
-        [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
+      <ion-item button routerLink="/dashboard/agenda" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
         <ion-icon slot="start" name="calendar-outline"></ion-icon>
         <ion-label>Agenda</ion-label>
       </ion-item>
 
-      <ion-item *appHasPermission="'pacientes'" button routerLink="/dashboard/pacientes" routerLinkActive="activo"
-        [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
+      <ion-item *appHasPermission="'pacientes'" button routerLink="/dashboard/pacientes" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
         <ion-icon slot="start" name="people-outline"></ion-icon>
         <ion-label>Pacientes</ion-label>
       </ion-item>
 
-      <ion-item *appHasPermission="'citas'" button routerLink="/dashboard/citas" routerLinkActive="activo"
-        [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
+      <ion-item *appHasPermission="'citas'" button routerLink="/dashboard/citas" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
         <ion-icon slot="start" name="clipboard-outline"></ion-icon>
         <ion-label>Citas</ion-label>
+        <ion-badge *ngIf="solicitudesPendientesCount > 0 && !sidebarContraido" color="warning">{{ solicitudesPendientesCount }}</ion-badge>
       </ion-item>
 
-      <ion-item *appHasPermission="'sesiones'" button routerLink="/dashboard/sesiones" routerLinkActive="activo"
-        [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
+      <ion-item *appHasPermission="'sesiones'" button routerLink="/dashboard/sesiones" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
         <ion-icon slot="start" name="pulse-outline"></ion-icon>
         <ion-label>Sesiones</ion-label>
       </ion-item>
 
-      <ion-item *appHasPermission="'estadisticas'" button routerLink="/dashboard/estadisticas" routerLinkActive="activo"
-        [routerLinkActiveOptions]="{ exact: false }" [class.contraido]="sidebarContraido" lines="none">
+      <ion-item *appHasPermission="'estadisticas'" button routerLink="/dashboard/estadisticas" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: false }" [class.contraido]="sidebarContraido" lines="none">
         <ion-icon slot="start" name="bar-chart-outline"></ion-icon>
         <ion-label>Estadísticas</ion-label>
       </ion-item>
 
-      <ion-item *appHasPermission="'configuracion'" button routerLink="/dashboard/configuracion" routerLinkActive="activo"
-        [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
+      <ion-item *appHasPermission="'configuracion'" button routerLink="/dashboard/configuracion" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
         <ion-icon slot="start" name="settings-outline"></ion-icon>
         <ion-label>Configuración</ion-label>
       </ion-item>
     </ion-list>
-    <!-- Botón hamburguesa para contraer/expandir sidebar -->
+
     <div class="sidebar-toggle" (click)="toggleSidebar()" title="Contraer menú">
       <ion-icon [name]="sidebarContraido ? 'chevron-forward-outline' : 'chevron-back-outline'"></ion-icon>
     </div>
-
   </aside>
 
-<!-- ── Modal: confirmar cierre de sesión ─────────────────────────── -->
-<app-confirm-dialog
-  *ngIf="logoutConfirmAbierto"
-  [config]="logoutConfirmConfig"
-  (confirmed)="cerrarSesion()"
-  (cancelled)="cancelarLogout()">
-</app-confirm-dialog>
+  <app-confirm-dialog
+    *ngIf="logoutConfirmAbierto"
+    [config]="logoutConfirmConfig"
+    (confirmed)="cerrarSesion()"
+    (cancelled)="cancelarLogout()">
+  </app-confirm-dialog>
 
-  <!-- Divider para redimensionar -->
   <div class="resizer" (mousedown)="startResizing($event)"></div>
 
-  <!-- Contenido principal -->
   <main class="main-content">
     <ion-router-outlet class="dashboard-content" [animated]="false"></ion-router-outlet>
   </main>
-
-</div>
-<!-- Backdrop — closes bottom menu when tapping outside -->
-<div
-  class="bottom-menu-backdrop"
-  *ngIf="menuInferiorAbierto"
-  (click)="cerrarMenuInferior()">
 </div>
 
-<!-- Menú inferior solo visible en móviles -->
+<div class="bottom-menu-backdrop" *ngIf="menuInferiorAbierto" (click)="cerrarMenuInferior()"></div>
+
 <div class="bottom-menu" [class.abierto]="menuInferiorAbierto">
-
-  <!-- Botón central para expandir -->
   <div class="bottom-toggle" (click)="toggleMenuInferior()">
     <ion-icon [name]="menuInferiorAbierto ? 'chevron-down-outline' : 'chevron-up-outline'"></ion-icon>
   </div>
 
-  <!-- Contenido del menú expandido -->
   <div class="bottom-content">
+    <ion-item button lines="none" (click)="irA('/dashboard/inicio')">
+      <ion-icon name="grid-outline" slot="start"></ion-icon>
+      <ion-label>Inicio</ion-label>
+    </ion-item>
     <ion-item button lines="none" (click)="irA('/dashboard/agenda')">
       <ion-icon name="calendar-outline" slot="start"></ion-icon>
       <ion-label>Agenda</ion-label>
@@ -271,6 +231,7 @@
     <ion-item *appHasPermission="'citas'" button lines="none" (click)="irA('/dashboard/citas')">
       <ion-icon slot="start" name="clipboard-outline"></ion-icon>
       <ion-label>Citas</ion-label>
+      <ion-badge *ngIf="solicitudesPendientesCount > 0" color="warning">{{ solicitudesPendientesCount }}</ion-badge>
     </ion-item>
     <ion-item *appHasPermission="'sesiones'" button lines="none" (click)="irA('/dashboard/sesiones')">
       <ion-icon slot="start" name="pulse-outline"></ion-icon>
@@ -285,15 +246,5 @@
       <ion-label>Configuración</ion-label>
     </ion-item>
   </div>
-
 </div>
 
-<!-- ─── MODAL: Solicitud de reprogramación ───────────────────────────────────── -->
-<app-solicitud-reprogramacion-modal
-  *ngIf="showSolicitudModal && solicitudSeleccionada"
-  [solicitud]="solicitudSeleccionada!"
-  (aceptada)="onSolicitudAceptada()"
-  (rechazada)="onSolicitudRechazada($event)"
-  (verAgenda)="onVerAgendaDesdeModal()"
-  (cerrado)="cerrarSolicitudModal()">
-</app-solicitud-reprogramacion-modal>

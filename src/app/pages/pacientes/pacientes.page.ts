@@ -4,7 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { PacientesApiService } from './pacientes-api.service';
-import { PacienteDto, PacienteRequest } from './models/paciente.model';
+import {
+  PacienteDto,
+  PacienteRequest,
+  PACIENTE_SEXO_OPTIONS,
+  SexoPaciente,
+  isSexoPaciente,
+  normalizeSexoPaciente,
+} from './models/paciente.model';
 import { getAvatarColor as avatarColorUtil } from '../../shared/utils/avatar.utils';
 import { formatFecha as formatFechaUtil } from '../../shared/utils/date.utils';
 import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../shared/confirm-dialog/confirm-dialog.component';
@@ -19,6 +26,9 @@ import { mapApiError, MappedApiError } from '../../shared/utils/api-error.mapper
   imports: [IonicModule, CommonModule, FormsModule, ConfirmDialogComponent, AgfDatePickerComponent],
 })
 export class PacientesPage implements OnInit {
+  readonly birthDateMaxYear = new Date().getFullYear();
+  readonly sexoOptions = PACIENTE_SEXO_OPTIONS;
+
   // ─── Data & filters ────────────────────────────────────────────────────────
   pacientesFiltrados: PacienteDto[] = [];
   totalPacientes = 0;
@@ -62,7 +72,7 @@ export class PacientesPage implements OnInit {
   emptyForm() {
     return {
       nombre: '', apellido: '', email: '', numero_telefono: '',
-      fecha_nacimiento: '', notas_generales: '', sexo: '',
+      fecha_nacimiento: '', notas_generales: '', sexo: '' as SexoPaciente | '',
       direccion: '', contacto_emergencia_nombre: '', contacto_emergencia_telefono: '',
     };
   }
@@ -180,7 +190,7 @@ export class PacientesPage implements OnInit {
     this.formPaciente = {
       nombre: p.nombre, apellido: p.apellido, email: p.email,
       numero_telefono: p.numero_telefono ?? '', fecha_nacimiento: p.fecha_nacimiento ?? '',
-      notas_generales: p.notas_generales ?? '', sexo: p.sexo ?? '',
+      notas_generales: p.notas_generales ?? '', sexo: normalizeSexoPaciente(p.sexo),
       direccion: p.direccion ?? '',
       contacto_emergencia_nombre: p.contacto_emergencia_nombre ?? '',
       contacto_emergencia_telefono: p.contacto_emergencia_telefono ?? '',
@@ -224,7 +234,7 @@ export class PacientesPage implements OnInit {
       || this.formPaciente.numero_telefono !== (p.numero_telefono ?? '')
       || this.formPaciente.fecha_nacimiento !== (p.fecha_nacimiento ?? '')
       || this.formPaciente.notas_generales !== (p.notas_generales ?? '')
-      || this.formPaciente.sexo !== (p.sexo ?? '')
+      || this.formPaciente.sexo !== normalizeSexoPaciente(p.sexo)
       || this.formPaciente.direccion !== (p.direccion ?? '')
       || this.formPaciente.contacto_emergencia_nombre !== (p.contacto_emergencia_nombre ?? '')
       || this.formPaciente.contacto_emergencia_telefono !== (p.contacto_emergencia_telefono ?? '');
@@ -236,6 +246,9 @@ export class PacientesPage implements OnInit {
     if (!this.formPaciente.apellido.trim()) this.formErrores['apellido'] = 'El apellido es requerido';
     if (this.formPaciente.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.formPaciente.email)) {
       this.formErrores['email'] = 'Formato de email inválido';
+    }
+    if (this.formPaciente.sexo && !isSexoPaciente(this.formPaciente.sexo)) {
+      this.formErrores['sexo'] = 'Selecciona una opción válida';
     }
     return Object.keys(this.formErrores).length === 0;
   }
@@ -267,7 +280,7 @@ export class PacientesPage implements OnInit {
       numero_telefono: this.formPaciente.numero_telefono.trim() || undefined,
       fecha_nacimiento: this.formPaciente.fecha_nacimiento || undefined,
       notas_generales: this.formPaciente.notas_generales.trim() || undefined,
-      sexo: this.formPaciente.sexo.trim() || undefined,
+      sexo: this.formPaciente.sexo || undefined,
       direccion: this.formPaciente.direccion.trim() || undefined,
       contacto_emergencia_nombre: this.formPaciente.contacto_emergencia_nombre.trim() || undefined,
       contacto_emergencia_telefono: this.formPaciente.contacto_emergencia_telefono.trim() || undefined,

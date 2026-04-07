@@ -132,12 +132,17 @@
           <!-- Fecha nacimiento + Teléfono en dos columnas -->
           <div class="reg-row-2">
             <div class="reg-field">
-              <ion-item lines="none" class="reg-item">
-                <ion-icon name="calendar-outline" slot="start" class="reg-icon"></ion-icon>
-                <ion-input type="date" formControlName="fecha_nacimiento"></ion-input>
-              </ion-item>
-              <div *ngIf="registroForm.get('fecha_nacimiento')?.touched && registroForm.get('fecha_nacimiento')?.invalid" class="reg-error">
-                Fecha requerida
+              <div class="reg-birthdate-field">
+                <agf-date-picker
+                  formControlName="fecha_nacimiento"
+                  placeholder="Fecha de nacimiento"
+                  [allowPast]="true"
+                  [showMonthYearSelectors]="true"
+                  [yearRangeStart]="1900"
+                  [yearRangeEnd]="birthDateMaxYear"
+                  [hasError]="!!(registroForm.get('fecha_nacimiento')?.touched && registroForm.get('fecha_nacimiento')?.invalid)"
+                  errorMsg="Fecha requerida"
+                ></agf-date-picker>
               </div>
             </div>
 

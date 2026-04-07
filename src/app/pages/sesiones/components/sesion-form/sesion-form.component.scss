@@ -80,6 +80,8 @@
 
 .sf-optional { font-weight: 400; color: var(--text-muted, #64748b); }
 
+.sf-input,
+.sf-select,
 .sf-textarea {
   padding: 10px 12px;
   border-radius: var(--radius-md, 10px);
@@ -97,6 +99,11 @@
   &:focus { border-color: #059669; }
   &--error { border-color: var(--danger, #ef4444) !important; }
   &::placeholder { color: var(--text-muted, #64748b); }
+}
+
+.sf-input,
+.sf-select {
+  min-height: 44px;
 }
 
 .sf-error { font-size: 12px; color: var(--danger, #ef4444); }
@@ -127,6 +134,11 @@
   cursor: pointer;
   transition: all 0.15s;
   ion-icon { font-size: 16px; }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
 
   &--cancel {
     background: transparent;

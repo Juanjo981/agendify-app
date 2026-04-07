@@ -19,6 +19,7 @@
   display:         flex;
   align-items:     center;
   justify-content: space-between;
+  gap:             10px;
   margin-bottom:   14px;
 
   &__label {
@@ -45,6 +46,54 @@
 
     &:hover  { background: rgba(99, 102, 241, 0.14); }
     &:active { background: rgba(99, 102, 241, 0.22); }
+  }
+
+  &__selectors {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(88px, 0.9fr);
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__select-wrap {
+    position: relative;
+    min-width: 0;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: 12px;
+      width: 8px;
+      height: 8px;
+      border-right: 1.5px solid rgba(71, 85, 105, 0.8);
+      border-bottom: 1.5px solid rgba(71, 85, 105, 0.8);
+      transform: translateY(-65%) rotate(45deg);
+      pointer-events: none;
+    }
+  }
+
+  &__select {
+    width: 100%;
+    height: 36px;
+    padding: 0 30px 0 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(99, 102, 241, 0.16);
+    background: rgba(255, 255, 255, 0.94);
+    color: var(--text-strong, #0f172a);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+    &:focus {
+      border-color: rgba(99, 102, 241, 0.4);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+    }
   }
 }
 

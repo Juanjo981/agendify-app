@@ -178,33 +178,58 @@
           </div>
         </div>
 
-        <!-- Alertas clínicas (entity-based) -->
-        <div class="det-alert-card">
+        <!-- Alertas clínicas -->
+        <section class="det-alert-card">
           <div class="det-alert-card__header">
-            <div>
-              <ion-icon name="warning-outline"></ion-icon>
-              <span>Alertas clínicas</span>
-              <span class="det-alert-count" *ngIf="alertas.length > 0">({{ alertas.length }})</span>
+            <div class="det-alert-card__title-wrap">
+              <div class="det-alert-card__icon">
+                <ion-icon name="shield-half-outline"></ion-icon>
+              </div>
+              <div class="det-alert-card__title-copy">
+                <div class="det-alert-card__eyebrow">Seguimiento clínico</div>
+                <div class="det-alert-card__title-row">
+                  <h3>Alertas clínicas</h3>
+                  <span class="det-alert-count" *ngIf="alertas.length > 0">{{ alertas.length }}</span>
+                </div>
+                <p>Recordatorios sensibles y banderas de seguridad visibles para el expediente.</p>
+              </div>
             </div>
-            <button class="det-btn-sm" (click)="abrirAlertaForm()">
+            <button class="det-alert-add-btn" (click)="abrirAlertaForm()">
               <ion-icon name="add-outline"></ion-icon>
-              Agregar
+              <span>Nueva alerta</span>
             </button>
           </div>
 
           <ion-spinner *ngIf="loadingAlertas" name="crescent" class="det-section-spinner"></ion-spinner>
 
-          <div *ngIf="!loadingAlertas && alertas.length === 0" class="det-empty-inline">
-            <p>Sin alertas registradas</p>
+          <div *ngIf="!loadingAlertas && alertas.length === 0" class="det-alert-empty">
+            <div class="det-alert-empty__icon">
+              <ion-icon name="document-text-outline"></ion-icon>
+            </div>
+            <div class="det-alert-empty__copy">
+              <strong>Sin alertas registradas</strong>
+              <p>Agrega una alerta para destacar alergias, medicamentos o consideraciones importantes del paciente.</p>
+            </div>
+            <button class="det-btn-outline det-empty-action" (click)="abrirAlertaForm()">
+              <ion-icon name="add-outline"></ion-icon>
+              Crear primera alerta
+            </button>
           </div>
 
           <ul class="det-alert-list" *ngIf="!loadingAlertas && alertas.length > 0">
             <li *ngFor="let alerta of alertas" class="det-alert-entity" [class.det-alert-entity--inactive]="!alerta.activa">
               <div class="det-alert-entity__body">
-                <ion-icon name="alert-circle-outline"></ion-icon>
-                <div>
+                <div class="det-alert-entity__marker">
+                  <ion-icon [name]="alerta.activa ? 'alert-circle-outline' : 'ellipse-outline'"></ion-icon>
+                </div>
+                <div class="det-alert-entity__content">
+                  <div class="det-alert-entity__meta">
+                    <span *ngIf="alerta.tipo_alerta" class="det-alert-entity__tipo">{{ alerta.tipo_alerta }}</span>
+                    <span class="det-alert-entity__status" [class.det-alert-entity__status--inactive]="!alerta.activa">
+                      {{ alerta.activa ? 'Activa' : 'Archivada' }}
+                    </span>
+                  </div>
                   <strong>{{ alerta.titulo }}</strong>
-                  <span *ngIf="alerta.tipo_alerta" class="det-alert-entity__tipo">{{ alerta.tipo_alerta }}</span>
                   <p *ngIf="alerta.descripcion" class="det-alert-entity__desc">{{ alerta.descripcion }}</p>
                 </div>
               </div>
@@ -221,37 +246,7 @@
               </div>
             </li>
           </ul>
-        </div>
-
-        <!-- Alerta form (inline) -->
-        <div *ngIf="showAlertaForm" class="det-inline-form">
-          <div class="pac-form-row">
-            <div class="pac-field">
-              <label>Tipo</label>
-              <select [(ngModel)]="alertaForm.tipo_alerta" class="pac-select pac-select--field">
-                <option value="CLINICA">Clínica</option>
-                <option value="ALERGIA">Alergia</option>
-                <option value="MEDICAMENTO">Medicamento</option>
-                <option value="OTRO">Otro</option>
-              </select>
-            </div>
-            <div class="pac-field">
-              <label>Título *</label>
-              <input type="text" [(ngModel)]="alertaForm.titulo" placeholder="Ej. Alergia a la penicilina" />
-            </div>
-          </div>
-          <div class="pac-field">
-            <label>Descripción</label>
-            <input type="text" [(ngModel)]="alertaForm.descripcion" placeholder="Detalles adicionales (opcional)" />
-          </div>
-          <div class="det-inline-form__actions">
-            <button class="pac-btn-ghost" (click)="cerrarAlertaForm()" [disabled]="saving">Cancelar</button>
-            <button class="det-btn-primary" (click)="guardarAlerta()" [disabled]="saving || !alertaForm.titulo.trim()">
-              <ion-spinner *ngIf="saving" name="crescent" class="pac-spinner-inline"></ion-spinner>
-              {{ alertaEditandoId ? 'Guardar' : 'Agregar' }}
-            </button>
-          </div>
-        </div>
+        </section>
 
         <!-- Notas generales -->
         <div class="det-notas-card">
@@ -565,14 +560,13 @@
         </div>
       </div>
       <div class="pac-form-row">
-        <div class="pac-field">
+        <div class="pac-field" [class.has-error]="formErrores['sexo']">
           <label>Sexo</label>
           <select [(ngModel)]="formPaciente.sexo" class="pac-select pac-select--field">
             <option value="">Sin especificar</option>
-            <option value="Masculino">Masculino</option>
-            <option value="Femenino">Femenino</option>
-            <option value="Otro">Otro</option>
+            <option *ngFor="let option of sexoOptions" [value]="option.value">{{ option.label }}</option>
           </select>
+          <span class="pac-field__error" *ngIf="formErrores['sexo']">{{ formErrores['sexo'] }}</span>
         </div>
         <div class="pac-field">
           <label>Dirección</label>
@@ -649,6 +643,53 @@
         <ion-spinner *ngIf="saving" name="crescent" class="pac-spinner-inline"></ion-spinner>
         <ion-icon *ngIf="!saving" name="checkmark-outline"></ion-icon>
         {{ notaEditandoId !== null ? 'Guardar cambios' : 'Guardar nota' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="showAlertaForm" class="pac-modal-backdrop" (click)="cerrarAlertaForm()"></div>
+  <div *ngIf="showAlertaForm" class="pac-modal pac-modal--small det-alert-modal" role="dialog">
+    <div class="pac-modal__header det-alert-modal__header">
+      <div class="det-alert-modal__title-wrap">
+        <div class="det-alert-modal__icon">
+          <ion-icon name="shield-half-outline"></ion-icon>
+        </div>
+        <div>
+          <h2>{{ alertaEditandoId !== null ? 'Editar alerta clínica' : 'Nueva alerta clínica' }}</h2>
+          <p>{{ alertaEditandoId !== null ? 'Actualiza los datos visibles en el expediente del paciente.' : 'Crea una alerta elegante y visible para el equipo clínico.' }}</p>
+        </div>
+      </div>
+      <button class="pac-modal__close" (click)="cerrarAlertaForm()" aria-label="Cerrar">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+    <div class="pac-modal__body">
+      <div class="pac-form-row">
+        <div class="pac-field">
+          <label>Tipo</label>
+          <select [(ngModel)]="alertaForm.tipo_alerta" class="pac-select pac-select--field">
+            <option value="CLINICA">Clínica</option>
+            <option value="ALERGIA">Alergia</option>
+            <option value="MEDICAMENTO">Medicamento</option>
+            <option value="OTRO">Otro</option>
+          </select>
+        </div>
+        <div class="pac-field">
+          <label>Título *</label>
+          <input type="text" [(ngModel)]="alertaForm.titulo" placeholder="Ej. Alergia a la penicilina" />
+        </div>
+      </div>
+      <div class="pac-field">
+        <label>Descripción</label>
+        <textarea [(ngModel)]="alertaForm.descripcion" rows="3" placeholder="Añade contexto clínico adicional si hace falta."></textarea>
+      </div>
+    </div>
+    <div class="pac-modal__footer">
+      <button class="pac-btn-ghost" (click)="cerrarAlertaForm()" [disabled]="saving">Cancelar</button>
+      <button class="det-btn-primary" (click)="guardarAlerta()" [disabled]="saving || !alertaForm.titulo.trim()">
+        <ion-spinner *ngIf="saving" name="crescent" class="pac-spinner-inline"></ion-spinner>
+        <ion-icon *ngIf="!saving" name="checkmark-outline"></ion-icon>
+        {{ alertaEditandoId ? 'Guardar cambios' : 'Guardar alerta' }}
       </button>
     </div>
   </div>

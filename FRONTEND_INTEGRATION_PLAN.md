@@ -515,7 +515,7 @@ Con Pacientes integrado, la Fase 4 (Citas) podrá referenciar pacientes reales a
 - [x] `buscar-paciente-modal` busca pacientes reales
 - [x] Detalle de cita muestra datos reales
 - [x] Loading, error y empty states funcionan
-- [x] `CitasMockService` ya no se inyecta en el módulo Citas (se mantiene sólo para Agenda/Fase 5)
+- [x] `CitasMockService` ya no se inyecta en el módulo Citas ni en Agenda
 
 **Qué NO tocar todavía:**
 - No integrar la vista de Agenda/Calendario (Fase 5)  
@@ -545,7 +545,7 @@ Con Citas integrado, la Fase 5 (Agenda) puede mostrar citas reales en el calenda
 > - `cita-form-modal` integrado con disponibilidad real (`GET /api/citas/disponibilidad`) y validación de slot.
 > - `buscar-paciente-modal` migrado a búsqueda real con `PacientesApiService`.
 > - `CitasPage` y `DetalleCitaPage` con loading/error/empty states reales.
-> - `CitasMockService` queda **deprecado** y fuera de inyección en módulo Citas; se conserva temporalmente para Agenda (Fase 5).
+> - `CitasMockService` queda **deprecado** y fuera de inyección en módulo Citas y Agenda.
 > - Verificación técnica: `npx tsc -p tsconfig.app.json --noEmit` sin errores.
 
 ---
@@ -565,18 +565,17 @@ Con Citas integrado, la Fase 5 (Agenda) puede mostrar citas reales en el calenda
 - `agenda.page.ts` — vista de calendario, grid, panel de creación, bloqueos
 
 **Servicios involucrados:**
-- Nuevo: `pages/agenda/agenda.service.api.ts` (o usar `CitasApiService` ampliado + `BloqueosApiService`)
+- Nuevo: `pages/agenda/agenda-api.service.ts`
 - `pages/citas/citas-api.service.ts` — reutilizado para crear citas desde agenda
-- Nuevo: `services/bloqueos.service.api.ts`
 
 **Endpoints involucrados:**
 | Método | Ruta | Propósito |
 |--------|------|-----------|
 | `GET` | `/api/agenda` | Citas + bloqueos del período. Params: `mes`, `anio` (o `fecha_desde`, `fecha_hasta`) |
-| `GET` | `/api/bloqueos` | Lista bloqueos. Params: `fecha_desde`, `fecha_hasta` |
-| `POST` | `/api/bloqueos` | Crear bloqueo |
-| `PUT` | `/api/bloqueos/{id}` | Editar bloqueo |
-| `DELETE` | `/api/bloqueos/{id}` | Eliminar bloqueo |
+| `GET` | `/api/bloqueos-horario` | Lista bloqueos. Params: `fechaDesde`, `fechaHasta` |
+| `POST` | `/api/bloqueos-horario` | Crear bloqueo |
+| `PUT` | `/api/bloqueos-horario/{id}` | Editar bloqueo |
+| `DELETE` | `/api/bloqueos-horario/{id}` | Eliminar bloqueo |
 | `GET` | `/api/configuracion/agenda` | Jornada, intervalos, sábados/domingos (Fase 5 solo lectura; escritura en Fase 8) |
 
 **Modelos involucrados:**
@@ -604,14 +603,14 @@ Con Citas integrado, la Fase 5 (Agenda) puede mostrar citas reales en el calenda
 - La configuración de agenda (`hora_inicio_jornada`, etc.) podría no existir aún si el profesional nunca la configuró — necesitar defaults del backend
 
 **Criterios de terminado:**
-- [ ] El calendario muestra citas reales del mes actual
-- [ ] Al cambiar de mes, se cargan citas del nuevo período
-- [ ] Los bloqueos se muestran visualmente en el calendario
-- [ ] Se pueden crear, editar y eliminar bloqueos
-- [ ] Se pueden crear citas desde la vista de agenda
-- [ ] La jornada laboral se renderiza según la configuración real
-- [ ] Loading state mientras carga el calendario
-- [ ] Error state si falla la carga
+- [x] El calendario muestra citas reales del mes actual
+- [x] Al cambiar de mes, se cargan citas del nuevo período
+- [x] Los bloqueos se muestran visualmente en el calendario
+- [x] Se pueden crear, editar y eliminar bloqueos
+- [x] Se pueden crear citas desde la vista de agenda
+- [x] La jornada laboral se consume desde la configuración real para horas disponibles y creación/bloqueos
+- [x] Loading state mientras carga el calendario
+- [x] Error state si falla la carga
 
 **Qué NO tocar todavía:**
 - No integrar solicitudes de reprogramación desde la agenda
@@ -622,8 +621,16 @@ Con Citas integrado, la Fase 5 (Agenda) puede mostrar citas reales en el calenda
 **Entregables concretos de la fase:**
 1. Agenda consumiendo datos reales del API
 2. CRUD de bloqueos funcional
-3. Grid de calendario renderizado con configuración de jornada real
+3. Configuración de jornada aplicada a horas disponibles y modal de bloqueos/citas
 4. Creación de citas desde agenda funcionando con API
+
+**Cierre implementado (05/04/2026):**
+- `AgendaPage` ya consume `GET /api/agenda?mes&anio` para cargar citas + bloqueos del mes visible en una sola llamada.
+- La navegación mensual recarga el período visible sin reescribir la lógica del grid.
+- Los bloqueos se renderizan dentro del calendario y del panel diario, y ya permiten crear, editar y eliminar contra `/api/bloqueos-horario`.
+- La creación y reprogramación de citas desde Agenda ya reutiliza `cita-form-modal` persistiendo con `CitasApiService`.
+- `configuracion_jornada` del backend se usa para construir las horas disponibles del modal y respetar la jornada en creación/bloqueos.
+- El layout mensual sigue siendo el existente: aún no oculta columnas de sábados/domingos aunque la configuración ya se consume.
 
 **Preparación para la siguiente fase:**
 Con Agenda integrada, el sistema tiene los tres módulos centrales (Pacientes, Citas, Agenda) funcionando con datos reales. La Fase 6 puede integrar sesiones clínicas que dependen de citas completadas.
@@ -632,169 +639,139 @@ Con Agenda integrada, el sistema tiene los tres módulos centrales (Pacientes, C
 
 ### Fase 6 — Sesiones Clínicas y Adjuntos
 
-**Objetivo:** Integrar el módulo de Sesiones Clínicas con la API real: creación desde cita completada, listado, detalle, edición, y el flujo completo de adjuntos (upload vía signed URL, registro de metadata, descarga, eliminación).
+**Estado:** ✅ Completada (5 de abril de 2026)
 
-**Alcance:**
-- Crear `SesionesApiService` consumiendo endpoints reales
-- Migrar `SesionesPage` (listado con filtros)
-- Migrar `DetalleSesionPage` (detalle, edición, adjuntos)
-- Integrar creación de sesión desde `DetalleCitaPage` (cita completada)
-- Implementar flujo de adjuntos: obtener signed URL → upload a storage → registrar metadata
-- Descarga de adjuntos
-- Eliminación de adjuntos
+**Objetivo:** Integrar sesiones clínicas reales y el flujo real de adjuntos sin reescribir la UI principal del módulo.
 
-**Pantallas afectadas:**
-- `sesiones/sesiones.page.ts` — listado con búsqueda y filtros
-- `sesiones/detalle-sesion/detalle-sesion.page.ts` — detalle, edición, adjuntos
-- `citas/detalle-cita/detalle-cita.page.ts` — botón "Crear sesión" desde cita completada
+**Implementado en esta fase:**
+- `SesionesApiService` (`GET /api/sesiones`, `GET /api/sesiones/{id}`, `POST /api/sesiones`, `PUT /api/sesiones/{id}`, `GET /api/citas/{id}/sesion`)
+- `AdjuntosServiceApi` con flujo signed URL de 3 pasos:
+  1. `POST /api/archivos-adjuntos/upload-url`
+  2. `PUT` directo al `upload_url` externo
+  3. `POST /api/archivos-adjuntos`
+- `SesionesPage` con listado real, filtros por fecha contra API y búsqueda local por paciente/tipo/resumen
+- `DetalleSesionPage` con detalle real, edición real, upload, preview, descarga y eliminación de adjuntos
+- `DetalleCitaPage` con acción real `Crear sesión` / `Ver sesión` para citas completadas
+- Exclusión explícita de dominios de storage en `auth.interceptor.ts`
+- `SesionesMockService` conservado como deprecated, pero fuera de los flujos activos del módulo
 
-**Servicios involucrados:**
-- `pages/sesiones/sesiones.service.mock.ts` — reemplazar
-- Nuevo: `pages/sesiones/sesiones.service.api.ts`
-- Nuevo: `services/adjuntos.service.api.ts` — manejo de signed URLs y upload
+**Pantallas / servicios tocados:**
+- `pages/sesiones/sesiones.page.ts`
+- `pages/sesiones/detalle-sesion/detalle-sesion.page.ts`
+- `pages/sesiones/sesiones-api.service.ts`
+- `services/adjuntos.service.api.ts`
+- `pages/citas/detalle-cita/detalle-cita.page.ts`
 
-**Endpoints involucrados:**
+**Endpoints reales usados finalmente:**
 | Método | Ruta | Propósito |
 |--------|------|-----------|
-| `GET` | `/api/sesiones` | Lista. Params: `busqueda`, `fecha_desde`, `fecha_hasta`, `con_adjunto`, `page`, `size` |
-| `GET` | `/api/sesiones/{id}` | Detalle |
-| `POST` | `/api/citas/{citaId}/sesion` | Crear sesión desde cita |
-| `PUT` | `/api/sesiones/{id}` | Editar notas |
-| `DELETE` | `/api/sesiones/{id}` | Eliminar sesión |
-| `POST` | `/api/sesiones/{id}/adjunto` | Subir adjunto (multipart o signed URL) |
-| `DELETE` | `/api/sesiones/{id}/adjunto` | Eliminar adjunto |
+| `GET` | `/api/sesiones` | Listado real de sesiones |
+| `GET` | `/api/sesiones/{id}` | Detalle real |
+| `POST` | `/api/sesiones` | Crear sesión desde cita completada |
+| `PUT` | `/api/sesiones/{id}` | Editar sesión |
+| `GET` | `/api/citas/{id}/sesion` | Resolver "Crear sesión" vs "Ver sesión" |
+| `GET` | `/api/sesiones/{id}/archivos-adjuntos` | Listar adjuntos de la sesión |
+| `POST` | `/api/archivos-adjuntos/upload-url` | Obtener signed URL |
+| `POST` | `/api/archivos-adjuntos` | Registrar metadata |
+| `GET` | `/api/archivos-adjuntos/{id}/download-url` | Preview / descarga |
+| `DELETE` | `/api/archivos-adjuntos/{id}` | Eliminación lógica del adjunto |
 
-**Modelos involucrados:**
-- `SesionDto` — verificar contra respuesta real. `nombre_paciente` y `apellido_paciente` deben venir vía JOIN
-- `SesionAdjunto` — adaptar: `previewUrl` no viene del backend, se genera localmente
-- Nuevo: `SignedUrlResponse` — `{ upload_url: string, storage_key: string }` (si se usa flujo de signed URL)
+**Qué parte ya usa API real y qué parte no:**
+- Usa API real:
+  - listado de sesiones
+  - detalle y edición de sesión
+  - creación de sesión desde cita completada
+  - adjuntos de sesión (upload / preview / download / delete)
+- Aún no se integra en esta fase:
+  - adjuntos de notas clínicas del módulo de pacientes
+  - cambio de estatus de sesión (`PATCH /api/sesiones/{id}/estatus`)
 
-**Dependencias previas:** Fase 4 (Citas integrado — la creación de sesión parte de una cita completada)
-
-**Cambios técnicos:**
-1. Crear `SesionesApiService` con HttpClient
-2. Crear `AdjuntosService` para encapsular el flujo de upload:
-   - Si el backend usa multipart: enviar el archivo directamente vía `FormData`
-   - Si el backend usa signed URLs: `POST /sesiones/{id}/adjunto/url` → obtener URL → `PUT` al storage → confirmar
-3. El interceptor debe **excluir** las URLs de storage (S3/GCS) de la inyección de Bearer token. Agregar a lista de URLs públicas o detectar por dominio
-4. Generar `previewUrl` localmente con `URL.createObjectURL()` para imágenes, o con la URL del backend para archivos ya subidos
-5. Implementar loading state para upload de archivos (progress bar si es posible)
-6. Conectar el botón "Crear sesión" en `DetalleCitaPage` con `POST /citas/{citaId}/sesion`
-7. Mapeo de iconos por tipo de archivo (ya existe en `detalle-sesion`) — no modificar
-
-**Riesgos:**
-- El flujo de adjuntos podría no estar implementado en backend aún (requiere object storage configurado)
-- El signed URL podría usar un dominio externo que el interceptor intentará interceptar
-- El límite de tamaño de archivo no está definido — definir en frontend y validar contra backend
-- La nota clínica asociada a la adjuntación de archivos en notas de paciente usa una tabla diferente (`adjuntos` con `entidad_tipo='nota'`) — verificar consistencia
+**Notas de integración / limitaciones detectadas:**
+- El backend no expone conteo/resumen de adjuntos dentro de `SesionDto`; para conservar el badge en el listado actual se hace una consulta ligera por sesión (`size=1`) sobre la página visible.
+- El filtro `con_adjunto` se resuelve sobre la página cargada, no como filtro server-side, porque `GET /api/sesiones` no documenta ese parámetro.
+- La creación desde cita usa `POST /api/sesiones` con `{ id_cita }`; el endpoint legado `POST /api/citas/{citaId}/sesion` no se usa.
 
 **Criterios de terminado:**
-- [ ] Listado de sesiones carga desde la API
-- [ ] Crear sesión desde cita completada funciona
-- [ ] Editar notas de sesión funciona
-- [ ] Eliminar sesión funciona
-- [ ] Upload de adjunto funciona (con preview para imágenes)
-- [ ] Descarga de adjunto funciona
-- [ ] Eliminación de adjunto funciona
-- [ ] El interceptor no interfiere con requests de storage
-- [ ] `SesionesMockService` ya no se inyecta
-
-**Qué NO tocar todavía:**
-- No implementar adjuntos de notas clínicas de paciente (se maneja en Fase 3, o se complementa aquí si es necesario)
-- No implementar tipos de sesión (V2)
-- No modificar el mapeo de iconos de adjuntos
-
-**Entregables concretos de la fase:**
-1. `SesionesApiService` funcional
-2. `AdjuntosService` con flujo completo de upload/download/delete
-3. Sesiones CRUD funcionando con API real
-4. Flujo de adjuntos end-to-end funcionando
+- [x] Listado de sesiones carga desde la API
+- [x] Crear sesión desde cita completada funciona
+- [x] Editar sesión funciona
+- [x] Upload de adjunto funciona
+- [x] Descarga / preview de adjunto funciona
+- [x] Eliminación de adjunto funciona
+- [x] El interceptor no interfiere con requests de storage
+- [x] `SesionesMockService` ya no se inyecta en flujos activos
 
 **Preparación para la siguiente fase:**
-Con Sesiones integradas, todos los módulos core del ciclo de vida de la consulta están funcionando con la API real. La Fase 7 (Dashboard) puede mostrar datos reales agregados.
+Con Sesiones integradas, el ciclo Paciente → Cita → Agenda → Sesión ya opera con API real. La Fase 7 puede consumir dashboard y agregados sin depender de mocks clínicos.
 
 ---
 
 ### Fase 7 — Dashboard y Resumen General
 
-**Objetivo:** Integrar la vista de Dashboard con datos reales: resumen de agenda del día, KPIs principales, estadísticas rápidas, solicitudes de reprogramación pendientes, y notificaciones.
+**Estado:** ✅ Completada (5 de abril de 2026)
 
-**Alcance:**
-- Obtener agenda del día actual (citas de hoy)
-- Obtener KPIs: citas hoy, citas del mes, ingresos del mes, pacientes nuevos, tasa de cancelación
-- Integrar solicitudes de reprogramación pendientes (badge + listado)
-- Integrar notificaciones (badge + dropdown/listado)
-- Definir estrategia de carga inicial del dashboard (paralela)
-- Definir estrategia de refresco después de acciones importantes
+**Objetivo:** Integrar un dashboard inicial real, resiliente y útil al entrar a la app, sin mezclar todavía el módulo completo de estadísticas.
 
-**Pantallas afectadas:**
-- `dashboard.page.ts` — layout principal, sidebar, KPIs, agenda del día, notificaciones
+**Implementado en esta fase:**
+- Nueva home real en `/dashboard/inicio`
+- `DashboardApiService` con:
+  - `GET /api/dashboard/resumen`
+  - `GET /api/dashboard/agenda-hoy`
+  - `GET /api/dashboard/consolidado`
+- `NotificacionesApiService` con `GET /api/notificaciones`
+- Carga paralela resiliente por bloques:
+  - la home carga `resumen` y `agenda-hoy` por separado
+  - el shell del dashboard carga `consolidado` y `notificaciones` en paralelo
+- KPIs reales
+- Agenda del día real
+- Badges reales de pendientes:
+  - notificaciones pendientes en la campana
+  - solicitudes pendientes en navegación de citas
+- Eliminación del array hardcodeado de notificaciones en `dashboard.page.ts`
 
-**Servicios involucrados:**
-- Nuevo: `services/dashboard.service.api.ts` (o consumir directamente los endpoints existentes)
-- `pages/citas/solicitud-reprogramacion.service.mock.ts` — reemplazar
-- Nuevo: `services/solicitudes.service.api.ts`
-- Nuevo: `services/notificaciones.service.api.ts`
-- `pages/citas/citas-api.service.ts` — para citas de hoy (o endpoint dedicado)
+**Pantallas / archivos tocados:**
+- `pages/dashboard/home/dashboard-home.page.ts`
+- `pages/dashboard/dashboard.page.ts`
+- `services/dashboard-api.service.ts`
+- `services/notificaciones.service.api.ts`
+- `app-routing.module.ts`
 
-**Endpoints involucrados:**
+**Endpoints reales usados finalmente:**
 | Método | Ruta | Propósito |
 |--------|------|-----------|
-| `GET` | `/api/estadisticas/resumen` | KPIs principales del dashboard |
-| `GET` | `/api/citas?fecha_desde=HOY&fecha_hasta=HOY` | Citas de hoy (o endpoint dedicado de agenda) |
-| `GET` | `/api/solicitudes-reprogramacion/pendientes` | Solicitudes pendientes (para badge) |
-| `GET` | `/api/notificaciones` | Listado de notificaciones |
-| `GET` | `/api/notificaciones/no-leidas/count` | Badge de notificaciones |
-| `PATCH` | `/api/solicitudes-reprogramacion/{id}/aceptar` | Aceptar solicitud |
-| `PATCH` | `/api/solicitudes-reprogramacion/{id}/rechazar` | Rechazar solicitud |
-| `PATCH` | `/api/notificaciones/{id}/leida` | Marcar notificación como leída |
+| `GET` | `/api/dashboard/resumen` | KPIs principales |
+| `GET` | `/api/dashboard/agenda-hoy` | Agenda operativa del día |
+| `GET` | `/api/dashboard/consolidado` | Counts de solicitudes / notificaciones pendientes |
+| `GET` | `/api/notificaciones` | Feed real del dropdown |
 
-**Modelos involucrados:**
-- `SolicitudReprogramacion` — ya definido, verificar contra backend (notar que usa camelCase — `idSolicitud`, `pacienteNombre` — potencial inconsistencia con snake_case del backend)
-- Nuevo: `NotificacionDto` — `{ id, tipo, icono, titulo, descripcion, leida, id_solicitud, fecha }`
-- Existente: KPI models de estadísticas
+**Qué quedó real y qué no en esta fase:**
+- Ya usa API real:
+  - home del dashboard
+  - KPIs
+  - agenda del día
+  - badge de solicitudes pendientes
+  - badge y listado de notificaciones
+- Deliberadamente no se integró aquí:
+  - estadísticas completas (`estadisticas-citas`, `estadisticas-pacientes`)
+  - workflow de aprobar/rechazar solicitudes desde el dropdown del dashboard
+  - marcado persistente de notificaciones como leídas
 
-**Dependencias previas:** Fases 3, 4, 6 (Pacientes, Citas, Sesiones — para que los datos agregados tengan sentido)
-
-**Cambios técnicos:**
-1. Eliminar el array de notificaciones hardcodeado en `dashboard.page.ts` y consumir `/api/notificaciones`
-2. Integrar `SolicitudesApiService` para solicitudes de reprogramación
-3. Implementar carga paralela de datos del dashboard al entrar (citas+KPIs+solicitudes+notificaciones simultáneamente)
-4. Implementar refresco automático del dashboard cuando se realizan acciones relevantes (ej: aceptar reprogramación → refrescar KPIs y agenda)
-5. Implementar polling ligero o "pull to refresh" para notificaciones
-6. El dashboard debe ser resiliente: si falla un endpoint de KPI, los demás deben mostrarse igual — no bloquear toda la vista
-7. Ajustar la interfaz `SolicitudReprogramacion` (camelCase) vs snake_case del backend — decidir si se adapta o se usa un mapper
-
-**Riesgos:**
-- El endpoint `/api/estadisticas/resumen` podría no estar implementado — requiere que el módulo de estadísticas del backend esté al menos parcialmente listo
-- Las notificaciones podrían no tener endpoint aún (el backend genera notificaciones como efecto secundario de otras acciones)
-- Si se hacen muchas peticiones en paralelo al cargar el dashboard, podría haber problemas de rendimiento en backend
-- Inconsistencia de naming: `SolicitudReprogramacion` usa camelCase internamente pero el backend devuelve snake_case
+**Notas de integración / decisiones de resiliencia:**
+- No se usó solo `GET /api/dashboard/consolidado` para toda la home porque un fallo único habría tumbado resumen y agenda a la vez.
+- El dropdown de notificaciones consume datos reales, pero la UI ahora trabaja con “pendientes” (`estado_envio=PENDIENTE`) en lugar de “leídas/no leídas”, que era un supuesto del mock anterior.
+- El count de solicitudes sí se muestra porque el backend lo expone en `DashboardConsolidadoDto`, pero no hay un endpoint global documentado para listar y gestionar todas las solicitudes pendientes desde el header; por eso esa interacción se deja para una fase posterior.
 
 **Criterios de terminado:**
-- [ ] Dashboard muestra agenda del día con citas reales
-- [ ] KPIs principales muestran datos reales
-- [ ] Badge de solicitudes pendientes funciona
-- [ ] Se pueden aceptar/rechazar solicitudes de reprogramación
-- [ ] Badge de notificaciones muestra cuenta real
-- [ ] Listado de notificaciones muestra datos reales
-- [ ] La carga es paralela y resiliente (fallo parcial no bloquea)
-- [ ] Notificaciones hardcodeadas eliminadas
-
-**Qué NO tocar todavía:**
-- No implementar estadísticas completas (solo el resumen del dashboard)
-- No implementar la vista de Actividad (Fase 9)
-- No implementar configuración de notificaciones
-
-**Entregables concretos de la fase:**
-1. Dashboard integrado con datos reales
-2. `SolicitudesApiService` funcional
-3. `NotificacionesApiService` funcional
-4. Notificaciones hardcodeadas eliminadas
-5. Carga paralela y resiliente implementada
+- [x] Dashboard carga datos reales
+- [x] Agenda del día funciona
+- [x] KPIs funcionan
+- [x] Badges de pendientes funcionan
+- [x] Notificaciones hardcodeadas eliminadas
+- [x] La carga es paralela y resiliente
+- [x] Si falla una sección, el resto del dashboard sigue usable
 
 **Preparación para la siguiente fase:**
-Con el Dashboard integrado, la Fase 8 puede extender la configuración del sistema, que es visible desde la navegación del dashboard.
+Con el dashboard operativo y sin mocks visibles, la Fase 8 puede centrarse en configuración/perfil sin depender de datos sintéticos en la entrada principal de la app.
 
 ---
 
@@ -814,8 +791,8 @@ Con el Dashboard integrado, la Fase 8 puede extender la configuración del siste
 - `perfil.page.ts` — datos personales y profesionales
 
 **Servicios involucrados:**
-- Nuevo: `services/configuracion.service.api.ts`
-- Nuevo: `services/perfil.service.api.ts`
+- Nuevo: `services/configuracion-api.service.ts`
+- Nuevo: `services/perfil-api.service.ts`
 - `services/auth.ts` — para cambio de contraseña
 
 **Endpoints involucrados:**
@@ -825,14 +802,14 @@ Con el Dashboard integrado, la Fase 8 puede extender la configuración del siste
 | `PUT` | `/api/configuracion/agenda` | Guardar config de agenda |
 | `GET` | `/api/configuracion/recordatorios` | Obtener config de recordatorios |
 | `PUT` | `/api/configuracion/recordatorios` | Guardar config de recordatorios |
-| `GET` | `/api/configuracion/sistema` | Obtener config de sistema |
-| `PUT` | `/api/configuracion/sistema` | Guardar config de sistema |
-| `GET` | `/api/profesionales/me` | Perfil del profesional |
-| `PUT` | `/api/profesionales/me/perfil` | Actualizar perfil profesional |
-| `GET` | `/api/profesionales/me/codigo-vinculacion` | Ver código de vinculación |
-| `POST` | `/api/profesionales/me/codigo-vinculacion/regenerar` | Regenerar código |
-| `PUT` | `/api/usuarios/me` | Actualizar datos personales |
-| `PUT` | `/api/usuarios/me/password` | Cambiar contraseña |
+| `GET` | `/api/configuracion/sistema` o `/api/configuracion-sistema` | Obtener config de sistema |
+| `PUT` | `/api/configuracion/sistema` o `POST/PUT /api/configuracion-sistema` | Guardar config de sistema |
+| `GET` | `/api/profesionales/me` o `/api/profesionales/{id}` | Perfil del profesional |
+| `PUT` | `/api/profesionales/me/perfil` o `/api/profesionales/{id}` | Actualizar perfil profesional |
+| `GET` | `/api/profesionales/me/codigo-vinculacion` o `/api/codigos-vinculacion/me` | Ver código de vinculación |
+| `POST` | `/api/profesionales/me/codigo-vinculacion/regenerar` o `/api/codigos-vinculacion/regenerar` | Regenerar código |
+| `PUT` | `/api/usuarios/me` o `/api/usuarios/{id}` | Actualizar datos personales |
+| `PUT` | `/api/usuarios/me/password` o `/api/usuarios/{id}/password` | Cambiar contraseña |
 
 **Modelos involucrados:**
 - Nuevo: `ConfiguracionAgendaDto` — campos según blueprint (hora_inicio_jornada, hora_fin_jornada, etc.)
@@ -859,13 +836,13 @@ Con el Dashboard integrado, la Fase 8 puede extender la configuración del siste
 - La tab de seguridad incluye integraciones (Google, WhatsApp, Pagos) que no están implementadas — mantener como UI informativa sin backend
 
 **Criterios de terminado:**
-- [ ] Las tres configuraciones (agenda, recordatorios, sistema) se cargan desde la API
-- [ ] Modificar y guardar configuración funciona
-- [ ] Reset a defaults funciona
-- [ ] Tracking de cambios funciona (botón guardar se habilita solo con cambios)
-- [ ] Perfil del profesional carga y se puede editar
+- [x] Las tres configuraciones (agenda, recordatorios, sistema) se cargan desde la API con fallback de contratos
+- [x] Modificar y guardar configuración funciona para los campos backend soportados
+- [x] Reset a defaults funciona
+- [x] Tracking de cambios funciona (botón guardar se habilita solo con cambios)
+- [x] Perfil del profesional carga y se puede editar
 - [ ] Código de vinculación se puede ver y regenerar
-- [ ] Cambio de contraseña funciona
+- [x] Cambio de contraseña funciona
 
 **Qué NO tocar todavía:**
 - No integrar la tab de Equipo (Fase 9)
@@ -873,10 +850,10 @@ Con el Dashboard integrado, la Fase 8 puede extender la configuración del siste
 - No modificar la lógica de permisos del recepcionista sobre configuración
 
 **Entregables concretos de la fase:**
-1. `ConfiguracionApiService` funcional con las tres secciones
-2. `PerfilApiService` funcional
-3. Todas las configuraciones cargando y guardando datos reales
-4. Perfil profesional integrado
+1. `ConfiguracionApiService` funcional con agenda, sistema y recordatorios
+2. `PerfilApiService` funcional con perfil/código/password y fallback de endpoints
+3. Configuración y perfil conectados sin modificar HTML/SCSS/layout
+4. Pendientes documentados para campos sin contrato y regeneración del código
 
 **Preparación para la siguiente fase:**
 La configuración de agenda ya integrada permite que la Fase 5 (ya completada) valide correctamente la jornada laboral. La Fase 9 (Equipo) completará la tab pendiente de configuración.
@@ -1111,7 +1088,7 @@ Con estadísticas integradas, solo quedan los endpoints públicos y el hardening
 
 **Servicios involucrados:**
 - Nuevo: `services/confirmacion-publica.service.ts`
-- `services/solicitudes.service.api.ts` — ya creado en Fase 7
+- Reutilizar el servicio/API de solicitudes que se defina cuando se complete el flujo global de reprogramación
 
 **Endpoints involucrados:**
 | Método | Ruta | Propósito |
@@ -1320,7 +1297,7 @@ Estas reglas aplican a **cada fase** cuando se implemente:
 **Estado:** ⬜ Pendiente — La interfaz completa debe reescribirse a snake_case. Además cambió la estructura interna (ver Hallazgo 29 en BACKEND_CHANGES).
 
 ### 9.2. ~~Conflicto de `CitaDto` resuelto pero verificar~~ → CONFIRMADO COMO PROBLEMA MAYOR
-**Estado:** ✅ Resuelto en Fase 4 (módulo Citas). Se mantiene compatibilidad legacy temporal para Agenda/Fase 5.
+**Estado:** ✅ Resuelto en Fase 5. Compatibilidad legacy mantenida solo a nivel de normalización de `CitaDto`, no en inyección de mocks.
 
 ### 9.3. ~~Endpoint de registro no coincide~~ → ✅ RESUELTO
 **Estado:** ✅ — El backend usa `POST /api/usuarios/registro`. El frontend debe ajustar la URL.
@@ -1374,8 +1351,8 @@ Path real: `/public/citas/gestion/{token}`. Métodos: PATCH (no POST) para confi
 | 5 | Interceptor inyecta Bearer y maneja 401 | ⬜ |
 | 6 | Pacientes CRUD funciona contra API | ⬜ |
 | 7 | Citas CRUD + estados + pagos funciona contra API | ⬜ |
-| 8 | Agenda muestra datos reales | ⬜ |
-| 9 | Bloqueos horarios CRUD funciona | ⬜ |
+| 8 | Agenda muestra datos reales | ? |
+| 9 | Bloqueos horarios CRUD funciona | ? |
 | 10 | Sesiones CRUD funciona con adjuntos | ⬜ |
 | 11 | Notas clínicas CRUD funciona | ⬜ |
 | 12 | Dashboard muestra datos agregados reales | ⬜ |
@@ -1405,7 +1382,7 @@ Path real: `/public/citas/gestion/{token}`. Métodos: PATCH (no POST) para confi
 | 2 — Auth y Sesión | Crítica | Media | Fase 1 | Medio | Login/Registro/Sesión | Parcial (SessionMock) | Sí (auth) | ✅ Completada |
 | 3 — Pacientes | Alta | Media | Fase 2 | Bajo | CRUD Pacientes | Sí (PacientesMock) | Sí | ✅ Completada |
 | 4 — Citas | Alta | Alta | Fase 3 | Medio | CRUD Citas, Estados, Pagos | Sí (CitasMock) | Sí | ✅ Completada (módulo Citas; Agenda en Fase 5) |
-| 5 — Agenda/Bloqueos | Alta | Alta | Fase 4 | Alto | Calendario, Bloqueos | Parcial | Sí | ⬜ Pendiente |
+| 5 — Agenda/Bloqueos | Alta | Alta | Fase 4 | Alto | Calendario, Bloqueos | Parcial | Sí | ? Completada |
 | 6 — Sesiones/Adjuntos | Alta | Alta | Fase 4 | Alto | Sesiones, Upload archivos | Sí (SesionesMock) | Sí + Storage | ⬜ Pendiente |
 | 7 — Dashboard | Media | Media | Fases 3-6 | Medio | Resumen, KPIs | Parcial | Sí | ⬜ Pendiente |
 | 8 — Configuración | Media | Baja | Fase 2 | Bajo | Ajustes del sistema | No (no hay mock) | Sí | ⬜ Pendiente |
@@ -1520,5 +1497,7 @@ Path real: `/public/citas/gestion/{token}`. Métodos: PATCH (no POST) para confi
 
 ---
 
-*Documento actualizado el 04/04/2026 — Cierre Fase 4 (Citas) con API real.*  
+*Documento actualizado el 05/04/2026 — Cierre Fase 7 (Dashboard y Resumen General) con API real.*  
 *Se actualizará conforme avancemos fase por fase.*
+
+

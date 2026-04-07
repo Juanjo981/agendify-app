@@ -6,15 +6,18 @@ import { RouterModule } from '@angular/router';
 import { AuthService } from 'src/app/services/auth';
 import { ROL_REGISTRO } from 'src/app/shared/models/auth.models';
 import { mapApiError, humanizeFieldError, API_ERROR_CODES } from 'src/app/shared/utils/api-error.mapper';
+import { AgfDatePickerComponent } from 'src/app/shared/components/agf-date-picker/agf-date-picker.component';
 
 @Component({
   selector: 'app-registro',
   standalone: true,
-  imports: [CommonModule, IonicModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, IonicModule, ReactiveFormsModule, RouterModule, AgfDatePickerComponent],
   templateUrl: './registro.page.html',
   styleUrls: ['./registro.page.scss'],
 })
 export class RegistroPage {
+  readonly birthDateMaxYear = new Date().getFullYear();
+
   registroForm: FormGroup;
   verPassword     = false;
   cargando        = false;
