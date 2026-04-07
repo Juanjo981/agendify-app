@@ -1509,3 +1509,10 @@ Path real: `/public/citas/gestion/{token}`. MÃ©todos: PATCH (no POST) para confi
 - Los filtros de rango/fecha se traducen a query params reales y las sub-vistas escuchan el estado global de filtros.
 - La exportación quedó conectada con soporte tolerante para blob directo o JSON con url/mensaje.
 - Los contratos faltantes del backend quedaron documentados en INTEGRATION_PENDING_ITEMS.md.
+## Actualizacion Fase 12 (2026-04-07)
+- ConfirmacionPublicaService creado para consultar la cita publica por token y ejecutar confirmar, cancelar y solicitar reprogramacion.
+- La ruta publica activa quedo en /public/citas/:token y se mantiene alias /confirmar-cita/:token para compatibilidad de links previos.
+- confirmar-cita.page.ts ya consume el contrato real /public/citas/gestion/{token} sin depender de sesion autenticada.
+- El interceptor ya excluye correctamente /public/*, por lo que no se envia bearer token en este flujo.
+- Los estados de token invalido, expirado o ya procesado se resuelven desde token_valido + accion_realizada.
+- La falta de un endpoint publico de disponibilidad/sugerencias para reprogramacion quedo documentada en INTEGRATION_PENDING_ITEMS.md.

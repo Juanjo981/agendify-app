@@ -146,26 +146,26 @@
     </div>
 
     <!-- ACCIONES PRINCIPALES (estado pendiente) -->
-    <div class="cc-actions" *ngIf="vista === 'pendiente'">
+    <div class="cc-actions" *ngIf="vista === 'pendiente' && (puedeConfirmar || puedeSolicitarReprogramacion || puedeCancelar)">
       <p class="cc-actions__hint">
         <ion-icon name="information-circle-outline"></ion-icon>
         Si no puedes asistir, puedes solicitar un cambio o cancelar directamente.
       </p>
 
       <!-- CTA principal -->
-      <button class="cc-btn-confirm" (click)="confirmar()">
+      <button class="cc-btn-confirm" *ngIf="puedeConfirmar" [disabled]="accionLoading" (click)="confirmar()">
         <ion-icon name="checkmark-circle-outline"></ion-icon>
         Confirmar mi asistencia
       </button>
 
       <!-- CTA secundario: reprogramar -->
-      <button class="cc-btn-reschedule" (click)="irAReprogramar()">
+      <button class="cc-btn-reschedule" *ngIf="puedeSolicitarReprogramacion" [disabled]="accionLoading" (click)="irAReprogramar()">
         <ion-icon name="calendar-outline"></ion-icon>
         Solicitar reprogramación
       </button>
 
       <!-- CTA terciario: cancelar - minimo peso visual -->
-      <button class="cc-btn-cancel-link" (click)="irACancelar()">
+      <button class="cc-btn-cancel-link" *ngIf="puedeCancelar" [disabled]="accionLoading" (click)="irACancelar()">
         No podré asistir — cancelar cita
       </button>
     </div>
@@ -210,7 +210,7 @@
       </div>
 
       <div class="cc-section__actions">
-        <button class="cc-btn-confirm" (click)="enviarReprogramacion()">
+        <button class="cc-btn-confirm" [disabled]="accionLoading || slotSeleccionado === null" (click)="enviarReprogramacion()">
           <ion-icon name="send-outline"></ion-icon>
           Enviar solicitud
         </button>
@@ -235,7 +235,7 @@
       </p>
 
       <div class="cc-section__actions">
-        <button class="cc-btn-cancel-danger" (click)="cancelarCita()">
+        <button class="cc-btn-cancel-danger" [disabled]="accionLoading" (click)="cancelarCita()">
           <ion-icon name="close-circle-outline"></ion-icon>
           Sí, cancelar mi cita
         </button>
@@ -304,9 +304,9 @@
       <div class="cc-expired__icon-wrap">
         <ion-icon name="link-outline"></ion-icon>
       </div>
-      <h2 class="cc-expired__title">Enlace no válido</h2>
+      <h2 class="cc-expired__title">{{ expiredTitle }}</h2>
       <p class="cc-expired__sub">
-        Este enlace ha expirado o ya no está disponible.
+        {{ expiredMessage }}
       </p>
       <div class="cc-expired__hint">
         <ion-icon name="call-outline"></ion-icon>
@@ -325,3 +325,4 @@
 
   </div>
 </ion-content>
+

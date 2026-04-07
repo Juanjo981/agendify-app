@@ -102,7 +102,12 @@ const routes: Routes = [
   {
     // Public page — no auth guard. Patient arrives here via SMS link.
     // Future shape: /confirmar-cita/:token
-    path: 'confirmar-cita',
+    path: 'public/citas/:token',
+    loadComponent: () =>
+      import('./pages/confirmar-cita/confirmar-cita.page').then(m => m.ConfirmarCitaPage)
+  },
+  {
+    path: 'confirmar-cita/:token',
     loadComponent: () =>
       import('./pages/confirmar-cita/confirmar-cita.page').then(m => m.ConfirmarCitaPage)
   },
