@@ -874,16 +874,17 @@ La configuración de agenda ya integrada permite que la Fase 5 (ya completada) v
 - `configuracion.page.ts` — tab "Equipo"
 
 **Servicios involucrados:**
-- `services/equipo.service.mock.ts` — reemplazar
-- `services/vinculacion.service.mock.ts` — reemplazar (parcialmente en Fase 2)
-- Nuevo: `services/equipo.service.api.ts`
+- `services/equipo.service.mock.ts` — deprecado, mantener sin inyección activa
+- `services/vinculacion.service.mock.ts` — deprecado, mantener sin inyección activa
+- Nuevo: `services/equipo-api.service.ts`
 
 **Endpoints involucrados:**
 | Método | Ruta | Propósito |
 |--------|------|-----------|
-| `GET` | `/api/equipo` | Lista recepcionistas con permisos |
-| `PUT` | `/api/equipo/{recepcionistaId}/permisos` | Actualizar permisos |
-| `PATCH` | `/api/equipo/{recepcionistaId}/activo` | Activar/desactivar |
+| `GET` | `/api/recepcionistas` o `/api/equipo` | Lista recepcionistas |
+| `GET` | `/api/recepcionistas/{id}/permisos` | Ver permisos |
+| `PUT` | `/api/recepcionistas/{id}/permisos` o `/api/equipo/{id}/permisos` | Actualizar permisos |
+| `PATCH` | `/api/recepcionistas/{id}/activo` o `/api/equipo/{id}/activo` | Activar/desactivar |
 
 **Modelos involucrados:**
 - `RecepcionistaEquipoViewModel` — view model ya definido, el servicio API construye instancias de esta interfaz a partir de la respuesta del backend
@@ -893,22 +894,22 @@ La configuración de agenda ya integrada permite que la Fase 5 (ya completada) v
 **Dependencias previas:** Fase 2 (Auth — para el rol y la vinculación)
 
 **Cambios técnicos:**
-1. Crear `EquipoApiService` que consuma `/api/equipo`
-2. La respuesta del backend probablemente sea plana (datos del recepcionista + permisos). El servicio API debe transformarla a `RecepcionistaEquipoViewModel` (calculando `initials`, `nombreCompleto`, `permisosActivosCount`, etc.)
-3. Conectar edición de permisos con `PUT /equipo/{id}/permisos`
-4. Conectar activar/desactivar con `PATCH /equipo/{id}/activo`
-5. `VinculacionMockService` ya debería estar parcialmente reemplazado desde Fase 2 (para el registro). Completar su reemplazo aquí si queda algo pendiente
+1. Crear `EquipoApiService` que consuma las rutas reales de recepcionistas
+2. Construir en el servicio el mapper enriquecido a `RecepcionistaEquipoViewModel` (`initials`, `nombreCompleto`, `permisosActivosCount`, `permisosResumen`, `fechaVinculacion`)
+3. Resolver permisos desde el listado cuando vengan embebidos, o con `GET /recepcionistas/{id}/permisos` cuando no vengan
+4. Conectar edición de permisos y activación/desactivación sin tocar la UX del modal actual
+5. Retirar la inyección activa de mocks en la pantalla integrada, dejando los mocks solo como fallback/deprecados en el repo
 
 **Riesgos:**
 - El endpoint `/api/equipo` podría devolver datos en formato plano que no coincidan con `RecepcionistaEquipoViewModel` — necesitar mapper
 - La activación/desactivación podría tener restricciones (ej: no desactivar al último recepcionista activo)
 
 **Criterios de terminado:**
-- [ ] Listado de recepcionistas carga desde la API
-- [ ] Edición de permisos funciona
-- [ ] Activación/desactivación funciona
-- [ ] View model se construye correctamente desde datos reales
-- [ ] `EquipoMockService` ya no se inyecta
+- [x] Listado de recepcionistas carga desde la API
+- [x] Edición de permisos funciona
+- [x] Activación/desactivación funciona
+- [x] View model se construye correctamente desde datos reales
+- [x] `EquipoMockService` ya no se inyecta en la pantalla integrada
 
 **Qué NO tocar todavía:**
 - No implementar invitaciones por email
@@ -917,7 +918,7 @@ La configuración de agenda ya integrada permite que la Fase 5 (ya completada) v
 **Entregables concretos de la fase:**
 1. `EquipoApiService` funcional
 2. Tab de Equipo en configuración integrada con API real
-3. Todos los mocks de equipo y vinculación eliminados
+3. Mocks de equipo/vinculación conservados pero fuera de la inyección activa
 
 **Preparación para la siguiente fase:**
 Con Equipo integrado, el sistema de permisos funciona end-to-end con datos reales. La Fase 10 puede integrar actividad y notificaciones que involucran acciones del equipo.

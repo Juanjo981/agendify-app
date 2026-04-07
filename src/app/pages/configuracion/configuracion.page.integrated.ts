@@ -5,8 +5,10 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { IonicModule, ToastController } from '@ionic/angular';
 import { ConfiguracionApiService } from 'src/app/services/configuracion-api.service';
-import { EquipoMockService, PERMISOS_DETALLES } from 'src/app/services/equipo.service.mock';
+import { EquipoApiService } from 'src/app/services/equipo-api.service';
+import { PERMISOS_DETALLES } from 'src/app/services/equipo.service.mock';
 import { PerfilApiService } from 'src/app/services/perfil-api.service';
+import { SessionService } from 'src/app/services/session.service';
 import { PermisoDetalle, RecepcionistaEquipoViewModel } from 'src/app/shared/models/equipo.model';
 import { PermisosRecepcionista } from 'src/app/shared/models/permisos.model';
 import { UsuarioMock } from 'src/app/shared/models/usuario.model';
@@ -75,6 +77,8 @@ export class ConfiguracionPage implements OnInit {
   private recordatoriosActuales: ConfiguracionRecordatorioDto[] = [];
   private cargando = false;
   private guardando = false;
+  private cargandoEquipo = false;
+  private guardandoEquipo = false;
 
   showResetConfirm = false;
   savedToast = false;
@@ -107,14 +111,29 @@ export class ConfiguracionPage implements OnInit {
   ];
 
   constructor(
-    private equipoSvc: EquipoMockService,
     private route: ActivatedRoute,
     private configuracionApi: ConfiguracionApiService,
+    private equipoApi: EquipoApiService,
     private perfilApi: PerfilApiService,
+    private session: SessionService,
     private toastCtrl: ToastController,
   ) {
-    this.profesionalActual = this.equipoSvc.getProfesionalActual();
-    this.recepcionistas = this.equipoSvc.getRecepcionistasDelProfesional();
+    const user = this.session.getUser();
+    this.profesionalActual = {
+      id: Number(user?.id_usuario ?? 0),
+      nombre: user?.nombre ?? '',
+      apellido: user?.apellido ?? '',
+      email: user?.email ?? '',
+      usuario: user?.username ?? '',
+      fecha_nacimiento: user?.fecha_nacimiento ?? '',
+      domicilio: user?.domicilio ?? '',
+      numero_telefono: user?.numero_telefono ?? '',
+      activo: user?.activo ?? true,
+      idRol: Number(user?.id_rol ?? 0) as any,
+      especialidad: user?.profesional?.especialidad ?? '',
+      codigoVinculacion: user?.profesional?.codigo_vinculacion ?? '',
+    };
+    this.recepcionistas = [];
   }
 
   ngOnInit(): void {
@@ -124,6 +143,7 @@ export class ConfiguracionPage implements OnInit {
     }
 
     void this.cargarConfiguracionReal();
+    void this.cargarEquipoReal();
   }
 
   hasChanges(): boolean {
@@ -213,16 +233,35 @@ export class ConfiguracionPage implements OnInit {
     this.permisosEditando[key] = (event as CustomEvent<{ checked: boolean }>).detail.checked;
   }
 
-  guardarPermisos(): void {
+  async guardarPermisos(): Promise<void> {
     if (!this.modalPermisos || !this.permisosEditando) return;
-    this.equipoSvc.updateRecepcionistaPermisos(this.modalPermisos.id, { ...this.permisosEditando });
-    this.recepcionistas = this.equipoSvc.getRecepcionistasDelProfesional();
-    this.cerrarModalPermisos();
+
+    try {
+      this.guardandoEquipo = true;
+      const updated = await this.equipoApi.updateRecepcionistaPermisos(
+        this.modalPermisos.id,
+        { ...this.permisosEditando },
+      );
+      this.recepcionistas = this.recepcionistas.map(item => item.id === updated.id ? updated : item);
+      this.cerrarModalPermisos();
+      await this.presentToast('Permisos actualizados correctamente.', 'success');
+    } catch (error) {
+      await this.presentToast(mapApiError(error).userMessage, 'danger');
+    } finally {
+      this.guardandoEquipo = false;
+    }
   }
 
-  toggleActivo(r: RecepcionistaEquipoViewModel): void {
-    this.equipoSvc.setRecepcionistaActivo(r.id, !r.activo);
-    this.recepcionistas = this.equipoSvc.getRecepcionistasDelProfesional();
+  async toggleActivo(r: RecepcionistaEquipoViewModel): Promise<void> {
+    try {
+      this.guardandoEquipo = true;
+      const updated = await this.equipoApi.setRecepcionistaActivo(r.id, !r.activo);
+      this.recepcionistas = this.recepcionistas.map(item => item.id === updated.id ? updated : item);
+    } catch (error) {
+      await this.presentToast(mapApiError(error).userMessage, 'danger');
+    } finally {
+      this.guardandoEquipo = false;
+    }
   }
 
   private async cargarConfiguracionReal(): Promise<void> {
@@ -247,6 +286,20 @@ export class ConfiguracionPage implements OnInit {
       await this.presentToast(mapApiError(error).userMessage, 'danger');
     } finally {
       this.cargando = false;
+    }
+  }
+
+  private async cargarEquipoReal(): Promise<void> {
+    if (this.cargandoEquipo) return;
+
+    try {
+      this.cargandoEquipo = true;
+      this.recepcionistas = await this.equipoApi.getRecepcionistas();
+    } catch (error) {
+      await this.presentToast(mapApiError(error).userMessage, 'danger');
+      this.recepcionistas = [];
+    } finally {
+      this.cargandoEquipo = false;
     }
   }
 

@@ -1362,6 +1362,10 @@ Nota Fase 8 (frontend ya integrado):
 - Para reducir complejidad y riesgo de mantenimiento, conviene unificar documentaciÃ³n y contrato backend en una sola surface canÃ³nica.
 - La UI actual no expone un trigger visual para regenerar `codigo_vinculacion`; si ese flujo debe quedar usable en frontend sin romper la regla de no cambiar diseÃ±o, hace falta definir un affordance permitido o una acciÃ³n ya existente.
 
+Nota Fase 9 (frontend ya integrado):
+- La integraciÃ³n real de equipo se hizo contra `GET /api/recepcionistas`, `GET/PUT /api/recepcionistas/{id}/permisos` y `PATCH /api/recepcionistas/{id}/activo`, con fallback al naming viejo `/api/equipo/*` porque el plan de integraciÃ³n seguÃ­a desactualizado.
+- El frontend tuvo que consolidar permisos granulares backend (ej. `puede_crear_citas`, `puede_editar_pacientes`) en el view model visual simplificado (`agenda`, `citas`, `pacientes`, `notasClinicas`, `configuracion`). Conviene documentar oficialmente esa equivalencia o exponer un DTO agregado para administraciÃ³n de equipo.
+
 *Documento actualizado el 06/04/2026 â€” Fase 8 (ConfiguraciÃ³n, Perfil y Preferencias).*  
 *VersiÃ³n 2.5 â€” ConfiguraciÃ³n y perfil consumen API real con fallback de endpoints; queda pendiente unificar el contrato documental de Fase 8.*
 
