@@ -57,3 +57,9 @@ _(Sin pendientes bloqueantes de frontend detectados en Fase 1)_
 
 
 | F25 | Fase 12 / Publico | No existe un endpoint o DTO documentado para ofrecer horarios disponibles sugeridos en la reprogramacion publica por token; el contrato publico solo permite enviar fecha_solicitada, hora_inicio_solicitada, hora_fin_solicitada y motivo | Para preservar la UI actual sin inventar nuevos controles, el frontend tuvo que derivar sugerencias heuristicas a partir del horario original de la cita, sin validacion real de disponibilidad | Exponer un endpoint publico de disponibilidad o sugerencias, o documentar un contrato alterno para solicitar reprogramacion sin depender de slots precomputados | ?? Alta | ? Pendiente |
+
+## Actualizacion Fase 13 (2026-04-07)
+- Se retiraron los mocks legacy y useMocks del runtime; cualquier referencia previa a mocks en este archivo debe considerarse cerrada por hardening final.
+- Pendiente real de release: npx ng build no completa en este entorno por EPERM unlink www/assets/shapes.svg bajo OneDrive y por la advertencia de baseline-browser-mapping desactualizado.
+- El resto de pendientes vigentes siguen siendo huecos de contrato/documentacion backend o validacion QA manual, no dependencias activas a mocks.
+

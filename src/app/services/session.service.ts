@@ -13,8 +13,8 @@ import { Permiso } from '../auth/permission.types';
  *  Populated from the `/api/auth/me` response after login or session restore.
  *  Consumed by AuthorizationService, guards, and components.
  *
- *  Replaces SessionMockService — the mock can be kept for reference but
- *  should no longer be injected anywhere.
+ *  Replaces the previous temporary session implementation and is now the
+ *  only session source used by active application flows.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 

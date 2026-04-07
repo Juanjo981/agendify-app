@@ -2,7 +2,7 @@ import { PermisosRecepcionista } from './permisos.model';
 
 /**
  * Descriptor de un permiso individual para renderizar en el modal de edición.
- * El array de detalles vive en EquipoMockService y se exporta como constante.
+ * El array de detalles vive en un catálogo compartido reutilizable por UI/API.
  */
 export interface PermisoDetalle {
   /** Clave tipada del permiso, coincide con keyof PermisosRecepcionista */

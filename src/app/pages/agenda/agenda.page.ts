@@ -17,10 +17,10 @@ import {
   CqaPopoverComponent,
 } from './components/cqa-popover/cqa-popover.component';
 import { SolicitudReprogramacionModalComponent } from '../../shared/components/solicitud-reprogramacion-modal/solicitud-reprogramacion-modal.component';
-import { SolicitudReprogramacionService } from '../citas/solicitud-reprogramacion.service.mock';
 import { SolicitudReprogramacion } from '../../shared/models/solicitud-reprogramacion.model';
 import { PacientesApiService } from '../pacientes/pacientes-api.service';
 import { CitasApiService } from '../citas/citas-api.service';
+import { SolicitudReprogramacionApiService } from '../citas/solicitud-reprogramacion-api.service';
 import {
   CitaDto,
   CitaUpsertRequest,
@@ -180,7 +180,7 @@ export class AgendaPage implements OnInit, OnDestroy {
     private citasSvc: CitasApiService,
     private agendaApi: AgendaApiService,
     private popoverCtrl: PopoverController,
-    private solicitudSvc: SolicitudReprogramacionService
+    private solicitudSvc: SolicitudReprogramacionApiService,
   ) {
     this.horas = this.buildHourOptions();
     this.generateCalendar();
@@ -228,34 +228,55 @@ export class AgendaPage implements OnInit, OnDestroy {
     this.showSolicitudModal = true;
   }
 
-  onSolicitudAceptada(): void {
+  async onSolicitudAceptada(): Promise<void> {
     if (!this.solicitudSeleccionada) return;
 
-    this.solicitudSvc.aceptar(this.solicitudSeleccionada.idSolicitud);
-    const cita = this.citasMes.find(c => c.id_cita === this.solicitudSeleccionada?.idCita);
-    if (cita) {
-      this.citaActiva = cita;
-      this.apptPrefill = {
-        fecha: cita.fecha,
-        horaInicio: cita.hora_inicio,
-        horaFin: cita.hora_fin,
-      };
-      this.apptShowBanner = true;
-      this.apptContextLabel = 'Reprogramando cita aceptada';
-      document.body.classList.add('modal-open');
-      this.showNewAppointmentPanel = true;
-    }
+    const solicitud = this.solicitudSeleccionada;
 
-    this.showSolicitudModal = false;
-    this.solicitudSeleccionada = null;
+    try {
+      this.saving = true;
+      await this.solicitudSvc.aprobar(solicitud.idCita, solicitud.idSolicitud);
+      const cita = this.citasMes.find(c => c.id_cita === solicitud.idCita);
+      if (cita) {
+        this.citaActiva = cita;
+        this.apptPrefill = {
+          fecha: cita.fecha,
+          horaInicio: cita.hora_inicio,
+          horaFin: cita.hora_fin,
+        };
+        this.apptShowBanner = true;
+        this.apptContextLabel = 'Reprogramando cita aceptada';
+        document.body.classList.add('modal-open');
+        this.showNewAppointmentPanel = true;
+      }
+
+      this.showSolicitudModal = false;
+      this.solicitudSeleccionada = null;
+      this.successMessage = 'Solicitud aprobada correctamente.';
+      this.generateCalendar();
+    } catch (err) {
+      this.errorMessage = mapApiError(err).userMessage;
+    } finally {
+      this.saving = false;
+    }
   }
 
-  onSolicitudRechazada(_motivo: string): void {
+  async onSolicitudRechazada(motivo: string): Promise<void> {
     if (!this.solicitudSeleccionada) return;
-    this.solicitudSvc.rechazar(this.solicitudSeleccionada.idSolicitud);
-    this.showSolicitudModal = false;
-    this.solicitudSeleccionada = null;
-    this.generateCalendar();
+
+    const solicitud = this.solicitudSeleccionada;
+    try {
+      this.saving = true;
+      await this.solicitudSvc.rechazar(solicitud.idCita, solicitud.idSolicitud, motivo);
+      this.showSolicitudModal = false;
+      this.solicitudSeleccionada = null;
+      this.successMessage = 'Solicitud rechazada correctamente.';
+      this.generateCalendar();
+    } catch (err) {
+      this.errorMessage = mapApiError(err).userMessage;
+    } finally {
+      this.saving = false;
+    }
   }
 
   onVerAgendaDesdeModal(): void {
@@ -289,6 +310,7 @@ export class AgendaPage implements OnInit, OnDestroy {
       this.citasMes = agenda.citas ?? [];
       this.bloqueosMes = agenda.bloqueos ?? [];
       this.configuracionJornada = agenda.configuracion_jornada ?? null;
+      await this.solicitudSvc.preloadPendientes(this.citasMes.map(cita => cita.id_cita));
       this.horas = this.buildHourOptions(this.configuracionJornada ?? undefined);
       this.generateCalendar();
       this.updateHeaderInfo();
@@ -298,6 +320,7 @@ export class AgendaPage implements OnInit, OnDestroy {
       this.citasMes = [];
       this.bloqueosMes = [];
       this.configuracionJornada = null;
+      this.solicitudSvc.clearCache();
       this.horas = this.buildHourOptions();
       this.generateCalendar();
       this.updateHeaderInfo();

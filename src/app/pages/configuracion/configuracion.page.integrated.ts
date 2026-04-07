@@ -6,7 +6,7 @@ import { ActivatedRoute } from '@angular/router';
 import { IonicModule, ToastController } from '@ionic/angular';
 import { ConfiguracionApiService } from 'src/app/services/configuracion-api.service';
 import { EquipoApiService } from 'src/app/services/equipo-api.service';
-import { PERMISOS_DETALLES } from 'src/app/services/equipo.service.mock';
+import { PERMISOS_DETALLES } from 'src/app/shared/constants/permisos-detalles';
 import { PerfilApiService } from 'src/app/services/perfil-api.service';
 import { SessionService } from 'src/app/services/session.service';
 import { PermisoDetalle, RecepcionistaEquipoViewModel } from 'src/app/shared/models/equipo.model';
