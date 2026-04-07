@@ -9,7 +9,7 @@ import {
   ExportacionReporteResponse,
   FormatoExportacion,
 } from '../../models/estadisticas.model';
-import { EstadisticasMockService } from '../../estadisticas.service.mock';
+import { EstadisticasApiService } from '../../estadisticas.service.api';
 
 @Component({
   selector: 'app-exportar-reporte-modal',
@@ -34,7 +34,7 @@ export class ExportarReporteModalComponent implements OnInit {
   exportando = false;
   resultado: ExportacionReporteResponse | null = null;
 
-  constructor(private svc: EstadisticasMockService) {}
+  constructor(private svc: EstadisticasApiService) {}
 
   ngOnInit() {
     // Defaults based on current month
@@ -81,6 +81,11 @@ export class ExportarReporteModalComponent implements OnInit {
       if (res.ok) {
         this.exportado.emit(res);
       }
+    } catch {
+      this.resultado = {
+        ok: false,
+        mensaje: 'No fue posible exportar el reporte con el contrato backend actual.',
+      };
     } finally {
       this.exportando = false;
     }

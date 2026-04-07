@@ -9,7 +9,7 @@ import {
   EstadoCitaFiltro,
   MetodoPagoFiltro,
 } from '../../models/filtros-estadisticas.model';
-import { EstadisticasMockService } from '../../estadisticas.service.mock';
+import { EstadisticasApiService } from '../../estadisticas.service.api';
 
 @Component({
   selector: 'app-filtros-estadisticas',
@@ -48,14 +48,11 @@ export class FiltrosEstadisticasComponent implements OnInit {
     { value: 'Crédito',       label: 'Crédito' },
   ];
 
-  // Mock — replace with real data from backend
-  profesionales: Array<{ id: string; nombre: string }> = [
+    profesionales: Array<{ id: string; nombre: string }> = [
     { id: '',  nombre: 'Todos los profesionales' },
-    { id: '1', nombre: 'Dra. García' },
-    { id: '2', nombre: 'Dr. Rodríguez' },
   ];
 
-  constructor(private svc: EstadisticasMockService) {}
+  constructor(private svc: EstadisticasApiService) {}
 
   ngOnInit() {
     this.filtros = this.svc.getFiltrosIniciales();
@@ -105,3 +102,4 @@ export class FiltrosEstadisticasComponent implements OnInit {
     return d.toISOString().slice(0, 10);
   }
 }
+

@@ -632,6 +632,10 @@ El mÃ³dulo de estadÃ­sticas tiene 9 endpoints distintos. Algunos son queries
 1. Para V1, las queries directas sobre las tablas principales son suficientes
 2. Si el volumen crece, considerar vistas materializadas o precalculaciÃ³n nocturna
 3. Los insights son opcionales y pueden devolver lista vacÃ­a si no estÃ¡n implementados â€” el frontend los maneja como optional
+4. Publicar DTOs completos para `/api/estadisticas/*` y el contrato de `POST /api/estadisticas/reportes/exportar` para eliminar mappers heurÃ­sticos en frontend
+
+**Estado frontend tras Fase 11:**  
+El mÃ³dulo ya quedÃ³ conectado a `EstadisticasApiService` y dejÃ³ de inyectar `EstadisticasMockService`, pero la documentaciÃ³n vigente sigue sin fijar nombres canÃ³nicos para series/rankings/reportes ni el formato exacto de exportaciÃ³n.
 
 **Prioridad:** Baja  
 **Bloqueante:** No  
@@ -1366,6 +1370,11 @@ Nota Fase 9 (frontend ya integrado):
 - La integraciÃ³n real de equipo se hizo contra `GET /api/recepcionistas`, `GET/PUT /api/recepcionistas/{id}/permisos` y `PATCH /api/recepcionistas/{id}/activo`, con fallback al naming viejo `/api/equipo/*` porque el plan de integraciÃ³n seguÃ­a desactualizado.
 - El frontend tuvo que consolidar permisos granulares backend (ej. `puede_crear_citas`, `puede_editar_pacientes`) en el view model visual simplificado (`agenda`, `citas`, `pacientes`, `notasClinicas`, `configuracion`). Conviene documentar oficialmente esa equivalencia o exponer un DTO agregado para administraciÃ³n de equipo.
 
-*Documento actualizado el 06/04/2026 â€” Fase 8 (ConfiguraciÃ³n, Perfil y Preferencias).*  
-*VersiÃ³n 2.5 â€” ConfiguraciÃ³n y perfil consumen API real con fallback de endpoints; queda pendiente unificar el contrato documental de Fase 8.*
+Nota Fase 10 (frontend ya integrado):
+- La pantalla global de actividad quedÃ³ conectada contra `GET /api/historial-eventos`; el endpoint `/api/actividad` seguÃ­a figurando en el plan pero no en la referencia real, asÃ­ que conviene unificar documentaciÃ³n y dejar una sola source of truth.
+- El frontend ya intenta marcar notificaciones individuales como leÃ­das con `PATCH/POST /api/notificaciones/{id}/leida`, pero la API Reference vigente todavÃ­a no publica ese contrato ni un campo canÃ³nico de lectura (`leida`, `fecha_leida`, etc.).
+- La acciÃ³n masiva "marcar todas como leÃ­das" quedÃ³ documentada como pendiente porque no existe affordance visual en la UI actual y la ruta tampoco estÃ¡ canonizada en la referencia.
+
+*Documento actualizado el 06/04/2026 â€” Fase 10 (Actividad, Notificaciones e Historial).*  
+*VersiÃ³n 2.6 â€” Actividad global consume `historial-eventos`, la lectura individual de notificaciones quedÃ³ integrada con fallback y siguen pendientes la canonizaciÃ³n documental y la acciÃ³n masiva.*
 

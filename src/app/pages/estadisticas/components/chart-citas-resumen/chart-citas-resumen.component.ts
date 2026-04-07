@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IonicModule } from '@ionic/angular';
 import { ResumenCitasEstadistica, EstadoCitaEstadistica } from '../../models/estadisticas.model';
-import { EstadisticasMockService } from '../../estadisticas.service.mock';
+import { EstadisticasApiService } from '../../estadisticas.service.api';
 
 @Component({
   selector: 'app-chart-citas-resumen',
@@ -12,14 +13,23 @@ import { EstadisticasMockService } from '../../estadisticas.service.mock';
   imports: [CommonModule, IonicModule],
 })
 export class ChartCitasResumenComponent implements OnInit {
-  resumen!: ResumenCitasEstadistica;
+  resumen: ResumenCitasEstadistica = {
+    totalPeriodo: 0,
+    estadoPredominante: 'Sin datos',
+    horasMasOcupadas: [],
+    diasMasOcupados: [],
+  };
   estados: EstadoCitaEstadistica[] = [];
+  private readonly destroyRef = inject(DestroyRef);
 
-  constructor(private svc: EstadisticasMockService) {}
+  constructor(private svc: EstadisticasApiService) {}
 
   ngOnInit() {
-    this.resumen = this.svc.getResumenCitas();
-    this.estados = this.svc.getEstadosCita();
+    this.svc.filtros$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(filtros => {
+        void this.cargar(filtros);
+      });
   }
 
   get maxHoras(): number {
@@ -40,5 +50,21 @@ export class ChartCitasResumenComponent implements OnInit {
 
   barPct(val: number, max: number): string {
     return `${Math.round((val / max) * 100)}%`;
+  }
+
+  private async cargar(filtros: any) {
+    try {
+      const data = await this.svc.getCitasStats('mes', filtros);
+      this.resumen = data.resumen;
+      this.estados = data.estados;
+    } catch {
+      this.resumen = {
+        totalPeriodo: 0,
+        estadoPredominante: 'No disponible',
+        horasMasOcupadas: [],
+        diasMasOcupados: [],
+      };
+      this.estados = [];
+    }
   }
 }

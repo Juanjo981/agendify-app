@@ -1,8 +1,9 @@
-import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, DestroyRef, OnInit, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IonicModule } from '@ionic/angular';
 import { ReporteEstadistica } from '../../models/estadisticas.model';
-import { EstadisticasMockService } from '../../estadisticas.service.mock';
+import { EstadisticasApiService } from '../../estadisticas.service.api';
 
 @Component({
   selector: 'app-tabla-reportes',
@@ -16,23 +17,49 @@ export class TablaReportesComponent implements OnInit {
 
   reportes: ReporteEstadistica[] = [];
   reporteExpandido: string | null = null;
+  cargandoDetalle = false;
+  private readonly destroyRef = inject(DestroyRef);
 
   // Columns to show in the detail preview table (derived from first row keys)
   columnasPorReporte: Record<string, string[]> = {};
 
-  constructor(private svc: EstadisticasMockService) {}
+  constructor(private svc: EstadisticasApiService) {}
 
   ngOnInit() {
-    this.reportes = this.svc.getReportes();
-    this.reportes.forEach(r => {
-      if (r.filas.length > 0) {
-        this.columnasPorReporte[r.id] = Object.keys(r.filas[0]);
-      }
-    });
+    this.svc.filtros$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(filtros => {
+        void this.cargarReportes(filtros);
+      });
   }
 
-  toggleDetalle(id: string) {
+  async toggleDetalle(id: string) {
     this.reporteExpandido = this.reporteExpandido === id ? null : id;
+    if (!this.reporteExpandido) {
+      return;
+    }
+
+    const reporte = this.reportes.find(item => item.id === id);
+    if (!reporte || reporte.filas.length > 0) {
+      return;
+    }
+
+    this.cargandoDetalle = true;
+    try {
+      const detalle = await this.svc.getReporteDetalle(reporte);
+      this.reportes = this.reportes.map(item => item.id === detalle.id ? detalle : item);
+      if (detalle.filas.length > 0) {
+        this.columnasPorReporte[detalle.id] = Object.keys(detalle.filas[0]);
+      }
+    } catch {
+      this.reportes = this.reportes.map(item => item.id === reporte.id ? {
+        ...item,
+        resumenTexto: 'No fue posible cargar el detalle del reporte',
+        filas: [],
+      } : item);
+    } finally {
+      this.cargandoDetalle = false;
+    }
   }
 
   onExportar(reporte: ReporteEstadistica) {
@@ -57,4 +84,20 @@ export class TablaReportesComponent implements OnInit {
   trackById(_: number, r: ReporteEstadistica): string { return r.id; }
   trackByKey(_: number, k: string): string { return k; }
   trackByIndex(i: number): number { return i; }
+
+  private async cargarReportes(filtros: any) {
+    try {
+      this.reportes = await this.svc.getReportes(filtros);
+    } catch {
+      this.reportes = [];
+    }
+
+    this.columnasPorReporte = {};
+    this.reportes.forEach(reporte => {
+      if (reporte.filas.length > 0) {
+        this.columnasPorReporte[reporte.id] = Object.keys(reporte.filas[0]);
+      }
+    });
+  }
 }
+

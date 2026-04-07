@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IonicModule } from '@ionic/angular';
 import { InsightEstadistica } from '../../models/estadisticas.model';
-import { EstadisticasMockService } from '../../estadisticas.service.mock';
+import { EstadisticasApiService } from '../../estadisticas.service.api';
 
 @Component({
   selector: 'app-insights-estadisticas',
@@ -13,12 +14,32 @@ import { EstadisticasMockService } from '../../estadisticas.service.mock';
 })
 export class InsightsEstadisticasComponent implements OnInit {
   insights: InsightEstadistica[] = [];
+  private readonly destroyRef = inject(DestroyRef);
 
-  constructor(private svc: EstadisticasMockService) {}
+  constructor(private svc: EstadisticasApiService) {}
 
   ngOnInit() {
-    this.insights = this.svc.getInsights();
+    this.svc.filtros$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(filtros => {
+        void this.cargarInsights(filtros);
+      });
   }
 
   trackById(_: number, ins: InsightEstadistica): string { return ins.id; }
+
+  private async cargarInsights(filtros: any) {
+    try {
+      this.insights = await this.svc.getInsights(filtros);
+    } catch {
+      this.insights = [{
+        id: 'insight-error',
+        icono: 'alert-circle-outline',
+        titulo: 'Insights no disponibles',
+        valor: 'Sin datos',
+        descripcion: 'No fue posible obtener insights para este período.',
+        tipo: 'warning',
+      }];
+    }
+  }
 }

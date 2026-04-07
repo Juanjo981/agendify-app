@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IonicModule } from '@ionic/angular';
 import { EstadoCitaEstadistica } from '../../models/estadisticas.model';
-import { EstadisticasMockService } from '../../estadisticas.service.mock';
+import { EstadisticasApiService } from '../../estadisticas.service.api';
 
 interface DonutSegment {
   dasharray: string;
@@ -21,17 +22,20 @@ export class ChartEstadosCitaComponent implements OnInit {
   estados: EstadoCitaEstadistica[] = [];
   donutSegments: DonutSegment[] = [];
   total = 0;
+  private readonly destroyRef = inject(DestroyRef);
 
   // SVG donut: cx=100 cy=100 r=70 → circumference ≈ 439.82
   readonly RADIUS = 70;
   get CIRCUMFERENCE(): number { return 2 * Math.PI * this.RADIUS; }
 
-  constructor(private svc: EstadisticasMockService) {}
+  constructor(private svc: EstadisticasApiService) {}
 
   ngOnInit() {
-    this.estados = this.svc.getEstadosCita();
-    this.total = this.estados.reduce((s, e) => s + e.total, 0);
-    this.donutSegments = this.buildDonut();
+    this.svc.filtros$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(filtros => {
+        void this.cargar(filtros);
+      });
   }
 
   private buildDonut(): DonutSegment[] {
@@ -57,5 +61,18 @@ export class ChartEstadosCitaComponent implements OnInit {
 
   trackByIndex(i: number): number {
     return i;
+  }
+
+  private async cargar(filtros: any) {
+    try {
+      const data = await this.svc.getCitasStats('mes', filtros);
+      this.estados = data.estados;
+      this.total = this.estados.reduce((s, e) => s + e.total, 0);
+      this.donutSegments = this.buildDonut();
+    } catch {
+      this.estados = [];
+      this.total = 0;
+      this.donutSegments = [];
+    }
   }
 }

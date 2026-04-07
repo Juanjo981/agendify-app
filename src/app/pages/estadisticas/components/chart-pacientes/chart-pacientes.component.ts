@@ -1,12 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IonicModule } from '@ionic/angular';
 import {
   NuevosVsRecurrentesPunto,
   RankingPaciente,
   ResumenPacientesEstadistica,
 } from '../../models/estadisticas.model';
-import { EstadisticasMockService } from '../../estadisticas.service.mock';
+import { EstadisticasApiService } from '../../estadisticas.service.api';
 
 @Component({
   selector: 'app-chart-pacientes',
@@ -19,17 +20,24 @@ export class ChartPacientesComponent implements OnInit {
   puntos: NuevosVsRecurrentesPunto[] = [];
   rankingCitas: RankingPaciente[] = [];
   rankingNoAsist: RankingPaciente[] = [];
-  resumen!: ResumenPacientesEstadistica;
+  resumen: ResumenPacientesEstadistica = {
+    totalActivos: 0,
+    nuevosEsteMes: 0,
+    recurrentesEsteMes: 0,
+    tasaRetencion: 0,
+  };
+  private readonly destroyRef = inject(DestroyRef);
 
   rankingTab: 'citas' | 'no-asistencias' = 'citas';
 
-  constructor(private svc: EstadisticasMockService) {}
+  constructor(private svc: EstadisticasApiService) {}
 
   ngOnInit() {
-    this.puntos = this.svc.getNuevosVsRecurrentes();
-    this.resumen = this.svc.getResumenPacientes();
-    this.rankingCitas = this.svc.getRankingMasCitas();
-    this.rankingNoAsist = this.svc.getRankingMasNoAsistencias();
+    this.svc.filtros$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(filtros => {
+        void this.cargar(filtros);
+      });
   }
 
   get rankingActivo(): RankingPaciente[] {
@@ -58,4 +66,24 @@ export class ChartPacientesComponent implements OnInit {
 
   trackByLabel(_: number, p: NuevosVsRecurrentesPunto): string { return p.label; }
   trackByPosicion(_: number, r: RankingPaciente): number { return r.posicion; }
+
+  private async cargar(filtros: any) {
+    try {
+      const data = await this.svc.getPacientesStats(filtros);
+      this.puntos = data.puntos;
+      this.resumen = data.resumen;
+      this.rankingCitas = data.rankingCitas;
+      this.rankingNoAsist = data.rankingNoAsistencias;
+    } catch {
+      this.puntos = [];
+      this.resumen = {
+        totalActivos: 0,
+        nuevosEsteMes: 0,
+        recurrentesEsteMes: 0,
+        tasaRetencion: 0,
+      };
+      this.rankingCitas = [];
+      this.rankingNoAsist = [];
+    }
+  }
 }

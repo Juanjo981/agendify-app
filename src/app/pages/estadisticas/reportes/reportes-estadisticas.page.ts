@@ -26,8 +26,6 @@ export class ReportesEstadisticasPage {
     this.reporteParaExportar = null;
   }
 
-  onExportado(res: ExportacionReporteResponse) {
-    console.log('Exportado:', res);
-    // TODO: show toast notification when backend is wired
+  onExportado(_: ExportacionReporteResponse) {
   }
 }

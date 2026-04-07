@@ -22,6 +22,10 @@ import {
 import { FiltroEstadisticas } from './models/filtros-estadisticas.model';
 
 @Injectable({ providedIn: 'root' })
+/**
+ * @deprecated Conservado solo como referencia temporal durante la integración.
+ * El módulo de estadísticas debe consumir `EstadisticasApiService`.
+ */
 export class EstadisticasMockService {
 
   // ─── Filters ───────────────────────────────────────────────────────────────
