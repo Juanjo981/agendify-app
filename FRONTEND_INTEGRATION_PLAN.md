@@ -1524,3 +1524,13 @@ Path real: `/public/citas/gestion/{token}`. Métodos: PATCH (no POST) para confi
 - `npx tsc -p tsconfig.app.json --noEmit` paso correctamente.
 - `npx ng build` no termino por un bloqueo externo de OneDrive sobre `www/assets/shapes.svg`, no por errores de integracion TypeScript.
 - El plan no se marca como 100% cerrado porque aun existen pendientes reales documentados en `INTEGRATION_PENDING_ITEMS.md` y falta validar build/QA visual final.
+
+## Auditoria Rapida Post-Fase 13 (2026-04-07)
+- Que quedo bien: el codigo compila con 
+px tsc -p tsconfig.app.json --noEmit, no hay mocks activos en src, useMocks ya no existe en runtime y el flujo de Agenda dejo de depender del mock de solicitudes.
+- Que quedo parcial: aunque el codigo ya no usa useMocks ni console.log de desarrollo, algunas marcas historicas del checklist siguen desactualizadas en secciones previas del plan; esta auditoria las supersede como estado vigente.
+- Que falta: cierre de build/QA final. 
+px ng build no puede certificarse en este entorno por EPERM unlink www/assets/shapes.svg bajo OneDrive y sigue pendiente validacion manual responsive/mobile.
+- Backend que sigue bloqueando o condicionando cierre fino: contratos canonicos pendientes en configuracion/perfil, notificaciones, estadisticas/reportes y disponibilidad publica para reprogramacion.
+- Decision: si podemos pasar a la siguiente etapa operativa, pero no declarar release final totalmente cerrado todavia.
+
