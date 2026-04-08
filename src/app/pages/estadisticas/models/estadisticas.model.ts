@@ -175,12 +175,11 @@ export interface ReporteEstadistica {
 }
 
 export interface ExportacionReporteRequest {
-  reporteId: string;
   tipo: TipoReporte;
   formato: FormatoExportacion;
   fechaDesde: string;
   fechaHasta: string;
-  profesional?: string;
+  profesionalId?: number;
   incluirResumen: boolean;
   incluirDetalle: boolean;
   nombreArchivo: string;
@@ -190,4 +189,157 @@ export interface ExportacionReporteResponse {
   ok: boolean;
   url?: string;      // download URL when backend is real
   mensaje: string;
+}
+
+export interface ProfesionalFiltroOption {
+  id: string;
+  nombre: string;
+}
+
+export interface ProfesionalEstadisticaDto {
+  id_profesional: number;
+  nombre: string;
+  apellido: string;
+  nombre_consulta?: string | null;
+}
+
+export interface EstadisticasResumenDto {
+  citas_hoy: number;
+  citas_mes: number;
+  pacientes_nuevos_mes: number;
+  pacientes_recurrentes: number;
+  ingresos_hoy: number;
+  ingresos_mes: number;
+  no_asistencias: number;
+  tasa_cancelacion: number;
+}
+
+export interface CitasPorPeriodoDto {
+  fecha: string;
+  label: string;
+  total: number;
+  confirmadas: number;
+  completadas: number;
+  canceladas: number;
+  no_asistio: number;
+}
+
+export interface EstadoCitaConteoDto {
+  estado: string;
+  cantidad: number;
+}
+
+export interface HoraOcupadaDto {
+  hora: string;
+  citas: number;
+}
+
+export interface DiaOcupadoDto {
+  dia: string;
+  citas: number;
+}
+
+export interface CitasStatsDto {
+  serie: CitasPorPeriodoDto[];
+  conteo_por_estado: EstadoCitaConteoDto[];
+  total_citas: number;
+  horas_mas_ocupadas: HoraOcupadaDto[];
+  dias_mas_ocupados: DiaOcupadoDto[];
+}
+
+export interface IngresoPorPeriodoDto {
+  fecha: string;
+  label: string;
+  total: number;
+  efectivo: number;
+  transferencia: number;
+  tarjeta: number;
+  pendiente: number;
+}
+
+export interface IngresoMetodoPagoDto {
+  metodo: string;
+  total: number;
+  porcentaje: number;
+}
+
+export interface IngresosStatsDto {
+  serie: IngresoPorPeriodoDto[];
+  por_metodo_pago: IngresoMetodoPagoDto[];
+  total_periodo: number;
+  monto_pendiente: number;
+  citas_pagadas: number;
+  citas_pendientes: number;
+  metodo_principal?: string | null;
+}
+
+export interface NuevosVsRecurrentesPuntoDto {
+  label: string;
+  nuevos: number;
+  recurrentes: number;
+}
+
+export interface RankingPacienteDto {
+  posicion: number;
+  id_paciente: number;
+  nombre_paciente: string;
+  apellido_paciente?: string | null;
+  valor: number;
+}
+
+export interface PacienteEstadisticaDto {
+  id_paciente: number;
+  nombre_paciente: string;
+  apellido_paciente?: string | null;
+  total_citas: number;
+  no_asistencias: number;
+  ingresos: number;
+  es_nuevo: boolean;
+}
+
+export interface PacientesStatsDto {
+  nuevos_vs_recurrentes: NuevosVsRecurrentesPuntoDto[];
+  total_activos: number;
+  nuevos_este_mes: number;
+  recurrentes_este_mes: number;
+  tasa_retencion: number;
+  ranking_mas_citas: RankingPacienteDto[];
+  ranking_no_asistencias?: RankingPacienteDto[];
+  ranking_por_ingresos?: RankingPacienteDto[];
+  pacientes: PacienteEstadisticaDto[];
+}
+
+export interface InsightEstadisticaDto {
+  id: string;
+  icono: string;
+  titulo: string;
+  valor: string;
+  descripcion: string;
+  tipo: InsightTipo;
+}
+
+export interface ResumenCajaDiariaDto {
+  fecha: string;
+  total_cobrado: number;
+  efectivo: number;
+  transferencia: number;
+  debito: number;
+  credito: number;
+  pagos_exentos: number;
+  pagos_pendientes: number;
+  citas_cobradas: number;
+}
+
+export interface ReporteEstadisticaDto {
+  id: string;
+  tipo: TipoReporte;
+  titulo: string;
+  descripcion: string;
+  icono: string;
+  color_icono: string;
+  total_registros: number;
+  resumen_texto: string;
+  periodo_label: string;
+  ultima_actualizacion: string;
+  filas: Record<string, string | number>[];
 }

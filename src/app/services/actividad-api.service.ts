@@ -30,6 +30,7 @@ export interface ActividadFeedItem {
   tiempo: string;
   fecha: ActividadFechaGrupo;
   fechaEvento: string;
+  solicitudId?: number | null;
   entidadTipo?: string | null;
   entidadId?: number | null;
   eventoTipo?: string | null;
@@ -87,6 +88,7 @@ export class ActividadApiService {
       tiempo: tiempoRelativo(item.fecha_evento),
       fecha: this.mapFechaGrupo(item.fecha_evento),
       fechaEvento: item.fecha_evento,
+      solicitudId: this.mapSolicitudId(item, meta),
       entidadTipo: item.entidad_tipo,
       entidadId: item.entidad_id,
       eventoTipo: item.evento_tipo,
@@ -96,6 +98,15 @@ export class ActividadApiService {
   private mapTipo(item: HistorialEventoDto, meta: Record<string, unknown>): ActividadTipo {
     const evento = (item.evento_tipo ?? '').toUpperCase();
     const entidad = (item.entidad_tipo ?? '').toUpperCase();
+
+    if (
+      entidad === 'SOLICITUD_REPROGRAMACION' ||
+      entidad === 'SOLICITUD_REPROGRAMACION_PACIENTE' ||
+      evento.includes('REPROGRAMACION') ||
+      evento.includes('REPROGRAM')
+    ) {
+      return 'reprogramar';
+    }
 
     if (
       entidad === 'RECEPCIONISTA' ||
@@ -119,14 +130,22 @@ export class ActividadApiService {
       return 'sistema';
     }
 
-    if (
-      evento.includes('REPROGRAMACION') ||
-      String(meta['tipo'] ?? '').toUpperCase().includes('REPROGRAMACION')
-    ) {
-      return 'reprogramar';
+    return 'agenda';
+  }
+
+  private mapSolicitudId(item: HistorialEventoDto, meta: Record<string, unknown>): number | null {
+    const entidad = (item.entidad_tipo ?? '').toUpperCase();
+
+    if (entidad === 'SOLICITUD_REPROGRAMACION' || entidad === 'SOLICITUD_REPROGRAMACION_PACIENTE') {
+      return this.normalizeNumber(item.entidad_id);
     }
 
-    return 'agenda';
+    return this.readNumber(meta, [
+      'id_solicitud',
+      'idSolicitud',
+      'id_solicitud_reprogramacion',
+      'idSolicitudReprogramacion',
+    ]);
   }
 
   private mapIcono(item: HistorialEventoDto, tipo: ActividadTipo): string {
@@ -254,5 +273,31 @@ export class ActividadApiService {
     }
 
     return '';
+  }
+
+  private readNumber(meta: Record<string, unknown>, keys: string[]): number | null {
+    for (const key of keys) {
+      const value = this.normalizeNumber(meta[key]);
+      if (value !== null) {
+        return value;
+      }
+    }
+
+    return null;
+  }
+
+  private normalizeNumber(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+      return value;
+    }
+
+    if (typeof value === 'string' && value.trim()) {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        return parsed;
+      }
+    }
+
+    return null;
   }
 }

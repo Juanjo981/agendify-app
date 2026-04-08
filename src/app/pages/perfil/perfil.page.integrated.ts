@@ -73,8 +73,6 @@ export class PerfilPage implements OnInit, OnDestroy {
   editarProfesional = false;
   editarHorarios = false;
 
-  private userId: number | null = null;
-  private profesionalId: number | null = null;
   private sistemaId: number | null = null;
   private recordatoriosActuales: ConfiguracionRecordatorioDto[] = [];
   private sistemaActual: ConfiguracionSistemaDto | null = null;
@@ -127,7 +125,7 @@ export class PerfilPage implements OnInit, OnDestroy {
           username: this.perfil.usuario.trim(),
           domicilio: this.perfil.domicilio.trim(),
           numero_telefono: this.perfil.telefono.trim(),
-        }, this.userId);
+        });
       }
 
       if (this.perfilProfesionalCambio()) {
@@ -135,7 +133,7 @@ export class PerfilPage implements OnInit, OnDestroy {
           especialidad: this.perfil.especialidad.trim(),
           nombre_consulta: this.perfilProfesional.consultorio.trim(),
           descripcion: this.perfilProfesional.descripcion.trim() || null,
-        }, this.profesionalId);
+        });
       }
 
       if (this.horariosCambio()) {
@@ -154,16 +152,33 @@ export class PerfilPage implements OnInit, OnDestroy {
 
       if (this.preferenciasCambio() || this.horariosCambio()) {
         this.sistemaActual = await this.configuracionApi.saveSistema({
+          notif_in_app: this.sistemaActual?.notif_in_app ?? true,
+          alertas_sonoras: this.sistemaActual?.alertas_sonoras ?? false,
+          avisos_citas_proximas: this.sistemaActual?.avisos_citas_proximas ?? true,
+          avisos_pacientes_nuevos: this.sistemaActual?.avisos_pacientes_nuevos ?? true,
+          avisos_pagos_pendientes: this.sistemaActual?.avisos_pagos_pendientes ?? true,
           zona_horaria: this.toBackendTimeZone(this.perfil.zonaHoraria),
           moneda: this.sistemaActual?.moneda ?? 'MXN',
           formato_hora: this.sistemaActual?.formato_hora ?? '24h',
+          formato_fecha: this.sistemaActual?.formato_fecha ?? 'DD/MM/YYYY',
           duracion_cita_default_min: Number(this.horarios.duracionCita),
           politica_cancelacion_horas: this.sistemaActual?.politica_cancelacion_horas ?? 24,
           permite_confirmacion_publica: this.sistemaActual?.permite_confirmacion_publica ?? true,
+          ocultar_datos_sensibles: this.sistemaActual?.ocultar_datos_sensibles ?? false,
+          confirmar_eliminar_citas: this.sistemaActual?.confirmar_eliminar_citas ?? true,
+          confirmar_eliminar_pacientes: this.sistemaActual?.confirmar_eliminar_pacientes ?? true,
+          permitir_cancelacion: this.sistemaActual?.permitir_cancelacion ?? true,
+          permitir_reprogramacion: this.sistemaActual?.permitir_reprogramacion ?? true,
+          recordatorio_profesional: this.sistemaActual?.recordatorio_profesional ?? true,
+          notif_paciente_confirma: this.sistemaActual?.notif_paciente_confirma ?? true,
+          notif_paciente_cancela: this.sistemaActual?.notif_paciente_cancela ?? true,
+          notif_paciente_reprograma: this.sistemaActual?.notif_paciente_reprograma ?? false,
           idioma: this.perfil.idioma,
           tema: this.sistemaActual?.tema ?? 'claro',
           tamano_interfaz: this.sistemaActual?.tamano_interfaz ?? 'normal',
           animaciones: this.sistemaActual?.animaciones ?? true,
+          vista_previa_datos: this.sistemaActual?.vista_previa_datos ?? true,
+          bloquear_cambios_criticos: this.sistemaActual?.bloquear_cambios_criticos ?? true,
         }, this.sistemaId);
         this.sistemaId = this.sistemaActual.id_configuracion_sistema ?? this.sistemaId;
       }
@@ -177,7 +192,7 @@ export class PerfilPage implements OnInit, OnDestroy {
         await this.perfilApi.changePassword({
           password_actual: this.passwordActual,
           password_nueva: this.nuevaPassword,
-        }, this.userId);
+        });
       }
 
       await this.auth.getCurrentUser().catch(() => null);
@@ -218,18 +233,14 @@ export class PerfilPage implements OnInit, OnDestroy {
   }
 
   private async cargarPerfilReal(): Promise<void> {
-    this.profesionalId = this.session.getProfesional()?.id_profesional ?? null;
-
     const [usuario, profesional, agenda, sistema, recordatorios] = await Promise.all([
       this.perfilApi.getUsuarioActual(),
-      this.perfilApi.getProfesionalActual(this.profesionalId).catch(() => null),
+      this.perfilApi.getProfesionalActual().catch(() => null),
       this.configuracionApi.getAgenda().catch(() => null),
       this.configuracionApi.getSistema().catch(() => null),
       this.configuracionApi.getRecordatorios().catch(() => []),
     ]);
 
-    this.userId = usuario.id_usuario;
-    this.profesionalId = profesional?.id_profesional ?? this.profesionalId;
     this.sistemaId = sistema?.id_configuracion_sistema ?? null;
     this.sistemaActual = sistema;
     this.recordatoriosActuales = recordatorios;

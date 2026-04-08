@@ -40,21 +40,30 @@ export interface DashboardConsolidadoDto {
 }
 
 export interface NotificacionDto {
-  id_notificacion: number;
+  id?: number;
+  id_notificacion?: number;
   id_paciente?: number | null;
   id_cita?: number | null;
-  canal: string;
-  tipo_notificacion: string;
+  pacienteId?: number | null;
+  citaId?: number | null;
+  canal?: string | null;
+  tipo?: string | null;
+  tipo_notificacion?: string | null;
+  icono?: string | null;
+  titulo?: string | null;
   destinatario?: string | null;
   asunto?: string | null;
+  descripcion?: string | null;
   mensaje_resumen?: string | null;
+  mensaje?: string | null;
   fecha_programada?: string | null;
   estado_envio?: string | null;
   estado?: string | null;
   leida?: boolean | null;
   fecha_leida?: string | null;
   read_at?: string | null;
-  created_at: string;
+  fecha?: string | null;
+  created_at?: string | null;
 }
 
 export interface DashboardCardItem {

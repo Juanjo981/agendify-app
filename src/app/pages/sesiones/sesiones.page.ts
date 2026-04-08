@@ -167,8 +167,19 @@ export class SesionesPage implements OnInit {
   private async cargarResumenAdjuntos(sesiones: SesionDto[]) {
     this.cargandoAdjuntos = true;
 
+    this.adjuntosPorSesion.clear();
+
+    const pendientes = sesiones.filter(sesion => {
+      const resumenBackend = this.getAdjuntoDesdeResumen(sesion);
+      if (resumenBackend !== undefined) {
+        this.adjuntosPorSesion.set(sesion.id_sesion, resumenBackend);
+        return false;
+      }
+      return true;
+    });
+
     const resultados = await Promise.all(
-      sesiones.map(async sesion => {
+      pendientes.map(async sesion => {
         try {
           const page = await this.adjuntosApi.getBySesionId(sesion.id_sesion, { size: 1 });
           return [sesion.id_sesion, page.content?.[0] ?? null] as const;
@@ -178,11 +189,27 @@ export class SesionesPage implements OnInit {
       })
     );
 
-    this.adjuntosPorSesion.clear();
     resultados.forEach(([sesionId, archivo]) => {
       this.adjuntosPorSesion.set(sesionId, archivo);
     });
 
     this.cargandoAdjuntos = false;
+  }
+
+  private getAdjuntoDesdeResumen(sesion: SesionDto): ArchivoAdjuntoDto | null | undefined {
+    if (sesion.primer_adjunto) return sesion.primer_adjunto;
+    if (sesion.tiene_adjuntos === false) return null;
+    if (typeof sesion.total_adjuntos === 'number') {
+      return sesion.total_adjuntos > 0 ? {
+        id_archivo_adjunto: 0,
+        entidad_tipo: 'SESION',
+        entidad_id: sesion.id_sesion,
+        nombre_original: `${sesion.total_adjuntos} adjunto${sesion.total_adjuntos === 1 ? '' : 's'}`,
+        nombre_storage: '',
+        bucket_name: '',
+        object_key: '',
+      } : null;
+    }
+    return undefined;
   }
 }

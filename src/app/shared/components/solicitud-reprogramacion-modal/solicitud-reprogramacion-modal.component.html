@@ -39,7 +39,7 @@
     <!-- Paciente -->
     <div class="srm-field">
       <span class="srm-field-label">Paciente</span>
-      <p class="srm-field-value srm-field-value--strong">{{ solicitud.pacienteNombre }}</p>
+      <p class="srm-field-value srm-field-value--strong">{{ solicitud.paciente_nombre }}</p>
     </div>
 
     <!-- Cita original -->
@@ -47,7 +47,7 @@
       <span class="srm-field-label">Cita original</span>
       <p class="srm-field-value">
         <ion-icon name="calendar-outline" class="srm-inline-icon"></ion-icon>
-        {{ fechaFormateada }} &bull; {{ solicitud.horaCita }}
+        {{ fechaFormateada }} &bull; {{ solicitud.hora_cita }}
       </p>
     </div>
 
@@ -61,9 +61,9 @@
     </div>
 
     <!-- Mensaje del paciente -->
-    <div class="srm-field" *ngIf="solicitud.mensajePaciente">
+    <div class="srm-field" *ngIf="solicitud.mensaje_paciente">
       <span class="srm-field-label">Mensaje del paciente</span>
-      <blockquote class="srm-quote">{{ solicitud.mensajePaciente }}</blockquote>
+      <blockquote class="srm-quote">{{ solicitud.mensaje_paciente }}</blockquote>
     </div>
 
     <p class="srm-timestamp">Recibida {{ tiempoTranscurrido }}</p>
@@ -111,3 +111,4 @@
   </div>
 
 </div>
+

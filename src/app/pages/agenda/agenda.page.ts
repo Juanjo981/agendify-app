@@ -235,8 +235,8 @@ export class AgendaPage implements OnInit, OnDestroy {
 
     try {
       this.saving = true;
-      await this.solicitudSvc.aprobar(solicitud.idCita, solicitud.idSolicitud);
-      const cita = this.citasMes.find(c => c.id_cita === solicitud.idCita);
+      await this.solicitudSvc.aprobar(solicitud.id_solicitud);
+      const cita = this.citasMes.find(c => c.id_cita === solicitud.id_cita);
       if (cita) {
         this.citaActiva = cita;
         this.apptPrefill = {
@@ -267,7 +267,7 @@ export class AgendaPage implements OnInit, OnDestroy {
     const solicitud = this.solicitudSeleccionada;
     try {
       this.saving = true;
-      await this.solicitudSvc.rechazar(solicitud.idCita, solicitud.idSolicitud, motivo);
+      await this.solicitudSvc.rechazar(solicitud.id_solicitud, motivo);
       this.showSolicitudModal = false;
       this.solicitudSeleccionada = null;
       this.successMessage = 'Solicitud rechazada correctamente.';
@@ -310,6 +310,7 @@ export class AgendaPage implements OnInit, OnDestroy {
       this.citasMes = agenda.citas ?? [];
       this.bloqueosMes = agenda.bloqueos ?? [];
       this.configuracionJornada = agenda.configuracion_jornada ?? null;
+      this.maxCitasPorDia = this.calcularCapacidadJornada(this.configuracionJornada);
       await this.solicitudSvc.preloadPendientes(this.citasMes.map(cita => cita.id_cita));
       this.horas = this.buildHourOptions(this.configuracionJornada ?? undefined);
       this.generateCalendar();
@@ -320,6 +321,7 @@ export class AgendaPage implements OnInit, OnDestroy {
       this.citasMes = [];
       this.bloqueosMes = [];
       this.configuracionJornada = null;
+      this.maxCitasPorDia = this.calcularCapacidadJornada(null);
       this.solicitudSvc.clearCache();
       this.horas = this.buildHourOptions();
       this.generateCalendar();
@@ -425,7 +427,7 @@ export class AgendaPage implements OnInit, OnDestroy {
       fullDate: this.formatDateLocal(date),
       events,
       citas,
-      colorCitas: this.getColorForDay(citas),
+      colorCitas: this.getColorForDay(date, citas),
     };
   }
 
@@ -436,10 +438,28 @@ export class AgendaPage implements OnInit, OnDestroy {
     return event.bloqueo?.hora_inicio || this.toTimePart(event.bloqueo?.fecha_inicio) || '99:99';
   }
 
-  getColorForDay(citas: number): string {
+  getColorForDay(date: Date, citas: number): string {
+    if (!this.isDiaHabilitado(date)) return '#f8fafc';
     if (citas >= this.maxCitasPorDia) return '#ffe4e1';
     if (citas >= this.maxCitasPorDia / 2) return '#fcfcda';
     return '#d8f8e1';
+  }
+
+  private isDiaHabilitado(date: Date): boolean {
+    if (!this.configuracionJornada) return true;
+    const day = date.getDay();
+    if (day === 6 && this.configuracionJornada.mostrar_sabados === false) return false;
+    if (day === 0 && this.configuracionJornada.mostrar_domingos === false) return false;
+    return true;
+  }
+
+  private calcularCapacidadJornada(config: ConfiguracionJornadaDto | null): number {
+    if (!config?.hora_inicio || !config?.hora_fin) return 8;
+    const inicio = this.toMinutes(config.hora_inicio);
+    const fin = this.toMinutes(config.hora_fin);
+    const intervalo = config.intervalo_minutos ?? config.intervalo ?? config.duracion_cita_default_min ?? 30;
+    if (inicio === null || fin === null || fin <= inicio || !intervalo) return 8;
+    return Math.max(1, Math.floor((fin - inicio) / intervalo));
   }
 
   prevMonth() {
@@ -712,6 +732,7 @@ export class AgendaPage implements OnInit, OnDestroy {
       case 'completada': this.confirmarCambioEstado('COMPLETADA'); break;
       case 'noAsistio': this.confirmarCambioEstado('NO_ASISTIO'); break;
       case 'cancelar': this.confirmarCambioEstado('CANCELADA'); break;
+      case 'eliminar': this.confirmarEliminarCita(); break;
       case 'crearSesion': this.accionCrearSesion(); break;
     }
   }
@@ -779,6 +800,23 @@ export class AgendaPage implements OnInit, OnDestroy {
     void this.persistirCambioEstado(estado);
   }
 
+  confirmarEliminarCita() {
+    if (!this.citaActiva) return;
+    const nombre = `${this.citaActiva.nombre_paciente} ${this.citaActiva.apellido_paciente}`;
+    this.pedirConfirmacion(
+      {
+        title: 'Eliminar cita',
+        message: 'Se eliminara definitivamente la cita de',
+        subject: nombre,
+        confirmLabel: 'Eliminar cita',
+        cancelLabel: 'Volver',
+        variant: 'danger',
+        icon: 'trash-outline',
+      },
+      () => { void this.eliminarCitaActiva(); }
+    );
+  }
+
   accionVerDetalle() {
     if (!this.citaActiva) return;
     this.router.navigate(['/dashboard/citas', this.citaActiva.id_cita]);
@@ -812,6 +850,18 @@ export class AgendaPage implements OnInit, OnDestroy {
     try {
       await this.citasSvc.cambiarEstado(this.citaActiva.id_cita, estado);
       this.successMessage = 'Estado de cita actualizado.';
+      this.cerrarQuickActions();
+      await this.loadAgendaForCurrentMonth();
+    } catch (err) {
+      this.errorMessage = mapApiError(err).userMessage;
+    }
+  }
+
+  private async eliminarCitaActiva() {
+    if (!this.citaActiva) return;
+    try {
+      await this.citasSvc.delete(this.citaActiva.id_cita);
+      this.successMessage = 'Cita eliminada correctamente.';
       this.cerrarQuickActions();
       await this.loadAgendaForCurrentMonth();
     } catch (err) {
@@ -1101,6 +1151,12 @@ export class AgendaPage implements OnInit, OnDestroy {
   private hourToMinutes(hour: string): number {
     const [hh, mm] = hour.split(':').map(Number);
     return (hh * 60) + mm;
+  }
+
+  private toMinutes(value: string | null | undefined): number | null {
+    const normalized = this.normalizeHour(value);
+    if (!normalized || !normalized.includes(':')) return null;
+    return this.hourToMinutes(normalized);
   }
 
   private minutesToHour(minutes: number): string {

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
@@ -7,6 +7,7 @@ import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
 import {
   CitaGestionPublicaResponseDto,
   ConfirmacionPublicaService,
+  DisponibilidadPublicaResponseDto,
 } from './confirmacion-publica.service';
 
 export type VistaEstado =
@@ -54,6 +55,8 @@ export class ConfirmarCitaPage implements OnInit {
   motivoReprogramacion = '';
   token = '';
   accionLoading = false;
+  loadingSlots = false;
+  slotsError = '';
   expiredTitle = 'Enlace no valido';
   expiredMessage = 'Este enlace ha expirado o ya no esta disponible.';
 
@@ -77,6 +80,7 @@ export class ConfirmarCitaPage implements OnInit {
   };
 
   slotsSugeridos: SlotSugerido[] = [];
+  private citaResponse: CitaGestionPublicaResponseDto | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -129,8 +133,10 @@ export class ConfirmarCitaPage implements OnInit {
 
   irAReprogramar(): void {
     if (!this.puedeSolicitarReprogramacion || this.accionLoading) return;
-    this.slotSeleccionado = this.slotSeleccionado ?? 0;
     this.vista = 'reprogramar';
+    if (this.slotsSugeridos.length === 0 && !this.loadingSlots) {
+      void this.cargarDisponibilidadPublica();
+    }
   }
 
   irACancelar(): void {
@@ -191,12 +197,14 @@ export class ConfirmarCitaPage implements OnInit {
   }
 
   private aplicarPayload(response: CitaGestionPublicaResponseDto): void {
+    this.citaResponse = response;
     this.cita = this.mapCita(response);
     this.puedeConfirmar = !!response.puede_confirmar;
     this.puedeCancelar = !!response.puede_cancelar;
     this.puedeSolicitarReprogramacion = !!response.puede_solicitar_reprogramacion;
-    this.slotsSugeridos = this.buildSlots(response.fecha_inicio, response.fecha_fin);
-    this.slotSeleccionado = this.slotsSugeridos.length > 0 ? 0 : null;
+    this.slotsSugeridos = [];
+    this.slotSeleccionado = null;
+    this.slotsError = '';
 
     if (!response.token_valido) {
       this.aplicarEstadoTokenInvalido(response);
@@ -204,6 +212,9 @@ export class ConfirmarCitaPage implements OnInit {
     }
 
     this.vista = 'pendiente';
+    if (this.puedeSolicitarReprogramacion) {
+      void this.cargarDisponibilidadPublica();
+    }
   }
 
   private aplicarEstadoTokenInvalido(response: CitaGestionPublicaResponseDto): void {
@@ -233,18 +244,88 @@ export class ConfirmarCitaPage implements OnInit {
   }
 
   private aplicarAccion(response: CitaGestionPublicaResponseDto, vista: Extract<VistaEstado, 'confirmada' | 'cancelada'>): void {
-    if (response.fecha_inicio) {
-      this.cita = this.mapCita({
-        ...response,
-        paciente_nombre: this.cita.nombrePaciente || response.paciente_nombre,
-        profesional_nombre: this.cita.profesional || response.profesional_nombre,
-        profesional_especialidad: this.cita.especialidad || response.profesional_especialidad,
-      });
+    this.citaResponse = { ...this.citaResponse, ...response } as CitaGestionPublicaResponseDto;
+
+    if (response.fecha_inicio && this.citaResponse) {
+      this.cita = this.mapCita(this.citaResponse);
     }
     this.vista = vista;
     this.puedeConfirmar = false;
     this.puedeCancelar = false;
     this.puedeSolicitarReprogramacion = false;
+  }
+
+  private async cargarDisponibilidadPublica(): Promise<void> {
+    if (!this.citaResponse) {
+      this.slotsSugeridos = [];
+      this.slotSeleccionado = null;
+      return;
+    }
+
+    const source = this.mapCitaDuration(this.citaResponse);
+    if (!source) {
+      this.slotsSugeridos = [];
+      this.slotSeleccionado = null;
+      return;
+    }
+
+    this.loadingSlots = true;
+    this.slotsError = '';
+
+    try {
+      const slots = await this.collectSlots(source.fechaInicio, source.duracionMinutos);
+      this.slotsSugeridos = slots;
+      this.slotSeleccionado = slots.length > 0 ? 0 : null;
+    } catch (error) {
+      this.slotsSugeridos = [];
+      this.slotSeleccionado = null;
+      this.slotsError = mapApiError(error).userMessage;
+    } finally {
+      this.loadingSlots = false;
+    }
+  }
+
+  private async collectSlots(fechaInicio: string, duracionMinutos: number): Promise<SlotSugerido[]> {
+    const start = new Date(fechaInicio);
+    const slots: SlotSugerido[] = [];
+
+    for (let dayOffset = 1; slots.length < 3 && dayOffset <= 14; dayOffset++) {
+      const nextDate = new Date(start);
+      nextDate.setDate(nextDate.getDate() + dayOffset);
+
+      const day = nextDate.getDay();
+      if (day === 0 || day === 6) {
+        continue;
+      }
+
+      const disponibilidad = await this.confirmacionPublicaSvc.getDisponibilidad(this.token, {
+        fecha: this.toDateOnly(nextDate),
+        duracionMinutos,
+      });
+
+      const mapped = this.mapDisponibilidad(disponibilidad);
+      for (const slot of mapped) {
+        slots.push(slot);
+        if (slots.length === 3) {
+          break;
+        }
+      }
+    }
+
+    return slots;
+  }
+
+  private mapDisponibilidad(response: DisponibilidadPublicaResponseDto): SlotSugerido[] {
+    const fecha = response.fecha;
+    const date = new Date(`${fecha}T00:00:00`);
+
+    return (response.slots ?? []).map(slot => ({
+      fecha,
+      horaInicio: this.normalizeHour(slot.hora_inicio),
+      horaFin: this.normalizeHour(slot.hora_fin),
+      fechaLabel: this.formatSlotDate(date),
+      horaLabel: `${this.normalizeHour(slot.hora_inicio)} – ${this.normalizeHour(slot.hora_fin)}`,
+    }));
   }
 
   private manejarError(error: unknown): void {
@@ -288,32 +369,18 @@ export class ConfirmarCitaPage implements OnInit {
     };
   }
 
-  private buildSlots(fechaInicio: string, fechaFin: string): SlotSugerido[] {
-    const start = new Date(fechaInicio);
-    const end = new Date(fechaFin);
-    const durationMs = Math.max(end.getTime() - start.getTime(), 45 * 60 * 1000);
-    const slots: SlotSugerido[] = [];
+  private mapCitaDuration(response: CitaGestionPublicaResponseDto): { fechaInicio: string; duracionMinutos: number } | null {
+    const start = new Date(response.fecha_inicio);
+    const end = new Date(response.fecha_fin);
 
-    for (let dayOffset = 1; slots.length < 3; dayOffset++) {
-      const nextStart = new Date(start);
-      nextStart.setDate(nextStart.getDate() + dayOffset);
-
-      const day = nextStart.getDay();
-      if (day === 0 || day === 6) {
-        continue;
-      }
-
-      const nextEnd = new Date(nextStart.getTime() + durationMs);
-      slots.push({
-        fecha: this.toDateOnly(nextStart),
-        horaInicio: this.formatTime(nextStart),
-        horaFin: this.formatTime(nextEnd),
-        fechaLabel: this.formatSlotDate(nextStart),
-        horaLabel: `${this.formatTime(nextStart)} � ${this.formatTime(nextEnd)}`,
-      });
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return null;
     }
 
-    return slots;
+    return {
+      fechaInicio: response.fecha_inicio,
+      duracionMinutos: Math.max(Math.round((end.getTime() - start.getTime()) / 60000), 1),
+    };
   }
 
   private detectModalidad(response: CitaGestionPublicaResponseDto): 'Presencial' | 'Virtual' {
@@ -373,5 +440,9 @@ export class ConfirmarCitaPage implements OnInit {
 
   private toBackendTime(value: string): string {
     return `${value}:00`;
+  }
+
+  private normalizeHour(value: string): string {
+    return String(value ?? '').slice(0, 5);
   }
 }

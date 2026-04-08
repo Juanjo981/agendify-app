@@ -73,12 +73,12 @@
     <!-- Profesional (optional) -->
     <div class="erm-field">
       <label class="erm-label" for="profesional">Profesional <span class="erm-optional">opcional</span></label>
-      <input
+      <select
         id="profesional"
         class="erm-input"
-        type="text"
-        placeholder="Todos los profesionales"
-        [(ngModel)]="profesional" />
+        [(ngModel)]="profesional">
+        <option *ngFor="let item of profesionales" [value]="item.id">{{ item.nombre }}</option>
+      </select>
     </div>
 
     <!-- Opciones de contenido -->

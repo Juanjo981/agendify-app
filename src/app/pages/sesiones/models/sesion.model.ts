@@ -14,6 +14,9 @@ export interface SesionDto {
   updated_at: string;
   nombre_paciente: string;
   apellido_paciente: string;
+  total_adjuntos?: number | null;
+  tiene_adjuntos?: boolean | null;
+  primer_adjunto?: ArchivoAdjuntoDto | null;
 }
 
 export interface SesionCreateRequest {

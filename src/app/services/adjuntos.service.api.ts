@@ -62,6 +62,24 @@ export class AdjuntosServiceApi {
     );
   }
 
+  getByNotaClinicaId(
+    notaClinicaId: number,
+    params: { page?: number; size?: number; sort?: string } = {}
+  ): Promise<PageResponse<ArchivoAdjuntoDto>> {
+    const query = buildQueryParams({
+      page: params.page,
+      size: params.size,
+      sort: params.sort ?? 'created_at,desc',
+    });
+
+    return firstValueFrom(
+      this.http.get<PageResponse<ArchivoAdjuntoDto>>(
+        `${environment.apiUrl}/notas-clinicas/${notaClinicaId}/archivos-adjuntos`,
+        { params: query }
+      )
+    );
+  }
+
   async uploadToEntidad(
     entidadTipo: SesionEntidadTipo,
     entidadId: number,

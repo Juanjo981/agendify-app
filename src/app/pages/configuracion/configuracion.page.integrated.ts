@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -173,16 +172,33 @@ export class ConfiguracionPage implements OnInit {
       });
 
       const sistemaGuardado = await this.configuracionApi.saveSistema({
+        notif_in_app: this.config.notifInApp,
+        alertas_sonoras: this.config.alertasSonoras,
+        avisos_citas_proximas: this.config.avisosCitasProximas,
+        avisos_pacientes_nuevos: this.config.avisosPacientesNuevos,
+        avisos_pagos_pendientes: this.config.avisosPagosPendientes,
         zona_horaria: this.toBackendTimeZone(this.config.zonaHoraria),
         moneda: this.config.moneda,
         formato_hora: this.toBackendHourFormat(this.config.formatoHora),
+        formato_fecha: this.config.formatoFecha,
         duracion_cita_default_min: Number(this.config.duracionCita),
         politica_cancelacion_horas: this.presetToHours(this.config.limiteCancelacion),
         permite_confirmacion_publica: this.config.solicitarConfirmacion,
+        ocultar_datos_sensibles: this.config.ocultarDatosSensibles,
+        confirmar_eliminar_citas: this.config.confirmarEliminarCitas,
+        confirmar_eliminar_pacientes: this.config.confirmarEliminarPacientes,
+        permitir_cancelacion: this.config.permitirCancelacion,
+        permitir_reprogramacion: this.config.permitirReprogramacion,
+        recordatorio_profesional: this.config.recordatorioProfesional,
+        notif_paciente_confirma: this.config.notifPacienteConfirma,
+        notif_paciente_cancela: this.config.notifPacienteCancela,
+        notif_paciente_reprograma: this.config.notifPacienteReprograma,
         idioma: this.config.idioma,
         tema: this.config.tema,
         tamano_interfaz: this.config.tamanoInterfaz,
         animaciones: this.config.animaciones,
+        vista_previa_datos: this.config.vistaPreviaDatos,
+        bloquear_cambios_criticos: this.config.bloquearCambiosCriticos,
       }, this.sistemaId);
 
       this.sistemaId = sistemaGuardado.id_configuracion_sistema ?? this.sistemaId;
@@ -335,40 +351,40 @@ export class ConfiguracionPage implements OnInit {
       true,
     );
     merged.solicitarConfirmacion = sistema?.permite_confirmacion_publica ?? merged.solicitarConfirmacion;
+    merged.permitirCancelacion = sistema?.permitir_cancelacion ?? merged.permitirCancelacion;
+    merged.permitirReprogramacion = sistema?.permitir_reprogramacion ?? merged.permitirReprogramacion;
     merged.limiteCancelacion = this.hoursToPreset(
       Number(sistema?.politica_cancelacion_horas ?? this.presetToHours(merged.limiteCancelacion)),
     );
+    merged.recordatorioProfesional = sistema?.recordatorio_profesional ?? merged.recordatorioProfesional;
+    merged.notifPacienteConfirma = sistema?.notif_paciente_confirma ?? merged.notifPacienteConfirma;
+    merged.notifPacienteCancela = sistema?.notif_paciente_cancela ?? merged.notifPacienteCancela;
+    merged.notifPacienteReprograma = sistema?.notif_paciente_reprograma ?? merged.notifPacienteReprograma;
+    merged.notifInApp = sistema?.notif_in_app ?? merged.notifInApp;
+    merged.alertasSonoras = sistema?.alertas_sonoras ?? merged.alertasSonoras;
+    merged.avisosCitasProximas = sistema?.avisos_citas_proximas ?? merged.avisosCitasProximas;
+    merged.avisosPacientesNuevos = sistema?.avisos_pacientes_nuevos ?? merged.avisosPacientesNuevos;
+    merged.avisosPagosPendientes = sistema?.avisos_pagos_pendientes ?? merged.avisosPagosPendientes;
     merged.tema = sistema?.tema ?? merged.tema;
     merged.tamanoInterfaz = sistema?.tamano_interfaz ?? merged.tamanoInterfaz;
     merged.animaciones = sistema?.animaciones ?? merged.animaciones;
     merged.idioma = sistema?.idioma ?? merged.idioma;
     merged.zonaHoraria = this.toUiTimeZone(sistema?.zona_horaria) ?? merged.zonaHoraria;
     merged.formatoHora = this.toUiHourFormat(sistema?.formato_hora) ?? merged.formatoHora;
+    merged.formatoFecha = sistema?.formato_fecha ?? merged.formatoFecha;
     merged.moneda = sistema?.moneda ?? merged.moneda;
+    merged.ocultarDatosSensibles = sistema?.ocultar_datos_sensibles ?? merged.ocultarDatosSensibles;
+    merged.confirmarEliminarCitas = sistema?.confirmar_eliminar_citas ?? merged.confirmarEliminarCitas;
+    merged.confirmarEliminarPacientes = sistema?.confirmar_eliminar_pacientes ?? merged.confirmarEliminarPacientes;
+    merged.vistaPreviaDatos = sistema?.vista_previa_datos ?? merged.vistaPreviaDatos;
+    merged.bloquearCambiosCriticos = sistema?.bloquear_cambios_criticos ?? merged.bloquearCambiosCriticos;
 
     return merged;
   }
 
   private async guardarRecordatorios(): Promise<void> {
-    const body = {
-      recordatorio_paciente_activo: this.config.recordatorioPaciente,
-      canal_email: this.config.canalEmail,
-      canal_sms: this.config.canalSMS,
-      anticipacion_minutos: this.reminderPresetToMinutes(this.config.tiempoRecordatorio),
-      recordatorio_mismo_dia_activo: this.config.recordatorioMismoDia,
-      anticipacion_mismo_dia_minutos: this.reminderPresetToMinutes(this.config.tiempoRecordatorioMismoDia),
-      solicitar_confirmacion: this.config.solicitarConfirmacion,
-    };
-
-    try {
-      this.recordatoriosActuales = await this.configuracionApi.saveRecordatoriosUnificado(body);
-    } catch (error) {
-      if (!(error instanceof HttpErrorResponse) || ![404, 405].includes(error.status)) {
-        throw error;
-      }
-      await this.syncRecordatoriosComoColeccion();
-      this.recordatoriosActuales = await this.configuracionApi.getRecordatorios().catch(() => this.recordatoriosActuales);
-    }
+    await this.syncRecordatoriosComoColeccion();
+    this.recordatoriosActuales = await this.configuracionApi.getRecordatorios().catch(() => this.recordatoriosActuales);
   }
 
   private async syncRecordatoriosComoColeccion(): Promise<void> {

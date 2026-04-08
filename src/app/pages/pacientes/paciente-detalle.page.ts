@@ -5,15 +5,17 @@ import { IonicModule } from '@ionic/angular';
 import { AgfDatePickerComponent } from '../../shared/components/agf-date-picker/agf-date-picker.component';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PacientesApiService } from './pacientes-api.service';
+import { AdjuntosServiceApi } from 'src/app/services/adjuntos.service.api';
 import {
   PacienteDto, PacienteRequest, ResumenPacienteDto,
   AlertaPacienteDto, AlertaPacienteRequest,
-  NotaClinicaDto, NotaClinicaRequest,
+  NotaClinicaDto, NotaClinicaFormState, NotaClinicaRequest, NotaClinicaViewModel,
   SesionPacienteDto,
   HistorialPacienteResponse, HistorialEvento, HistorialTipoEvento,
   PACIENTE_SEXO_OPTIONS, SexoPaciente, isSexoPaciente, normalizeSexoPaciente,
   mapHistorialEventoApi,
 } from './models/paciente.model';
+import { ArchivoAdjuntoDto } from '../sesiones/models/sesion.model';
 import { getAvatarColor as avatarColorUtil } from '../../shared/utils/avatar.utils';
 import { formatFecha as formatFechaUtil } from '../../shared/utils/date.utils';
 import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../shared/confirm-dialog/confirm-dialog.component';
@@ -50,7 +52,7 @@ export class PacienteDetallePage implements OnInit {
   alertaEditandoId: number | null = null;
 
   // ─── Notas clínicas ────────────────────────────────────────────────────────
-  notas: NotaClinicaDto[] = [];
+  notas: NotaClinicaViewModel[] = [];
   loadingNotas = false;
   notasLoaded = false;
   totalNotas = 0;
@@ -58,8 +60,9 @@ export class PacienteDetallePage implements OnInit {
   notasIsLastPage = true;
 
   showNotaModal = false;
-  notaForm = { titulo: '', contenido: '', tipo_nota: 'GENERAL', visible_en_resumen: false };
+  notaForm = this.emptyNotaForm();
   notaEditandoId: number | null = null;
+  notaAdjuntosModal: ArchivoAdjuntoDto[] = [];
   notaError = '';
 
   // ─── Sesiones ──────────────────────────────────────────────────────────────
@@ -92,6 +95,7 @@ export class PacienteDetallePage implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private svc: PacientesApiService,
+    private adjuntosApi: AdjuntosServiceApi,
   ) {}
 
   async ngOnInit() {
@@ -131,6 +135,16 @@ export class PacienteDetallePage implements OnInit {
     };
   }
 
+  emptyNotaForm(): NotaClinicaFormState {
+    return {
+      id_paciente: this.paciente?.id_paciente ?? 0,
+      titulo: '',
+      contenido: '',
+      tipo_nota: 'GENERAL',
+      visible_en_resumen: false,
+    };
+  }
+
   calcularEdad(fecha: string): number {
     const hoy = new Date();
     const nac = new Date(fecha);
@@ -151,6 +165,20 @@ export class PacienteDetallePage implements OnInit {
 
   formatFecha(iso: string): string {
     return formatFechaUtil(iso);
+  }
+
+  formatFileSize(bytes?: number | null): string {
+    const value = Number(bytes || 0);
+    if (value < 1024) return `${value} B`;
+    if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+    return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  getFileIcon(type?: string | null): string {
+    if (!type) return 'attach-outline';
+    if (type.startsWith('image/')) return 'image-outline';
+    if (type === 'application/pdf') return 'document-outline';
+    return 'document-text-outline';
   }
 
   // ─── Section switching with lazy load ──────────────────────────────────────
@@ -260,14 +288,16 @@ export class PacienteDetallePage implements OnInit {
         page: this.notasPage,
         size: 20,
       });
+      const notasPage = page.content.map(nota => this.createNotaViewModel(nota));
       if (reset) {
-        this.notas = page.content;
+        this.notas = notasPage;
       } else {
-        this.notas = [...this.notas, ...page.content];
+        this.notas = [...this.notas, ...notasPage];
       }
       this.totalNotas = page.total_elements;
       this.notasIsLastPage = page.last;
       this.notasLoaded = true;
+      await this.cargarAdjuntosNotas(notasPage);
     } catch { /* silent */ } finally {
       this.loadingNotas = false;
     }
@@ -279,20 +309,23 @@ export class PacienteDetallePage implements OnInit {
     this.cargarNotas(false);
   }
 
-  abrirNotaModal(nota?: NotaClinicaDto) {
+  abrirNotaModal(nota?: NotaClinicaViewModel) {
     this.notaForm = {
+      id_paciente: nota?.id_paciente ?? this.paciente?.id_paciente ?? 0,
+      id_sesion: nota?.id_sesion ?? null,
       titulo: nota?.titulo ?? '',
       contenido: nota?.contenido ?? '',
       tipo_nota: nota?.tipo_nota ?? 'GENERAL',
       visible_en_resumen: nota?.visible_en_resumen ?? false,
     };
     this.notaEditandoId = nota?.id_nota_clinica ?? null;
+    this.notaAdjuntosModal = [...(nota?.adjuntos ?? [])];
     this.notaError = '';
     this.showNotaModal = true;
   }
 
   cerrarNotaModal() {
-    if (this.notaForm.titulo.trim() || this.notaForm.contenido.trim()) {
+    if (this.notaForm.titulo.trim() || this.notaForm.contenido.trim() || this.notaForm.adjunto) {
       this.openConfirm(
         {
           title: 'Descartar nota',
@@ -302,12 +335,11 @@ export class PacienteDetallePage implements OnInit {
           variant: 'danger',
           icon: 'alert-circle-outline',
         },
-        () => { this.showNotaModal = false; this.notaEditandoId = null; }
+        () => { this.resetNotaModal(); }
       );
       return;
     }
-    this.showNotaModal = false;
-    this.notaEditandoId = null;
+    this.resetNotaModal();
   }
 
   async guardarNota() {
@@ -318,25 +350,41 @@ export class PacienteDetallePage implements OnInit {
     }
     this.saving = true;
     try {
+      let notaGuardada: NotaClinicaDto;
       if (this.notaEditandoId) {
-        await this.svc.updateNota(this.notaEditandoId, {
+        notaGuardada = await this.svc.updateNota(this.notaEditandoId, {
           id_paciente: this.paciente.id_paciente,
+          id_sesion: this.notaForm.id_sesion ?? null,
           titulo: this.notaForm.titulo.trim(),
           contenido: this.notaForm.contenido.trim(),
           tipo_nota: this.notaForm.tipo_nota,
           visible_en_resumen: this.notaForm.visible_en_resumen,
         });
       } else {
-        await this.svc.createNota({
+        notaGuardada = await this.svc.createNota({
           id_paciente: this.paciente.id_paciente,
+          id_sesion: this.notaForm.id_sesion ?? null,
           titulo: this.notaForm.titulo.trim(),
           contenido: this.notaForm.contenido.trim(),
           tipo_nota: this.notaForm.tipo_nota,
           visible_en_resumen: this.notaForm.visible_en_resumen,
         });
       }
-      this.showNotaModal = false;
-      this.notaEditandoId = null;
+
+      if (this.notaForm.adjunto) {
+        try {
+          await this.adjuntosApi.uploadToEntidad('NOTA_CLINICA', notaGuardada.id_nota_clinica, this.notaForm.adjunto);
+        } catch (err) {
+          const mapped = mapApiError(err);
+          this.notaEditandoId = notaGuardada.id_nota_clinica;
+          this.notaAdjuntosModal = await this.obtenerAdjuntosNota(notaGuardada.id_nota_clinica);
+          this.notaError = `La nota se guardó, pero no se pudo subir el adjunto. ${mapped.userMessage}`;
+          await this.cargarNotas();
+          return;
+        }
+      }
+
+      this.resetNotaModal();
       await this.cargarNotas();
       this.resumen = await this.svc.getResumen(this.paciente.id_paciente);
     } catch (err) {
@@ -366,6 +414,98 @@ export class PacienteDetallePage implements OnInit {
           this.errorMessage = mapped.userMessage;
         }
       }
+    );
+  }
+
+  onNotaAdjuntoSeleccionado(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    this.removerAdjuntoPendiente();
+    const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined;
+    this.notaForm.adjunto = {
+      file,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      previewUrl,
+    };
+    this.notaError = '';
+    (event.target as HTMLInputElement).value = '';
+  }
+
+  removerAdjuntoPendiente() {
+    if (this.notaForm.adjunto?.previewUrl) {
+      URL.revokeObjectURL(this.notaForm.adjunto.previewUrl);
+    }
+    this.notaForm.adjunto = undefined;
+  }
+
+  async verAdjunto(adjunto: ArchivoAdjuntoDto) {
+    try {
+      const response = await this.adjuntosApi.getDownloadUrl(adjunto.id_archivo_adjunto);
+      window.open(response.download_url, '_blank', 'noopener');
+    } catch (err) {
+      this.notaError = mapApiError(err).userMessage;
+    }
+  }
+
+  async descargarAdjunto(adjunto: ArchivoAdjuntoDto) {
+    try {
+      const response = await this.adjuntosApi.getDownloadUrl(adjunto.id_archivo_adjunto);
+      const link = document.createElement('a');
+      link.href = response.download_url;
+      link.download = response.nombre_original || adjunto.nombre_original;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.click();
+    } catch (err) {
+      this.notaError = mapApiError(err).userMessage;
+    }
+  }
+
+  eliminarAdjuntoNota(nota: NotaClinicaViewModel, adjunto: ArchivoAdjuntoDto) {
+    this.openConfirm(
+      {
+        title: 'Eliminar adjunto',
+        message: `Se marcará como inactivo "${adjunto.nombre_original}".`,
+        confirmLabel: 'Eliminar',
+        variant: 'danger',
+        icon: 'trash-outline',
+      },
+      async () => {
+        try {
+          await this.adjuntosApi.delete(adjunto.id_archivo_adjunto);
+          const adjuntosActualizados = await this.obtenerAdjuntosNota(nota.id_nota_clinica);
+          this.actualizarAdjuntosNota(nota.id_nota_clinica, adjuntosActualizados);
+          if (this.notaEditandoId === nota.id_nota_clinica) {
+            this.notaAdjuntosModal = [...adjuntosActualizados];
+          }
+        } catch (err) {
+          this.notaError = mapApiError(err).userMessage;
+        }
+      }
+    );
+  }
+
+  eliminarAdjuntoNotaModal(adjunto: ArchivoAdjuntoDto) {
+    if (!this.notaEditandoId) return;
+
+    this.eliminarAdjuntoNota(
+      {
+        ...this.createNotaViewModel({
+          id_nota_clinica: this.notaEditandoId,
+          id_paciente: this.paciente?.id_paciente ?? this.notaForm.id_paciente,
+          id_sesion: this.notaForm.id_sesion ?? null,
+          titulo: this.notaForm.titulo,
+          contenido: this.notaForm.contenido,
+          tipo_nota: this.notaForm.tipo_nota,
+          visible_en_resumen: this.notaForm.visible_en_resumen,
+          created_at: '',
+        }),
+        adjuntos: [...this.notaAdjuntosModal],
+      },
+      adjunto
     );
   }
 
@@ -747,5 +887,56 @@ export class PacienteDetallePage implements OnInit {
   onConfirmDialogCancelled() {
     this.confirmConfig = null;
     this.confirmCallback = null;
+  }
+
+  private createNotaViewModel(nota: NotaClinicaDto): NotaClinicaViewModel {
+    return {
+      ...nota,
+      adjuntos: nota.adjuntos ?? [],
+      adjuntosLoading: false,
+    };
+  }
+
+  private async cargarAdjuntosNotas(notas: NotaClinicaViewModel[]) {
+    if (!notas.length) return;
+
+    notas.forEach(nota => { nota.adjuntosLoading = true; });
+
+    const adjuntosPorNota = await Promise.all(
+      notas.map(async nota => ({
+        notaId: nota.id_nota_clinica,
+        adjuntos: await this.obtenerAdjuntosNota(nota.id_nota_clinica),
+      }))
+    );
+
+    adjuntosPorNota.forEach(({ notaId, adjuntos }) => {
+      this.actualizarAdjuntosNota(notaId, adjuntos);
+    });
+  }
+
+  private async obtenerAdjuntosNota(notaId: number): Promise<ArchivoAdjuntoDto[]> {
+    try {
+      const page = await this.adjuntosApi.getByNotaClinicaId(notaId, { size: 50 });
+      return page.content ?? [];
+    } catch {
+      return [];
+    }
+  }
+
+  private actualizarAdjuntosNota(notaId: number, adjuntos: ArchivoAdjuntoDto[]) {
+    this.notas = this.notas.map(nota =>
+      nota.id_nota_clinica === notaId
+        ? { ...nota, adjuntos, adjuntosLoading: false }
+        : nota
+    );
+  }
+
+  private resetNotaModal() {
+    this.removerAdjuntoPendiente();
+    this.showNotaModal = false;
+    this.notaEditandoId = null;
+    this.notaAdjuntosModal = [];
+    this.notaError = '';
+    this.notaForm = this.emptyNotaForm();
   }
 }

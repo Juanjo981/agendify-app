@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
@@ -14,127 +14,62 @@ import {
 @Injectable({ providedIn: 'root' })
 export class PerfilApiService {
   private readonly baseUrl = environment.apiUrl;
+  private readonly usuarioMeUrl = `${this.baseUrl}/usuarios/me`;
+  private readonly passwordUrl = `${this.usuarioMeUrl}/password`;
+  private readonly profesionalMeUrl = `${this.baseUrl}/profesionales/me`;
+  private readonly profesionalPerfilUrl = `${this.profesionalMeUrl}/perfil`;
+  private readonly codigoVinculacionUrl = `${this.baseUrl}/codigos-vinculacion/me`;
+  private readonly regenerarCodigoUrl = `${this.baseUrl}/codigos-vinculacion/regenerar`;
 
   constructor(private http: HttpClient) {}
 
-  getUsuarioActual(): Promise<UsuarioPerfilDto> {
-    return this.tryPaths(
-      ['usuarios/me', 'auth/me'],
-      path => firstValueFrom(this.http.get<any>(`${this.baseUrl}/${path}`)).then(raw => this.normalizeUsuario(raw)),
-    );
+  async getUsuarioActual(): Promise<UsuarioPerfilDto> {
+    const raw = await firstValueFrom(this.http.get<any>(this.usuarioMeUrl));
+    return this.normalizeUsuario(raw);
   }
 
-  getProfesionalActual(profesionalId?: number | null): Promise<ProfesionalPerfilDto | null> {
-    const dynamicPaths = ['profesionales/me'];
-    if (profesionalId) {
-      dynamicPaths.push(`profesionales/${profesionalId}`);
-    }
-
-    return this.tryPaths(
-      dynamicPaths,
-      path => firstValueFrom(this.http.get<any>(`${this.baseUrl}/${path}`)).then(raw => this.normalizeProfesional(raw)),
-      { allowNullWhenMissing: true },
-    );
+  async getProfesionalActual(): Promise<ProfesionalPerfilDto | null> {
+    const raw = await firstValueFrom(this.http.get<any>(this.profesionalMeUrl));
+    return this.normalizeProfesional(raw);
   }
 
-  updateUsuarioActual(body: UsuarioPerfilUpdateRequest, userId?: number | null): Promise<UsuarioPerfilDto> {
-    return this.tryPaths(
-      ['usuarios/me'],
-      path => firstValueFrom(this.http.put<any>(`${this.baseUrl}/${path}`, body)).then(raw => this.normalizeUsuario(raw)),
-      {
-        fallback: () => {
-          if (!userId) {
-            throw new Error('No se encontró el id del usuario actual para actualizar el perfil.');
-          }
-          return firstValueFrom(
-            this.http.put<any>(`${this.baseUrl}/usuarios/${userId}`, body),
-          ).then(raw => this.normalizeUsuario(raw));
-        },
-      },
-    );
+  async updateUsuarioActual(body: UsuarioPerfilUpdateRequest): Promise<UsuarioPerfilDto> {
+    const raw = await firstValueFrom(this.http.put<any>(this.usuarioMeUrl, body));
+    return this.normalizeUsuario(raw);
   }
 
-  updateProfesionalActual(
-    body: ProfesionalPerfilUpdateRequest,
-    profesionalId?: number | null,
-  ): Promise<ProfesionalPerfilDto | null> {
-    return this.tryPaths(
-      ['profesionales/me/perfil'],
-      path => firstValueFrom(this.http.put<any>(`${this.baseUrl}/${path}`, body)).then(raw => this.normalizeProfesional(raw)),
-      {
-        fallback: () => {
-          if (!profesionalId) {
-            throw new Error('No se encontró el id del perfil profesional actual para guardar cambios.');
-          }
-          return firstValueFrom(
-            this.http.put<any>(`${this.baseUrl}/profesionales/${profesionalId}`, body),
-          ).then(raw => this.normalizeProfesional(raw));
-        },
-      },
-    );
+  async updateProfesionalActual(body: ProfesionalPerfilUpdateRequest): Promise<ProfesionalPerfilDto | null> {
+    const raw = await firstValueFrom(this.http.put<any>(this.profesionalPerfilUrl, body));
+    return this.normalizeProfesional(raw);
   }
 
-  getCodigoVinculacion(profesionalId?: number | null): Promise<string | null> {
-    return this.tryPaths(
-      ['profesionales/me/codigo-vinculacion', 'codigos-vinculacion/me'],
-      path => firstValueFrom(this.http.get<any>(`${this.baseUrl}/${path}`)).then(raw => this.normalizeCodigo(raw)),
-      {
-        allowNullWhenMissing: true,
-        fallback: async () => {
-          const profesional = await this.getProfesionalActual(profesionalId);
-          return profesional?.codigo_vinculacion ?? null;
-        },
-      },
-    );
+  async getCodigoVinculacion(): Promise<string | null> {
+    const raw = await firstValueFrom(this.http.get<any>(this.codigoVinculacionUrl));
+    return this.normalizeCodigo(raw);
   }
 
-  regenerarCodigoVinculacion(profesionalId?: number | null): Promise<string | null> {
-    return this.tryPaths(
-      ['profesionales/me/codigo-vinculacion/regenerar', 'codigos-vinculacion/regenerar'],
-      path => firstValueFrom(this.http.post<any>(`${this.baseUrl}/${path}`, {})).then(raw => this.normalizeCodigo(raw)),
-      {
-        fallback: async () => {
-          const profesional = await this.getProfesionalActual(profesionalId);
-          return profesional?.codigo_vinculacion ?? null;
-        },
-      },
-    );
+  async regenerarCodigoVinculacion(): Promise<string | null> {
+    const raw = await firstValueFrom(this.http.post<any>(this.regenerarCodigoUrl, {}));
+    return this.normalizeCodigo(raw);
   }
 
-  changePassword(body: ChangePasswordRequest, userId?: number | null): Promise<void> {
-    const payload = {
+  changePassword(body: ChangePasswordRequest): Promise<void> {
+    return firstValueFrom(this.http.put<void>(this.passwordUrl, {
       password_actual: body.password_actual,
       password_nueva: body.password_nueva,
-      current_password: body.password_actual,
-      new_password: body.password_nueva,
-      contrasena_actual: body.password_actual,
-      contrasena_nueva: body.password_nueva,
-    };
-
-    return this.tryPaths(
-      ['usuarios/me/password'],
-      path => firstValueFrom(this.http.put<void>(`${this.baseUrl}/${path}`, payload)),
-      {
-        fallback: () => {
-          if (!userId) {
-            throw new Error('No se encontró el id del usuario actual para cambiar la contraseña.');
-          }
-          return firstValueFrom(this.http.put<void>(`${this.baseUrl}/usuarios/${userId}/password`, payload));
-        },
-      },
-    );
+    }));
   }
 
   private normalizeUsuario(raw: any): UsuarioPerfilDto {
     const base: AuthMeResponse | any = raw;
     return {
-      id_usuario: Number(base?.id_usuario ?? base?.id ?? 0),
+      id_usuario: Number(base?.id_usuario ?? 0),
       nombre: base?.nombre ?? '',
       apellido: base?.apellido ?? '',
       email: base?.email ?? '',
-      username: base?.username ?? base?.usuario ?? '',
+      username: base?.username ?? '',
       domicilio: base?.domicilio ?? null,
-      numero_telefono: base?.numero_telefono ?? base?.telefono ?? null,
+      numero_telefono: base?.numero_telefono ?? null,
       fecha_nacimiento: base?.fecha_nacimiento ?? null,
       id_rol: this.normalizeNumber(base?.id_rol),
       activo: this.normalizeBoolean(base?.activo),
@@ -147,20 +82,20 @@ export class PerfilApiService {
     if (!source) return null;
 
     return {
-      id_profesional: this.normalizeNumber(source?.id_profesional ?? source?.id),
-      especialidad: source?.especialidad ?? source?.profesional_especialidad ?? null,
+      id_profesional: this.normalizeNumber(source?.id_profesional),
+      especialidad: source?.especialidad ?? null,
       nombre_consulta: source?.nombre_consulta ?? null,
       tipo_servicio: source?.tipo_servicio ?? null,
-      descripcion: source?.descripcion ?? source?.bio ?? null,
+      descripcion: source?.descripcion ?? null,
       codigo_vinculacion: source?.codigo_vinculacion ?? null,
-      telefono_consultorio: source?.telefono_consultorio ?? source?.telefono ?? null,
-      direccion_consultorio: source?.direccion_consultorio ?? source?.direccion ?? null,
+      telefono_consultorio: source?.telefono_consultorio ?? null,
+      direccion_consultorio: source?.direccion_consultorio ?? null,
     };
   }
 
   private normalizeCodigo(raw: any): string | null {
     if (!raw) return null;
-    return raw?.codigo_vinculacion ?? raw?.codigo ?? raw?.value ?? null;
+    return raw?.codigo_vinculacion ?? null;
   }
 
   private normalizeNumber(value: unknown): number | null {
@@ -172,38 +107,5 @@ export class PerfilApiService {
   private normalizeBoolean(value: unknown): boolean | null {
     if (value === null || value === undefined) return null;
     return Boolean(value);
-  }
-
-  private async tryPaths<T>(
-    paths: string[],
-    runner: (path: string) => Promise<T>,
-    options?: { fallback?: () => Promise<T>; allowNullWhenMissing?: boolean },
-  ): Promise<T> {
-    let lastError: unknown;
-
-    for (let index = 0; index < paths.length; index += 1) {
-      try {
-        return await runner(paths[index]);
-      } catch (error) {
-        lastError = error;
-        if (!this.isFallbackError(error) || index === paths.length - 1) {
-          break;
-        }
-      }
-    }
-
-    if (options?.fallback) {
-      return options.fallback();
-    }
-
-    if (options?.allowNullWhenMissing && lastError instanceof HttpErrorResponse && lastError.status === 404) {
-      return null as T;
-    }
-
-    throw lastError;
-  }
-
-  private isFallbackError(error: unknown): boolean {
-    return error instanceof HttpErrorResponse && [404, 405].includes(error.status);
   }
 }

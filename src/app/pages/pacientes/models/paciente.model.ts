@@ -1,3 +1,4 @@
+import { ArchivoAdjuntoDto, SesionArchivoLocal } from '../../sesiones/models/sesion.model';
 // ─── Paciente (alineado al backend PacienteDto) ──────────────────────────────
 
 export const PACIENTE_SEXO_OPTIONS = [
@@ -138,6 +139,12 @@ export interface NotaClinicaDto {
   tipo_nota:           string;
   visible_en_resumen:  boolean;
   created_at:          string;
+  adjuntos?:           ArchivoAdjuntoDto[];
+}
+
+export interface NotaClinicaViewModel extends NotaClinicaDto {
+  adjuntos:          ArchivoAdjuntoDto[];
+  adjuntosLoading?:  boolean;
 }
 
 export interface NotaClinicaRequest {
@@ -147,6 +154,10 @@ export interface NotaClinicaRequest {
   contenido:          string;
   tipo_nota:          string;
   visible_en_resumen: boolean;
+}
+
+export interface NotaClinicaFormState extends NotaClinicaRequest {
+  adjunto?: SesionArchivoLocal;
 }
 
 // ─── Sesión clínica (sub-recurso del paciente) ────────────────────────────────
@@ -309,3 +320,4 @@ export interface CitaResumenDto {
   estado: 'Confirmada' | 'Pendiente' | 'Cancelada';
   notas?: string;
 }
+

@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
@@ -14,83 +14,56 @@ import {
 @Injectable({ providedIn: 'root' })
 export class ConfiguracionApiService {
   private readonly baseUrl = environment.apiUrl;
+  private readonly agendaUrl = `${this.baseUrl}/configuracion/agenda`;
+  private readonly sistemaCollectionUrl = `${this.baseUrl}/configuracion-sistema`;
+  private readonly recordatoriosUrl = `${this.baseUrl}/configuracion-recordatorios`;
 
   constructor(private http: HttpClient) {}
 
   getAgenda(): Promise<ConfiguracionAgendaDto> {
-    return this.tryPaths(
-      ['configuracion/agenda'],
-      path => firstValueFrom(this.http.get<any>(`${this.baseUrl}/${path}`)).then(raw => this.normalizeAgenda(raw)),
-    );
+    return firstValueFrom(this.http.get<any>(this.agendaUrl)).then(raw => this.normalizeAgenda(raw));
   }
 
   saveAgenda(body: ConfiguracionAgendaRequest): Promise<ConfiguracionAgendaDto> {
-    return this.tryPaths(
-      ['configuracion/agenda'],
-      path => firstValueFrom(this.http.put<any>(`${this.baseUrl}/${path}`, body)).then(raw => this.normalizeAgenda(raw)),
-    );
+    return firstValueFrom(this.http.put<any>(this.agendaUrl, body)).then(raw => this.normalizeAgenda(raw));
   }
 
   getSistema(): Promise<ConfiguracionSistemaDto> {
-    return this.tryPaths(
-      ['configuracion/sistema', 'configuracion-sistema'],
-      path => firstValueFrom(this.http.get<any>(`${this.baseUrl}/${path}`)).then(raw => this.normalizeSistema(raw)),
-    );
+    return firstValueFrom(this.http.get<any>(this.sistemaCollectionUrl)).then(raw => this.normalizeSistema(raw));
   }
 
   saveSistema(body: ConfiguracionSistemaRequest, currentId?: number | null): Promise<ConfiguracionSistemaDto> {
-    return this.tryPaths(
-      ['configuracion/sistema'],
-      path => firstValueFrom(this.http.put<any>(`${this.baseUrl}/${path}`, body)).then(raw => this.normalizeSistema(raw)),
-      { fallback: () => this.saveSistemaResource(body, currentId) },
-    );
+    if (currentId) {
+      return firstValueFrom(
+        this.http.put<any>(`${this.sistemaCollectionUrl}/${currentId}`, body),
+      ).then(raw => this.normalizeSistema(raw));
+    }
+
+    return firstValueFrom(
+      this.http.post<any>(this.sistemaCollectionUrl, body),
+    ).then(raw => this.normalizeSistema(raw));
   }
 
   getRecordatorios(): Promise<ConfiguracionRecordatorioDto[]> {
-    return this.tryPaths(
-      ['configuracion/recordatorios', 'configuracion-recordatorios'],
-      path => firstValueFrom(this.http.get<any>(`${this.baseUrl}/${path}`)).then(raw => this.normalizeRecordatorios(raw)),
-    );
-  }
-
-  saveRecordatoriosUnificado(body: Record<string, unknown>): Promise<ConfiguracionRecordatorioDto[]> {
-    return this.tryPaths(
-      ['configuracion/recordatorios'],
-      path => firstValueFrom(this.http.put<any>(`${this.baseUrl}/${path}`, body)).then(raw => this.normalizeRecordatorios(raw)),
-    );
+    return firstValueFrom(this.http.get<any>(this.recordatoriosUrl)).then(raw => this.normalizeRecordatorios(raw));
   }
 
   createRecordatorio(body: ConfiguracionRecordatorioRequest): Promise<ConfiguracionRecordatorioDto> {
     return firstValueFrom(
-      this.http.post<any>(`${this.baseUrl}/configuracion-recordatorios`, body),
+      this.http.post<any>(this.recordatoriosUrl, body),
     ).then(raw => this.normalizeRecordatorio(raw));
   }
 
   updateRecordatorio(id: number, body: ConfiguracionRecordatorioRequest): Promise<ConfiguracionRecordatorioDto> {
     return firstValueFrom(
-      this.http.put<any>(`${this.baseUrl}/configuracion-recordatorios/${id}`, body),
+      this.http.put<any>(`${this.recordatoriosUrl}/${id}`, body),
     ).then(raw => this.normalizeRecordatorio(raw));
   }
 
   setActivoRecordatorio(id: number, activo: boolean): Promise<ConfiguracionRecordatorioDto> {
     return firstValueFrom(
-      this.http.patch<any>(`${this.baseUrl}/configuracion-recordatorios/${id}/activo`, { activo }),
+      this.http.patch<any>(`${this.recordatoriosUrl}/${id}/activo`, { activo }),
     ).then(raw => this.normalizeRecordatorio(raw));
-  }
-
-  private async saveSistemaResource(
-    body: ConfiguracionSistemaRequest,
-    currentId?: number | null,
-  ): Promise<ConfiguracionSistemaDto> {
-    if (currentId) {
-      return firstValueFrom(
-        this.http.put<any>(`${this.baseUrl}/configuracion-sistema/${currentId}`, body),
-      ).then(raw => this.normalizeSistema(raw));
-    }
-
-    return firstValueFrom(
-      this.http.post<any>(`${this.baseUrl}/configuracion-sistema`, body),
-    ).then(raw => this.normalizeSistema(raw));
   }
 
   private normalizeAgenda(raw: any): ConfiguracionAgendaDto {
@@ -114,17 +87,34 @@ export class ConfiguracionApiService {
   private normalizeSistema(raw: any): ConfiguracionSistemaDto {
     return {
       id_configuracion_sistema: this.normalizeNumber(raw?.id_configuracion_sistema),
+      id_profesional: this.normalizeNumber(raw?.id_profesional),
+      notif_in_app: this.normalizeBoolean(raw?.notif_in_app),
+      alertas_sonoras: this.normalizeBoolean(raw?.alertas_sonoras),
+      avisos_citas_proximas: this.normalizeBoolean(raw?.avisos_citas_proximas),
+      avisos_pacientes_nuevos: this.normalizeBoolean(raw?.avisos_pacientes_nuevos),
+      avisos_pagos_pendientes: this.normalizeBoolean(raw?.avisos_pagos_pendientes),
       zona_horaria: raw?.zona_horaria ?? null,
       moneda: raw?.moneda ?? null,
       formato_hora: raw?.formato_hora ?? null,
+      formato_fecha: raw?.formato_fecha ?? null,
       duracion_cita_default_min: this.normalizeNumber(raw?.duracion_cita_default_min),
       politica_cancelacion_horas: this.normalizeNumber(raw?.politica_cancelacion_horas),
       permite_confirmacion_publica: this.normalizeBoolean(raw?.permite_confirmacion_publica),
+      ocultar_datos_sensibles: this.normalizeBoolean(raw?.ocultar_datos_sensibles),
+      confirmar_eliminar_citas: this.normalizeBoolean(raw?.confirmar_eliminar_citas),
+      confirmar_eliminar_pacientes: this.normalizeBoolean(raw?.confirmar_eliminar_pacientes),
+      permitir_cancelacion: this.normalizeBoolean(raw?.permitir_cancelacion),
+      permitir_reprogramacion: this.normalizeBoolean(raw?.permitir_reprogramacion),
+      recordatorio_profesional: this.normalizeBoolean(raw?.recordatorio_profesional),
+      notif_paciente_confirma: this.normalizeBoolean(raw?.notif_paciente_confirma),
+      notif_paciente_cancela: this.normalizeBoolean(raw?.notif_paciente_cancela),
+      notif_paciente_reprograma: this.normalizeBoolean(raw?.notif_paciente_reprograma),
       idioma: raw?.idioma ?? null,
       tema: raw?.tema ?? null,
       tamano_interfaz: raw?.tamano_interfaz ?? null,
       animaciones: this.normalizeBoolean(raw?.animaciones),
-      activo: this.normalizeBoolean(raw?.activo),
+      vista_previa_datos: this.normalizeBoolean(raw?.vista_previa_datos),
+      bloquear_cambios_criticos: this.normalizeBoolean(raw?.bloquear_cambios_criticos),
     };
   }
 
@@ -160,38 +150,5 @@ export class ConfiguracionApiService {
   private normalizeBoolean(value: unknown): boolean | null {
     if (value === null || value === undefined) return null;
     return Boolean(value);
-  }
-
-  private async tryPaths<T>(
-    paths: string[],
-    runner: (path: string) => Promise<T>,
-    options?: { fallback?: () => Promise<T> },
-  ): Promise<T> {
-    let lastError: unknown;
-
-    for (let index = 0; index < paths.length; index += 1) {
-      try {
-        return await runner(paths[index]);
-      } catch (error) {
-        lastError = error;
-        if (!this.isFallbackError(error) || index === paths.length - 1) {
-          break;
-        }
-      }
-    }
-
-    if (options?.fallback) {
-      try {
-        return await options.fallback();
-      } catch (error) {
-        lastError = error;
-      }
-    }
-
-    throw lastError;
-  }
-
-  private isFallbackError(error: unknown): boolean {
-    return error instanceof HttpErrorResponse && [404, 405].includes(error.status);
   }
 }

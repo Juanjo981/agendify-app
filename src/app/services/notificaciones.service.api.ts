@@ -6,6 +6,13 @@ import { buildQueryParams } from 'src/app/shared/utils/query-params.utils';
 import { PageResponse } from 'src/app/shared/models/page.model';
 import { NotificacionDto } from '../pages/dashboard/dashboard.models';
 
+interface NotificacionesUnreadCountResponse {
+  count?: number | null;
+  unreadCount?: number | null;
+  noLeidas?: number | null;
+  notificacionesNoLeidas?: number | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class NotificacionesApiService {
   private readonly base = `${environment.apiUrl}/notificaciones`;
@@ -44,39 +51,29 @@ export class NotificacionesApiService {
     );
   }
 
+  async getUnreadCount(): Promise<number> {
+    const response = await firstValueFrom(
+      this.http.get<number | NotificacionesUnreadCountResponse>(`${this.base}/no-leidas/count`)
+    );
+
+    if (typeof response === 'number') {
+      return response;
+    }
+
+    return (
+      response.count ??
+      response.unreadCount ??
+      response.noLeidas ??
+      response.notificacionesNoLeidas ??
+      0
+    );
+  }
+
   async markAsRead(id: number): Promise<void> {
-    await this.runFallback([
-      () => firstValueFrom(this.http.patch<void>(`${this.base}/${id}/leida`, {})),
-      () => firstValueFrom(this.http.post<void>(`${this.base}/${id}/leida`, {})),
-    ]);
+    await firstValueFrom(this.http.patch<void>(`${this.base}/${id}/leida`, {}));
   }
 
   async markAllAsRead(): Promise<void> {
-    await this.runFallback([
-      () => firstValueFrom(this.http.post<void>(`${this.base}/marcar-todas-leidas`, {})),
-      () => firstValueFrom(this.http.patch<void>(`${this.base}/marcar-todas-leidas`, {})),
-    ]);
-  }
-
-  private async runFallback<T>(attempts: Array<() => Promise<T>>): Promise<T> {
-    let lastError: unknown;
-
-    for (const attempt of attempts) {
-      try {
-        return await attempt();
-      } catch (error) {
-        lastError = error;
-        if (!this.isContractMismatch(error)) {
-          throw error;
-        }
-      }
-    }
-
-    throw lastError;
-  }
-
-  private isContractMismatch(error: unknown): boolean {
-    const status = (error as { status?: number } | null)?.status;
-    return status === 404 || status === 405;
+    await firstValueFrom(this.http.post<void>(`${this.base}/marcar-todas-leidas`, {}));
   }
 }

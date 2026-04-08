@@ -2,9 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { IonicModule, LoadingController, ToastController } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { SolicitudReprogramacion } from 'src/app/shared/models/solicitud-reprogramacion.model';
 import { SolicitudReprogramacionModalComponent } from 'src/app/shared/components/solicitud-reprogramacion-modal/solicitud-reprogramacion-modal.component';
 import { ActividadApiService, ActividadFeedItem, ActividadTipo } from 'src/app/services/actividad-api.service';
+import { SolicitudReprogramacionApiService } from '../citas/solicitud-reprogramacion-api.service';
 import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
 
 type FiltroActivo = 'todos' | 'agenda' | 'equipo' | 'sistema';
@@ -43,6 +45,8 @@ export class ActividadPageIntegrated implements OnInit {
 
   constructor(
     private actividadApi: ActividadApiService,
+    private solicitudApi: SolicitudReprogramacionApiService,
+    private router: Router,
     private loadingCtrl: LoadingController,
     private toastCtrl: ToastController,
   ) {}
@@ -51,24 +55,57 @@ export class ActividadPageIntegrated implements OnInit {
     await this.cargarActividad();
   }
 
-  abrirSolicitud(solicitudId: number): void {
-    void solicitudId;
+  async abrirSolicitud(solicitudId: number): Promise<void> {
+    try {
+      const solicitud = await this.solicitudApi.ensureLoaded(solicitudId);
+      if (!solicitud) {
+        await this.presentToast('No pudimos cargar la solicitud seleccionada.');
+        return;
+      }
+
+      this.solicitudSeleccionada = solicitud;
+      this.showSolicitudModal = true;
+    } catch (error) {
+      await this.presentToast(mapApiError(error).userMessage);
+    }
   }
 
-  onSolicitudAceptada(): void {
-    this.showSolicitudModal = false;
-    this.solicitudSeleccionada = null;
+  async onSolicitudAceptada(): Promise<void> {
+    if (!this.solicitudSeleccionada) {
+      return;
+    }
+
+    try {
+      await this.solicitudApi.aprobar(this.solicitudSeleccionada.id_solicitud);
+      this.showSolicitudModal = false;
+      this.solicitudSeleccionada = null;
+      await this.cargarActividad();
+      await this.presentToast('Solicitud aprobada correctamente.', 'success');
+    } catch (error) {
+      await this.presentToast(mapApiError(error).userMessage);
+    }
   }
 
-  onSolicitudRechazada(motivo: string): void {
-    void motivo;
-    this.showSolicitudModal = false;
-    this.solicitudSeleccionada = null;
+  async onSolicitudRechazada(motivo: string): Promise<void> {
+    if (!this.solicitudSeleccionada) {
+      return;
+    }
+
+    try {
+      await this.solicitudApi.rechazar(this.solicitudSeleccionada.id_solicitud, motivo);
+      this.showSolicitudModal = false;
+      this.solicitudSeleccionada = null;
+      await this.cargarActividad();
+      await this.presentToast('Solicitud rechazada correctamente.', 'success');
+    } catch (error) {
+      await this.presentToast(mapApiError(error).userMessage);
+    }
   }
 
-  onVerAgenda(): void {
+  async onVerAgenda(): Promise<void> {
     this.showSolicitudModal = false;
     this.solicitudSeleccionada = null;
+    await this.router.navigate(['/dashboard/agenda']);
   }
 
   cerrarSolicitudModal(): void {
@@ -137,15 +174,16 @@ export class ActividadPageIntegrated implements OnInit {
       descripcion: item.descripcion,
       tiempo: item.tiempo,
       fecha: item.fecha,
+      solicitudId: item.solicitudId ?? undefined,
     };
   }
 
-  private async presentToast(message: string): Promise<void> {
+  private async presentToast(message: string, color: 'danger' | 'success' = 'danger'): Promise<void> {
     const toast = await this.toastCtrl.create({
       message,
       duration: 3000,
       position: 'bottom',
-      color: 'danger',
+      color,
     });
 
     await toast.present();

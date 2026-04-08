@@ -10,6 +10,7 @@ export type CqaAction =
   | 'completada'
   | 'noAsistio'
   | 'cancelar'
+  | 'eliminar'
   | 'crearSesion';
 
 @Component({
@@ -50,6 +51,7 @@ export class CqaPopoverComponent {
     if (action === 'completada') return e === 'COMPLETADA';
     if (action === 'noAsistio')  return e === 'NO_ASISTIO';
     if (action === 'cancelar')   return e === 'CANCELADA';
+    if (action === 'eliminar')   return e === 'COMPLETADA';
     return false;
   }
 

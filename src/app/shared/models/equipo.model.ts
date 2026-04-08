@@ -15,6 +15,48 @@ export interface PermisoDetalle {
   icono: string;
 }
 
+export interface RecepcionistaDto {
+  id: number;
+  id_usuario: number;
+  id_profesional?: number | null;
+  activo: boolean;
+  fecha_vinculacion?: string | null;
+  nombre: string;
+  apellido: string;
+  email: string;
+  permisos?: PermisosRecepcionistaDto | Record<string, boolean> | null;
+  permisos_activos_count?: number | null;
+  permisosActivosCount?: number | null;
+  permisos_resumen?: string | null;
+  permisosResumen?: string | null;
+}
+
+export interface PermisosRecepcionistaDto {
+  agenda?: boolean | null;
+  citas?: boolean | null;
+  pacientes?: boolean | null;
+  notas_clinicas?: boolean | null;
+  configuracion?: boolean | null;
+  puede_crear_citas?: boolean | null;
+  puede_ver_citas?: boolean | null;
+  puede_editar_citas?: boolean | null;
+  puede_cancelar_citas?: boolean | null;
+  puede_ver_agenda?: boolean | null;
+  puede_gestionar_agenda?: boolean | null;
+  puede_ver_pacientes?: boolean | null;
+  puede_crear_pacientes?: boolean | null;
+  puede_editar_pacientes?: boolean | null;
+  puede_ver_notas_clinicas?: boolean | null;
+  puede_crear_notas_clinicas?: boolean | null;
+  puede_editar_notas_clinicas?: boolean | null;
+  puede_ver_configuracion?: boolean | null;
+  puede_editar_configuracion?: boolean | null;
+}
+
+export interface CodigoVinculacionDto {
+  codigo_vinculacion: string;
+}
+
 /**
  * View model listo para renderizar cada recepcionista en la vista Equipo.
  *

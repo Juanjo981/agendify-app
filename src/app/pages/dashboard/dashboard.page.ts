@@ -164,30 +164,38 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.notificacionesLoading = true;
     this.notificacionesError = '';
 
-    const [consolidadoResult, notificacionesResult] = await Promise.all([
+    const [consolidadoResult, unreadCountResult, notificacionesResult] = await Promise.all([
       this.wrapResult(this.dashboardApi.getConsolidado()),
+      this.wrapResult(this.notificacionesApi.getUnreadCount()),
       this.wrapResult(this.notificacionesApi.getAll({ size: 8, sort: 'created_at,desc' })),
     ]);
 
     if (consolidadoResult.ok) {
       this.solicitudesPendientesCount = consolidadoResult.value.solicitudes_pendientes_count ?? 0;
-      this.notificacionesPendientesCount = consolidadoResult.value.notificaciones_pendientes_count ?? 0;
+    }
+
+    if (unreadCountResult.ok) {
+      this.notificacionesPendientesCount = unreadCountResult.value ?? 0;
     }
 
     if (notificacionesResult.ok) {
       const content = notificacionesResult.value.content ?? [];
       this.notificaciones = content.map((item: NotificacionDto) => this.mapNotificacion(item));
-      if (!consolidadoResult.ok) {
+      if (!unreadCountResult.ok) {
         this.notificacionesPendientesCount = this.notificaciones.filter(item => item.pendiente).length;
       }
     } else {
       this.notificacionesError = mapApiError(notificacionesResult.error).userMessage;
-      if (!consolidadoResult.ok) {
+      if (!unreadCountResult.ok) {
         this.notificaciones = [];
       }
     }
 
-    if (!consolidadoResult.ok && !this.notificacionesError) {
+    if (!unreadCountResult.ok && !notificacionesResult.ok && !this.notificacionesError) {
+      this.notificacionesError = mapApiError(unreadCountResult.error).userMessage;
+    }
+
+    if (!consolidadoResult.ok && !unreadCountResult.ok && !this.notificacionesError) {
       this.notificacionesError = mapApiError(consolidadoResult.error).userMessage;
     }
 
@@ -263,20 +271,26 @@ export class DashboardPage implements OnInit, OnDestroy {
   }
 
   private mapNotificacion(item: NotificacionDto): DashboardNotificationItem {
-    const tipo = this.mapTipo(item.tipo_notificacion);
-    const titulo = item.asunto?.trim() || this.getTipoLabel(item.tipo_notificacion);
-    const descripcion = item.mensaje_resumen?.trim() || item.destinatario?.trim() || 'Notificación del sistema';
+    const tipoNotificacion = item.tipo ?? item.tipo_notificacion ?? '';
+    const titulo = item.titulo?.trim() || item.asunto?.trim() || this.getTipoLabel(tipoNotificacion);
+    const descripcion =
+      item.descripcion?.trim() ||
+      item.mensaje_resumen?.trim() ||
+      item.mensaje?.trim() ||
+      item.destinatario?.trim() ||
+      'Notificación del sistema';
+    const fecha = item.fecha ?? item.created_at ?? item.fecha_leida ?? item.read_at ?? new Date().toISOString();
 
     return {
-      id: item.id_notificacion,
-      tipo,
-      icono: this.getTipoIcon(item.tipo_notificacion),
+      id: item.id ?? item.id_notificacion ?? 0,
+      tipo: this.mapTipo(tipoNotificacion),
+      icono: item.icono?.trim() || this.getTipoIcon(tipoNotificacion),
       titulo,
       descripcion,
-      tiempo: tiempoRelativo(item.created_at),
+      tiempo: tiempoRelativo(fecha),
       pendiente: this.isNotificacionPendiente(item),
-      idCita: item.id_cita,
-      idPaciente: item.id_paciente,
+      idCita: item.id_cita ?? item.citaId,
+      idPaciente: item.id_paciente ?? item.pacienteId,
     };
   }
 
@@ -293,7 +307,11 @@ export class DashboardPage implements OnInit, OnDestroy {
       return false;
     }
 
-    return estado === 'PENDIENTE';
+    if (estado) {
+      return estado === 'PENDIENTE' || estado === 'NO_LEIDA' || estado === 'UNREAD';
+    }
+
+    return item.leida !== true;
   }
 
   private async marcarNotificacionLeida(item: DashboardNotificationItem): Promise<void> {
@@ -302,7 +320,7 @@ export class DashboardPage implements OnInit, OnDestroy {
       item.pendiente = false;
       this.notificacionesPendientesCount = Math.max(0, this.notificacionesPendientesCount - 1);
     } catch {
-      // El endpoint de lectura todavía no está documentado de forma canónica.
+      // El badge visual se mantiene consistente si falla la persistencia remota.
     }
   }
 

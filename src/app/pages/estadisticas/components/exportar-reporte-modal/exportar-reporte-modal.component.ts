@@ -8,6 +8,7 @@ import {
   ExportacionReporteRequest,
   ExportacionReporteResponse,
   FormatoExportacion,
+  ProfesionalFiltroOption,
 } from '../../models/estadisticas.model';
 import { EstadisticasApiService } from '../../estadisticas.service.api';
 
@@ -27,6 +28,7 @@ export class ExportarReporteModalComponent implements OnInit {
   incluirResumen = true;
   incluirDetalle = true;
   profesional = '';
+  profesionales: ProfesionalFiltroOption[] = [{ id: '', nombre: 'Todos los profesionales' }];
   fechaDesde = '';
   fechaHasta = '';
   nombreArchivo = '';
@@ -36,13 +38,20 @@ export class ExportarReporteModalComponent implements OnInit {
 
   constructor(private svc: EstadisticasApiService) {}
 
-  ngOnInit() {
+  async ngOnInit() {
     // Defaults based on current month
     const hoy = new Date();
     this.fechaHasta = hoy.toISOString().slice(0, 10);
     this.fechaDesde = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
       .toISOString().slice(0, 10);
     this.nombreArchivo = this.buildNombreArchivo();
+    this.profesional = this.svc.filtrosActuales.profesional || '';
+
+    try {
+      this.profesionales = await this.svc.getProfesionalesFiltro();
+    } catch {
+      this.profesionales = [{ id: '', nombre: 'Todos los profesionales' }];
+    }
   }
 
   setFormato(f: FormatoExportacion) {
@@ -61,12 +70,11 @@ export class ExportarReporteModalComponent implements OnInit {
     this.resultado = null;
 
     const req: ExportacionReporteRequest = {
-      reporteId: this.reporte.id,
       tipo: this.reporte.tipo,
       formato: this.formato,
       fechaDesde: this.fechaDesde,
       fechaHasta: this.fechaHasta,
-      profesional: this.profesional || undefined,
+      profesionalId: this.profesional ? Number(this.profesional) : undefined,
       incluirResumen: this.incluirResumen,
       incluirDetalle: this.incluirDetalle,
       nombreArchivo: this.nombreArchivo,

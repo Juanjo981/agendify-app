@@ -30,6 +30,18 @@ export interface SolicitudReprogramacionPublicaRequest {
   motivo: string;
 }
 
+export interface DisponibilidadPublicaSlotDto {
+  hora_inicio: string;
+  hora_fin: string;
+}
+
+export interface DisponibilidadPublicaResponseDto {
+  fecha: string;
+  duracion_minutos: number;
+  total_slots: number;
+  slots: DisponibilidadPublicaSlotDto[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class ConfirmacionPublicaService {
   private readonly publicBase = `${environment.apiUrl.replace(/\/api\/?$/, '')}/public/citas/gestion`;
@@ -57,6 +69,23 @@ export class ConfirmacionPublicaService {
   solicitarReprogramacion(token: string, body: SolicitudReprogramacionPublicaRequest): Promise<unknown> {
     return firstValueFrom(
       this.http.post(`${this.publicBase}/${encodeURIComponent(token)}/solicitudes-reprogramacion`, body)
+    );
+  }
+
+  getDisponibilidad(token: string, params: {
+    fecha: string;
+    duracionMinutos?: number;
+  }): Promise<DisponibilidadPublicaResponseDto> {
+    return firstValueFrom(
+      this.http.get<DisponibilidadPublicaResponseDto>(
+        `${this.publicBase}/${encodeURIComponent(token)}/disponibilidad`,
+        {
+          params: {
+            fecha: params.fecha,
+            ...(params.duracionMinutos ? { duracionMinutos: String(params.duracionMinutos) } : {}),
+          },
+        },
+      )
     );
   }
 }

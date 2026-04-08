@@ -484,6 +484,13 @@
         <span class="cqa-act-label">Cancelar cita</span>
       </button>
 
+      <button
+        class="cqa-act cqa-act--danger"
+        (click)="confirmarEliminarCita()"
+        [disabled]="citaActiva.estado_cita === 'COMPLETADA'">
+        <div class="cqa-act-icon"><ion-icon name="trash-outline"></ion-icon></div>
+        <span class="cqa-act-label">Eliminar cita</span>
+      </button>
       <!-- Crear sesión: solo si completada y sin sesión -->
       <ng-container *ngIf="citaActiva.estado_cita === 'COMPLETADA' && !citaActiva.tiene_sesion">
         <div class="cqa-sep"></div>
@@ -567,3 +574,5 @@
   </ng-template>
 
 </ion-modal>
+
+

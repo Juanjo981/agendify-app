@@ -10,6 +10,7 @@ import {
   MetodoPagoFiltro,
 } from '../../models/filtros-estadisticas.model';
 import { EstadisticasApiService } from '../../estadisticas.service.api';
+import { ProfesionalFiltroOption } from '../../models/estadisticas.model';
 
 @Component({
   selector: 'app-filtros-estadisticas',
@@ -48,14 +49,19 @@ export class FiltrosEstadisticasComponent implements OnInit {
     { value: 'Crédito',       label: 'Crédito' },
   ];
 
-    profesionales: Array<{ id: string; nombre: string }> = [
-    { id: '',  nombre: 'Todos los profesionales' },
+  profesionales: ProfesionalFiltroOption[] = [
+    { id: '', nombre: 'Todos los profesionales' },
   ];
 
   constructor(private svc: EstadisticasApiService) {}
 
-  ngOnInit() {
+  async ngOnInit() {
     this.filtros = this.svc.getFiltrosIniciales();
+    try {
+      this.profesionales = await this.svc.getProfesionalesFiltro();
+    } catch {
+      this.profesionales = [{ id: '', nombre: 'Todos los profesionales' }];
+    }
     this.emitir();
   }
 

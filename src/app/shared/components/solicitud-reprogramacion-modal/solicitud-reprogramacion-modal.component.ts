@@ -35,9 +35,9 @@ export class SolicitudReprogramacionModalComponent {
   }
 
   get fechaFormateada(): string {
-    if (!this.solicitud?.fechaCita) return '';
+    if (!this.solicitud?.fecha_cita) return '';
     // Append T00:00 to avoid UTC→local-day drift
-    const d = new Date(this.solicitud.fechaCita + 'T00:00');
+    const d = new Date(this.solicitud.fecha_cita + 'T00:00');
     return d.toLocaleDateString('es-ES', {
       weekday: 'long',
       day: 'numeric',
@@ -47,8 +47,8 @@ export class SolicitudReprogramacionModalComponent {
   }
 
   get fechaSugeridaFormateada(): string | null {
-    if (!this.solicitud?.fechaHoraSugerida) return null;
-    const d = new Date(this.solicitud.fechaHoraSugerida);
+    if (!this.solicitud?.fecha_hora_sugerida) return null;
+    const d = new Date(this.solicitud.fecha_hora_sugerida);
     const fecha = d.toLocaleDateString('es-ES', {
       weekday: 'long',
       day: 'numeric',
@@ -59,8 +59,8 @@ export class SolicitudReprogramacionModalComponent {
   }
 
   get tiempoTranscurrido(): string {
-    if (!this.solicitud?.fechaSolicitud) return '';
-    const diff = Date.now() - new Date(this.solicitud.fechaSolicitud).getTime();
+    if (!this.solicitud?.fecha_solicitud) return '';
+    const diff = Date.now() - new Date(this.solicitud.fecha_solicitud).getTime();
     const mins  = Math.floor(diff / 60000);
     if (mins < 60)  return `hace ${mins} min`;
     const hours = Math.floor(mins / 60);
@@ -84,3 +84,4 @@ export class SolicitudReprogramacionModalComponent {
   onVerAgenda(): void { this.verAgenda.emit(); }
   onCerrar():    void { this.cerrado.emit(); }
 }
+

@@ -323,6 +323,22 @@
             <span class="det-nota-item__visible" *ngIf="nota.visible_en_resumen">
               <ion-icon name="eye-outline"></ion-icon> Visible en resumen
             </span>
+            <div class="det-nota-adjunto" *ngIf="nota.adjuntosLoading || nota.adjuntos.length > 0">
+              <div class="det-adjunto-chip" *ngFor="let adjunto of nota.adjuntos">
+                <ion-icon class="det-adjunto-chip__icon" [name]="getFileIcon(adjunto.mime_type)"></ion-icon>
+                <span class="det-adjunto-chip__name">{{ adjunto.nombre_original }}</span>
+                <span class="det-adjunto-chip__size">{{ formatFileSize(adjunto.tamano_bytes) }}</span>
+                <button class="det-adjunto-chip__btn" type="button" (click)="verAdjunto(adjunto)" title="Ver adjunto">
+                  <ion-icon name="eye-outline"></ion-icon>
+                </button>
+                <button class="det-adjunto-chip__btn det-adjunto-chip__btn--download" type="button" (click)="descargarAdjunto(adjunto)" title="Descargar adjunto">
+                  <ion-icon name="download-outline"></ion-icon>
+                </button>
+                <button class="det-adjunto-chip__btn" type="button" (click)="eliminarAdjuntoNota(nota, adjunto)" title="Eliminar adjunto">
+                  <ion-icon name="trash-outline"></ion-icon>
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- Load more -->
@@ -633,6 +649,49 @@
           <button class="pac-toggle" [class.on]="notaForm.visible_en_resumen" (click)="notaForm.visible_en_resumen = !notaForm.visible_en_resumen" type="button">
             <span class="pac-toggle__knob"></span>
           </button>
+        </div>
+      </div>
+      <div class="det-adjunto-section">
+        <p class="det-adjunto-label">Adjunto <span>(opcional)</span></p>
+        <div class="det-nota-adjunto" *ngIf="notaAdjuntosModal.length > 0">
+          <div class="det-adjunto-chip" *ngFor="let adjunto of notaAdjuntosModal">
+            <ion-icon class="det-adjunto-chip__icon" [name]="getFileIcon(adjunto.mime_type)"></ion-icon>
+            <span class="det-adjunto-chip__name">{{ adjunto.nombre_original }}</span>
+            <span class="det-adjunto-chip__size">{{ formatFileSize(adjunto.tamano_bytes) }}</span>
+            <button class="det-adjunto-chip__btn" type="button" (click)="verAdjunto(adjunto)" title="Ver adjunto">
+              <ion-icon name="eye-outline"></ion-icon>
+            </button>
+            <button class="det-adjunto-chip__btn det-adjunto-chip__btn--download" type="button" (click)="descargarAdjunto(adjunto)" title="Descargar adjunto">
+              <ion-icon name="download-outline"></ion-icon>
+            </button>
+            <button class="det-adjunto-chip__btn" type="button" (click)="eliminarAdjuntoNotaModal(adjunto)" title="Eliminar adjunto">
+              <ion-icon name="trash-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+        <input class="det-adjunto-input" #notaAdjuntoInput type="file" accept=".txt,.doc,.docx,.pdf,.jpg,.jpeg,.png,.webp" (change)="onNotaAdjuntoSeleccionado($event)" />
+        <button *ngIf="!notaForm.adjunto" class="det-adjunto-zone" type="button" (click)="notaAdjuntoInput.click()">
+          <ion-icon class="det-adjunto-zone__icon" name="cloud-upload-outline"></ion-icon>
+          <span class="det-adjunto-zone__text">Seleccionar archivo</span>
+          <span class="det-adjunto-zone__hint">PDF, Word o imagen. Se sube al guardar la nota.</span>
+        </button>
+        <div *ngIf="notaForm.adjunto" class="det-adjunto-preview-card">
+          <img *ngIf="notaForm.adjunto.previewUrl" class="det-adjunto-preview-img" [src]="notaForm.adjunto.previewUrl" alt="Vista previa del adjunto" />
+          <div class="det-adjunto-preview-info">
+            <ion-icon *ngIf="!notaForm.adjunto.previewUrl" class="det-adjunto-preview-icon" [name]="getFileIcon(notaForm.adjunto.type)"></ion-icon>
+            <div class="det-adjunto-preview-meta">
+              <span class="det-adjunto-preview-name">{{ notaForm.adjunto.name }}</span>
+              <span class="det-adjunto-preview-size">{{ formatFileSize(notaForm.adjunto.size) }}</span>
+            </div>
+          </div>
+          <div class="det-adjunto-preview-actions">
+            <button class="det-adjunto-replace-btn" type="button" (click)="notaAdjuntoInput.click()" title="Reemplazar archivo">
+              <ion-icon name="swap-horizontal-outline"></ion-icon>
+            </button>
+            <button class="det-adjunto-remove-btn" type="button" (click)="removerAdjuntoPendiente()" title="Quitar archivo">
+              <ion-icon name="trash-outline"></ion-icon>
+            </button>
+          </div>
         </div>
       </div>
       <span class="pac-field__error" *ngIf="notaError">{{ notaError }}</span>

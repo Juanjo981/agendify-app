@@ -72,6 +72,12 @@
     <span class="cpop-act-label">Cancelar cita</span>
   </button>
 
+  <button class="cpop-act cpop-act--danger"
+    (click)="act('eliminar')"
+    [disabled]="isDisabled('eliminar')">
+    <div class="cpop-act-icon"><ion-icon name="trash-outline"></ion-icon></div>
+    <span class="cpop-act-label">Eliminar cita</span>
+  </button>
   <!-- Crear sesión: only when Completada + no session yet -->
   <ng-container *ngIf="showCrearSesion">
     <div class="cpop-sep"></div>
@@ -83,3 +89,5 @@
   </ng-container>
 
 </div>
+
+

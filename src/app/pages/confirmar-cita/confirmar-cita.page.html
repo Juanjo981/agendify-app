@@ -1,4 +1,4 @@
-<ion-content class="cc-page">
+﻿<ion-content class="cc-page">
   <div class="cc-wrap">
 
     <!-- BRANDING -->
@@ -12,11 +12,11 @@
     <div class="cc-hero" *ngIf="vista === 'pendiente'">
       <p class="cc-hero__eyebrow">
         <ion-icon name="notifications-outline"></ion-icon>
-        Tu cita es en {{ cita.diasRestantes }} día{{ cita.diasRestantes === 1 ? '' : 's' }}
+        Tu cita es en {{ cita.diasRestantes }} dÃ­a{{ cita.diasRestantes === 1 ? '' : 's' }}
       </p>
       <h1 class="cc-hero__title">Confirma tu<br>asistencia</h1>
       <p class="cc-hero__sub">
-        Solo te tomará unos segundos. Confirma que estarás presente en tu cita.
+        Solo te tomarÃ¡ unos segundos. Confirma que estarÃ¡s presente en tu cita.
       </p>
     </div>
 
@@ -26,9 +26,9 @@
         <ion-icon name="calendar-outline"></ion-icon>
         Cambio de horario
       </p>
-      <h1 class="cc-hero__title cc-hero__title--sm">Solicitar<br>reprogramación</h1>
+      <h1 class="cc-hero__title cc-hero__title--sm">Solicitar<br>reprogramaciÃ³n</h1>
       <p class="cc-hero__sub">
-        Dinos cuándo podrías asistir y se lo comunicaremos a tu profesional.
+        Dinos cuÃ¡ndo podrÃ­as asistir y se lo comunicaremos a tu profesional.
       </p>
     </div>
 
@@ -38,9 +38,9 @@
         <ion-icon name="close-circle-outline"></ion-icon>
         Cancelar cita
       </p>
-      <h1 class="cc-hero__title cc-hero__title--sm">¿Deseas cancelar<br>tu cita?</h1>
+      <h1 class="cc-hero__title cc-hero__title--sm">Â¿Deseas cancelar<br>tu cita?</h1>
       <p class="cc-hero__sub">
-        Por favor confirma esta acción. Tu profesional será notificado.
+        Por favor confirma esta acciÃ³n. Tu profesional serÃ¡ notificado.
       </p>
     </div>
 
@@ -114,7 +114,7 @@
           <div class="cc-detail-item__body">
             <span class="cc-detail-item__label">Hora</span>
             <span class="cc-detail-item__value cc-detail-item__value--highlight">
-              {{ cita.horaInicio }} – {{ cita.horaFin }}
+              {{ cita.horaInicio }} â€“ {{ cita.horaFin }}
             </span>
           </div>
         </div>
@@ -137,7 +137,7 @@
             <ion-icon name="location-outline"></ion-icon>
           </div>
           <div class="cc-detail-item__body">
-            <span class="cc-detail-item__label">Dirección</span>
+            <span class="cc-detail-item__label">DirecciÃ³n</span>
             <span class="cc-detail-item__value">{{ cita.ubicacion }}</span>
           </div>
         </div>
@@ -161,12 +161,12 @@
       <!-- CTA secundario: reprogramar -->
       <button class="cc-btn-reschedule" *ngIf="puedeSolicitarReprogramacion" [disabled]="accionLoading" (click)="irAReprogramar()">
         <ion-icon name="calendar-outline"></ion-icon>
-        Solicitar reprogramación
+        Solicitar reprogramaciÃ³n
       </button>
 
       <!-- CTA terciario: cancelar - minimo peso visual -->
       <button class="cc-btn-cancel-link" *ngIf="puedeCancelar" [disabled]="accionLoading" (click)="irACancelar()">
-        No podré asistir — cancelar cita
+        No podrÃ© asistir â€” cancelar cita
       </button>
     </div>
 
@@ -176,26 +176,22 @@
       <p class="cc-section__subtitle">Horarios disponibles sugeridos</p>
 
       <!-- Slots de horario sugeridos -->
-      <div class="cc-slots">
-        <button class="cc-slot"
-                [class.cc-slot--selected]="slotSeleccionado === 0"
-                (click)="slotSeleccionado = 0">
-          <span class="cc-slot__day">Mié 18 mar</span>
-          <span class="cc-slot__time">09:00 – 10:00</span>
-        </button>
-        <button class="cc-slot"
-                [class.cc-slot--selected]="slotSeleccionado === 1"
-                (click)="slotSeleccionado = 1">
-          <span class="cc-slot__day">Jue 19 mar</span>
-          <span class="cc-slot__time">11:00 – 12:00</span>
-        </button>
-        <button class="cc-slot"
-                [class.cc-slot--selected]="slotSeleccionado === 2"
-                (click)="slotSeleccionado = 2">
-          <span class="cc-slot__day">Vie 20 mar</span>
-          <span class="cc-slot__time">16:00 – 17:00</span>
+      <div class="cc-slots" *ngIf="slotsSugeridos.length > 0">
+        <button
+          *ngFor="let slot of slotsSugeridos; let i = index"
+          class="cc-slot"
+          [class.cc-slot--selected]="slotSeleccionado === i"
+          (click)="slotSeleccionado = i">
+          <span class="cc-slot__day">{{ slot.fechaLabel }}</span>
+          <span class="cc-slot__time">{{ slot.horaLabel }}</span>
         </button>
       </div>
+
+      <p class="cc-section__or" *ngIf="loadingSlots">Consultando disponibilidad...</p>
+      <p class="cc-section__or" *ngIf="!loadingSlots && slotsError">{{ slotsError }}</p>
+      <p class="cc-section__or" *ngIf="!loadingSlots && !slotsError && slotsSugeridos.length === 0">
+        No encontramos horarios disponibles por ahora. Puedes dejar tu preferencia abajo.
+      </p>
 
       <p class="cc-section__or">o describe tu preferencia</p>
 
@@ -230,18 +226,18 @@
       </div>
 
       <p class="cc-cancel-confirm__text">
-        Si cancelas, tu profesional será notificado y el turno quedará disponible
-        para otros pacientes. <strong>Esta acción no puede deshacerse.</strong>
+        Si cancelas, tu profesional serÃ¡ notificado y el turno quedarÃ¡ disponible
+        para otros pacientes. <strong>Esta acciÃ³n no puede deshacerse.</strong>
       </p>
 
       <div class="cc-section__actions">
         <button class="cc-btn-cancel-danger" [disabled]="accionLoading" (click)="cancelarCita()">
           <ion-icon name="close-circle-outline"></ion-icon>
-          Sí, cancelar mi cita
+          SÃ­, cancelar mi cita
         </button>
         <button class="cc-btn-back" (click)="volver()">
           <ion-icon name="arrow-back-outline"></ion-icon>
-          Volver — no quiero cancelar
+          Volver â€” no quiero cancelar
         </button>
       </div>
 
@@ -254,7 +250,7 @@
           <ion-icon name="checkmark-outline"></ion-icon>
         </div>
       </div>
-      <h2 class="cc-result__title">¡Cita confirmada!</h2>
+      <h2 class="cc-result__title">Â¡Cita confirmada!</h2>
       <p class="cc-result__sub">
         Tu asistencia ha sido registrada correctamente.<br>
         Te esperamos el <strong>{{ cita.fechaCorta }}</strong> a las <strong>{{ cita.horaInicio }}</strong> h.
@@ -266,7 +262,7 @@
         </span>
         <span class="cc-chip cc-chip--green">
           <ion-icon name="time-outline"></ion-icon>
-          {{ cita.horaInicio }} – {{ cita.horaFin }}
+          {{ cita.horaInicio }} â€“ {{ cita.horaFin }}
         </span>
       </div>
     </div>
@@ -280,7 +276,7 @@
       </div>
       <h2 class="cc-result__title">Cita cancelada</h2>
       <p class="cc-result__sub">
-        Tu cita ha sido cancelada. Si cambias de opinión, comunícate directamente
+        Tu cita ha sido cancelada. Si cambias de opiniÃ³n, comunÃ­cate directamente
         con tu profesional para agendar una nueva cita.
       </p>
     </div>
@@ -294,8 +290,8 @@
       </div>
       <h2 class="cc-result__title">Solicitud enviada</h2>
       <p class="cc-result__sub">
-        Tu solicitud de reprogramación fue enviada correctamente. Tu profesional
-        se pondrá en contacto contigo para acordar el nuevo horario.
+        Tu solicitud de reprogramaciÃ³n fue enviada correctamente. Tu profesional
+        se pondrÃ¡ en contacto contigo para acordar el nuevo horario.
       </p>
     </div>
 
@@ -310,7 +306,7 @@
       </p>
       <div class="cc-expired__hint">
         <ion-icon name="call-outline"></ion-icon>
-        <span>Comunícate directamente con tu consultorio o profesional para gestionar tu cita.</span>
+        <span>ComunÃ­cate directamente con tu consultorio o profesional para gestionar tu cita.</span>
       </div>
     </div>
 
@@ -318,11 +314,13 @@
     <footer class="cc-footer" *ngIf="vista !== 'expirado'">
       <ion-icon name="shield-checkmark-outline"></ion-icon>
       <span>
-        Este enlace fue enviado por tu profesional a través de <strong>Agendify</strong>.
-        No compartas esta URL con nadie más.
+        Este enlace fue enviado por tu profesional a travÃ©s de <strong>Agendify</strong>.
+        No compartas esta URL con nadie mÃ¡s.
       </span>
     </footer>
 
   </div>
 </ion-content>
+
+
 

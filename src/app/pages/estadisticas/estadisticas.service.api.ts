@@ -1,24 +1,35 @@
 import { HttpClient, HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, firstValueFrom } from 'rxjs';
-import { environment } from 'src/environments/environment';
+import { SessionService } from 'src/app/services/session.service';
 import { buildQueryParams } from 'src/app/shared/utils/query-params.utils';
+import { environment } from 'src/environments/environment';
 import {
   CitasPorPeriodo,
+  CitasStatsDto,
   EstadoCitaEstadistica,
   EstadisticasResumen,
+  EstadisticasResumenDto,
   ExportacionReporteRequest,
   ExportacionReporteResponse,
   IngresoPorMetodoPago,
   IngresoPorPeriodo,
+  IngresosStatsDto,
   InsightEstadistica,
+  InsightEstadisticaDto,
   KpiCard,
   NuevosVsRecurrentesPunto,
   PacienteEstadistica,
+  PacientesStatsDto,
   PeriodoCitas,
+  ProfesionalEstadisticaDto,
+  ProfesionalFiltroOption,
   RankingPaciente,
+  RankingPacienteDto,
   ReporteEstadistica,
+  ReporteEstadisticaDto,
   ResumenCajaDiaria,
+  ResumenCajaDiariaDto,
   ResumenCitasEstadistica,
   ResumenIngresosEstadistica,
   ResumenPacientesEstadistica,
@@ -46,14 +57,29 @@ interface PacientesStatsViewModel {
   pacientes: PacienteEstadistica[];
 }
 
+interface ExportacionReportePayload {
+  tipo_reporte: TipoReporte;
+  formato: 'pdf' | 'excel';
+  fecha_desde: string;
+  fecha_hasta: string;
+  id_profesional?: number;
+  incluir_resumen: boolean;
+  incluir_detalle: boolean;
+  nombre_archivo: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class EstadisticasApiService {
   private readonly base = `${environment.apiUrl}/estadisticas`;
+  private readonly profesionalesUrl = `${environment.apiUrl}/profesionales`;
   private readonly filtrosSubject = new BehaviorSubject<FiltroEstadisticas>(this.getFiltrosIniciales());
 
   readonly filtros$ = this.filtrosSubject.asObservable();
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private session: SessionService,
+  ) {}
 
   getFiltrosIniciales(): FiltroEstadisticas {
     const hoy = new Date();
@@ -75,20 +101,48 @@ export class EstadisticasApiService {
     this.filtrosSubject.next({ ...filtros });
   }
 
+  async getProfesionalesFiltro(): Promise<ProfesionalFiltroOption[]> {
+    const baseOption: ProfesionalFiltroOption = { id: '', nombre: 'Todos los profesionales' };
+
+    if (this.session.esAdmin()) {
+      const rows = await firstValueFrom(this.http.get<ProfesionalEstadisticaDto[]>(this.profesionalesUrl));
+      return [
+        baseOption,
+        ...(rows ?? []).map(item => ({
+          id: String(item.id_profesional),
+          nombre: this.buildProfesionalLabel(item),
+        })),
+      ];
+    }
+
+    const profesional = this.session.getProfesional();
+    if (!profesional) {
+      return [baseOption];
+    }
+
+    return [
+      baseOption,
+      {
+        id: String(profesional.id_profesional),
+        nombre: profesional.nombre_consulta?.trim() || this.session.getNombreCompleto() || 'Mi perfil profesional',
+      },
+    ];
+  }
+
   async getResumenKpis(filtros: FiltroEstadisticas = this.filtrosActuales): Promise<EstadisticasResumen> {
     const raw = await firstValueFrom(
-      this.http.get<any>(`${this.base}/resumen`, { params: this.buildStatsParams(filtros) })
+      this.http.get<EstadisticasResumenDto>(`${this.base}/resumen`, { params: this.buildStatsParams(filtros) })
     );
 
     return {
-      citasHoy: this.readNumber(raw, ['citas_hoy', 'citasHoy']),
-      citasMes: this.readNumber(raw, ['citas_mes', 'citasMes', 'total_citas', 'totalCitas']),
-      pacientesNuevosMes: this.readNumber(raw, ['pacientes_nuevos_mes', 'pacientesNuevosMes', 'pacientes_nuevos', 'pacientesNuevos']),
-      pacientesRecurrentes: this.readNumber(raw, ['pacientes_recurrentes', 'pacientesRecurrentes', 'recurrentes']),
-      ingresosHoy: this.readNumber(raw, ['ingresos_hoy', 'ingresosHoy']),
-      ingresosMes: this.readNumber(raw, ['ingresos_mes', 'ingresosMes', 'ingresos_totales', 'ingresosTotales']),
-      noAsistencias: this.readNumber(raw, ['no_asistencias', 'noAsistencias']),
-      tasaCancelacion: this.readNumber(raw, ['tasa_cancelacion', 'tasaCancelacion']),
+      citasHoy: raw.citas_hoy ?? 0,
+      citasMes: raw.citas_mes ?? 0,
+      pacientesNuevosMes: raw.pacientes_nuevos_mes ?? 0,
+      pacientesRecurrentes: raw.pacientes_recurrentes ?? 0,
+      ingresosHoy: raw.ingresos_hoy ?? 0,
+      ingresosMes: raw.ingresos_mes ?? 0,
+      noAsistencias: raw.no_asistencias ?? 0,
+      tasaCancelacion: raw.tasa_cancelacion ?? 0,
     };
   }
 
@@ -107,31 +161,36 @@ export class EstadisticasApiService {
 
   async getCitasStats(periodo: PeriodoCitas, filtros: FiltroEstadisticas = this.filtrosActuales): Promise<CitasStatsViewModel> {
     const raw = await firstValueFrom(
-      this.http.get<any>(`${this.base}/citas`, {
+      this.http.get<CitasStatsDto>(`${this.base}/citas`, {
         params: this.buildStatsParams(filtros, { periodo }),
       })
     );
 
-    const barras = this.readArray(raw, ['serie', 'series', 'periodos', 'items', 'data']).map((item: any) =>
-      this.normalizeCitasPorPeriodo(item, periodo)
-    );
+    const barras = (raw.serie ?? []).map(item => ({
+      fecha: item.fecha,
+      label: item.label || this.buildPeriodoLabel(item.fecha, periodo),
+      total: item.total ?? 0,
+      confirmadas: item.confirmadas ?? 0,
+      completadas: item.completadas ?? 0,
+      canceladas: item.canceladas ?? 0,
+      noAsistio: item.no_asistio ?? 0,
+    }));
 
-    const estados = this.normalizeEstados(raw);
-    const totalPeriodo = this.readNumber(raw, ['total_citas', 'totalCitas'], barras.reduce((acc, item) => acc + item.total, 0));
+    const estados = this.mapEstados(raw);
 
     return {
       barras,
       estados,
       resumen: {
-        totalPeriodo,
+        totalPeriodo: raw.total_citas ?? barras.reduce((acc, item) => acc + item.total, 0),
         estadoPredominante: estados[0]?.estado ?? 'Sin datos',
-        horasMasOcupadas: this.readArray(raw, ['horas_mas_ocupadas', 'horasMasOcupadas']).map((item: any) => ({
-          hora: this.readString(item, ['hora', 'label'], 'Sin datos'),
-          citas: this.readNumber(item, ['citas', 'cantidad', 'total']),
+        horasMasOcupadas: (raw.horas_mas_ocupadas ?? []).map(item => ({
+          hora: item.hora || 'Sin datos',
+          citas: item.citas ?? 0,
         })),
-        diasMasOcupados: this.readArray(raw, ['dias_mas_ocupados', 'diasMasOcupados']).map((item: any) => ({
-          dia: this.readString(item, ['dia', 'label'], 'Sin datos'),
-          citas: this.readNumber(item, ['citas', 'cantidad', 'total']),
+        diasMasOcupados: (raw.dias_mas_ocupados ?? []).map(item => ({
+          dia: item.dia || 'Sin datos',
+          citas: item.citas ?? 0,
         })),
       },
     };
@@ -139,68 +198,87 @@ export class EstadisticasApiService {
 
   async getIngresosStats(periodo: PeriodoCitas, filtros: FiltroEstadisticas = this.filtrosActuales): Promise<IngresosStatsViewModel> {
     const raw = await firstValueFrom(
-      this.http.get<any>(`${this.base}/ingresos`, {
+      this.http.get<IngresosStatsDto>(`${this.base}/ingresos`, {
         params: this.buildStatsParams(filtros, { periodo }),
       })
     );
 
-    const barras = this.readArray(raw, ['serie', 'series', 'periodos', 'items', 'data']).map((item: any) =>
-      this.normalizeIngresoPorPeriodo(item, periodo)
-    );
+    const barras = (raw.serie ?? []).map(item => ({
+      fecha: item.fecha,
+      label: item.label || this.buildPeriodoLabel(item.fecha, periodo),
+      total: item.total ?? 0,
+      efectivo: item.efectivo ?? 0,
+      transferencia: item.transferencia ?? 0,
+      tarjeta: item.tarjeta ?? 0,
+      pendiente: item.pendiente ?? 0,
+    }));
 
-    const metodosRaw = this.readArray(raw, ['por_metodo_pago', 'porMetodoPago', 'metodos_pago', 'metodosPago']);
-    const totalMetodos = metodosRaw.reduce((acc: number, item: any) => acc + this.readNumber(item, ['total', 'monto']), 0);
-    const metodos = metodosRaw.map((item: any) => this.normalizeMetodoPago(item, totalMetodos));
+    const metodos = (raw.por_metodo_pago ?? []).map(item => ({
+      metodo: this.normalizeMetodoPagoLabel(item.metodo),
+      total: item.total ?? 0,
+      porcentaje: item.porcentaje ?? 0,
+      color: this.colorMetodoPago(this.normalizeMetodoPagoLabel(item.metodo)),
+    }));
 
     return {
       barras,
       metodos,
       resumen: {
-        totalPeriodo: this.readNumber(raw, ['total_periodo', 'totalPeriodo', 'total_ingresos', 'totalIngresos'], barras.reduce((acc, item) => acc + item.total, 0)),
-        montoPendiente: this.readNumber(raw, ['monto_pendiente', 'montoPendiente', 'pendiente_total', 'pendienteTotal']),
-        citasPagadas: this.readNumber(raw, ['citas_pagadas', 'citasPagadas']),
-        citasPendientes: this.readNumber(raw, ['citas_pendientes', 'citasPendientes']),
-        metodoPrincipal: [...metodos].sort((a, b) => b.total - a.total)[0]?.metodo ?? 'Sin datos',
+        totalPeriodo: raw.total_periodo ?? barras.reduce((acc, item) => acc + item.total, 0),
+        montoPendiente: raw.monto_pendiente ?? 0,
+        citasPagadas: raw.citas_pagadas ?? 0,
+        citasPendientes: raw.citas_pendientes ?? 0,
+        metodoPrincipal: raw.metodo_principal?.trim() || [...metodos].sort((a, b) => b.total - a.total)[0]?.metodo || 'Sin datos',
       },
     };
   }
 
   async getPacientesStats(filtros: FiltroEstadisticas = this.filtrosActuales): Promise<PacientesStatsViewModel> {
     const raw = await firstValueFrom(
-      this.http.get<any>(`${this.base}/pacientes`, { params: this.buildStatsParams(filtros) })
+      this.http.get<PacientesStatsDto>(`${this.base}/pacientes`, { params: this.buildStatsParams(filtros) })
     );
 
+    const rankingNoAsistenciasSource = raw.ranking_no_asistencias ?? raw.ranking_por_ingresos ?? [];
+
     return {
-      puntos: this.readArray(raw, ['nuevos_vs_recurrentes', 'nuevosVsRecurrentes', 'serie', 'periodos']).map((item: any) => ({
-        label: this.readString(item, ['label', 'periodo', 'mes'], 'Sin datos'),
-        nuevos: this.readNumber(item, ['nuevos', 'pacientes_nuevos', 'pacientesNuevos']),
-        recurrentes: this.readNumber(item, ['recurrentes', 'pacientes_recurrentes', 'pacientesRecurrentes']),
+      puntos: (raw.nuevos_vs_recurrentes ?? []).map(item => ({
+        label: item.label || 'Sin datos',
+        nuevos: item.nuevos ?? 0,
+        recurrentes: item.recurrentes ?? 0,
       })),
       resumen: {
-        totalActivos: this.readNumber(raw, ['total_activos', 'totalActivos', 'total_pacientes_activos', 'totalPacientesActivos']),
-        nuevosEsteMes: this.readNumber(raw, ['nuevos_este_mes', 'nuevosEsteMes', 'pacientes_nuevos', 'pacientesNuevos']),
-        recurrentesEsteMes: this.readNumber(raw, ['recurrentes_este_mes', 'recurrentesEsteMes', 'pacientes_recurrentes', 'pacientesRecurrentes']),
-        tasaRetencion: this.readNumber(raw, ['tasa_retencion', 'tasaRetencion']),
+        totalActivos: raw.total_activos ?? 0,
+        nuevosEsteMes: raw.nuevos_este_mes ?? 0,
+        recurrentesEsteMes: raw.recurrentes_este_mes ?? 0,
+        tasaRetencion: raw.tasa_retencion ?? 0,
       },
-      rankingCitas: this.readArray(raw, ['ranking_mas_citas', 'rankingMasCitas']).map((item: any, index: number) => this.normalizeRankingPaciente(item, index)),
-      rankingNoAsistencias: this.readArray(raw, ['ranking_no_asistencias', 'rankingNoAsistencias']).map((item: any, index: number) => this.normalizeRankingPaciente(item, index)),
-      pacientes: this.readArray(raw, ['pacientes', 'items']).map((item: any) => this.normalizePacienteEstadistica(item)),
+      rankingCitas: (raw.ranking_mas_citas ?? []).map((item, index) => this.mapRankingPaciente(item, index)),
+      rankingNoAsistencias: rankingNoAsistenciasSource.map((item, index) => this.mapRankingPaciente(item, index)),
+      pacientes: (raw.pacientes ?? []).map(item => ({
+        id: item.id_paciente ?? 0,
+        nombre: item.nombre_paciente || 'Sin datos',
+        apellido: item.apellido_paciente ?? '',
+        totalCitas: item.total_citas ?? 0,
+        noAsistencias: item.no_asistencias ?? 0,
+        ingresos: item.ingresos ?? 0,
+        esNuevo: item.es_nuevo === true,
+      })),
     };
   }
 
   async getInsights(filtros: FiltroEstadisticas = this.filtrosActuales): Promise<InsightEstadistica[]> {
     try {
       const raw = await firstValueFrom(
-        this.http.get<any>(`${this.base}/insights`, { params: this.buildStatsParams(filtros) })
+        this.http.get<InsightEstadisticaDto[]>(`${this.base}/insights`, { params: this.buildStatsParams(filtros) })
       );
 
-      return this.readArray(raw, ['insights', 'items', 'data'], Array.isArray(raw) ? raw : []).map((item: any, index: number) => ({
-        id: this.readString(item, ['id'], `insight-${index + 1}`),
-        icono: this.readString(item, ['icono', 'icon', 'icon_name'], 'sparkles-outline'),
-        titulo: this.readString(item, ['titulo', 'title'], 'Insight'),
-        valor: this.readString(item, ['valor', 'value'], 'Sin datos'),
-        descripcion: this.readString(item, ['descripcion', 'description'], ''),
-        tipo: this.normalizeInsightTipo(this.readString(item, ['tipo', 'tone', 'variant'], 'primary')),
+      return (raw ?? []).map((item, index) => ({
+        id: item.id || `insight-${index + 1}`,
+        icono: item.icono || 'sparkles-outline',
+        titulo: item.titulo || 'Insight',
+        valor: item.valor || 'Sin datos',
+        descripcion: item.descripcion || '',
+        tipo: this.normalizeInsightTipo(item.tipo || 'primary'),
       }));
     } catch (error) {
       if (this.isNotFound(error)) {
@@ -213,21 +291,21 @@ export class EstadisticasApiService {
   async getCajaDiaria(fecha: string, filtros: FiltroEstadisticas = this.filtrosActuales): Promise<ResumenCajaDiaria | null> {
     try {
       const raw = await firstValueFrom(
-        this.http.get<any>(`${this.base}/caja-diaria`, {
+        this.http.get<ResumenCajaDiariaDto>(`${this.base}/caja-diaria`, {
           params: this.buildStatsParams(filtros, { fecha }),
         })
       );
 
       return {
-        fecha: this.readString(raw, ['fecha'], fecha),
-        totalCobrado: this.readNumber(raw, ['total_cobrado', 'totalCobrado', 'monto_total', 'montoTotal']),
-        efectivo: this.readNumber(raw, ['efectivo']),
-        transferencia: this.readNumber(raw, ['transferencia']),
-        debito: this.readNumber(raw, ['debito', 'debito_total']),
-        credito: this.readNumber(raw, ['credito', 'credito_total']),
-        pagosExentos: this.readNumber(raw, ['pagos_exentos', 'pagosExentos']),
-        pagosPendientes: this.readNumber(raw, ['pagos_pendientes', 'pagosPendientes']),
-        citasCobradas: this.readNumber(raw, ['citas_cobradas', 'citasCobradas']),
+        fecha: raw.fecha || fecha,
+        totalCobrado: raw.total_cobrado ?? 0,
+        efectivo: raw.efectivo ?? 0,
+        transferencia: raw.transferencia ?? 0,
+        debito: raw.debito ?? 0,
+        credito: raw.credito ?? 0,
+        pagosExentos: raw.pagos_exentos ?? 0,
+        pagosPendientes: raw.pagos_pendientes ?? 0,
+        citasCobradas: raw.citas_cobradas ?? 0,
       };
     } catch (error) {
       if (this.isNotFound(error)) {
@@ -240,12 +318,10 @@ export class EstadisticasApiService {
   async getReportes(filtros: FiltroEstadisticas = this.filtrosActuales): Promise<ReporteEstadistica[]> {
     try {
       const raw = await firstValueFrom(
-        this.http.get<any>(`${this.base}/reportes`, { params: this.buildStatsParams(filtros) })
+        this.http.get<ReporteEstadisticaDto[]>(`${this.base}/reportes`, { params: this.buildStatsParams(filtros) })
       );
 
-      return this.readArray(raw, ['reportes', 'items', 'data'], Array.isArray(raw) ? raw : []).map((item: any) =>
-        this.normalizeReporte(item)
-      );
+      return (raw ?? []).map(item => this.mapReporte(item));
     } catch (error) {
       if (this.isNotFound(error)) {
         return [];
@@ -256,12 +332,12 @@ export class EstadisticasApiService {
 
   async getReporteDetalle(reporte: Pick<ReporteEstadistica, 'id' | 'tipo'>, filtros: FiltroEstadisticas = this.filtrosActuales): Promise<ReporteEstadistica> {
     const raw = await firstValueFrom(
-      this.http.get<any>(`${this.base}/reportes/${encodeURIComponent(reporte.tipo)}`, {
+      this.http.get<ReporteEstadisticaDto>(`${this.base}/reportes/${encodeURIComponent(reporte.tipo)}`, {
         params: this.buildStatsParams(filtros),
       })
     );
 
-    return this.normalizeReporte(raw, reporte);
+    return this.mapReporte(raw, reporte);
   }
 
   exportarPdf(req: ExportacionReporteRequest): Promise<ExportacionReporteResponse> {
@@ -273,8 +349,19 @@ export class EstadisticasApiService {
   }
 
   private async exportarReporte(req: ExportacionReporteRequest): Promise<ExportacionReporteResponse> {
+    const payload: ExportacionReportePayload = {
+      tipo_reporte: req.tipo,
+      formato: req.formato,
+      fecha_desde: req.fechaDesde,
+      fecha_hasta: req.fechaHasta,
+      id_profesional: req.profesionalId,
+      incluir_resumen: req.incluirResumen,
+      incluir_detalle: req.incluirDetalle,
+      nombre_archivo: req.nombreArchivo,
+    };
+
     const response = await firstValueFrom(
-      this.http.post(`${this.base}/reportes/exportar`, req, {
+      this.http.post(`${this.base}/reportes/exportar`, payload, {
         observe: 'response',
         responseType: 'blob',
       })
@@ -309,49 +396,21 @@ export class EstadisticasApiService {
       rango: filtros.rango,
       fecha_desde: filtros.fechaDesde,
       fecha_hasta: filtros.fechaHasta,
-      profesional: filtros.profesional || undefined,
+      id_profesional: filtros.profesional || undefined,
       estado_cita: this.mapEstadoFiltro(filtros.estadoCita),
       metodo_pago: this.mapMetodoPagoFiltro(filtros.metodoPago),
       ...extras,
     });
   }
 
-  private normalizeCitasPorPeriodo(item: any, periodo: PeriodoCitas): CitasPorPeriodo {
-    const fecha = this.readString(item, ['fecha', 'periodo', 'key'], '');
-    const label = this.readString(item, ['label'], this.buildPeriodoLabel(fecha, periodo));
-    return {
-      fecha,
-      label,
-      total: this.readNumber(item, ['total', 'cantidad', 'total_citas']),
-      confirmadas: this.readNumber(item, ['confirmadas', 'confirmada', 'confirmados']),
-      completadas: this.readNumber(item, ['completadas', 'completada', 'completados']),
-      canceladas: this.readNumber(item, ['canceladas', 'cancelada', 'cancelados']),
-      noAsistio: this.readNumber(item, ['no_asistio', 'noAsistio']),
-    };
-  }
-
-  private normalizeIngresoPorPeriodo(item: any, periodo: PeriodoCitas): IngresoPorPeriodo {
-    const fecha = this.readString(item, ['fecha', 'periodo', 'key'], '');
-    const label = this.readString(item, ['label'], this.buildPeriodoLabel(fecha, periodo));
-    return {
-      fecha,
-      label,
-      total: this.readNumber(item, ['total', 'monto_total', 'montoTotal']),
-      efectivo: this.readNumber(item, ['efectivo']),
-      transferencia: this.readNumber(item, ['transferencia']),
-      tarjeta: this.readNumber(item, ['tarjeta']),
-      pendiente: this.readNumber(item, ['pendiente', 'monto_pendiente', 'montoPendiente']),
-    };
-  }
-
-  private normalizeEstados(raw: any): EstadoCitaEstadistica[] {
-    const conteos = this.readArray(raw, ['conteo_por_estado', 'conteoPorEstado', 'estados']);
-    const total = conteos.reduce((acc: number, item: any) => acc + this.readNumber(item, ['cantidad', 'total']), 0);
+  private mapEstados(raw: CitasStatsDto): EstadoCitaEstadistica[] {
+    const conteos = raw.conteo_por_estado ?? [];
+    const total = conteos.reduce((acc, item) => acc + (item.cantidad ?? 0), 0);
 
     return conteos
-      .map((item: any) => {
-        const estado = this.normalizeEstadoLabel(this.readString(item, ['estado', 'label'], 'Sin datos'));
-        const cantidad = this.readNumber(item, ['cantidad', 'total']);
+      .map(item => {
+        const estado = this.normalizeEstadoLabel(item.estado);
+        const cantidad = item.cantidad ?? 0;
         return {
           estado,
           total: cantidad,
@@ -362,66 +421,42 @@ export class EstadisticasApiService {
       .sort((a, b) => b.total - a.total);
   }
 
-  private normalizeMetodoPago(item: any, totalMetodos: number): IngresoPorMetodoPago {
-    const metodo = this.normalizeMetodoPagoLabel(this.readString(item, ['metodo', 'label'], 'Sin datos'));
-    const total = this.readNumber(item, ['total', 'monto']);
-    const porcentajeRaw = this.readNumber(item, ['porcentaje'], -1);
-    const porcentaje = porcentajeRaw >= 0
-      ? porcentajeRaw
-      : totalMetodos > 0
-        ? Number(((total / totalMetodos) * 100).toFixed(1))
-        : 0;
-
+  private mapRankingPaciente(item: RankingPacienteDto, index: number): RankingPaciente {
+    const nombre = item.nombre_paciente || 'Sin datos';
     return {
-      metodo,
-      total,
-      porcentaje,
-      color: this.colorMetodoPago(metodo),
-    };
-  }
-
-  private normalizeRankingPaciente(item: any, index: number): RankingPaciente {
-    const nombre = this.readString(item, ['nombre', 'nombre_paciente', 'paciente_nombre'], 'Sin datos');
-    const apellido = this.readString(item, ['apellido', 'apellido_paciente', 'paciente_apellido'], '');
-    return {
-      posicion: this.readNumber(item, ['posicion'], index + 1),
-      id: this.readNumber(item, ['id', 'id_paciente']),
+      posicion: item.posicion ?? index + 1,
+      id: item.id_paciente ?? 0,
       nombre,
-      apellido,
-      valor: this.readNumber(item, ['valor', 'cantidad', 'total']),
+      apellido: item.apellido_paciente ?? '',
+      valor: item.valor ?? 0,
       avatarInicial: nombre.charAt(0).toUpperCase() || '?',
       colorAvatar: this.avatarColor(index),
     };
   }
 
-  private normalizePacienteEstadistica(item: any): PacienteEstadistica {
+  private mapReporte(raw: ReporteEstadisticaDto, fallback?: Pick<ReporteEstadistica, 'id' | 'tipo'>): ReporteEstadistica {
+    const tipo = this.normalizeTipoReporte(raw.tipo ?? fallback?.tipo ?? 'citas');
+    const filas = raw.filas ?? [];
+
     return {
-      id: this.readNumber(item, ['id', 'id_paciente']),
-      nombre: this.readString(item, ['nombre', 'nombre_paciente'], 'Sin datos'),
-      apellido: this.readString(item, ['apellido', 'apellido_paciente'], ''),
-      totalCitas: this.readNumber(item, ['total_citas', 'totalCitas']),
-      noAsistencias: this.readNumber(item, ['no_asistencias', 'noAsistencias']),
-      ingresos: this.readNumber(item, ['ingresos', 'total_ingresos', 'totalIngresos']),
-      esNuevo: this.readBoolean(item, ['es_nuevo', 'esNuevo']),
+      id: raw.id ?? fallback?.id ?? tipo,
+      tipo,
+      titulo: raw.titulo ?? this.tituloReporte(tipo),
+      descripcion: raw.descripcion ?? '',
+      icono: raw.icono ?? this.iconoReporte(tipo),
+      colorIcono: raw.color_icono ?? this.colorReporte(tipo),
+      totalRegistros: raw.total_registros ?? filas.length,
+      resumenTexto: raw.resumen_texto ?? (filas.length ? `${filas.length} registros` : 'Sin datos en el período'),
+      periodoLabel: raw.periodo_label ?? this.buildPeriodoTexto(this.filtrosActuales),
+      ultimaActualizacion: raw.ultima_actualizacion ?? new Date().toISOString(),
+      filas,
     };
   }
 
-  private normalizeReporte(raw: any, fallback?: Pick<ReporteEstadistica, 'id' | 'tipo'>): ReporteEstadistica {
-    const tipo = this.normalizeTipoReporte(this.readString(raw, ['tipo', 'id'], fallback?.tipo ?? 'citas'));
-    const filas = this.readArray(raw, ['filas', 'rows', 'detalle', 'items'], []);
-    return {
-      id: this.readString(raw, ['id'], fallback?.id ?? tipo),
-      tipo,
-      titulo: this.readString(raw, ['titulo', 'title'], this.tituloReporte(tipo)),
-      descripcion: this.readString(raw, ['descripcion', 'description'], ''),
-      icono: this.readString(raw, ['icono', 'icon'], this.iconoReporte(tipo)),
-      colorIcono: this.readString(raw, ['color_icono', 'colorIcono'], this.colorReporte(tipo)),
-      totalRegistros: this.readNumber(raw, ['total_registros', 'totalRegistros', 'total'], filas.length),
-      resumenTexto: this.readString(raw, ['resumen_texto', 'resumenTexto'], filas.length ? `${filas.length} registros` : 'Sin datos en el período'),
-      periodoLabel: this.readString(raw, ['periodo_label', 'periodoLabel'], this.buildPeriodoTexto(this.filtrosActuales)),
-      ultimaActualizacion: this.readString(raw, ['ultima_actualizacion', 'ultimaActualizacion', 'generated_at'], new Date().toISOString()),
-      filas,
-    };
+  private buildProfesionalLabel(item: ProfesionalEstadisticaDto): string {
+    const consulta = item.nombre_consulta?.trim();
+    const nombreCompleto = [item.nombre, item.apellido].filter(Boolean).join(' ').trim();
+    return consulta ? `${consulta} · ${nombreCompleto}` : nombreCompleto || `Profesional #${item.id_profesional}`;
   }
 
   private buildPeriodoTexto(filtros: FiltroEstadisticas): string {
@@ -474,8 +509,8 @@ export class EstadisticasApiService {
     const map: Record<Exclude<MetodoPagoFiltro, 'todos'>, string> = {
       Efectivo: 'EFECTIVO',
       Transferencia: 'TRANSFERENCIA',
-      Débito: 'DEBITO',
-      Crédito: 'CREDITO',
+      'Débito': 'DEBITO',
+      'Crédito': 'CREDITO',
     };
     return value === 'todos' ? undefined : map[value];
   }
@@ -586,50 +621,6 @@ export class EstadisticasApiService {
     anchor.download = filename;
     anchor.click();
     window.URL.revokeObjectURL(url);
-  }
-
-  private readArray(source: any, keys: string[], fallback: any[] = []): any[] {
-    for (const key of keys) {
-      const value = source?.[key];
-      if (Array.isArray(value)) {
-        return value;
-      }
-    }
-    return fallback;
-  }
-
-  private readString(source: any, keys: string[], fallback = ''): string {
-    for (const key of keys) {
-      const value = source?.[key];
-      if (typeof value === 'string' && value.trim().length > 0) {
-        return value.trim();
-      }
-      if (typeof value === 'number') {
-        return String(value);
-      }
-    }
-    return fallback;
-  }
-
-  private readNumber(source: any, keys: string[], fallback = 0): number {
-    for (const key of keys) {
-      const value = source?.[key];
-      const numeric = Number(value);
-      if (!Number.isNaN(numeric)) {
-        return numeric;
-      }
-    }
-    return fallback;
-  }
-
-  private readBoolean(source: any, keys: string[], fallback = false): boolean {
-    for (const key of keys) {
-      const value = source?.[key];
-      if (typeof value === 'boolean') {
-        return value;
-      }
-    }
-    return fallback;
   }
 
   private isNotFound(error: unknown): boolean {
