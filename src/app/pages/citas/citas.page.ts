@@ -1,6 +1,7 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { CitaCardComponent } from './components/cita-card/cita-card.component';
@@ -20,6 +21,7 @@ import {
   toTimePart,
 } from './models/cita.model';
 import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
+import { CitasRefreshService } from '../../shared/refresh/dashboard-module-refresh.services';
 
 @Component({
   selector: 'app-citas',
@@ -38,6 +40,7 @@ import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
   ],
 })
 export class CitasPage implements OnInit, OnDestroy {
+  private readonly destroyRef = inject(DestroyRef);
   citasFiltradas: CitaDto[] = [];
   showFormModal = false;
   citaEditando: CitaDto | null = null;
@@ -64,11 +67,20 @@ export class CitasPage implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
-    private svc: CitasApiService
+    private svc: CitasApiService,
+    private refresh: CitasRefreshService,
   ) {}
 
   ngOnInit() {
-    this.aplicarFiltros(this.filtrosActuales);
+    this.refresh.watchSection('list')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        void this.cargar(true);
+      });
+  }
+
+  ionViewWillEnter() {
+    this.refresh.enterSection('list');
   }
 
   aplicarFiltros(filtros: FiltroCitas) {
@@ -117,7 +129,7 @@ export class CitasPage implements OnInit, OnDestroy {
       }
 
       this.cerrarModal();
-      await this.cargar(true);
+      this.refresh.requestRefresh('list');
     } catch (err) {
       this.errorMessage = mapApiError(err).userMessage;
     } finally {

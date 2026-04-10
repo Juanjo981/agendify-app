@@ -148,23 +148,17 @@
   <!-- PANEL — NUEVA CITA                                        -->
   <!-- ========================================================= -->
 
-  <div class="new-appointment-panel" [class.open]="showNewAppointmentPanel" (touchstart)="startDrag($event)"
-    (touchmove)="onDrag($event)" (touchend)="endDrag($event)">
-
-    <!-- Handle estilo iOS -->
-    <div class="drag-handle"></div>
-
-    <app-cita-form-modal
-      context="agenda"
-      [prefill]="apptPrefill"
-      [showContextBanner]="apptShowBanner"
-      [contextDateLabel]="apptContextLabel"
-      [saving]="saving"
-      (saved)="onCitaGuardadaDesdeAgenda($event)"
-      (cancelled)="closeNewAppointmentPanel()"
-    ></app-cita-form-modal>
-
-  </div>
+  <app-cita-form-panel
+    [isOpen]="showNewAppointmentPanel"
+    context="agenda"
+    [prefill]="apptPrefill"
+    [showContextBanner]="apptShowBanner"
+    [contextDateLabel]="apptContextLabel"
+    [saving]="saving"
+    [errorMessage]="errorMessage"
+    (saved)="onCitaGuardadaDesdeAgenda($event)"
+    (cancelled)="closeNewAppointmentPanel()"
+  ></app-cita-form-panel>
 
 
 

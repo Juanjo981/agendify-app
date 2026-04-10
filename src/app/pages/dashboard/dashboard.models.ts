@@ -71,6 +71,6 @@ export interface DashboardCardItem {
   label: string;
   value: string;
   icon: string;
-  tone: 'primary' | 'success' | 'warning' | 'neutral';
+  tone: 'primary' | 'success' | 'warning' | 'neutral' | 'accent';
   helper?: string;
 }

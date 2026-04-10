@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { IonicModule, ToastController } from '@ionic/angular';
@@ -14,6 +15,7 @@ import { UsuarioMock } from 'src/app/shared/models/usuario.model';
 import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
 import { AgfTimePickerComponent } from '../../shared/components/agf-time-picker/agf-time-picker.component';
 import { ConfiguracionRecordatorioDto } from '../../shared/models/configuracion.models';
+import { ConfiguracionRefreshService, ConfiguracionTabId } from '../../shared/refresh/dashboard-module-refresh.services';
 
 const DEFAULTS = {
   vistaDefault: 'semana',
@@ -60,8 +62,6 @@ const DEFAULTS = {
 };
 
 type ConfigState = typeof DEFAULTS;
-type CfgTab = 'general' | 'agenda' | 'equipo' | 'seguridad' | 'sistema';
-
 @Component({
   selector: 'app-configuracion',
   standalone: true,
@@ -70,6 +70,7 @@ type CfgTab = 'general' | 'agenda' | 'equipo' | 'seguridad' | 'sistema';
   styleUrls: ['./configuracion.page.scss']
 })
 export class ConfiguracionPage implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   config: ConfigState = { ...DEFAULTS };
   private configOriginal: ConfigState = { ...DEFAULTS };
   private sistemaId: number | null = null;
@@ -100,8 +101,8 @@ export class ConfiguracionPage implements OnInit {
   permisosEditando: PermisosRecepcionista | null = null;
   readonly permisosDetalles: PermisoDetalle[] = PERMISOS_DETALLES;
 
-  activeTab: CfgTab = 'general';
-  readonly cfgTabs: { id: CfgTab; label: string; icon: string }[] = [
+  activeTab: ConfiguracionTabId = 'general';
+  readonly cfgTabs: { id: ConfiguracionTabId; label: string; icon: string }[] = [
     { id: 'general', label: 'General', icon: 'apps-outline' },
     { id: 'agenda', label: 'Agenda', icon: 'calendar-outline' },
     { id: 'equipo', label: 'Equipo', icon: 'people-circle-outline' },
@@ -116,6 +117,7 @@ export class ConfiguracionPage implements OnInit {
     private perfilApi: PerfilApiService,
     private session: SessionService,
     private toastCtrl: ToastController,
+    private refresh: ConfiguracionRefreshService,
   ) {
     const user = this.session.getUser();
     this.profesionalActual = {
@@ -136,21 +138,26 @@ export class ConfiguracionPage implements OnInit {
   }
 
   ngOnInit(): void {
-    const tabParam = this.route.snapshot.queryParamMap.get('tab');
-    if (tabParam && this.cfgTabs.some(tab => tab.id === tabParam)) {
-      this.activeTab = tabParam as CfgTab;
-    }
+    this.bindRefreshStreams();
 
-    void this.cargarConfiguracionReal();
-    void this.cargarEquipoReal();
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        const tabParam = params.get('tab');
+        if (tabParam && this.cfgTabs.some(tab => tab.id === tabParam)) {
+          this.activeTab = tabParam as ConfiguracionTabId;
+        }
+        this.refresh.enterSection(this.activeTab);
+      });
   }
 
   hasChanges(): boolean {
     return JSON.stringify(this.config) !== JSON.stringify(this.configOriginal);
   }
 
-  setTab(tab: CfgTab): void {
+  setTab(tab: ConfiguracionTabId): void {
     this.activeTab = tab;
+    this.refresh.enterSection(tab);
   }
 
   async guardar(): Promise<void> {
@@ -206,6 +213,7 @@ export class ConfiguracionPage implements OnInit {
 
       this.config = this.mergeConfig(agendaGuardada, sistemaGuardado, this.recordatoriosActuales);
       this.configOriginal = { ...this.config };
+      this.refresh.requestRefresh(['general', 'agenda', 'seguridad', 'sistema']);
       this.savedToast = true;
       setTimeout(() => (this.savedToast = false), 2800);
     } catch (error) {
@@ -260,6 +268,7 @@ export class ConfiguracionPage implements OnInit {
       );
       this.recepcionistas = this.recepcionistas.map(item => item.id === updated.id ? updated : item);
       this.cerrarModalPermisos();
+      this.refresh.requestRefresh('equipo');
       await this.presentToast('Permisos actualizados correctamente.', 'success');
     } catch (error) {
       await this.presentToast(mapApiError(error).userMessage, 'danger');
@@ -273,6 +282,7 @@ export class ConfiguracionPage implements OnInit {
       this.guardandoEquipo = true;
       const updated = await this.equipoApi.setRecepcionistaActivo(r.id, !r.activo);
       this.recepcionistas = this.recepcionistas.map(item => item.id === updated.id ? updated : item);
+      this.refresh.requestRefresh('equipo');
     } catch (error) {
       await this.presentToast(mapApiError(error).userMessage, 'danger');
     } finally {
@@ -567,5 +577,21 @@ export class ConfiguracionPage implements OnInit {
       position: 'top',
     });
     await toast.present();
+  }
+
+  private bindRefreshStreams(): void {
+    ['general', 'agenda', 'seguridad', 'sistema'].forEach(tab => {
+      this.refresh.watchSection(tab as ConfiguracionTabId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => {
+          void this.cargarConfiguracionReal();
+        });
+    });
+
+    this.refresh.watchSection('equipo')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        void this.cargarEquipoReal();
+      });
   }
 }

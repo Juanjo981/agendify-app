@@ -252,10 +252,23 @@
         <div class="det-notas-card">
           <div class="det-notas-card__header">
             <ion-icon name="clipboard-outline"></ion-icon>
-            <span>Notas generales</span>
+            <span>Resumen clínico</span>
           </div>
-          <p class="det-notas-card__body" *ngIf="paciente.notas_generales">{{ paciente.notas_generales }}</p>
-          <p class="det-notas-card__body det-empty-text" *ngIf="!paciente.notas_generales">Sin notas generales registradas.</p>
+          <div class="det-notas-summary-list" *ngIf="notasVisiblesResumen.length > 0; else sinNotasResumen">
+            <article class="det-nota-summary-item" *ngFor="let nota of notasVisiblesResumen">
+              <div class="det-nota-summary-item__top">
+                <span class="det-nota-summary-chip" [ngClass]="getNotaResumenTipoClass(nota.tipo_nota)">
+                  {{ getNotaResumenTipoLabel(nota.tipo_nota) }}
+                </span>
+                <span class="det-nota-summary-date" *ngIf="nota.created_at">{{ formatFecha(nota.created_at) }}</span>
+              </div>
+              <p class="det-nota-summary-title" *ngIf="nota.titulo">{{ nota.titulo }}</p>
+              <p class="det-nota-summary-content">{{ getNotaResumenContenido(nota.contenido) }}</p>
+            </article>
+          </div>
+          <ng-template #sinNotasResumen>
+            <p class="det-notas-card__body det-empty-text">Sin notas visibles en resumen.</p>
+          </ng-template>
         </div>
 
         <!-- Actions -->
@@ -454,6 +467,7 @@
             <button class="det-hist-chip" [class.det-hist-chip--active]="histFiltroTipo === 'citas'"    (click)="histFiltroTipo = 'citas'">Citas</button>
             <button class="det-hist-chip" [class.det-hist-chip--active]="histFiltroTipo === 'sesiones'" (click)="histFiltroTipo = 'sesiones'">Sesiones</button>
             <button class="det-hist-chip" [class.det-hist-chip--active]="histFiltroTipo === 'notas'"    (click)="histFiltroTipo = 'notas'">Notas</button>
+            <button class="det-hist-chip" [class.det-hist-chip--active]="histFiltroTipo === 'alertas'" (click)="histFiltroTipo = 'alertas'">Alertas</button>
           </div>
         </div>
 
@@ -637,11 +651,7 @@
         <div class="pac-field">
           <label>Tipo de nota</label>
           <select [(ngModel)]="notaForm.tipo_nota" class="pac-select pac-select--field">
-            <option value="GENERAL">General</option>
-            <option value="DIAGNOSTICO">Diagnóstico</option>
-            <option value="TRATAMIENTO">Tratamiento</option>
-            <option value="SEGUIMIENTO">Seguimiento</option>
-            <option value="OTRO">Otro</option>
+            <option *ngFor="let option of notaTipoOptions" [value]="option.value">{{ option.label }}</option>
           </select>
         </div>
         <div class="pac-field pac-field--toggle">
@@ -724,28 +734,27 @@
     </div>
     <div class="pac-modal__body">
       <div class="pac-form-row">
-        <div class="pac-field">
+        <div class="pac-field" [class.has-error]="alertaErrores['tipo_alerta']">
           <label>Tipo</label>
-          <select [(ngModel)]="alertaForm.tipo_alerta" class="pac-select pac-select--field">
-            <option value="CLINICA">Clínica</option>
-            <option value="ALERGIA">Alergia</option>
-            <option value="MEDICAMENTO">Medicamento</option>
-            <option value="OTRO">Otro</option>
+          <select [ngModel]="alertaForm.tipo_alerta" (ngModelChange)="onAlertaTipoChange($event)" class="pac-select pac-select--field">
+            <option *ngFor="let option of alertaTipoOptions" [value]="option.value">{{ option.label }}</option>
           </select>
+          <span class="pac-field__error" *ngIf="alertaErrores['tipo_alerta']">{{ alertaErrores['tipo_alerta'] }}</span>
         </div>
         <div class="pac-field">
           <label>Título *</label>
           <input type="text" [(ngModel)]="alertaForm.titulo" placeholder="Ej. Alergia a la penicilina" />
         </div>
       </div>
-      <div class="pac-field">
+      <div class="pac-field" [class.has-error]="alertaErrores['descripcion']">
         <label>Descripción</label>
-        <textarea [(ngModel)]="alertaForm.descripcion" rows="3" placeholder="Añade contexto clínico adicional si hace falta."></textarea>
+        <textarea [ngModel]="alertaForm.descripcion" (ngModelChange)="onAlertaDescripcionChange($event)" rows="3" placeholder="Añade contexto clínico adicional si hace falta."></textarea>
+        <span class="pac-field__error" *ngIf="alertaErrores['descripcion']">{{ alertaErrores['descripcion'] }}</span>
       </div>
     </div>
     <div class="pac-modal__footer">
       <button class="pac-btn-ghost" (click)="cerrarAlertaForm()" [disabled]="saving">Cancelar</button>
-      <button class="det-btn-primary" (click)="guardarAlerta()" [disabled]="saving || !alertaForm.titulo.trim()">
+      <button class="det-btn-primary" (click)="guardarAlerta()" [disabled]="saving || !canGuardarAlerta">
         <ion-spinner *ngIf="saving" name="crescent" class="pac-spinner-inline"></ion-spinner>
         <ion-icon *ngIf="!saving" name="checkmark-outline"></ion-icon>
         {{ alertaEditandoId ? 'Guardar cambios' : 'Guardar alerta' }}
@@ -762,3 +771,5 @@
   </app-confirm-dialog>
 
 </ion-content>
+
+

@@ -6,6 +6,7 @@ import { buildQueryParams } from 'src/app/shared/utils/query-params.utils';
 import { PageResponse } from 'src/app/shared/models/page.model';
 import {
   PacienteDto,
+  NotaResumenPacienteDto,
   PacienteRequest,
   ResumenPacienteDto,
   AlertaPacienteDto,
@@ -40,8 +41,58 @@ export class PacientesApiService {
 
   getById(id: number): Promise<PacienteDto> {
     return firstValueFrom(
-      this.http.get<PacienteDto>(`${this.base}/${id}`)
-    );
+      this.http.get<PacienteApiDto>(`${this.base}/${id}`)
+    ).then(paciente => this.mapPacienteDto(paciente));
+  }
+
+  private mapPacienteDto(paciente: PacienteApiDto): PacienteDto {
+    return {
+      ...paciente,
+      notas_visibles_resumen: this.resolveNotasVisiblesResumen(paciente),
+    };
+  }
+
+  private resolveNotasVisiblesResumen(paciente: PacienteApiDto): NotaResumenPacienteDto[] {
+    const candidates = [
+      paciente.notas_visibles_resumen,
+      paciente.notas_resumen,
+      paciente.resumen_notas,
+      paciente.notas_clinicas_visibles_resumen,
+      paciente.notas_clinicas,
+    ];
+
+    const notas = candidates.find(Array.isArray) ?? [];
+
+    return notas
+      .filter((nota): nota is Record<string, unknown> => !!nota && typeof nota === 'object')
+      .map(nota => ({
+        id_nota_clinica: this.toNumberOrUndefined(nota['id_nota_clinica'] ?? nota['id_nota']),
+        titulo: this.toStringOrNull(nota['titulo']),
+        contenido: this.toStringOrNull(nota['contenido'] ?? nota['resumen'] ?? nota['descripcion']),
+        tipo_nota: this.toStringOrNull(nota['tipo_nota']) ?? 'GENERAL',
+        visible_en_resumen: this.toBooleanOrNull(nota['visible_en_resumen']),
+        created_at: this.toStringOrNull(nota['created_at'] ?? nota['fecha_creacion'] ?? nota['fecha']),
+      }))
+      .filter(nota => nota.visible_en_resumen !== false && !!nota.contenido?.trim())
+      .sort((a, b) => this.parseDateValue(b.created_at) - this.parseDateValue(a.created_at));
+  }
+
+  private toStringOrNull(value: unknown): string | null {
+    return typeof value === 'string' ? value : null;
+  }
+
+  private toBooleanOrNull(value: unknown): boolean | null {
+    return typeof value === 'boolean' ? value : null;
+  }
+
+  private toNumberOrUndefined(value: unknown): number | undefined {
+    return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+  }
+
+  private parseDateValue(value?: string | null): number {
+    if (!value) return 0;
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
   }
 
   create(body: PacienteRequest): Promise<PacienteDto> {
@@ -168,3 +219,10 @@ export class PacientesApiService {
     );
   }
 }
+
+type PacienteApiDto = PacienteDto & {
+  notas_resumen?: unknown;
+  resumen_notas?: unknown;
+  notas_clinicas?: unknown;
+  notas_clinicas_visibles_resumen?: unknown;
+};

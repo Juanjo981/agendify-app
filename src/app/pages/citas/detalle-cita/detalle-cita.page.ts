@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+ï»¿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DestroyRef, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EstadoBadgeComponent } from '../components/estado-badge/estado-badge.component';
@@ -27,6 +29,7 @@ import {
 } from '../models/cita.model';
 import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
 import { SesionesApiService } from '../../sesiones/sesiones-api.service';
+import { AgendaRefreshService, CitasRefreshService } from '../../../shared/refresh/dashboard-module-refresh.services';
 
 @Component({
   selector: 'app-detalle-cita',
@@ -45,6 +48,7 @@ import { SesionesApiService } from '../../sesiones/sesiones-api.service';
   ],
 })
 export class DetalleCitaPage implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   cita: CitaDto | null = null;
   citaId = 0;
   sesionRelacionadaId: number | null = null;
@@ -72,11 +76,33 @@ export class DetalleCitaPage implements OnInit {
     private router: Router,
     private citasSvc: CitasApiService,
     private sesionesSvc: SesionesApiService,
+    private citasRefresh: CitasRefreshService,
+    private agendaRefresh: AgendaRefreshService,
   ) {}
 
   ngOnInit() {
-    this.citaId = Number(this.route.snapshot.paramMap.get('id'));
-    void this.recargar();
+    this.citasRefresh.watchSection('detail')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        if (this.citaId) {
+          void this.recargar();
+        }
+      });
+
+    this.route.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        this.citaId = Number(params.get('id'));
+        if (this.citaId) {
+          this.citasRefresh.enterSection('detail');
+        }
+      });
+  }
+
+  ionViewWillEnter() {
+    if (this.citaId) {
+      this.citasRefresh.enterSection('detail');
+    }
   }
 
   volver() {
@@ -95,7 +121,7 @@ export class DetalleCitaPage implements OnInit {
   }
 
   formatMonto(n: number): string {
-    return `€${Number(n || 0).toFixed(2)}`;
+    return `â‚¬${Number(n || 0).toFixed(2)}`;
   }
 
   get iniciales(): string {
@@ -148,14 +174,14 @@ export class DetalleCitaPage implements OnInit {
   }
 
   get sesionButtonLabel(): string {
-    return this.sesionRelacionadaId ? 'Ver sesión' : 'Crear sesión';
+    return this.sesionRelacionadaId ? 'Ver sesiÃ³n' : 'Crear sesiÃ³n';
   }
 
   cambiarEstado(estado: EstadoCita, title: string) {
     this.openConfirm(
       {
         title,
-        message: `¿Confirmas cambiar el estado de la cita a "${estado}"?`,
+        message: `Â¿Confirmas cambiar el estado de la cita a "${estado}"?`,
         confirmLabel: 'Confirmar',
         variant: 'primary',
         icon: 'checkmark-circle-outline',
@@ -175,6 +201,9 @@ export class DetalleCitaPage implements OnInit {
       this.cita = await this.citasSvc.update(this.cita.id_cita, body);
       this.showEditarModal = false;
       await this.cargarSesionRelacionada();
+      this.citasRefresh.requestRefresh('list');
+      this.citasRefresh.requestRefresh('detail');
+      this.agendaRefresh.requestRefresh('agenda');
     } catch (err) {
       this.errorMessage = mapApiError(err).userMessage;
     } finally {
@@ -199,6 +228,9 @@ export class DetalleCitaPage implements OnInit {
       this.cita = await this.citasSvc.update(this.cita.id_cita, body);
       this.showReprogramarModal = false;
       await this.cargarSesionRelacionada();
+      this.citasRefresh.requestRefresh('list');
+      this.citasRefresh.requestRefresh('detail');
+      this.agendaRefresh.requestRefresh('agenda');
     } catch (err) {
       this.errorMessage = mapApiError(err).userMessage;
     } finally {
@@ -231,6 +263,9 @@ export class DetalleCitaPage implements OnInit {
         monto: Number(this.pagoForm.monto || 0),
       });
       this.showPagoForm = false;
+      this.citasRefresh.requestRefresh('list');
+      this.citasRefresh.requestRefresh('detail');
+      this.agendaRefresh.requestRefresh('agenda');
     } catch (err) {
       this.pagoError = mapApiError(err).userMessage;
     } finally {
@@ -297,6 +332,9 @@ export class DetalleCitaPage implements OnInit {
     try {
       this.cita = await this.citasSvc.cambiarEstado(this.cita.id_cita, estado);
       await this.cargarSesionRelacionada();
+      this.citasRefresh.requestRefresh('list');
+      this.citasRefresh.requestRefresh('detail');
+      this.agendaRefresh.requestRefresh('agenda');
     } catch (err) {
       this.errorMessage = mapApiError(err).userMessage;
     } finally {
@@ -359,3 +397,4 @@ export class DetalleCitaPage implements OnInit {
     this.confirmCallback = null;
   }
 }
+

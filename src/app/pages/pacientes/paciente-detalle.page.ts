@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IonicModule } from '@ionic/angular';
 import { AgfDatePickerComponent } from '../../shared/components/agf-date-picker/agf-date-picker.component';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -8,11 +9,13 @@ import { PacientesApiService } from './pacientes-api.service';
 import { AdjuntosServiceApi } from 'src/app/services/adjuntos.service.api';
 import {
   PacienteDto, PacienteRequest, ResumenPacienteDto,
-  AlertaPacienteDto, AlertaPacienteRequest,
-  NotaClinicaDto, NotaClinicaFormState, NotaClinicaRequest, NotaClinicaViewModel,
+  ALERTA_TIPO_OPTIONS, AlertaPacienteDto, AlertaPacienteRequest,
+  NOTA_CLINICA_TIPO_OPTIONS,
+  NotaClinicaDto, NotaClinicaFormState, NotaClinicaRequest, NotaClinicaTipo, NotaClinicaViewModel,
+  NotaResumenPacienteDto,
   SesionPacienteDto,
   HistorialPacienteResponse, HistorialEvento, HistorialTipoEvento,
-  PACIENTE_SEXO_OPTIONS, SexoPaciente, isSexoPaciente, normalizeSexoPaciente,
+  PACIENTE_SEXO_OPTIONS, SexoPaciente, isSexoPaciente, normalizeAlertaPacienteTipo, normalizeSexoPaciente,
   mapHistorialEventoApi,
 } from './models/paciente.model';
 import { ArchivoAdjuntoDto } from '../sesiones/models/sesion.model';
@@ -22,6 +25,7 @@ import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../shared/confir
 import { PacienteSubmenuComponent, SeccionPaciente } from './components/paciente-submenu/paciente-submenu.component';
 import { mapApiError } from '../../shared/utils/api-error.mapper';
 import html2pdf from 'html2pdf.js';
+import { PacienteDetailRefreshService } from '../../shared/refresh/dashboard-module-refresh.services';
 
 @Component({
   selector: 'app-paciente-detalle',
@@ -31,7 +35,10 @@ import html2pdf from 'html2pdf.js';
   imports: [IonicModule, CommonModule, FormsModule, ConfirmDialogComponent, PacienteSubmenuComponent, AgfDatePickerComponent],
 })
 export class PacienteDetallePage implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   readonly sexoOptions = PACIENTE_SEXO_OPTIONS;
+  readonly alertaTipoOptions = ALERTA_TIPO_OPTIONS;
+  readonly notaTipoOptions = NOTA_CLINICA_TIPO_OPTIONS;
   paciente: PacienteDto | null = null;
   resumen: ResumenPacienteDto | null = null;
 
@@ -48,8 +55,9 @@ export class PacienteDetallePage implements OnInit {
   loadingAlertas = false;
   alertasLoaded = false;
   showAlertaForm = false;
-  alertaForm = { tipo_alerta: 'CLINICA', titulo: '', descripcion: '' };
+  alertaForm = { tipo_alerta: normalizeAlertaPacienteTipo(), titulo: '', descripcion: '' };
   alertaEditandoId: number | null = null;
+  alertaErrores: Record<string, string> = {};
 
   // ─── Notas clínicas ────────────────────────────────────────────────────────
   notas: NotaClinicaViewModel[] = [];
@@ -79,7 +87,7 @@ export class PacienteDetallePage implements OnInit {
   loadingHistorial = false;
   historialLoaded = false;
   histBusqueda = '';
-  histFiltroTipo: 'todos' | 'citas' | 'sesiones' | 'notas' = 'todos';
+  histFiltroTipo: 'todos' | 'citas' | 'sesiones' | 'notas' | 'alertas' = 'todos';
   exportandoPDF = false;
 
   // ─── Edit modal ────────────────────────────────────────────────────────────
@@ -90,17 +98,34 @@ export class PacienteDetallePage implements OnInit {
   // ─── Confirm dialog ────────────────────────────────────────────────────────
   confirmConfig: ConfirmDialogConfig | null = null;
   private confirmCallback: (() => void) | null = null;
+  private pacienteId = 0;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private svc: PacientesApiService,
     private adjuntosApi: AdjuntosServiceApi,
+    private refresh: PacienteDetailRefreshService,
   ) {}
 
   async ngOnInit() {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    await this.cargarPaciente(id);
+    this.bindRefreshStreams();
+
+    this.route.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(async params => {
+        const id = Number(params.get('id'));
+        if (!id || Number.isNaN(id)) return;
+        this.pacienteId = id;
+        this.notasLoaded = false;
+        this.sesionesLoaded = false;
+        this.historialLoaded = false;
+        this.alertasLoaded = false;
+        await this.cargarInformacionPaciente();
+        if (this.seccionActiva !== 'informacion') {
+          this.refresh.enterSection(this.seccionActiva);
+        }
+      });
   }
 
   async cargarPaciente(id: number) {
@@ -181,12 +206,41 @@ export class PacienteDetallePage implements OnInit {
     return 'document-text-outline';
   }
 
+  get notasVisiblesResumen(): NotaResumenPacienteDto[] {
+    return this.paciente?.notas_visibles_resumen ?? [];
+  }
+
+  getNotaResumenTipoLabel(tipo?: string | null): string {
+    const normalized = (tipo ?? '').trim().toUpperCase();
+    const match = this.notaTipoOptions.find(option => option.value === normalized);
+    return match?.label ?? 'Otro';
+  }
+
+  getNotaResumenTipoClass(tipo?: string | null): string {
+    const normalized = (tipo ?? '').trim().toUpperCase() as NotaClinicaTipo | '';
+    const map: Record<NotaClinicaTipo | 'DEFAULT', string> = {
+      GENERAL: 'det-nota-summary-chip--general',
+      DIAGNOSTICO: 'det-nota-summary-chip--diagnostico',
+      TRATAMIENTO: 'det-nota-summary-chip--tratamiento',
+      SEGUIMIENTO: 'det-nota-summary-chip--seguimiento',
+      RECETA_MEDICA: 'det-nota-summary-chip--receta',
+      OTRO: 'det-nota-summary-chip--otro',
+      DEFAULT: 'det-nota-summary-chip--otro',
+    };
+    return map[normalized as NotaClinicaTipo] ?? map.DEFAULT;
+  }
+
+  getNotaResumenContenido(contenido?: string | null, maxLength = 180): string {
+    const clean = (contenido ?? '').replace(/\s+/g, ' ').trim();
+    if (!clean) return '';
+    if (clean.length <= maxLength) return clean;
+    return `${clean.slice(0, maxLength).replace(/\s+$/, '')}…`;
+  }
+
   // ─── Section switching with lazy load ──────────────────────────────────────
   setSeccion(sec: SeccionPaciente) {
     this.seccionActiva = sec;
-    if (sec === 'notas' && !this.notasLoaded) this.cargarNotas();
-    if (sec === 'sesiones' && !this.sesionesLoaded) this.cargarSesiones();
-    if (sec === 'historial' && !this.historialLoaded) this.cargarHistorial();
+    this.refresh.enterSection(sec);
   }
 
   // ─── Alertas ───────────────────────────────────────────────────────────────
@@ -203,10 +257,11 @@ export class PacienteDetallePage implements OnInit {
 
   abrirAlertaForm(alerta?: AlertaPacienteDto) {
     this.alertaForm = {
-      tipo_alerta: alerta?.tipo_alerta ?? 'CLINICA',
+      tipo_alerta: normalizeAlertaPacienteTipo(alerta?.tipo_alerta),
       titulo: alerta?.titulo ?? '',
       descripcion: alerta?.descripcion ?? '',
     };
+    this.alertaErrores = {};
     this.alertaEditandoId = alerta?.id_alerta_paciente ?? null;
     this.showAlertaForm = true;
   }
@@ -214,16 +269,47 @@ export class PacienteDetallePage implements OnInit {
   cerrarAlertaForm() {
     this.showAlertaForm = false;
     this.alertaEditandoId = null;
+    this.alertaErrores = {};
+  }
+
+  get canGuardarAlerta(): boolean {
+    return !!this.alertaForm.titulo.trim() && !!this.alertaForm.descripcion.trim() && !this.alertaErrores['tipo_alerta'];
+  }
+
+  onAlertaDescripcionChange(value: string) {
+    this.alertaForm.descripcion = value;
+    if (value.trim()) {
+      delete this.alertaErrores['descripcion'];
+    }
+  }
+
+  onAlertaTipoChange(value: string) {
+    this.alertaForm.tipo_alerta = normalizeAlertaPacienteTipo(value);
+    delete this.alertaErrores['tipo_alerta'];
+  }
+
+  private validarAlertaForm(): boolean {
+    this.alertaErrores = {};
+
+    if (!this.alertaTipoOptions.some(option => option.value === this.alertaForm.tipo_alerta)) {
+      this.alertaErrores['tipo_alerta'] = 'Selecciona un tipo de alerta válido';
+    }
+
+    if (!this.alertaForm.descripcion.trim()) {
+      this.alertaErrores['descripcion'] = 'La descripción es obligatoria';
+    }
+
+    return Object.keys(this.alertaErrores).length === 0;
   }
 
   async guardarAlerta() {
-    if (!this.paciente || !this.alertaForm.titulo.trim()) return;
+    if (!this.paciente || !this.alertaForm.titulo.trim() || !this.validarAlertaForm()) return;
     this.saving = true;
     try {
       const body: AlertaPacienteRequest = {
         tipo_alerta: this.alertaForm.tipo_alerta,
         titulo: this.alertaForm.titulo.trim(),
-        descripcion: this.alertaForm.descripcion.trim() || undefined,
+        descripcion: this.alertaForm.descripcion.trim(),
       };
       if (this.alertaEditandoId) {
         await this.svc.updateAlerta(this.paciente.id_paciente, this.alertaEditandoId, body);
@@ -232,10 +318,18 @@ export class PacienteDetallePage implements OnInit {
       }
       this.showAlertaForm = false;
       this.alertaEditandoId = null;
-      await this.cargarAlertas();
-      this.resumen = await this.svc.getResumen(this.paciente.id_paciente);
+      this.refresh.requestRefresh('informacion');
+      if (this.seccionActiva === 'historial') {
+        this.refresh.requestRefresh('historial');
+      }
     } catch (err) {
       const mapped = mapApiError(err);
+      if (mapped.fieldErrors?.['tipo_alerta']) {
+        this.alertaErrores['tipo_alerta'] = 'Selecciona un tipo de alerta válido';
+      }
+      if (mapped.fieldErrors?.['descripcion']) {
+        this.alertaErrores['descripcion'] = mapped.fieldErrors['descripcion'];
+      }
       this.errorMessage = mapped.userMessage;
     } finally {
       this.saving = false;
@@ -246,8 +340,10 @@ export class PacienteDetallePage implements OnInit {
     if (!this.paciente) return;
     try {
       await this.svc.toggleAlerta(this.paciente.id_paciente, alerta.id_alerta_paciente, !alerta.activa);
-      await this.cargarAlertas();
-      this.resumen = await this.svc.getResumen(this.paciente.id_paciente);
+      this.refresh.requestRefresh('informacion');
+      if (this.seccionActiva === 'historial') {
+        this.refresh.requestRefresh('historial');
+      }
     } catch (err) {
       const mapped = mapApiError(err);
       this.errorMessage = mapped.userMessage;
@@ -266,8 +362,10 @@ export class PacienteDetallePage implements OnInit {
       async () => {
         try {
           await this.svc.deleteAlerta(this.paciente!.id_paciente, alerta.id_alerta_paciente);
-          await this.cargarAlertas();
-          this.resumen = await this.svc.getResumen(this.paciente!.id_paciente);
+          this.refresh.requestRefresh('informacion');
+          if (this.seccionActiva === 'historial') {
+            this.refresh.requestRefresh('historial');
+          }
         } catch (err) {
           const mapped = mapApiError(err);
           this.errorMessage = mapped.userMessage;
@@ -385,8 +483,13 @@ export class PacienteDetallePage implements OnInit {
       }
 
       this.resetNotaModal();
-      await this.cargarNotas();
-      this.resumen = await this.svc.getResumen(this.paciente.id_paciente);
+      this.refresh.requestRefresh('notas');
+      if (this.seccionActiva === 'informacion') {
+        this.refresh.requestRefresh('informacion');
+      }
+      if (this.seccionActiva === 'historial') {
+        this.refresh.requestRefresh('historial');
+      }
     } catch (err) {
       const mapped = mapApiError(err);
       this.notaError = mapped.userMessage;
@@ -407,8 +510,13 @@ export class PacienteDetallePage implements OnInit {
       async () => {
         try {
           await this.svc.deleteNota(nota.id_nota_clinica);
-          await this.cargarNotas();
-          this.resumen = await this.svc.getResumen(this.paciente!.id_paciente);
+          this.refresh.requestRefresh('notas');
+          if (this.seccionActiva === 'informacion') {
+            this.refresh.requestRefresh('informacion');
+          }
+          if (this.seccionActiva === 'historial') {
+            this.refresh.requestRefresh('historial');
+          }
         } catch (err) {
           const mapped = mapApiError(err);
           this.errorMessage = mapped.userMessage;
@@ -554,18 +662,15 @@ export class PacienteDetallePage implements OnInit {
   }
 
   get historialFiltrado(): HistorialEvento[] {
-    const TIPOS_CITAS = new Set<HistorialTipoEvento>([
-      'cita_confirmada', 'cita_completada', 'cita_cancelada',
-      'cita_pendiente', 'cita_pospuesta', 'no_asistio',
-      'reprogramacion', 'pago_registrado', 'pago_pendiente',
-    ]);
     let eventos = [...this.historialEventos];
     if (this.histFiltroTipo === 'citas') {
-      eventos = eventos.filter(ev => TIPOS_CITAS.has(ev.tipo));
+      eventos = eventos.filter(ev => ev.tipo === 'CITA');
     } else if (this.histFiltroTipo === 'sesiones') {
-      eventos = eventos.filter(ev => ev.tipo === 'sesion_registrada');
+      eventos = eventos.filter(ev => ev.tipo === 'SESION');
     } else if (this.histFiltroTipo === 'notas') {
-      eventos = eventos.filter(ev => ev.tipo === 'nota_agregada');
+      eventos = eventos.filter(ev => ev.tipo === 'NOTA');
+    } else if (this.histFiltroTipo === 'alertas') {
+      eventos = eventos.filter(ev => ev.tipo === 'ALERTA');
     }
     const q = this.histBusqueda.trim().toLowerCase();
     if (q) {
@@ -580,51 +685,33 @@ export class PacienteDetallePage implements OnInit {
 
   getEventoIcon(tipo: HistorialTipoEvento): string {
     const map: Record<string, string> = {
-      cita_confirmada:  'checkmark-circle-outline',
-      cita_completada:  'checkmark-done-circle-outline',
-      cita_cancelada:   'close-circle-outline',
-      cita_pendiente:   'time-outline',
-      cita_pospuesta:   'arrow-forward-circle-outline',
-      no_asistio:       'person-remove-outline',
-      sesion_registrada:'pulse-outline',
-      pago_registrado:  'card-outline',
-      pago_pendiente:   'wallet-outline',
-      reprogramacion:   'calendar-outline',
-      nota_agregada:    'document-text-outline',
+      CITA:   'calendar-outline',
+      SESION: 'pulse-outline',
+      NOTA:   'document-text-outline',
+      ALERTA: 'warning-outline',
+      OTRO:   'ellipse-outline',
     };
     return map[tipo] ?? 'ellipse-outline';
   }
 
   getEventoLabel(tipo: HistorialTipoEvento): string {
     const map: Record<string, string> = {
-      cita_confirmada:  'Cita confirmada',
-      cita_completada:  'Cita completada',
-      cita_cancelada:   'Cita cancelada',
-      cita_pendiente:   'Cita pendiente',
-      cita_pospuesta:   'Cita pospuesta',
-      no_asistio:       'No asistió',
-      sesion_registrada:'Sesión registrada',
-      pago_registrado:  'Pago registrado',
-      pago_pendiente:   'Pago pendiente',
-      reprogramacion:   'Reprogramación',
-      nota_agregada:    'Nota clínica',
+      CITA:   'CITA',
+      SESION: 'SESION',
+      NOTA:   'NOTA',
+      ALERTA: 'ALERTA',
+      OTRO:   'OTRO',
     };
     return map[tipo] ?? tipo;
   }
 
   getEventoColorClass(tipo: HistorialTipoEvento): string {
     const map: Record<string, string> = {
-      cita_confirmada:  'ev--green',
-      cita_completada:  'ev--green',
-      cita_cancelada:   'ev--red',
-      cita_pendiente:   'ev--yellow',
-      cita_pospuesta:   'ev--yellow',
-      no_asistio:       'ev--red',
-      sesion_registrada:'ev--purple',
-      pago_registrado:  'ev--blue',
-      pago_pendiente:   'ev--yellow',
-      reprogramacion:   'ev--blue',
-      nota_agregada:    'ev--slate',
+      CITA:   'ev--blue',
+      SESION: 'ev--purple',
+      NOTA:   'ev--slate',
+      ALERTA: 'ev--yellow',
+      OTRO:   'ev--slate',
     };
     return map[tipo] ?? 'ev--slate';
   }
@@ -853,6 +940,7 @@ export class PacienteDetallePage implements OnInit {
       this.paciente = await this.svc.update(this.paciente.id_paciente, body);
       this.resumen = await this.svc.getResumen(this.paciente.id_paciente);
       this.showEditarModal = false;
+      this.refresh.requestRefresh('informacion');
     } catch (err) {
       const mapped = mapApiError(err);
       if (mapped.fieldErrors) {
@@ -939,4 +1027,36 @@ export class PacienteDetallePage implements OnInit {
     this.notaError = '';
     this.notaForm = this.emptyNotaForm();
   }
+
+  private bindRefreshStreams() {
+    this.refresh.watchSection('informacion')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        void this.cargarInformacionPaciente();
+      });
+
+    this.refresh.watchSection('notas')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        void this.cargarNotas();
+      });
+
+    this.refresh.watchSection('sesiones')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        void this.cargarSesiones();
+      });
+
+    this.refresh.watchSection('historial')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        void this.cargarHistorial();
+      });
+  }
+
+  private async cargarInformacionPaciente() {
+    if (!this.pacienteId) return;
+    await this.cargarPaciente(this.pacienteId);
+  }
 }
+

@@ -63,6 +63,7 @@ export interface PacienteDto {
   contacto_emergencia_nombre?:   string;
   contacto_emergencia_telefono?: string;
   notas_generales:               string;
+  notas_visibles_resumen?:       NotaResumenPacienteDto[];
   activo:                        boolean;
   created_at?:                   string;
   updated_at?:                   string;
@@ -111,10 +112,30 @@ export interface ResumenPacienteDto {
 
 // ─── Alerta del paciente ──────────────────────────────────────────────────────
 
+export const ALERTA_TIPO_OPTIONS = [
+  { label: 'Alergia', value: 'ALERGIA' },
+  { label: 'Adeudo', value: 'ADEUDO' },
+  { label: 'Restricción', value: 'RESTRICCION' },
+  { label: 'Indicación', value: 'INDICACION' },
+  { label: 'Otra', value: 'OTRA' },
+] as const;
+
+export type AlertaPacienteTipo = (typeof ALERTA_TIPO_OPTIONS)[number]['value'];
+
+const ALERTA_TIPO_VALUES = new Set<string>(ALERTA_TIPO_OPTIONS.map(option => option.value));
+
+export function isAlertaPacienteTipo(value?: string | null): value is AlertaPacienteTipo {
+  return !!value && ALERTA_TIPO_VALUES.has(value);
+}
+
+export function normalizeAlertaPacienteTipo(value?: string | null): AlertaPacienteTipo {
+  return isAlertaPacienteTipo(value) ? value : 'ALERGIA';
+}
+
 export interface AlertaPacienteDto {
   id_alerta_paciente:  number;
   id_paciente:         number;
-  tipo_alerta:         string;
+  tipo_alerta:         AlertaPacienteTipo | string;
   titulo:              string;
   descripcion?:        string;
   activa:              boolean;
@@ -122,7 +143,7 @@ export interface AlertaPacienteDto {
 }
 
 export interface AlertaPacienteRequest {
-  tipo_alerta: string;
+  tipo_alerta: AlertaPacienteTipo;
   titulo:      string;
   descripcion?: string;
   activa?:     boolean;
@@ -130,13 +151,33 @@ export interface AlertaPacienteRequest {
 
 // ─── Nota clínica ─────────────────────────────────────────────────────────────
 
+export const NOTA_CLINICA_TIPO_OPTIONS = [
+  { label: 'General', value: 'GENERAL' },
+  { label: 'Diagnóstico', value: 'DIAGNOSTICO' },
+  { label: 'Tratamiento', value: 'TRATAMIENTO' },
+  { label: 'Seguimiento', value: 'SEGUIMIENTO' },
+  { label: 'Receta médica', value: 'RECETA_MEDICA' },
+  { label: 'Otro', value: 'OTRO' },
+] as const;
+
+export type NotaClinicaTipo = (typeof NOTA_CLINICA_TIPO_OPTIONS)[number]['value'];
+
+export interface NotaResumenPacienteDto {
+  id_nota_clinica?:    number;
+  titulo?:             string | null;
+  contenido?:          string | null;
+  tipo_nota?:          NotaClinicaTipo | string | null;
+  visible_en_resumen?: boolean | null;
+  created_at?:         string | null;
+}
+
 export interface NotaClinicaDto {
   id_nota_clinica:     number;
   id_paciente:         number;
   id_sesion?:          number | null;
   titulo:              string;
   contenido:           string;
-  tipo_nota:           string;
+  tipo_nota:           NotaClinicaTipo | string;
   visible_en_resumen:  boolean;
   created_at:          string;
   adjuntos?:           ArchivoAdjuntoDto[];
@@ -152,7 +193,7 @@ export interface NotaClinicaRequest {
   id_sesion?:         number | null;
   titulo:             string;
   contenido:          string;
-  tipo_nota:          string;
+  tipo_nota:          NotaClinicaTipo | string;
   visible_en_resumen: boolean;
 }
 
@@ -192,7 +233,9 @@ export interface HistorialPacienteResponse {
 }
 
 export interface HistorialEventoApi {
+  tipo?:             string;
   tipo_evento:       string;
+  categoria?:        string;
   fecha_evento:      string;
   titulo:            string;
   descripcion_corta: string;
@@ -204,18 +247,11 @@ export interface HistorialEventoApi {
 // ─── Tipos UI (para renderizar en la vista) ───────────────────────────────────
 
 export type HistorialTipoEvento =
-  | 'cita_confirmada'
-  | 'cita_completada'
-  | 'cita_cancelada'
-  | 'cita_pendiente'
-  | 'cita_pospuesta'
-  | 'no_asistio'
-  | 'sesion_registrada'
-  | 'pago_registrado'
-  | 'pago_pendiente'
-  | 'reprogramacion'
-  | 'nota_agregada'
-  | 'otro';
+  | 'CITA'
+  | 'SESION'
+  | 'NOTA'
+  | 'ALERTA'
+  | 'OTRO';
 
 export interface HistorialEvento {
   id:          string;
@@ -234,48 +270,64 @@ export function mapHistorialEventoApi(ev: HistorialEventoApi): HistorialEvento {
   const fecha = fechaParts[0] ?? '';
   const hora  = fechaParts[1]?.substring(0, 5);
 
-  const TIPO_MAP: Record<string, HistorialTipoEvento> = {
-    CITA_CREADA:            'cita_pendiente',
-    CITA_CONFIRMADA:        'cita_confirmada',
-    CITA_COMPLETADA:        'cita_completada',
-    CITA_CANCELADA:         'cita_cancelada',
-    CITA_POSPUESTA:         'cita_pospuesta',
-    CITA_NO_ASISTIO:        'no_asistio',
-    NO_ASISTIO:             'no_asistio',
-    SESION_REGISTRADA:      'sesion_registrada',
-    SESION_CREADA:          'sesion_registrada',
-    PAGO_REGISTRADO:        'pago_registrado',
-    PAGO_PENDIENTE:         'pago_pendiente',
-    REPROGRAMACION:         'reprogramacion',
-    NOTA_AGREGADA:          'nota_agregada',
-    NOTA_CREADA:            'nota_agregada',
-    ESTADO_CAMBIADO:        mapEstadoCambiado(ev),
-  };
-
-  const tipo = TIPO_MAP[ev.tipo_evento] ?? TIPO_MAP[ev.estado ?? ''] ?? 'otro';
-
   return {
     id:          `${ev.modulo}-${ev.id_referencia}`,
     fecha,
     hora,
-    tipo,
+    tipo:        resolveHistorialType(ev),
     descripcion: ev.titulo ?? ev.descripcion_corta ?? '',
     detalle:     ev.descripcion_corta,
   };
 }
 
-function mapEstadoCambiado(ev: HistorialEventoApi): HistorialTipoEvento {
-  if (ev.modulo === 'CITA') {
-    switch (ev.estado) {
-      case 'CONFIRMADA':  return 'cita_confirmada';
-      case 'COMPLETADA':  return 'cita_completada';
-      case 'CANCELADA':   return 'cita_cancelada';
-      case 'PENDIENTE':   return 'cita_pendiente';
-      case 'POSPUESTA':   return 'cita_pospuesta';
-      case 'NO_ASISTIO':  return 'no_asistio';
-    }
+export function resolveHistorialType(item: Pick<HistorialEventoApi, 'tipo' | 'tipo_evento' | 'categoria' | 'modulo'>): HistorialTipoEvento {
+  const candidates = [item.tipo, item.tipo_evento, item.categoria, item.modulo];
+  for (const candidate of candidates) {
+    const resolved = mapHistorialTypeCandidate(candidate);
+    if (resolved !== 'OTRO') return resolved;
   }
-  return 'otro';
+  return 'OTRO';
+}
+
+function mapHistorialTypeCandidate(value?: string | null): HistorialTipoEvento {
+  const normalized = normalizeHistorialTypeValue(value);
+  if (!normalized) return 'OTRO';
+
+  if (normalized === 'CITA' || normalized === 'CITAS' || normalized.startsWith('CITA_')) {
+    return 'CITA';
+  }
+
+  if (normalized === 'SESION' || normalized === 'SESIONES' || normalized.startsWith('SESION_')) {
+    return 'SESION';
+  }
+
+  if (
+    normalized === 'NOTA' ||
+    normalized === 'NOTAS' ||
+    normalized === 'NOTA_CLINICA' ||
+    normalized === 'NOTAS_CLINICAS' ||
+    normalized.startsWith('NOTA_') ||
+    normalized.startsWith('NOTAS_')
+  ) {
+    return 'NOTA';
+  }
+
+  if (normalized === 'ALERTA' || normalized === 'ALERTAS' || normalized.startsWith('ALERTA_')) {
+    return 'ALERTA';
+  }
+
+  return 'OTRO';
+}
+
+function normalizeHistorialTypeValue(value?: string | null): string {
+  return (value ?? '')
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toUpperCase();
 }
 
 // ─── Legacy (deprecated — kept for backward compat during transition) ─────────

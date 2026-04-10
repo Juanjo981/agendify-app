@@ -101,6 +101,10 @@ export class EstadisticasApiService {
     this.filtrosSubject.next({ ...filtros });
   }
 
+  reloadCurrentFilters(): void {
+    this.filtrosSubject.next({ ...this.filtrosSubject.value });
+  }
+
   async getProfesionalesFiltro(): Promise<ProfesionalFiltroOption[]> {
     const baseOption: ProfesionalFiltroOption = { id: '', nombre: 'Todos los profesionales' };
 

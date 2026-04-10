@@ -83,7 +83,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   const token = authService.getAccessToken();
-  const authReq = token ? withBearerToken(req, token) : req;
+  if (!token) {
+    return recoverAuthenticatedRequest(req, next, authService, router, toastCtrl);
+  }
+
+  const authReq = withBearerToken(req, token);
 
   return next(authReq).pipe(
     catchError(error => {
@@ -104,11 +108,21 @@ function handle401(
   router:      Router,
   toastCtrl:   ToastController,
 ): Observable<any> {
+  return recoverAuthenticatedRequest(originalReq, next, authService, router, toastCtrl);
+}
 
+function recoverAuthenticatedRequest(
+  originalReq: HttpRequest<unknown>,
+  next:        HttpHandlerFn,
+  authService: AuthService,
+  router:      Router,
+  toastCtrl:   ToastController,
+): Observable<any> {
   // Sin refresh_token en storage → no hay nada que intentar
   if (!authService.getRefreshToken()) {
     authService.forceLogout();
     router.navigateByUrl('/login');
+    showSessionToast(toastCtrl, 'Tu sesión finalizó. Inicia sesión nuevamente.');
     return throwError(() => new Error('No refresh token available'));
   }
 

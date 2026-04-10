@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FiltroEstadisticas } from '../models/filtros-estadisticas.model';
 import { KpiCard } from '../models/estadisticas.model';
 import { EstadisticasApiService } from '../estadisticas.service.api';
@@ -9,6 +10,7 @@ import { ResumenKpisComponent } from '../components/resumen-kpis/resumen-kpis.co
 import { InsightsEstadisticasComponent } from '../components/insights-estadisticas/insights-estadisticas.component';
 import { ChartCitasPorPeriodoComponent } from '../components/chart-citas-por-periodo/chart-citas-por-periodo.component';
 import { ChartIngresosComponent } from '../components/chart-ingresos/chart-ingresos.component';
+import { EstadisticasRefreshService } from '../../../shared/refresh/dashboard-module-refresh.services';
 
 @Component({
   selector: 'app-dashboard-estadisticas',
@@ -26,13 +28,25 @@ import { ChartIngresosComponent } from '../components/chart-ingresos/chart-ingre
   ],
 })
 export class DashboardEstadisticasPage implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   filtrosActivos?: FiltroEstadisticas;
   kpis: KpiCard[] = [];
   cargando = false;
 
-  constructor(private svc: EstadisticasApiService) {}
+  constructor(
+    private svc: EstadisticasApiService,
+    private refresh: EstadisticasRefreshService,
+  ) {}
 
   ngOnInit() {
+    this.refresh.watchSection('dashboard')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.svc.reloadCurrentFilters();
+        this.filtrosActivos = this.svc.filtrosActuales;
+        void this.cargarResumen(this.filtrosActivos);
+      });
+
     this.filtrosActivos = this.svc.filtrosActuales;
     void this.cargarResumen(this.filtrosActivos);
   }

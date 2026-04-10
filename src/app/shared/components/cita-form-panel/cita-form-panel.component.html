@@ -1,0 +1,24 @@
+﻿<div
+  class="new-appointment-panel"
+  [class.open]="isOpen"
+  (touchstart)="startDrag($event)"
+  (touchmove)="onDrag($event)"
+  (touchend)="endDrag()"
+>
+  <div class="drag-handle"></div>
+
+  <app-cita-form-modal
+    [context]="context"
+    [prefill]="prefill"
+    [showContextBanner]="showContextBanner"
+    [contextDateLabel]="contextDateLabel"
+    [saving]="saving"
+    (saved)="onSaved($event)"
+    (cancelled)="onCancelled()"
+  ></app-cita-form-modal>
+
+  <div class="cfp-error" *ngIf="errorMessage">
+    <ion-icon name="alert-circle-outline"></ion-icon>
+    <span>{{ errorMessage }}</span>
+  </div>
+</div>

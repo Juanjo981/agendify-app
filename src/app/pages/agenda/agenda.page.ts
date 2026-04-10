@@ -1,13 +1,15 @@
 ﻿import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DestroyRef, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { IonicModule, PopoverController, createAnimation } from '@ionic/angular';
 import {
   CitaFormContext,
   CitaFormData,
-  CitaFormModalComponent,
 } from '../../shared/components/cita-form-modal/cita-form-modal.component';
+import { CitaFormPanelComponent } from '../../shared/components/cita-form-panel/cita-form-panel.component';
 import {
   ConfirmDialogComponent,
   ConfirmDialogConfig,
@@ -34,6 +36,7 @@ import {
   BloqueoHorarioUpsertRequest,
   ConfiguracionJornadaDto,
 } from './agenda.models';
+import { AgendaRefreshService, CitasRefreshService } from '../../shared/refresh/dashboard-module-refresh.services';
 
 interface CalendarEvent {
   title: string;
@@ -63,7 +66,7 @@ interface CalendarDay {
     IonicModule,
     CommonModule,
     FormsModule,
-    CitaFormModalComponent,
+    CitaFormPanelComponent,
     ConfirmDialogComponent,
     SolicitudReprogramacionModalComponent,
   ],
@@ -71,6 +74,7 @@ interface CalendarDay {
   styleUrls: ['./agenda.page.scss'],
 })
 export class AgendaPage implements OnInit, OnDestroy {
+  private readonly destroyRef = inject(DestroyRef);
   nombreUsuario = 'Juan Jose';
   showNewAppointmentPanel = false;
 
@@ -170,10 +174,6 @@ export class AgendaPage implements OnInit, OnDestroy {
     { value: 'monthly' as const, label: 'Mensual' },
   ];
 
-  private dragStartY = 0;
-  private dragCurrentY = 0;
-  private isDragging = false;
-
   constructor(
     private pacientesSvc: PacientesApiService,
     private router: Router,
@@ -181,6 +181,8 @@ export class AgendaPage implements OnInit, OnDestroy {
     private agendaApi: AgendaApiService,
     private popoverCtrl: PopoverController,
     private solicitudSvc: SolicitudReprogramacionApiService,
+    private agendaRefresh: AgendaRefreshService,
+    private citasRefresh: CitasRefreshService,
   ) {
     this.horas = this.buildHourOptions();
     this.generateCalendar();
@@ -188,6 +190,12 @@ export class AgendaPage implements OnInit, OnDestroy {
   }
 
   async ngOnInit() {
+    this.agendaRefresh.watchSection('agenda')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        void this.loadAgendaForCurrentMonth();
+      });
+
     try {
       const page = await this.pacientesSvc.getAll({ activo: true, size: 500 });
       this.pacientes = page.content.map(p => ({
@@ -197,8 +205,10 @@ export class AgendaPage implements OnInit, OnDestroy {
     } catch {
       this.pacientes = [];
     }
+  }
 
-    await this.loadAgendaForCurrentMonth();
+  ionViewWillEnter() {
+    this.agendaRefresh.enterSection('agenda');
   }
 
   ngOnDestroy() {
@@ -246,7 +256,6 @@ export class AgendaPage implements OnInit, OnDestroy {
         };
         this.apptShowBanner = true;
         this.apptContextLabel = 'Reprogramando cita aceptada';
-        document.body.classList.add('modal-open');
         this.showNewAppointmentPanel = true;
       }
 
@@ -614,7 +623,7 @@ export class AgendaPage implements OnInit, OnDestroy {
         this.successMessage = 'Bloqueo creado correctamente.';
       }
       this.closeBlockModal();
-      await this.loadAgendaForCurrentMonth();
+      this.agendaRefresh.requestRefresh('agenda');
     } catch (err) {
       this.errorMessage = mapApiError(err).userMessage;
     } finally {
@@ -633,7 +642,7 @@ export class AgendaPage implements OnInit, OnDestroy {
     try {
       await this.agendaApi.deleteBloqueo(id);
       this.successMessage = 'Bloqueo eliminado correctamente.';
-      await this.loadAgendaForCurrentMonth();
+      this.agendaRefresh.requestRefresh('agenda');
     } catch (err) {
       this.errorMessage = mapApiError(err).userMessage;
     } finally {
@@ -837,7 +846,6 @@ export class AgendaPage implements OnInit, OnDestroy {
     this.apptShowBanner = true;
     this.apptContextLabel = 'Reprogramando cita';
     this.cerrarQuickActions();
-    document.body.classList.add('modal-open');
     this.showNewAppointmentPanel = true;
   }
 
@@ -851,7 +859,8 @@ export class AgendaPage implements OnInit, OnDestroy {
       await this.citasSvc.cambiarEstado(this.citaActiva.id_cita, estado);
       this.successMessage = 'Estado de cita actualizado.';
       this.cerrarQuickActions();
-      await this.loadAgendaForCurrentMonth();
+      this.agendaRefresh.requestRefresh('agenda');
+      this.citasRefresh.requestRefresh('list');
     } catch (err) {
       this.errorMessage = mapApiError(err).userMessage;
     }
@@ -863,7 +872,8 @@ export class AgendaPage implements OnInit, OnDestroy {
       await this.citasSvc.delete(this.citaActiva.id_cita);
       this.successMessage = 'Cita eliminada correctamente.';
       this.cerrarQuickActions();
-      await this.loadAgendaForCurrentMonth();
+      this.agendaRefresh.requestRefresh('agenda');
+      this.citasRefresh.requestRefresh('list');
     } catch (err) {
       this.errorMessage = mapApiError(err).userMessage;
     }
@@ -882,17 +892,11 @@ export class AgendaPage implements OnInit, OnDestroy {
       this.apptContextLabel = '';
     }
 
-    document.body.classList.add('modal-open');
     this.showNewAppointmentPanel = true;
   }
 
   closeNewAppointmentPanel() {
     this.showNewAppointmentPanel = false;
-    document.body.classList.remove('modal-open');
-    this.resetPanelTransform();
-    this.dragStartY = 0;
-    this.dragCurrentY = 0;
-    this.isDragging = false;
   }
 
   async onCitaGuardadaDesdeAgenda(data: CitaFormData) {
@@ -921,7 +925,8 @@ export class AgendaPage implements OnInit, OnDestroy {
       this.apptPrefill = {};
       this.apptShowBanner = false;
       this.closeNewAppointmentPanel();
-      await this.loadAgendaForCurrentMonth();
+      this.agendaRefresh.requestRefresh('agenda');
+      this.citasRefresh.requestRefresh('list');
     } catch (err) {
       this.errorMessage = mapApiError(err).userMessage;
     } finally {
@@ -943,7 +948,6 @@ export class AgendaPage implements OnInit, OnDestroy {
     this.solicitudSeleccionada = null;
     this.cqaConfirmConfig = null;
     this.cqaConfirmFn = null;
-    document.body.classList.remove('modal-open');
     if (this.openPopover) {
       this.openPopover.dismiss();
       this.openPopover = null;
@@ -991,49 +995,6 @@ export class AgendaPage implements OnInit, OnDestroy {
     }
     this.closeDateModal();
   }
-  private isMobile(): boolean {
-    return window.innerWidth <= 600;
-  }
-
-  private getPanelElement(): HTMLElement | null {
-    return document.querySelector('.new-appointment-panel');
-  }
-
-  startDrag(event: TouchEvent) {
-    if (!this.isMobile() || !this.showNewAppointmentPanel) return;
-    this.dragStartY = event.touches[0].clientY;
-    this.dragCurrentY = this.dragStartY;
-    this.isDragging = true;
-  }
-
-  onDrag(event: TouchEvent) {
-    if (!this.isMobile() || !this.isDragging) return;
-    this.dragCurrentY = event.touches[0].clientY;
-    const diff = this.dragCurrentY - this.dragStartY;
-    if (diff <= 0) return;
-    const panel = this.getPanelElement();
-    if (panel) panel.style.transform = `translate(-50%, ${diff}px)`;
-  }
-
-  endDrag(_event: TouchEvent) {
-    if (!this.isMobile() || !this.isDragging) return;
-    const diff = this.dragCurrentY - this.dragStartY;
-    const panel = this.getPanelElement();
-    this.isDragging = false;
-    if (diff > 120) {
-      this.closeNewAppointmentPanel();
-    } else if (panel) {
-      panel.style.transform = '';
-    }
-    this.dragStartY = 0;
-    this.dragCurrentY = 0;
-  }
-
-  private resetPanelTransform() {
-    const panel = this.getPanelElement();
-    if (panel) panel.style.transform = '';
-  }
-
   openBuscarPacienteModal(modo: 'seleccionar' | 'toolbar' = 'toolbar') {
     this.buscarModo = modo;
     this.buscarBusqueda = '';

@@ -273,6 +273,99 @@
   margin: 0;
 }
 
+.det-notas-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.det-nota-summary-item {
+  padding: 14px 14px 13px;
+  border-radius: 14px;
+  border: 1px solid rgba(203, 213, 225, 0.72);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(248, 250, 252, 0.9));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.det-nota-summary-item__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.det-nota-summary-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.det-nota-summary-chip--general {
+  color: #1d4ed8;
+  background: rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.16);
+}
+
+.det-nota-summary-chip--diagnostico {
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.1);
+  border-color: rgba(124, 58, 237, 0.16);
+}
+
+.det-nota-summary-chip--tratamiento {
+  color: #0f766e;
+  background: rgba(13, 148, 136, 0.1);
+  border-color: rgba(13, 148, 136, 0.16);
+}
+
+.det-nota-summary-chip--seguimiento {
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.18);
+}
+
+.det-nota-summary-chip--receta {
+  color: #be123c;
+  background: rgba(244, 63, 94, 0.1);
+  border-color: rgba(244, 63, 94, 0.16);
+}
+
+.det-nota-summary-chip--otro {
+  color: #475569;
+  background: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+.det-nota-summary-date {
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+  white-space: nowrap;
+}
+
+.det-nota-summary-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-strong, #0f172a);
+  line-height: 1.35;
+}
+
+.det-nota-summary-content {
+  margin: 0;
+  font-size: 13.5px;
+  color: #334155;
+  line-height: 1.55;
+}
+
 .det-empty-text { color: var(--text-muted, #64748b) !important; font-style: italic; }
 
 // ─── Citas tab ───────────────────────────────────────────────────────────────
