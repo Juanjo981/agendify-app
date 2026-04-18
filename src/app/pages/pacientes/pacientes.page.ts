@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
@@ -16,7 +16,7 @@ import { getAvatarColor as avatarColorUtil } from '../../shared/utils/avatar.uti
 import { formatFecha as formatFechaUtil } from '../../shared/utils/date.utils';
 import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../shared/confirm-dialog/confirm-dialog.component';
 import { AgfDatePickerComponent } from '../../shared/components/agf-date-picker/agf-date-picker.component';
-import { mapApiError, MappedApiError } from '../../shared/utils/api-error.mapper';
+import { mapApiError } from '../../shared/utils/api-error.mapper';
 
 @Component({
   selector: 'app-pacientes',
@@ -26,49 +26,93 @@ import { mapApiError, MappedApiError } from '../../shared/utils/api-error.mapper
   imports: [IonicModule, CommonModule, FormsModule, ConfirmDialogComponent, AgfDatePickerComponent],
 })
 export class PacientesPage implements OnInit {
+  @ViewChild('pacientesTable') private pacientesTable?: ElementRef<HTMLElement>;
+
   readonly birthDateMaxYear = new Date().getFullYear();
   readonly sexoOptions = PACIENTE_SEXO_OPTIONS;
 
-  // ─── Data & filters ────────────────────────────────────────────────────────
   pacientesFiltrados: PacienteDto[] = [];
   totalPacientes = 0;
   busqueda = '';
   filtroActivo: 'todos' | 'activos' | 'inactivos' = 'todos';
   ordenamiento: 'az' | 'za' | 'recientes' | 'antiguos' = 'az';
 
-  // ─── Pagination ────────────────────────────────────────────────────────────
   currentPage = 0;
   pageSize = 20;
   totalPages = 0;
+  isFirstPage = true;
   isLastPage = true;
 
-  // ─── Loading / error ───────────────────────────────────────────────────────
   loading = false;
-  loadingMore = false;
   errorMessage = '';
   saving = false;
 
-  // ─── Form modal ────────────────────────────────────────────────────────────
   showFormModal = false;
   modoModal: 'crear' | 'editar' = 'crear';
   pacienteEditando: PacienteDto | null = null;
   formPaciente = this.emptyForm();
   formErrores: Record<string, string> = {};
 
-  // ─── Confirm dialog ────────────────────────────────────────────────────────
   confirmConfig: ConfirmDialogConfig | null = null;
   private confirmCallback: (() => void) | null = null;
-
-  // ─── Search debounce ───────────────────────────────────────────────────────
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private router: Router, private svc: PacientesApiService) {}
 
   ngOnInit() {
-    this.cargar();
+    void this.cargar();
   }
 
-  // ─── Helpers ───────────────────────────────────────────────────────────────
+  get currentPageDisplay(): number {
+    return this.currentPage + 1;
+  }
+
+  get shouldShowPagination(): boolean {
+    return !this.loading && !this.errorMessage && this.totalPacientes > 0 && this.totalPages > 1;
+  }
+
+  get visiblePageItems(): Array<number | 'ellipsis'> {
+    if (this.totalPages <= 1) return [];
+
+    const current = this.currentPageDisplay;
+    const total = this.totalPages;
+    const siblingCount = this.isCompactPagination() ? 0 : 1;
+    const pages = new Set<number>([1, total, current]);
+
+    for (let offset = 1; offset <= siblingCount; offset++) {
+      pages.add(current - offset);
+      pages.add(current + offset);
+    }
+
+    if (current <= 2 + siblingCount) {
+      for (let page = 2; page <= Math.min(3 + siblingCount, total - 1); page++) {
+        pages.add(page);
+      }
+    }
+
+    if (current >= total - (1 + siblingCount)) {
+      for (let page = Math.max(total - (2 + siblingCount), 2); page < total; page++) {
+        pages.add(page);
+      }
+    }
+
+    const sortedPages = [...pages]
+      .filter(page => page >= 1 && page <= total)
+      .sort((a, b) => a - b);
+
+    const items: Array<number | 'ellipsis'> = [];
+
+    for (const page of sortedPages) {
+      const previous = items[items.length - 1];
+      if (typeof previous === 'number' && page - previous > 1) {
+        items.push('ellipsis');
+      }
+      items.push(page);
+    }
+
+    return items;
+  }
+
   emptyForm() {
     return {
       nombre: '', apellido: '', email: '', numero_telefono: '',
@@ -108,14 +152,9 @@ export class PacientesPage implements OnInit {
     }
   }
 
-  // ─── Load data ─────────────────────────────────────────────────────────────
-  async cargar(reset = true) {
-    if (reset) {
-      this.currentPage = 0;
-      this.loading = true;
-    } else {
-      this.loadingMore = true;
-    }
+  async cargar(page = 0, options: { scrollToTable?: boolean } = {}) {
+    const targetPage = Math.max(page, 0);
+    this.loading = true;
     this.errorMessage = '';
 
     try {
@@ -123,58 +162,86 @@ export class PacientesPage implements OnInit {
                    : this.filtroActivo === 'inactivos' ? false
                    : undefined;
 
-      const page = await this.svc.getAll({
+      const response = await this.svc.getAll({
         search: this.busqueda.trim() || undefined,
         activo,
-        page: this.currentPage,
+        page: targetPage,
         size: this.pageSize,
         sort: this.getSortParam(),
       });
 
-      if (reset) {
-        this.pacientesFiltrados = page.content;
-      } else {
-        this.pacientesFiltrados = [...this.pacientesFiltrados, ...page.content];
+      if (response.total_pages > 0 && targetPage >= response.total_pages && response.content.length === 0) {
+        await this.cargar(response.total_pages - 1, options);
+        return;
       }
-      this.totalPacientes = page.total_elements;
-      this.totalPages = page.total_pages;
-      this.isLastPage = page.last;
+
+      this.pacientesFiltrados = response.content;
+      this.totalPacientes = response.total_elements;
+      this.totalPages = response.total_pages;
+      this.currentPage = response.number;
+      this.pageSize = response.size || this.pageSize;
+      this.isFirstPage = response.first;
+      this.isLastPage = response.last;
+
+      if (options.scrollToTable) {
+        setTimeout(() => this.scrollToTable(), 0);
+      }
     } catch (err) {
-      const mapped = mapApiError(err);
-      this.errorMessage = mapped.userMessage;
+      this.pacientesFiltrados = [];
+      this.totalPacientes = 0;
+      this.totalPages = 0;
+      this.currentPage = 0;
+      this.isFirstPage = true;
+      this.isLastPage = true;
+      this.errorMessage = mapApiError(err).userMessage;
     } finally {
       this.loading = false;
-      this.loadingMore = false;
     }
   }
 
-  cargarMas() {
-    if (this.isLastPage || this.loadingMore) return;
-    this.currentPage++;
-    this.cargar(false);
+  goToPreviousPage() {
+    if (this.isFirstPage || this.loading) return;
+    void this.cargar(this.currentPage - 1, { scrollToTable: true });
   }
 
-  // ─── Filter & sort ─────────────────────────────────────────────────────────
+  goToNextPage() {
+    if (this.isLastPage || this.loading) return;
+    void this.cargar(this.currentPage + 1, { scrollToTable: true });
+  }
+
+  goToPage(page: number) {
+    const targetPage = page - 1;
+    if (targetPage === this.currentPage || targetPage < 0 || targetPage >= this.totalPages || this.loading) return;
+    void this.cargar(targetPage, { scrollToTable: true });
+  }
+
+  isPageNumber(item: number | 'ellipsis'): item is number {
+    return typeof item === 'number';
+  }
+
+  trackByPaginationItem(index: number, item: number | 'ellipsis'): string {
+    return `${item}-${index}`;
+  }
+
   onBusquedaChange() {
     if (this.searchTimer) clearTimeout(this.searchTimer);
-    this.searchTimer = setTimeout(() => this.cargar(), 350);
+    this.searchTimer = setTimeout(() => void this.cargar(), 350);
   }
 
   clearBusqueda() {
     this.busqueda = '';
-    this.cargar();
+    void this.cargar();
   }
 
   setFiltroActivo(v: 'todos' | 'activos' | 'inactivos') {
     this.filtroActivo = v;
-    this.cargar();
+    void this.cargar();
   }
 
   onOrdenamientoChange() {
-    this.cargar();
+    void this.cargar();
   }
 
-  // ─── CRUD ──────────────────────────────────────────────────────────────────
   abrirCrearModal() {
     this.modoModal = 'crear';
     this.formPaciente = this.emptyForm();
@@ -224,7 +291,11 @@ export class PacientesPage implements OnInit {
   private formHasChanges(): boolean {
     if (this.modoModal === 'crear') {
       const empty = this.emptyForm();
-      return Object.keys(empty).some(k => (this.formPaciente as any)[k] !== (empty as any)[k]);
+      return Object.keys(empty).some(key => {
+        const currentValue = this.formPaciente[key as keyof typeof empty];
+        const initialValue = empty[key as keyof typeof empty];
+        return currentValue !== initialValue;
+      });
     }
     if (!this.pacienteEditando) return false;
     const p = this.pacienteEditando;
@@ -266,7 +337,7 @@ export class PacientesPage implements OnInit {
         icon: 'checkmark-circle-outline',
         variant: 'primary',
       },
-      () => this.ejecutarGuardar()
+      () => void this.ejecutarGuardar()
     );
   }
 
@@ -294,7 +365,7 @@ export class PacientesPage implements OnInit {
       }
       this.showFormModal = false;
       this.pacienteEditando = null;
-      await this.cargar();
+      await this.cargar(this.currentPage);
     } catch (err) {
       const mapped = mapApiError(err);
       if (mapped.fieldErrors) {
@@ -323,23 +394,23 @@ export class PacientesPage implements OnInit {
         variant: nuevoEstado ? 'primary' : 'danger',
         icon: nuevoEstado ? 'checkmark-circle-outline' : 'close-circle-outline',
       },
-      async () => {
-        try {
-          await this.svc.setActivo(p.id_paciente, nuevoEstado);
-          await this.cargar();
-        } catch (err) {
-          const mapped = mapApiError(err);
-          this.errorMessage = mapped.userMessage;
-        }
+      () => {
+        void (async () => {
+          try {
+            await this.svc.setActivo(p.id_paciente, nuevoEstado);
+            await this.cargar(this.currentPage);
+          } catch (err) {
+            this.errorMessage = mapApiError(err).userMessage;
+          }
+        })();
       }
     );
   }
 
   verPaciente(p: PacienteDto) {
-    this.router.navigate(['/dashboard/pacientes', p.id_paciente]);
+    void this.router.navigate(['/dashboard/pacientes', p.id_paciente]);
   }
 
-  // ─── Confirm dialog handlers ───────────────────────────────────────────────
   private openConfirm(config: ConfirmDialogConfig, onConfirm: () => void) {
     this.confirmConfig = config;
     this.confirmCallback = onConfirm;
@@ -355,4 +426,16 @@ export class PacientesPage implements OnInit {
     this.confirmConfig = null;
     this.confirmCallback = null;
   }
+
+  private isCompactPagination(): boolean {
+    return typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches;
+  }
+
+  private scrollToTable() {
+    this.pacientesTable?.nativeElement.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }
 }
+

@@ -185,10 +185,143 @@
   p { font-size: 15px; font-weight: 600; margin: 0; }
 }
 
-.cit-load-more {
-  margin-top: 14px;
+.cit-pagination {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 18px 20px 20px;
+  border: 1px solid rgba(209, 213, 219, 0.45);
+  border-radius: var(--radius-lg, 16px);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.74) 0%, rgba(255, 255, 255, 0.9) 100%);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+.cit-pagination__summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+}
+
+.cit-pagination__size {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(209, 213, 219, 0.45);
+
+  select {
+    min-width: 68px;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(209, 213, 219, 0.55);
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--text-strong, #0f172a);
+    font-size: 13px;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+
+    &:focus {
+      border-color: rgba(99, 102, 241, 0.4);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+    }
+  }
+}
+
+.cit-pagination__controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cit-pagination__pages {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(209, 213, 219, 0.45);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.cit-pagination__nav,
+.cit-pagination__page {
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--text-strong, #0f172a);
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.cit-pagination__nav {
+  padding: 0 14px;
+  color: var(--text-muted, #64748b);
+  border-color: rgba(209, 213, 219, 0.5);
+}
+
+.cit-pagination__page {
+  min-width: 36px;
+  padding: 0 10px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+.cit-pagination__nav ion-icon,
+.cit-pagination__page ion-icon {
+  font-size: 15px;
+}
+
+.cit-pagination__nav:hover:not(:disabled),
+.cit-pagination__page:hover:not(.active) {
+  transform: translateY(-1px);
+  border-color: rgba(99, 102, 241, 0.22);
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--primary-mid, #6366f1);
+  box-shadow: 0 10px 18px rgba(99, 102, 241, 0.12);
+}
+
+.cit-pagination__page.active {
+  background: linear-gradient(135deg, var(--primary, #3b3f92), var(--primary-mid, #6366f1));
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(99, 102, 241, 0.26);
+}
+
+.cit-pagination__nav:disabled,
+.cit-pagination__page:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: none;
+  transform: none;
+}
+
+.cit-pagination__ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  color: var(--text-muted, #94a3b8);
+  font-size: 16px;
+  font-weight: 700;
 }
 
 // ─── Responsive ──────────────────────────────────────────────────────────────
@@ -202,3 +335,57 @@
   .cit-page-header { flex-direction: column; align-items: flex-start; }
   .cit-btn-primary { width: 100%; justify-content: center; }
 }
+
+@media (max-width: 540px) {
+  .cit-pagination {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .cit-pagination__summary {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .cit-pagination__size {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .cit-pagination__controls {
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .cit-pagination__pages {
+    flex: 1;
+    justify-content: center;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .cit-pagination__pages::-webkit-scrollbar {
+    display: none;
+  }
+
+  .cit-pagination__nav {
+    min-width: 44px;
+    padding: 0 12px;
+  }
+
+  .cit-pagination__nav span {
+    display: none;
+  }
+
+  .cit-pagination__page {
+    min-width: 34px;
+    height: 34px;
+    padding: 0 8px;
+  }
+}
+
+

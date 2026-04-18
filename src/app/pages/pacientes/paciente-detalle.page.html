@@ -1,9 +1,49 @@
 <ion-content class="det-content">
 
   <!-- ══════════════ LOADING ══════════════ -->
-  <div *ngIf="loading" class="det-loading">
-    <ion-spinner name="crescent"></ion-spinner>
-    <p>Cargando paciente…</p>
+  <div *ngIf="loading && showInitialLoader" class="det-loading-shell">
+    <div class="det-loading-hero">
+      <div class="det-loading-hero__back">
+        <ion-skeleton-text animated style="width: 86px; height: 14px; border-radius: 999px;"></ion-skeleton-text>
+      </div>
+      <div class="det-loading-hero__body">
+        <ion-skeleton-text animated class="det-loading-avatar"></ion-skeleton-text>
+        <div class="det-loading-hero__copy">
+          <ion-skeleton-text animated style="width: 220px; height: 28px; border-radius: 14px;"></ion-skeleton-text>
+          <div class="det-loading-chips">
+            <ion-skeleton-text animated *ngFor="let chip of skeletonLines" style="width: 88px; height: 24px; border-radius: 999px;"></ion-skeleton-text>
+          </div>
+        </div>
+        <div class="det-loading-actions">
+          <ion-skeleton-text animated style="width: 104px; height: 40px; border-radius: 999px;"></ion-skeleton-text>
+          <ion-skeleton-text animated style="width: 118px; height: 40px; border-radius: 999px;"></ion-skeleton-text>
+        </div>
+      </div>
+    </div>
+
+    <div class="det-loading-tabs">
+      <ion-skeleton-text animated *ngFor="let tab of skeletonCards" style="width: 118px; height: 40px; border-radius: 14px;"></ion-skeleton-text>
+    </div>
+
+    <div class="det-loading-panel">
+      <div class="det-loading-grid">
+        <div class="det-loading-card" *ngFor="let card of skeletonCards">
+          <ion-skeleton-text animated style="width: 42px; height: 42px; border-radius: 14px;"></ion-skeleton-text>
+          <div class="det-loading-card__copy">
+            <ion-skeleton-text animated style="width: 92px; height: 12px; border-radius: 999px;"></ion-skeleton-text>
+            <ion-skeleton-text animated style="width: 168px; height: 16px; border-radius: 999px;"></ion-skeleton-text>
+          </div>
+        </div>
+      </div>
+
+      <div class="det-loading-block">
+        <div class="det-loading-block__header">
+          <ion-skeleton-text animated style="width: 168px; height: 16px; border-radius: 999px;"></ion-skeleton-text>
+          <ion-skeleton-text animated style="width: 96px; height: 32px; border-radius: 999px;"></ion-skeleton-text>
+        </div>
+        <ion-skeleton-text animated *ngFor="let line of skeletonLines" style="width: 100%; height: 15px; border-radius: 999px;"></ion-skeleton-text>
+      </div>
+    </div>
   </div>
 
   <!-- ══════════════ ERROR ══════════════ -->
@@ -27,7 +67,7 @@
   </div>
 
   <!-- ══════════════ MAIN ══════════════════ -->
-  <div *ngIf="paciente" class="det-wrapper">
+  <div *ngIf="paciente" class="det-wrapper" [class.det-wrapper--refreshing]="refreshingInformacion">
 
     <!-- ─── HERO ─────────────────────────────────────────────────────────── -->
     <div class="det-hero">
@@ -82,10 +122,10 @@
     </app-paciente-submenu>
 
     <!-- ─── SECTION CONTENT ──────────────────────────────────────────────── -->
-    <div class="det-tab-content">
+    <div class="det-tab-content" [attr.data-section-transition]="sectionTransitionKey">
 
       <!-- ════ SECCIÓN: INFORMACIÓN ════ -->
-      <div *ngIf="seccionActiva === 'informacion'" class="det-informacion">
+      <div *ngIf="seccionActiva === 'informacion'" class="det-informacion det-section-panel">
 
         <!-- Ficha de contacto -->
         <div class="det-info-grid">
@@ -252,22 +292,16 @@
         <div class="det-notas-card">
           <div class="det-notas-card__header">
             <ion-icon name="clipboard-outline"></ion-icon>
-            <span>Resumen clínico</span>
+            <span>Notas generales</span>
+            <button class="det-nota-edit-btn" (click)="editNotasGenerales()" title="Editar notas generales" type="button">
+              <ion-icon name="pencil-outline"></ion-icon>
+            </button>
           </div>
-          <div class="det-notas-summary-list" *ngIf="notasVisiblesResumen.length > 0; else sinNotasResumen">
-            <article class="det-nota-summary-item" *ngFor="let nota of notasVisiblesResumen">
-              <div class="det-nota-summary-item__top">
-                <span class="det-nota-summary-chip" [ngClass]="getNotaResumenTipoClass(nota.tipo_nota)">
-                  {{ getNotaResumenTipoLabel(nota.tipo_nota) }}
-                </span>
-                <span class="det-nota-summary-date" *ngIf="nota.created_at">{{ formatFecha(nota.created_at) }}</span>
-              </div>
-              <p class="det-nota-summary-title" *ngIf="nota.titulo">{{ nota.titulo }}</p>
-              <p class="det-nota-summary-content">{{ getNotaResumenContenido(nota.contenido) }}</p>
-            </article>
-          </div>
+          <p class="det-notas-card__body det-nota-item__text" *ngIf="hasNotasGenerales; else sinNotasResumen">
+            {{ notasGeneralesResumen }}
+          </p>
           <ng-template #sinNotasResumen>
-            <p class="det-notas-card__body det-empty-text">Sin notas visibles en resumen.</p>
+            <p class="det-notas-card__body det-empty-text">Sin notas generales. Agrega un resumen del paciente.</p>
           </ng-template>
         </div>
 
@@ -286,7 +320,7 @@
       </div>
 
       <!-- ════ SECCIÓN: NOTAS ════ -->
-      <div *ngIf="seccionActiva === 'notas'" class="det-notas">
+      <div *ngIf="seccionActiva === 'notas'" class="det-notas det-section-panel" [class.det-section-panel--refreshing]="loadingNotas && notasLoaded">
         <div class="det-notas-topbar">
           <div class="det-notas-topbar__info">
             <ion-icon name="document-text-outline"></ion-icon>
@@ -299,11 +333,15 @@
         </div>
 
         <!-- Loading -->
-        <div *ngIf="loadingNotas" class="det-section-loading">
-          <ion-spinner name="crescent"></ion-spinner>
+        <div *ngIf="loadingNotas && !notasLoaded" class="det-section-skeleton">
+          <div class="det-section-skeleton__card" *ngFor="let line of skeletonLines">
+            <ion-skeleton-text animated style="width: 140px; height: 14px; border-radius: 999px;"></ion-skeleton-text>
+            <ion-skeleton-text animated style="width: 100%; height: 16px; border-radius: 999px;"></ion-skeleton-text>
+            <ion-skeleton-text animated style="width: 78%; height: 16px; border-radius: 999px;"></ion-skeleton-text>
+          </div>
         </div>
 
-        <div *ngIf="!loadingNotas && notas.length === 0" class="det-empty">
+        <div *ngIf="!loadingNotas && notasLoaded && notas.length === 0" class="det-empty">
           <ion-icon name="document-text-outline"></ion-icon>
           <p>Sin notas clínicas</p>
           <span>Registra la primera nota clínica del paciente</span>
@@ -313,7 +351,7 @@
           </button>
         </div>
 
-        <div class="det-nota-list" *ngIf="!loadingNotas && notas.length > 0">
+        <div class="det-nota-list" *ngIf="notas.length > 0">
           <div *ngFor="let nota of notas" class="det-nota-item">
             <div class="det-nota-item__header">
               <span class="det-nota-item__fecha">
@@ -334,7 +372,7 @@
             <p class="det-nota-item__text" *ngIf="nota.contenido">{{ nota.contenido }}</p>
             <p class="det-nota-item__text det-nota-empty-text" *ngIf="!nota.contenido">(Sin contenido)</p>
             <span class="det-nota-item__visible" *ngIf="nota.visible_en_resumen">
-              <ion-icon name="eye-outline"></ion-icon> Visible en resumen
+              <ion-icon name="document-text-outline"></ion-icon> Incluida en PDF
             </span>
             <div class="det-nota-adjunto" *ngIf="nota.adjuntosLoading || nota.adjuntos.length > 0">
               <div class="det-adjunto-chip" *ngFor="let adjunto of nota.adjuntos">
@@ -362,15 +400,19 @@
       </div>
 
       <!-- ════ SECCIÓN: SESIONES ════ -->
-      <div *ngIf="seccionActiva === 'sesiones'" class="det-sesiones">
+      <div *ngIf="seccionActiva === 'sesiones'" class="det-sesiones det-section-panel" [class.det-section-panel--refreshing]="loadingSesiones && sesionesLoaded">
 
         <!-- Loading -->
-        <div *ngIf="loadingSesiones" class="det-section-loading">
-          <ion-spinner name="crescent"></ion-spinner>
+        <div *ngIf="loadingSesiones && !sesionesLoaded" class="det-section-skeleton">
+          <div class="det-section-skeleton__card" *ngFor="let line of skeletonLines">
+            <ion-skeleton-text animated style="width: 126px; height: 14px; border-radius: 999px;"></ion-skeleton-text>
+            <ion-skeleton-text animated style="width: 100%; height: 16px; border-radius: 999px;"></ion-skeleton-text>
+            <ion-skeleton-text animated style="width: 72%; height: 16px; border-radius: 999px;"></ion-skeleton-text>
+          </div>
         </div>
 
         <!-- Stats row -->
-        <div class="det-ses-stats" *ngIf="!loadingSesiones && sesiones.length > 0">
+        <div class="det-ses-stats" *ngIf="sesiones.length > 0">
           <div class="det-ses-stat">
             <strong>{{ totalSesiones }}</strong>
             <span>Sesiones</span>
@@ -388,7 +430,7 @@
         </div>
 
         <!-- Session cards -->
-        <div class="det-ses-list" *ngIf="!loadingSesiones && sesiones.length > 0">
+        <div class="det-ses-list" *ngIf="sesiones.length > 0">
           <div *ngFor="let ses of sesiones" class="det-ses-card">
             <div class="det-ses-card__header">
               <div class="det-ses-card__meta">
@@ -412,7 +454,7 @@
         </div>
 
         <!-- Empty -->
-        <div *ngIf="!loadingSesiones && sesiones.length === 0" class="det-empty">
+        <div *ngIf="!loadingSesiones && sesionesLoaded && sesiones.length === 0" class="det-empty">
           <ion-icon name="pulse-outline"></ion-icon>
           <p>Sin sesiones registradas</p>
           <span>Las sesiones clínicas registradas del paciente aparecerán aquí</span>
@@ -421,14 +463,18 @@
       </div>
 
       <!-- ════ SECCIÓN: HISTORIAL ════ -->
-      <div *ngIf="seccionActiva === 'historial'" class="det-historial">
+      <div *ngIf="seccionActiva === 'historial'" class="det-historial det-section-panel" [class.det-section-panel--refreshing]="loadingHistorial && historialLoaded">
 
         <!-- Loading -->
-        <div *ngIf="loadingHistorial" class="det-section-loading">
-          <ion-spinner name="crescent"></ion-spinner>
+        <div *ngIf="loadingHistorial && !historialLoaded" class="det-section-skeleton">
+          <div class="det-section-skeleton__card" *ngFor="let line of skeletonLines">
+            <ion-skeleton-text animated style="width: 156px; height: 14px; border-radius: 999px;"></ion-skeleton-text>
+            <ion-skeleton-text animated style="width: 100%; height: 16px; border-radius: 999px;"></ion-skeleton-text>
+            <ion-skeleton-text animated style="width: 82%; height: 16px; border-radius: 999px;"></ion-skeleton-text>
+          </div>
         </div>
 
-        <ng-container *ngIf="!loadingHistorial">
+        <ng-container *ngIf="historialLoaded">
 
         <!-- Topbar with export button -->
         <div class="det-hist-topbar">
@@ -541,6 +587,61 @@
   </div><!-- *ngIf="paciente" -->
 
 
+  <div *ngIf="showNotasGeneralesModal" class="pac-modal-backdrop" (click)="cerrarNotasGeneralesModal()"></div>
+  <div *ngIf="showNotasGeneralesModal" class="pac-modal pac-modal--small pac-modal--notes" role="dialog" aria-modal="true" aria-labelledby="notas-generales-modal-title">
+    <div class="pac-modal__header">
+      <h2 id="notas-generales-modal-title">Editar notas generales</h2>
+      <div class="pac-modal__header-actions">
+        <button
+          class="pac-modal__utility-btn"
+          type="button"
+          (click)="copiarNotasGenerales()"
+          [disabled]="!notasGeneralesDraft.trim()"
+          aria-label="Copiar notas generales"
+          title="Copiar notas"
+        >
+          <ion-icon name="copy-outline"></ion-icon>
+        </button>
+        <button
+          class="pac-modal__utility-btn"
+          type="button"
+          (click)="exportarNotasGeneralesTxt()"
+          [disabled]="!notasGeneralesDraft.trim()"
+          aria-label="Exportar notas generales"
+          title="Exportar .txt"
+        >
+          <ion-icon name="download-outline"></ion-icon>
+        </button>
+        <button class="pac-modal__close" (click)="cerrarNotasGeneralesModal()" aria-label="Cerrar">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+    </div>
+    <div class="pac-modal__body">
+      <div class="pac-field pac-field--notes">
+        <label>Notas generales</label>
+        <textarea
+          class="pac-textarea--notes"
+          [(ngModel)]="notasGeneralesDraft"
+          rows="5"
+          placeholder="Escribe aqu� un resumen general relevante del paciente..."
+        ></textarea>
+      </div>
+
+      <div class="pac-field__error pac-field__error--general" *ngIf="notasGeneralesError">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        {{ notasGeneralesError }}
+      </div>
+    </div>
+    <div class="pac-modal__footer">
+      <button class="pac-btn-ghost" (click)="cerrarNotasGeneralesModal()" [disabled]="savingNotasGenerales">Cancelar</button>
+      <button class="det-btn-primary" (click)="guardarNotasGenerales()" [disabled]="savingNotasGenerales">
+        <ion-spinner *ngIf="savingNotasGenerales" name="crescent" class="pac-spinner-inline"></ion-spinner>
+        <ion-icon *ngIf="!savingNotasGenerales" name="checkmark-outline"></ion-icon>
+        Guardar
+      </button>
+    </div>
+  </div>
   <!-- ══════════════ MODAL EDITAR PACIENTE ══════════════════════════════════ -->
   <div *ngIf="showEditarModal" class="pac-modal-backdrop" (click)="cerrarEditarModal()"></div>
   <div *ngIf="showEditarModal" class="pac-modal" role="dialog">
@@ -655,8 +756,19 @@
           </select>
         </div>
         <div class="pac-field pac-field--toggle">
-          <label>Visible en resumen</label>
-          <button class="pac-toggle" [class.on]="notaForm.visible_en_resumen" (click)="notaForm.visible_en_resumen = !notaForm.visible_en_resumen" type="button">
+          <div class="pac-field__toggle-copy">
+            <label>Incluir en PDF del historial</label>
+            <span class="pac-field__hint">Si está activado, esta nota aparecerá en la exportación PDF del historial del paciente.</span>
+          </div>
+          <button
+            class="pac-toggle"
+            [class.on]="notaForm.visible_en_resumen"
+            (click)="notaForm.visible_en_resumen = !notaForm.visible_en_resumen"
+            type="button"
+            [attr.aria-pressed]="notaForm.visible_en_resumen"
+            aria-label="Incluir nota en PDF del historial"
+            title="Incluir en PDF del historial"
+          >
             <span class="pac-toggle__knob"></span>
           </button>
         </div>
@@ -679,11 +791,14 @@
             </button>
           </div>
         </div>
-        <input class="det-adjunto-input" #notaAdjuntoInput type="file" accept=".txt,.doc,.docx,.pdf,.jpg,.jpeg,.png,.webp" (change)="onNotaAdjuntoSeleccionado($event)" />
-        <button *ngIf="!notaForm.adjunto" class="det-adjunto-zone" type="button" (click)="notaAdjuntoInput.click()">
+        <p class="det-adjunto-blocked-message" *ngIf="notaTieneAdjuntoExistente">
+          Esta nota ya tiene un archivo adjunto. Elimina el actual para subir otro.
+        </p>
+        <input class="det-adjunto-input" #notaAdjuntoInput type="file" accept=".txt,.doc,.docx,.pdf,.jpg,.jpeg,.png,.webp" (change)="onNotaAdjuntoSeleccionado($event)" [disabled]="notaTieneAdjuntoExistente" />
+        <button *ngIf="puedeSeleccionarAdjuntoNota" class="det-adjunto-zone" type="button" (click)="notaAdjuntoInput.click()">
           <ion-icon class="det-adjunto-zone__icon" name="cloud-upload-outline"></ion-icon>
           <span class="det-adjunto-zone__text">Seleccionar archivo</span>
-          <span class="det-adjunto-zone__hint">PDF, Word o imagen. Se sube al guardar la nota.</span>
+          <span class="det-adjunto-zone__hint">PDF, Word o imagen. Máximo 2 MB. Se sube al guardar la nota.</span>
         </button>
         <div *ngIf="notaForm.adjunto" class="det-adjunto-preview-card">
           <img *ngIf="notaForm.adjunto.previewUrl" class="det-adjunto-preview-img" [src]="notaForm.adjunto.previewUrl" alt="Vista previa del adjunto" />
@@ -771,5 +886,8 @@
   </app-confirm-dialog>
 
 </ion-content>
+
+
+
 
 

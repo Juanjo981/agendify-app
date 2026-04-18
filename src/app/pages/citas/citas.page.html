@@ -28,10 +28,10 @@
     </div>
 
     <p class="cit-counter" *ngIf="!loading">
-      Mostrando <strong>{{ citasFiltradas.length }}</strong> de <strong>{{ totalCitas }}</strong> citas
+      Mostrando <strong>{{ currentRangeStart }}</strong>-<strong>{{ currentRangeEnd }}</strong> de <strong>{{ totalCitas }}</strong> citas
     </p>
 
-    <div class="cit-table-wrapper" *ngIf="!loading">
+    <div #citasResults class="cit-table-wrapper" *ngIf="!loading">
       <div class="cit-table-head">
         <div class="cit-col cit-col--paciente">Paciente</div>
         <div class="cit-col cit-col--fecha">Fecha</div>
@@ -129,12 +129,60 @@
       </div>
     </div>
 
-    <div *ngIf="!isLastPage && !loading" class="cit-load-more">
-      <button class="cit-btn-primary" (click)="cargarMas()" [disabled]="loadingMore">
-        <ion-spinner *ngIf="loadingMore" name="crescent"></ion-spinner>
-        <span *ngIf="!loadingMore">Cargar m√°s</span>
-        <span *ngIf="loadingMore">Cargando...</span>
-      </button>
+    <div *ngIf="shouldShowPagination" class="cit-pagination" aria-label="PaginaciÛn de citas">
+      <div class="cit-pagination__summary">
+        <span>P·gina {{ currentPageDisplay }} de {{ totalPages || 1 }}</span>
+
+        <label class="cit-pagination__size" aria-label="Cantidad por p·gina">
+          <span>Mostrar</span>
+          <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+            <option *ngFor="let option of pageSizeOptions" [ngValue]="option">{{ option }}</option>
+          </select>
+          <span>por p·gina</span>
+        </label>
+      </div>
+
+      <div class="cit-pagination__controls" *ngIf="totalPages > 1">
+        <button
+          class="cit-pagination__nav"
+          type="button"
+          (click)="goToPreviousPage()"
+          [disabled]="isFirstPage"
+          aria-label="P·gina anterior"
+        >
+          <ion-icon name="chevron-back-outline"></ion-icon>
+          <span>Anterior</span>
+        </button>
+
+        <div class="cit-pagination__pages">
+          <ng-container *ngFor="let item of visiblePageItems; trackBy: trackByPaginationItem">
+            <button
+              *ngIf="isPageNumber(item); else paginationEllipsis"
+              class="cit-pagination__page"
+              type="button"
+              [class.active]="item === currentPageDisplay"
+              [attr.aria-current]="item === currentPageDisplay ? 'page' : null"
+              (click)="goToPage(item)"
+            >
+              {{ item }}
+            </button>
+            <ng-template #paginationEllipsis>
+              <span class="cit-pagination__ellipsis" aria-hidden="true">Ö</span>
+            </ng-template>
+          </ng-container>
+        </div>
+
+        <button
+          class="cit-pagination__nav"
+          type="button"
+          (click)="goToNextPage()"
+          [disabled]="isLastPage"
+          aria-label="P·gina siguiente"
+        >
+          <span>Siguiente</span>
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </button>
+      </div>
     </div>
   </div>
 </ion-content>
@@ -147,3 +195,5 @@
   (saved)="onGuardado($event)"
   (cancelled)="cerrarModal()"
 ></app-cita-form-modal>
+
+

@@ -1,7 +1,7 @@
 <ion-content class="pac-content">
   <div class="pac-wrapper">
 
-    <!-- ══════════════════════════════ PAGE HEADER ══════════════════════════════ -->
+    <!-- PAGE HEADER -->
     <div class="pac-page-header">
       <div class="pac-page-header__text">
         <h1 class="pac-title">Pacientes</h1>
@@ -13,7 +13,7 @@
       </button>
     </div>
 
-    <!-- ══════════════════════════════ FILTER BAR ═══════════════════════════════ -->
+    <!-- FILTER BAR -->
     <div class="pac-filters">
       <div class="pac-search">
         <ion-icon name="search-outline" class="pac-search__icon"></ion-icon>
@@ -48,12 +48,12 @@
       </div>
     </div>
 
-    <!-- ══════════════════════════════ COUNTER ══════════════════════════════════ -->
+    <!-- COUNTER -->
     <p class="pac-counter" *ngIf="!loading">
       Mostrando <strong>{{ pacientesFiltrados.length }}</strong> de <strong>{{ totalPacientes }}</strong> pacientes
     </p>
 
-    <!-- ══════════════════════════════ ERROR STATE ══════════════════════════════ -->
+    <!-- ERROR STATE -->
     <div *ngIf="errorMessage && !loading" class="pac-error">
       <ion-icon name="alert-circle-outline"></ion-icon>
       <p>{{ errorMessage }}</p>
@@ -63,16 +63,15 @@
       </button>
     </div>
 
-    <!-- ══════════════════════════════ LOADING STATE ════════════════════════════ -->
+    <!-- LOADING STATE -->
     <div *ngIf="loading" class="pac-loading">
       <ion-spinner name="crescent"></ion-spinner>
       <p>Cargando pacientes…</p>
     </div>
 
-    <!-- ══════════════════════════════ TABLE ════════════════════════════════════ -->
-    <div class="pac-table-wrapper" *ngIf="!loading">
+    <!-- TABLE -->
+    <div class="pac-table-wrapper" *ngIf="!loading" #pacientesTable>
 
-      <!-- Table head (desktop only) -->
       <div class="pac-table-head">
         <div class="pac-col pac-col--paciente">Paciente</div>
         <div class="pac-col pac-col--email">Email</div>
@@ -82,21 +81,18 @@
         <div class="pac-col pac-col--acciones">Acciones</div>
       </div>
 
-      <!-- Empty state -->
       <div *ngIf="pacientesFiltrados.length === 0 && !errorMessage" class="pac-empty">
         <ion-icon name="people-outline"></ion-icon>
         <p>No se encontraron pacientes</p>
         <span>Prueba con otros filtros o crea un nuevo paciente</span>
       </div>
 
-      <!-- Rows -->
       <div
         *ngFor="let p of pacientesFiltrados"
         class="pac-row"
         (click)="verPaciente(p)"
         role="row"
       >
-        <!-- Paciente -->
         <div class="pac-col pac-col--paciente">
           <span class="pac-data-label">Paciente</span>
           <div class="pac-patient">
@@ -109,26 +105,22 @@
           </div>
         </div>
 
-        <!-- Email -->
         <div class="pac-col pac-col--email" (click)="$event.stopPropagation()">
           <span class="pac-data-label">Email</span>
           <a *ngIf="p.email" class="pac-link" href="mailto:{{ p.email }}">{{ p.email }}</a>
           <span *ngIf="!p.email">—</span>
         </div>
 
-        <!-- Teléfono -->
         <div class="pac-col pac-col--telefono">
           <span class="pac-data-label">Teléfono</span>
           <span>{{ p.numero_telefono || '—' }}</span>
         </div>
 
-        <!-- Edad -->
         <div class="pac-col pac-col--edad">
           <span class="pac-data-label">Edad</span>
           <span>{{ p.fecha_nacimiento ? calcularEdad(p.fecha_nacimiento) + ' años' : '—' }}</span>
         </div>
 
-        <!-- Estado -->
         <div class="pac-col pac-col--estado">
           <span class="pac-data-label">Estado</span>
           <span class="pac-badge" [class.pac-badge--active]="p.activo" [class.pac-badge--inactive]="!p.activo">
@@ -136,7 +128,6 @@
           </span>
         </div>
 
-        <!-- Acciones -->
         <div class="pac-col pac-col--acciones" (click)="$event.stopPropagation()">
           <span class="pac-data-label">Acciones</span>
           <div class="pac-actions">
@@ -159,20 +150,55 @@
         </div>
       </div>
 
-      <!-- Load more -->
-      <div *ngIf="!isLastPage" class="pac-load-more">
-        <button class="pac-btn-outline" (click)="cargarMas()" [disabled]="loadingMore">
-          <ion-spinner *ngIf="loadingMore" name="crescent" class="pac-spinner-inline"></ion-spinner>
-          <span *ngIf="!loadingMore">Cargar más</span>
-          <span *ngIf="loadingMore">Cargando…</span>
-        </button>
+      <div *ngIf="shouldShowPagination" class="pac-pagination" aria-label="Paginación de pacientes">
+        <div class="pac-pagination__summary">Página {{ currentPageDisplay }} de {{ totalPages }}</div>
+
+        <div class="pac-pagination__controls">
+          <button
+            class="pac-pagination__nav"
+            type="button"
+            (click)="goToPreviousPage()"
+            [disabled]="isFirstPage"
+            aria-label="Página anterior"
+          >
+            <ion-icon name="chevron-back-outline"></ion-icon>
+            <span>Anterior</span>
+          </button>
+
+          <div class="pac-pagination__pages">
+            <ng-container *ngFor="let item of visiblePageItems; trackBy: trackByPaginationItem">
+              <button
+                *ngIf="isPageNumber(item); else paginationEllipsis"
+                class="pac-pagination__page"
+                type="button"
+                [class.active]="item === currentPageDisplay"
+                [attr.aria-current]="item === currentPageDisplay ? 'page' : null"
+                (click)="goToPage(item)"
+              >
+                {{ item }}
+              </button>
+              <ng-template #paginationEllipsis>
+                <span class="pac-pagination__ellipsis" aria-hidden="true">…</span>
+              </ng-template>
+            </ng-container>
+          </div>
+
+          <button
+            class="pac-pagination__nav"
+            type="button"
+            (click)="goToNextPage()"
+            [disabled]="isLastPage"
+            aria-label="Página siguiente"
+          >
+            <span>Siguiente</span>
+            <ion-icon name="chevron-forward-outline"></ion-icon>
+          </button>
+        </div>
       </div>
 
-    </div><!-- .pac-table-wrapper -->
-  </div><!-- .pac-wrapper -->
+    </div>
+  </div>
 
-
-  <!-- ══════════════════ MODAL CREAR / EDITAR PACIENTE ═════════════════════════ -->
   <div *ngIf="showFormModal" class="pac-modal-backdrop" (click)="cerrarFormModal()"></div>
   <div *ngIf="showFormModal" class="pac-modal" role="dialog">
     <div class="pac-modal__header">
@@ -183,7 +209,6 @@
     </div>
 
     <div class="pac-modal__body">
-      <!-- General error -->
       <div class="pac-field__error pac-field__error--general" *ngIf="formErrores['_general']">
         <ion-icon name="alert-circle-outline"></ion-icon>
         {{ formErrores['_general'] }}
@@ -271,8 +296,6 @@
     </div>
   </div>
 
-
-  <!-- ══════════════════════ CONFIRM DIALOG ═══════════════════════════════════ -->
   <app-confirm-dialog
     [config]="confirmConfig"
     (confirmed)="onConfirmDialogConfirmed()"

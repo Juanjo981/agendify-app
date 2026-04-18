@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -41,14 +41,18 @@ import { CitasRefreshService } from '../../shared/refresh/dashboard-module-refre
 })
 export class CitasPage implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
+  @ViewChild('citasResults') private citasResults?: ElementRef<HTMLElement>;
+
+  readonly pageSizeOptions = [10, 20, 50];
   citasFiltradas: CitaDto[] = [];
   showFormModal = false;
   citaEditando: CitaDto | null = null;
 
   totalCitas = 0;
   currentPage = 0;
-  pageSize = 20;
+  pageSize = 10;
   totalPages = 0;
+  isFirstPage = true;
   isLastPage = true;
 
   loading = false;
@@ -83,15 +87,100 @@ export class CitasPage implements OnInit, OnDestroy {
     this.refresh.enterSection('list');
   }
 
+  get currentPageDisplay(): number {
+    return this.safePageNumber(this.currentPage) + 1;
+  }
+
+  get shouldShowPagination(): boolean {
+    return !this.loading && !this.errorMessage && this.totalCitas > 0;
+  }
+
+  get currentRangeStart(): number {
+    if (this.totalCitas === 0) return 0;
+    const page = this.safePageNumber(this.currentPage);
+    const size = this.safePageSize(this.pageSize);
+    return page * size + 1;
+  }
+
+  get currentRangeEnd(): number {
+    if (this.totalCitas === 0) return 0;
+    const visibleItems = Array.isArray(this.citasFiltradas) ? this.citasFiltradas.length : 0;
+    return Math.min(this.currentRangeStart + visibleItems - 1, this.totalCitas);
+  }
+
+  get visiblePageItems(): Array<number | 'ellipsis'> {
+    if (this.totalPages <= 1) return [];
+
+    const current = this.currentPageDisplay;
+    const total = this.totalPages;
+    const siblingCount = this.isCompactPagination() ? 0 : 1;
+    const pages = new Set<number>([1, total, current]);
+
+    for (let offset = 1; offset <= siblingCount; offset++) {
+      pages.add(current - offset);
+      pages.add(current + offset);
+    }
+
+    if (current <= 2 + siblingCount) {
+      for (let page = 2; page <= Math.min(3 + siblingCount, total - 1); page++) {
+        pages.add(page);
+      }
+    }
+
+    if (current >= total - (1 + siblingCount)) {
+      for (let page = Math.max(total - (2 + siblingCount), 2); page < total; page++) {
+        pages.add(page);
+      }
+    }
+
+    const sortedPages = [...pages]
+      .filter(page => page >= 1 && page <= total)
+      .sort((a, b) => a - b);
+
+    const items: Array<number | 'ellipsis'> = [];
+
+    for (const page of sortedPages) {
+      const previous = items[items.length - 1];
+      if (typeof previous === 'number' && page - previous > 1) {
+        items.push('ellipsis');
+      }
+      items.push(page);
+    }
+
+    return items;
+  }
+
   aplicarFiltros(filtros: FiltroCitas) {
     this.filtrosActuales = { ...filtros };
     void this.cargar(true);
   }
 
-  cargarMas() {
-    if (this.isLastPage || this.loadingMore) return;
-    this.currentPage++;
-    void this.cargar(false);
+  goToPreviousPage() {
+    if (this.isFirstPage || this.loading) return;
+    void this.cargar(false, this.currentPage - 1, { scrollToResults: true });
+  }
+
+  goToNextPage() {
+    if (this.isLastPage || this.loading) return;
+    void this.cargar(false, this.currentPage + 1, { scrollToResults: true });
+  }
+
+  goToPage(page: number) {
+    const targetPage = page - 1;
+    if (targetPage === this.currentPage || targetPage < 0 || targetPage >= this.totalPages || this.loading) return;
+    void this.cargar(false, targetPage, { scrollToResults: true });
+  }
+
+  onPageSizeChange() {
+    void this.cargar(true, 0, { scrollToResults: true });
+  }
+
+  isPageNumber(item: number | 'ellipsis'): item is number {
+    return typeof item === 'number';
+  }
+
+  trackByPaginationItem(index: number, item: number | 'ellipsis'): string {
+    return `${item}-${index}`;
   }
 
   verDetalle(cita: CitaDto) {
@@ -161,14 +250,18 @@ export class CitasPage implements OnInit, OnDestroy {
     return !['COMPLETADA', 'CANCELADA', 'NO_ASISTIO'].includes(cita.estado_cita);
   }
 
-  private async cargar(reset: boolean) {
+  private async cargar(
+    reset: boolean,
+    pageOverride?: number,
+    options: { scrollToResults?: boolean } = {},
+  ) {
+    const targetPage = Math.max(pageOverride ?? (reset ? 0 : this.currentPage), 0);
+
     if (reset) {
-      this.currentPage = 0;
       this.loading = true;
       this.errorMessage = '';
-    } else {
-      this.loadingMore = true;
     }
+    this.loadingMore = !reset;
 
     try {
       const page = await this.svc.getAll({
@@ -178,22 +271,34 @@ export class CitasPage implements OnInit, OnDestroy {
         pacienteId: this.filtrosActuales.id_paciente ?? undefined,
         fechaDesde: this.toBoundaryDateTime(this.filtrosActuales.fecha_desde, false),
         fechaHasta: this.toBoundaryDateTime(this.filtrosActuales.fecha_hasta, true),
-        page: this.currentPage,
+        page: targetPage,
         size: this.pageSize,
         sort: 'fecha_inicio,desc',
       });
 
-      if (reset) {
-        this.citasFiltradas = page.content;
-      } else {
-        this.citasFiltradas = [...this.citasFiltradas, ...page.content];
+      if (page.total_pages > 0 && targetPage >= page.total_pages && page.content.length === 0) {
+        await this.cargar(false, page.total_pages - 1, options);
+        return;
       }
 
-      this.totalCitas = page.total_elements;
-      this.totalPages = page.total_pages;
-      this.isLastPage = page.last;
+      this.citasFiltradas = page.content;
+      this.totalCitas = Number(page.total_elements ?? 0);
+      this.totalPages = Number(page.total_pages ?? 0);
+      this.currentPage = this.resolvePageNumber(page);
+      this.pageSize = this.resolvePageSize(page);
+      this.isFirstPage = Boolean(page.first ?? this.currentPage <= 0);
+      this.isLastPage = Boolean(page.last ?? this.currentPage >= Math.max(this.totalPages - 1, 0));
+
+      if (options.scrollToResults) {
+        setTimeout(() => this.scrollToResults(), 0);
+      }
     } catch (err) {
-      if (reset) this.citasFiltradas = [];
+      this.citasFiltradas = [];
+      this.totalCitas = 0;
+      this.totalPages = 0;
+      this.currentPage = 0;
+      this.isFirstPage = true;
+      this.isLastPage = true;
       this.errorMessage = mapApiError(err).userMessage;
     } finally {
       this.loading = false;
@@ -216,5 +321,37 @@ export class CitasPage implements OnInit, OnDestroy {
   private toBoundaryDateTime(dateIso: string, endOfDay: boolean): string | undefined {
     if (!dateIso) return undefined;
     return `${dateIso}T${endOfDay ? '23:59:59' : '00:00:00'}`;
+  }
+
+  private scrollToResults() {
+    this.citasResults?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  private isCompactPagination(): boolean {
+    return typeof window !== 'undefined' && window.innerWidth < 640;
+  }
+
+  private resolvePageNumber(page: {
+    number?: number | null;
+    pageable?: { page_number?: number | null };
+  }): number {
+    return this.safePageNumber(page.number ?? page.pageable?.page_number ?? 0);
+  }
+
+  private resolvePageSize(page: {
+    size?: number | null;
+    pageable?: { page_size?: number | null };
+  }): number {
+    return this.safePageSize(page.size ?? page.pageable?.page_size ?? this.pageSize);
+  }
+
+  private safePageNumber(value: unknown): number {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  }
+
+  private safePageSize(value: unknown): number {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 10;
   }
 }

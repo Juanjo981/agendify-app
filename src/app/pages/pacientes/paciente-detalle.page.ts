@@ -2,7 +2,7 @@ import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, ToastController } from '@ionic/angular';
 import { AgfDatePickerComponent } from '../../shared/components/agf-date-picker/agf-date-picker.component';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PacientesApiService } from './pacientes-api.service';
@@ -11,8 +11,7 @@ import {
   PacienteDto, PacienteRequest, ResumenPacienteDto,
   ALERTA_TIPO_OPTIONS, AlertaPacienteDto, AlertaPacienteRequest,
   NOTA_CLINICA_TIPO_OPTIONS,
-  NotaClinicaDto, NotaClinicaFormState, NotaClinicaRequest, NotaClinicaTipo, NotaClinicaViewModel,
-  NotaResumenPacienteDto,
+  NotaClinicaDto, NotaClinicaFormState, NotaClinicaRequest, NotaClinicaViewModel,
   SesionPacienteDto,
   HistorialPacienteResponse, HistorialEvento, HistorialTipoEvento,
   PACIENTE_SEXO_OPTIONS, SexoPaciente, isSexoPaciente, normalizeAlertaPacienteTipo, normalizeSexoPaciente,
@@ -36,16 +35,24 @@ import { PacienteDetailRefreshService } from '../../shared/refresh/dashboard-mod
 })
 export class PacienteDetallePage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private static readonly MAX_NOTA_ADJUNTO_BYTES = 2 * 1024 * 1024;
+  private static readonly LOADING_VISUAL_DELAY_MS = 180;
+  private initialLoaderTimer?: ReturnType<typeof setTimeout>;
   readonly sexoOptions = PACIENTE_SEXO_OPTIONS;
   readonly alertaTipoOptions = ALERTA_TIPO_OPTIONS;
   readonly notaTipoOptions = NOTA_CLINICA_TIPO_OPTIONS;
+  readonly skeletonCards = [0, 1, 2, 3];
+  readonly skeletonLines = [0, 1, 2];
   paciente: PacienteDto | null = null;
   resumen: ResumenPacienteDto | null = null;
 
   // ─── Loading / error ───────────────────────────────────────────────────────
   loading = true;
+  showInitialLoader = false;
+  refreshingInformacion = false;
   errorMessage = '';
   saving = false;
+  sectionTransitionKey = 0;
 
   // ─── Secciones ─────────────────────────────────────────────────────────────
   seccionActiva: SeccionPaciente = 'informacion';
@@ -94,6 +101,10 @@ export class PacienteDetallePage implements OnInit {
   showEditarModal = false;
   formPaciente = this.emptyForm();
   formErrores: Record<string, string> = {};
+  showNotasGeneralesModal = false;
+  notasGeneralesDraft = '';
+  notasGeneralesError = '';
+  savingNotasGenerales = false;
 
   // ─── Confirm dialog ────────────────────────────────────────────────────────
   confirmConfig: ConfirmDialogConfig | null = null;
@@ -106,7 +117,10 @@ export class PacienteDetallePage implements OnInit {
     private svc: PacientesApiService,
     private adjuntosApi: AdjuntosServiceApi,
     private refresh: PacienteDetailRefreshService,
-  ) {}
+    private toastCtrl: ToastController,
+  ) {
+    this.destroyRef.onDestroy(() => this.clearInitialLoaderTimer());
+  }
 
   async ngOnInit() {
     this.bindRefreshStreams();
@@ -129,7 +143,16 @@ export class PacienteDetallePage implements OnInit {
   }
 
   async cargarPaciente(id: number) {
-    this.loading = true;
+    const showShellLoader = !this.paciente || this.paciente.id_paciente !== id;
+    if (showShellLoader) {
+      this.loading = true;
+      this.showInitialLoader = false;
+      this.paciente = null;
+      this.resumen = null;
+      this.startInitialLoaderDelay();
+    } else {
+      this.refreshingInformacion = true;
+    }
     this.errorMessage = '';
     try {
       const [paciente, resumen] = await Promise.all([
@@ -143,7 +166,13 @@ export class PacienteDetallePage implements OnInit {
       const mapped = mapApiError(err);
       this.errorMessage = mapped.userMessage;
     } finally {
-      this.loading = false;
+      if (showShellLoader) {
+        this.clearInitialLoaderTimer();
+        this.showInitialLoader = false;
+        this.loading = false;
+      } else {
+        this.refreshingInformacion = false;
+      }
     }
   }
 
@@ -206,40 +235,114 @@ export class PacienteDetallePage implements OnInit {
     return 'document-text-outline';
   }
 
-  get notasVisiblesResumen(): NotaResumenPacienteDto[] {
-    return this.paciente?.notas_visibles_resumen ?? [];
+  get notasGeneralesResumen(): string {
+    return (this.paciente?.notas_generales ?? '').trim();
   }
 
-  getNotaResumenTipoLabel(tipo?: string | null): string {
-    const normalized = (tipo ?? '').trim().toUpperCase();
-    const match = this.notaTipoOptions.find(option => option.value === normalized);
-    return match?.label ?? 'Otro';
+  get hasNotasGenerales(): boolean {
+    return this.notasGeneralesResumen.length > 0;
   }
 
-  getNotaResumenTipoClass(tipo?: string | null): string {
-    const normalized = (tipo ?? '').trim().toUpperCase() as NotaClinicaTipo | '';
-    const map: Record<NotaClinicaTipo | 'DEFAULT', string> = {
-      GENERAL: 'det-nota-summary-chip--general',
-      DIAGNOSTICO: 'det-nota-summary-chip--diagnostico',
-      TRATAMIENTO: 'det-nota-summary-chip--tratamiento',
-      SEGUIMIENTO: 'det-nota-summary-chip--seguimiento',
-      RECETA_MEDICA: 'det-nota-summary-chip--receta',
-      OTRO: 'det-nota-summary-chip--otro',
-      DEFAULT: 'det-nota-summary-chip--otro',
-    };
-    return map[normalized as NotaClinicaTipo] ?? map.DEFAULT;
+  editNotasGenerales() {
+    if (!this.paciente) return;
+    this.notasGeneralesDraft = this.paciente.notas_generales ?? '';
+    this.notasGeneralesError = '';
+    this.showNotasGeneralesModal = true;
   }
 
-  getNotaResumenContenido(contenido?: string | null, maxLength = 180): string {
-    const clean = (contenido ?? '').replace(/\s+/g, ' ').trim();
-    if (!clean) return '';
-    if (clean.length <= maxLength) return clean;
-    return `${clean.slice(0, maxLength).replace(/\s+$/, '')}…`;
+  cerrarNotasGeneralesModal() {
+    if (this.savingNotasGenerales) return;
+    this.showNotasGeneralesModal = false;
+    this.notasGeneralesError = '';
+  }
+
+  async guardarNotasGenerales() {
+    if (!this.paciente || this.savingNotasGenerales) return;
+    this.savingNotasGenerales = true;
+    this.notasGeneralesError = '';
+
+    try {
+      const pacienteActualizado = await this.svc.update(
+        this.paciente.id_paciente,
+        this.buildPacienteUpdateRequest({
+          notas_generales: this.notasGeneralesDraft.trim() || undefined,
+        }),
+      );
+
+      this.paciente = pacienteActualizado;
+      if (this.resumen) {
+        this.resumen = {
+          ...this.resumen,
+          notas_generales: pacienteActualizado.notas_generales ?? '',
+          updated_at: pacienteActualizado.updated_at ?? this.resumen.updated_at,
+        };
+      }
+
+      this.showNotasGeneralesModal = false;
+    } catch (err) {
+      const mapped = mapApiError(err);
+      this.notasGeneralesError = mapped.fieldErrors?.['notas_generales'] ?? mapped.userMessage;
+    } finally {
+      this.savingNotasGenerales = false;
+    }
+  }
+
+  async copiarNotasGenerales() {
+    const contenido = this.notasGeneralesDraft.trim();
+    if (!contenido) return;
+
+    try {
+      await navigator.clipboard.writeText(contenido);
+      await this.presentToast('Notas copiadas');
+    } catch {
+      await this.presentToast('No fue posible copiar las notas.');
+    }
+  }
+
+  async exportarNotasGeneralesTxt() {
+    const contenido = this.notasGeneralesDraft.trim();
+    if (!contenido) return;
+
+    const nombrePaciente = [this.paciente?.nombre, this.paciente?.apellido]
+      .filter(Boolean)
+      .join('-')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9-]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    const fileName = `notas-generales-${nombrePaciente || 'paciente'}.txt`;
+    const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = objectUrl;
+    anchor.download = fileName;
+    anchor.click();
+    URL.revokeObjectURL(objectUrl);
+
+    await this.presentToast('Archivo exportado');
+  }
+
+  get notaTieneAdjuntoExistente(): boolean {
+    return this.notaAdjuntosModal.length > 0;
+  }
+
+  get notaTieneAdjuntoPendiente(): boolean {
+    return !!this.notaForm.adjunto;
+  }
+
+  get puedeSeleccionarAdjuntoNota(): boolean {
+    return !this.notaTieneAdjuntoExistente && !this.notaTieneAdjuntoPendiente;
   }
 
   // ─── Section switching with lazy load ──────────────────────────────────────
   setSeccion(sec: SeccionPaciente) {
+    if (this.seccionActiva === sec) return;
     this.seccionActiva = sec;
+    this.sectionTransitionKey++;
     this.refresh.enterSection(sec);
   }
 
@@ -446,6 +549,10 @@ export class PacienteDetallePage implements OnInit {
       this.notaError = 'El contenido es requerido.';
       return;
     }
+    if (this.notaTieneAdjuntoExistente && this.notaForm.adjunto) {
+      this.notaError = 'Esta nota ya tiene un archivo adjunto. Elimina el actual para subir otro.';
+      return;
+    }
     this.saving = true;
     try {
       let notaGuardada: NotaClinicaDto;
@@ -526,8 +633,21 @@ export class PacienteDetallePage implements OnInit {
   }
 
   onNotaAdjuntoSeleccionado(event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) return;
+
+    if (this.notaTieneAdjuntoExistente) {
+      this.notaError = 'Esta nota ya tiene un archivo adjunto. Elimina el actual para subir otro.';
+      input.value = '';
+      return;
+    }
+
+    if (file.size > PacienteDetallePage.MAX_NOTA_ADJUNTO_BYTES) {
+      this.notaError = 'El archivo supera el tamaño máximo permitido de 2 MB.';
+      input.value = '';
+      return;
+    }
 
     this.removerAdjuntoPendiente();
     const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined;
@@ -539,7 +659,7 @@ export class PacienteDetallePage implements OnInit {
       previewUrl,
     };
     this.notaError = '';
-    (event.target as HTMLInputElement).value = '';
+    input.value = '';
   }
 
   removerAdjuntoPendiente() {
@@ -547,6 +667,7 @@ export class PacienteDetallePage implements OnInit {
       URL.revokeObjectURL(this.notaForm.adjunto.previewUrl);
     }
     this.notaForm.adjunto = undefined;
+    this.notaError = '';
   }
 
   async verAdjunto(adjunto: ArchivoAdjuntoDto) {
@@ -588,6 +709,7 @@ export class PacienteDetallePage implements OnInit {
           this.actualizarAdjuntosNota(nota.id_nota_clinica, adjuntosActualizados);
           if (this.notaEditandoId === nota.id_nota_clinica) {
             this.notaAdjuntosModal = [...adjuntosActualizados];
+            this.notaError = '';
           }
         } catch (err) {
           this.notaError = mapApiError(err).userMessage;
@@ -923,7 +1045,7 @@ export class PacienteDetallePage implements OnInit {
     if (!this.paciente) return;
     this.saving = true;
     this.formErrores = {};
-    const body: PacienteRequest = {
+    const body = this.buildPacienteUpdateRequest({
       nombre: this.formPaciente.nombre.trim(),
       apellido: this.formPaciente.apellido.trim(),
       email: this.formPaciente.email.trim() || undefined,
@@ -934,7 +1056,7 @@ export class PacienteDetallePage implements OnInit {
       direccion: this.formPaciente.direccion.trim() || undefined,
       contacto_emergencia_nombre: this.formPaciente.contacto_emergencia_nombre.trim() || undefined,
       contacto_emergencia_telefono: this.formPaciente.contacto_emergencia_telefono.trim() || undefined,
-    };
+    });
 
     try {
       this.paciente = await this.svc.update(this.paciente.id_paciente, body);
@@ -954,6 +1076,42 @@ export class PacienteDetallePage implements OnInit {
     } finally {
       this.saving = false;
     }
+  }
+
+  private buildPacienteUpdateRequest(overrides: Partial<PacienteRequest> = {}): PacienteRequest {
+    if (!this.paciente) {
+      return {
+        nombre: overrides.nombre ?? '',
+        apellido: overrides.apellido ?? '',
+        ...overrides,
+      };
+    }
+
+    const hasOverride = <K extends keyof PacienteRequest>(key: K) =>
+      Object.prototype.hasOwnProperty.call(overrides, key);
+
+    return {
+      nombre: hasOverride('nombre') ? overrides.nombre ?? '' : this.paciente.nombre.trim(),
+      apellido: hasOverride('apellido') ? overrides.apellido ?? '' : this.paciente.apellido.trim(),
+      email: hasOverride('email') ? overrides.email : this.paciente.email?.trim() || undefined,
+      numero_telefono: hasOverride('numero_telefono') ? overrides.numero_telefono : this.paciente.numero_telefono?.trim() || undefined,
+      fecha_nacimiento: hasOverride('fecha_nacimiento') ? overrides.fecha_nacimiento : this.paciente.fecha_nacimiento || undefined,
+      notas_generales: hasOverride('notas_generales') ? overrides.notas_generales : this.paciente.notas_generales?.trim() || undefined,
+      sexo: hasOverride('sexo') ? overrides.sexo : normalizeSexoPaciente(this.paciente.sexo) || undefined,
+      direccion: hasOverride('direccion') ? overrides.direccion : this.paciente.direccion?.trim() || undefined,
+      contacto_emergencia_nombre: hasOverride('contacto_emergencia_nombre') ? overrides.contacto_emergencia_nombre : this.paciente.contacto_emergencia_nombre?.trim() || undefined,
+      contacto_emergencia_telefono: hasOverride('contacto_emergencia_telefono') ? overrides.contacto_emergencia_telefono : this.paciente.contacto_emergencia_telefono?.trim() || undefined,
+    };
+  }
+
+  private async presentToast(message: string) {
+    const toast = await this.toastCtrl.create({
+      message,
+      duration: 1800,
+      position: 'bottom',
+      color: 'dark',
+    });
+    await toast.present();
   }
 
   irANuevaCita() {
@@ -1031,32 +1189,56 @@ export class PacienteDetallePage implements OnInit {
   private bindRefreshStreams() {
     this.refresh.watchSection('informacion')
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        void this.cargarInformacionPaciente();
+      .subscribe(event => {
+        if (event.reason === 'request') {
+          void this.cargarInformacionPaciente();
+        }
       });
 
     this.refresh.watchSection('notas')
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        void this.cargarNotas();
+      .subscribe(event => {
+        if (event.reason === 'request' || !this.notasLoaded) {
+          void this.cargarNotas();
+        }
       });
 
     this.refresh.watchSection('sesiones')
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        void this.cargarSesiones();
+      .subscribe(event => {
+        if (event.reason === 'request' || !this.sesionesLoaded) {
+          void this.cargarSesiones();
+        }
       });
 
     this.refresh.watchSection('historial')
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        void this.cargarHistorial();
+      .subscribe(event => {
+        if (event.reason === 'request' || !this.historialLoaded) {
+          void this.cargarHistorial();
+        }
       });
   }
 
   private async cargarInformacionPaciente() {
     if (!this.pacienteId) return;
     await this.cargarPaciente(this.pacienteId);
+  }
+
+  private startInitialLoaderDelay() {
+    this.clearInitialLoaderTimer();
+    this.initialLoaderTimer = setTimeout(() => {
+      if (this.loading && !this.paciente) {
+        this.showInitialLoader = true;
+      }
+    }, PacienteDetallePage.LOADING_VISUAL_DELAY_MS);
+  }
+
+  private clearInitialLoaderTimer() {
+    if (this.initialLoaderTimer) {
+      clearTimeout(this.initialLoaderTimer);
+      this.initialLoaderTimer = undefined;
+    }
   }
 }
 
