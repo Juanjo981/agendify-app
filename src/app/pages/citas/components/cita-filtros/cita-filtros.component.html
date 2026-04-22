@@ -27,8 +27,8 @@
 
     <div class="cf-select-wrap">
       <ion-icon name="cash-outline"></ion-icon>
-      <select class="cf-select" [(ngModel)]="filtros.estado_pago" (ngModelChange)="emitir()">
-        <option *ngFor="let o of pagoOpts" [value]="o.value">{{ o.label }}</option>
+      <select class="cf-select" [(ngModel)]="filtros.estado_pago" (ngModelChange)="onEstadoPagoChange($event)">
+        <option *ngFor="let o of pagoOpts" [ngValue]="o.value">{{ o.label }}</option>
       </select>
     </div>
 

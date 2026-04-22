@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { AgfDatePickerComponent } from '../../../../shared/components/agf-date-picker/agf-date-picker.component';
-import { EstadoCita, EstadoPago, FiltroCitas } from '../../models/cita.model';
+import { EstadoCita, EstadoPago, FiltroCitas, isEstadoPago } from '../../models/cita.model';
 
 @Component({
   selector: 'app-cita-filtros',
@@ -48,7 +48,15 @@ export class CitaFiltrosComponent implements OnInit {
   }
 
   emitir() {
-    this.filtrosCambiados.emit({ ...this.filtros });
+    this.filtrosCambiados.emit({
+      ...this.filtros,
+      estado_pago: this.normalizeEstadoPagoFilter(this.filtros.estado_pago),
+    });
+  }
+
+  onEstadoPagoChange(value: EstadoPago | 'todos' | string | null | undefined) {
+    this.filtros.estado_pago = this.normalizeEstadoPagoFilter(value);
+    this.emitir();
   }
 
   limpiar() {
@@ -72,5 +80,10 @@ export class CitaFiltrosComponent implements OnInit {
       this.filtros.fecha_hasta ||
       this.filtros.id_paciente
     );
+  }
+
+  private normalizeEstadoPagoFilter(value: EstadoPago | 'todos' | string | null | undefined): EstadoPago | 'todos' {
+    if (value === 'todos' || value === '' || value == null) return 'todos';
+    return isEstadoPago(value) ? value : 'todos';
   }
 }

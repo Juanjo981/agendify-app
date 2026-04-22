@@ -28,7 +28,7 @@
     </div>
 
     <p class="cit-counter" *ngIf="!loading">
-      Mostrando <strong>{{ currentRangeStart }}</strong>-<strong>{{ currentRangeEnd }}</strong> de <strong>{{ totalCitas }}</strong> citas
+      Mostrando <strong>{{ currentRangeStart }}</strong>-<strong>{{ currentRangeEnd }}</strong> de <strong>{{ summaryTotalCitas }}</strong> {{ citasSummaryLabel }}
     </p>
 
     <div #citasResults class="cit-table-wrapper" *ngIf="!loading">
@@ -38,7 +38,7 @@
         <div class="cit-col cit-col--hora">Hora</div>
         <div class="cit-col cit-col--estado">Estado</div>
         <div class="cit-col cit-col--pago">Pago</div>
-        <div class="cit-col cit-col--metodo">MÃ©todo</div>
+        <div class="cit-col cit-col--metodo">M&eacute;todo</div>
         <div class="cit-col cit-col--monto">Monto</div>
         <div class="cit-col cit-col--acciones">Acciones</div>
       </div>
@@ -87,8 +87,8 @@
         </div>
 
         <div class="cit-col cit-col--metodo">
-          <span class="cit-data-label">MÃ©todo</span>
-          <span>â€”</span>
+          <span class="cit-data-label">M&eacute;todo</span>
+          <span>&mdash;</span>
         </div>
 
         <div class="cit-col cit-col--monto">
@@ -129,16 +129,16 @@
       </div>
     </div>
 
-    <div *ngIf="shouldShowPagination" class="cit-pagination" aria-label="Paginación de citas">
+    <div *ngIf="shouldShowPagination" class="cit-pagination" aria-label="Paginaci&oacute;n de citas">
       <div class="cit-pagination__summary">
-        <span>Página {{ currentPageDisplay }} de {{ totalPages || 1 }}</span>
+        <span>P&aacute;gina {{ currentPageDisplay }} de {{ totalPages || 1 }}</span>
 
-        <label class="cit-pagination__size" aria-label="Cantidad por página">
+        <label class="cit-pagination__size" aria-label="Cantidad por p&aacute;gina">
           <span>Mostrar</span>
           <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
             <option *ngFor="let option of pageSizeOptions" [ngValue]="option">{{ option }}</option>
           </select>
-          <span>por página</span>
+          <span>por p&aacute;gina</span>
         </label>
       </div>
 
@@ -148,7 +148,7 @@
           type="button"
           (click)="goToPreviousPage()"
           [disabled]="isFirstPage"
-          aria-label="Página anterior"
+          aria-label="P&aacute;gina anterior"
         >
           <ion-icon name="chevron-back-outline"></ion-icon>
           <span>Anterior</span>
@@ -167,7 +167,7 @@
               {{ item }}
             </button>
             <ng-template #paginationEllipsis>
-              <span class="cit-pagination__ellipsis" aria-hidden="true">…</span>
+              <span class="cit-pagination__ellipsis" aria-hidden="true">&hellip;</span>
             </ng-template>
           </ng-container>
         </div>
@@ -177,7 +177,7 @@
           type="button"
           (click)="goToNextPage()"
           [disabled]="isLastPage"
-          aria-label="Página siguiente"
+          aria-label="P&aacute;gina siguiente"
         >
           <span>Siguiente</span>
           <ion-icon name="chevron-forward-outline"></ion-icon>
@@ -195,5 +195,6 @@
   (saved)="onGuardado($event)"
   (cancelled)="cerrarModal()"
 ></app-cita-form-modal>
+
 
 

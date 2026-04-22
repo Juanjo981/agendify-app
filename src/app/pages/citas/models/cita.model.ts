@@ -157,6 +157,10 @@ export const ESTADO_PAGO_VALUES: EstadoPago[] = [
   'REEMBOLSADO',
 ];
 
+export function isEstadoPago(value: unknown): value is EstadoPago {
+  return ESTADO_PAGO_VALUES.includes(value as EstadoPago);
+}
+
 export function estadoCitaToLabel(estado: EstadoCita): EstadoCitaLabel {
   return ESTADO_CITA_LABEL[estado] ?? 'Pendiente';
 }

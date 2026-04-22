@@ -12,11 +12,13 @@ import {
 } from '../../shared/components/cita-form-modal/cita-form-modal.component';
 import { EstadoBadgeComponent } from './components/estado-badge/estado-badge.component';
 import { PagoBadgeComponent } from './components/pago-badge/pago-badge.component';
-import { CitasApiService } from './citas-api.service';
+import { CitasApiService, CitasPageResponse } from './citas-api.service';
 import {
   CitaDto,
   CitaUpsertRequest,
   FiltroCitas,
+  EstadoPago,
+  isEstadoPago,
   toDatePart,
   toTimePart,
 } from './models/cita.model';
@@ -54,6 +56,7 @@ export class CitasPage implements OnInit, OnDestroy {
   totalPages = 0;
   isFirstPage = true;
   isLastPage = true;
+  private hasReliableServerPagination = false;
 
   loading = false;
   loadingMore = false;
@@ -95,17 +98,30 @@ export class CitasPage implements OnInit, OnDestroy {
     return !this.loading && !this.errorMessage && this.totalCitas > 0;
   }
 
+  get summaryTotalCitas(): number {
+    if (this.hasReliableServerPagination) {
+      return this.totalCitas;
+    }
+    return Array.isArray(this.citasFiltradas) ? this.citasFiltradas.length : 0;
+  }
+
   get currentRangeStart(): number {
-    if (this.totalCitas === 0) return 0;
+    if (this.summaryTotalCitas === 0) return 0;
+    if (!this.hasReliableServerPagination) return 1;
     const page = this.safePageNumber(this.currentPage);
     const size = this.safePageSize(this.pageSize);
     return page * size + 1;
   }
 
   get currentRangeEnd(): number {
-    if (this.totalCitas === 0) return 0;
+    if (this.summaryTotalCitas === 0) return 0;
     const visibleItems = Array.isArray(this.citasFiltradas) ? this.citasFiltradas.length : 0;
-    return Math.min(this.currentRangeStart + visibleItems - 1, this.totalCitas);
+    if (!this.hasReliableServerPagination) return visibleItems;
+    return Math.min(this.currentRangeStart + visibleItems - 1, this.summaryTotalCitas);
+  }
+
+  get citasSummaryLabel(): string {
+    return this.summaryTotalCitas === 1 ? 'cita' : 'citas';
   }
 
   get visiblePageItems(): Array<number | 'ellipsis'> {
@@ -267,7 +283,7 @@ export class CitasPage implements OnInit, OnDestroy {
       const page = await this.svc.getAll({
         search: this.filtrosActuales.busqueda.trim() || undefined,
         estado: this.filtrosActuales.estado === 'todos' ? undefined : this.filtrosActuales.estado,
-        estadoPago: this.filtrosActuales.estado_pago === 'todos' ? undefined : this.filtrosActuales.estado_pago,
+        estadoPago: this.resolveEstadoPagoFilterParam(),
         pacienteId: this.filtrosActuales.id_paciente ?? undefined,
         fechaDesde: this.toBoundaryDateTime(this.filtrosActuales.fecha_desde, false),
         fechaHasta: this.toBoundaryDateTime(this.filtrosActuales.fecha_hasta, true),
@@ -282,6 +298,7 @@ export class CitasPage implements OnInit, OnDestroy {
       }
 
       this.citasFiltradas = page.content;
+      this.hasReliableServerPagination = this.hasReliablePaginationTotals(page);
       this.totalCitas = Number(page.total_elements ?? 0);
       this.totalPages = Number(page.total_pages ?? 0);
       this.currentPage = this.resolvePageNumber(page);
@@ -294,6 +311,7 @@ export class CitasPage implements OnInit, OnDestroy {
       }
     } catch (err) {
       this.citasFiltradas = [];
+      this.hasReliableServerPagination = false;
       this.totalCitas = 0;
       this.totalPages = 0;
       this.currentPage = 0;
@@ -353,5 +371,17 @@ export class CitasPage implements OnInit, OnDestroy {
   private safePageSize(value: unknown): number {
     const parsed = Number(value);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 10;
+  }
+
+  private hasReliablePaginationTotals(page: CitasPageResponse<CitaDto>): boolean {
+    return Boolean(page._meta?.hasReliableTotalElements);
+  }
+
+  private resolveEstadoPagoFilterParam(): EstadoPago | undefined {
+    const selected = this.filtrosActuales.estado_pago;
+    if (selected === 'todos' || selected == null) {
+      return undefined;
+    }
+    return isEstadoPago(selected) ? selected : undefined;
   }
 }
