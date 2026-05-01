@@ -17,13 +17,14 @@ import { formatFecha as formatFechaUtil } from '../../shared/utils/date.utils';
 import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../shared/confirm-dialog/confirm-dialog.component';
 import { AgfDatePickerComponent } from '../../shared/components/agf-date-picker/agf-date-picker.component';
 import { mapApiError } from '../../shared/utils/api-error.mapper';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-pacientes',
   templateUrl: './pacientes.page.html',
   styleUrls: ['./pacientes.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule, ConfirmDialogComponent, AgfDatePickerComponent],
+  imports: [IonicModule, CommonModule, FormsModule, ConfirmDialogComponent, AgfDatePickerComponent, PaginationComponent],
 })
 export class PacientesPage implements OnInit {
   @ViewChild('pacientesTable') private pacientesTable?: ElementRef<HTMLElement>;
@@ -39,9 +40,8 @@ export class PacientesPage implements OnInit {
 
   currentPage = 0;
   pageSize = 20;
+  readonly pageSizeOptions = [10, 20, 50];
   totalPages = 0;
-  isFirstPage = true;
-  isLastPage = true;
 
   loading = false;
   errorMessage = '';
@@ -68,49 +68,7 @@ export class PacientesPage implements OnInit {
   }
 
   get shouldShowPagination(): boolean {
-    return !this.loading && !this.errorMessage && this.totalPacientes > 0 && this.totalPages > 1;
-  }
-
-  get visiblePageItems(): Array<number | 'ellipsis'> {
-    if (this.totalPages <= 1) return [];
-
-    const current = this.currentPageDisplay;
-    const total = this.totalPages;
-    const siblingCount = this.isCompactPagination() ? 0 : 1;
-    const pages = new Set<number>([1, total, current]);
-
-    for (let offset = 1; offset <= siblingCount; offset++) {
-      pages.add(current - offset);
-      pages.add(current + offset);
-    }
-
-    if (current <= 2 + siblingCount) {
-      for (let page = 2; page <= Math.min(3 + siblingCount, total - 1); page++) {
-        pages.add(page);
-      }
-    }
-
-    if (current >= total - (1 + siblingCount)) {
-      for (let page = Math.max(total - (2 + siblingCount), 2); page < total; page++) {
-        pages.add(page);
-      }
-    }
-
-    const sortedPages = [...pages]
-      .filter(page => page >= 1 && page <= total)
-      .sort((a, b) => a - b);
-
-    const items: Array<number | 'ellipsis'> = [];
-
-    for (const page of sortedPages) {
-      const previous = items[items.length - 1];
-      if (typeof previous === 'number' && page - previous > 1) {
-        items.push('ellipsis');
-      }
-      items.push(page);
-    }
-
-    return items;
+    return !this.loading && !this.errorMessage && this.totalPacientes > 0;
   }
 
   emptyForm() {
@@ -180,8 +138,6 @@ export class PacientesPage implements OnInit {
       this.totalPages = response.total_pages;
       this.currentPage = response.number;
       this.pageSize = response.size || this.pageSize;
-      this.isFirstPage = response.first;
-      this.isLastPage = response.last;
 
       if (options.scrollToTable) {
         setTimeout(() => this.scrollToTable(), 0);
@@ -191,36 +147,21 @@ export class PacientesPage implements OnInit {
       this.totalPacientes = 0;
       this.totalPages = 0;
       this.currentPage = 0;
-      this.isFirstPage = true;
-      this.isLastPage = true;
       this.errorMessage = mapApiError(err).userMessage;
     } finally {
       this.loading = false;
     }
   }
 
-  goToPreviousPage() {
-    if (this.isFirstPage || this.loading) return;
-    void this.cargar(this.currentPage - 1, { scrollToTable: true });
+  onPaginationPageChange(page: number) {
+    if (page === this.currentPage || page < 0 || page >= this.totalPages || this.loading) return;
+    void this.cargar(page, { scrollToTable: true });
   }
 
-  goToNextPage() {
-    if (this.isLastPage || this.loading) return;
-    void this.cargar(this.currentPage + 1, { scrollToTable: true });
-  }
-
-  goToPage(page: number) {
-    const targetPage = page - 1;
-    if (targetPage === this.currentPage || targetPage < 0 || targetPage >= this.totalPages || this.loading) return;
-    void this.cargar(targetPage, { scrollToTable: true });
-  }
-
-  isPageNumber(item: number | 'ellipsis'): item is number {
-    return typeof item === 'number';
-  }
-
-  trackByPaginationItem(index: number, item: number | 'ellipsis'): string {
-    return `${item}-${index}`;
+  onPaginationPageSizeChange(nextSize: number) {
+    if (!Number.isFinite(nextSize) || nextSize <= 0 || nextSize === this.pageSize) return;
+    this.pageSize = nextSize;
+    void this.cargar(0, { scrollToTable: true });
   }
 
   onBusquedaChange() {
@@ -425,10 +366,6 @@ export class PacientesPage implements OnInit {
   onConfirmDialogCancelled() {
     this.confirmConfig = null;
     this.confirmCallback = null;
-  }
-
-  private isCompactPagination(): boolean {
-    return typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches;
   }
 
   private scrollToTable() {

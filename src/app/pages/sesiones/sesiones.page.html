@@ -168,6 +168,17 @@
           </div>
         </div>
       </div>
+
+      <div *ngIf="shouldShowPagination" class="ses-pagination" aria-label="Paginación de sesiones">
+        <app-pagination
+          [page]="currentPage"
+          [pageSize]="pageSize"
+          [total]="totalSesiones"
+          [pageSizeOptions]="pageSizeOptions"
+          (pageChange)="onPaginationPageChange($event)"
+          (pageSizeChange)="onPaginationPageSizeChange($event)"
+        ></app-pagination>
+      </div>
     </ng-container>
   </div>
 </ion-content>

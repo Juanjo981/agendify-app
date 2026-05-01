@@ -1,0 +1,44 @@
+<div class="ag-pagination" [class.ag-pagination--compact]="compact" aria-label="Paginación">
+  <div class="ag-pagination__controls">
+    <label *ngIf="showPageSizeSelector" class="ag-pagination__size" aria-label="Tamaño de página">
+      <select
+        class="ag-pagination__select"
+        [value]="safePageSize"
+        (change)="onPageSizeSelect($event)"
+      >
+        <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} / pág</option>
+      </select>
+    </label>
+
+    <span class="ag-pagination__range" aria-live="polite">
+      {{ rangeStart }}-{{ rangeEnd }} de {{ safeTotal }}
+    </span>
+
+    <div class="ag-pagination__actions">
+      <button
+        class="ag-pagination__btn"
+        type="button"
+        (click)="onPreviousPage()"
+        [disabled]="isFirstPage"
+        aria-label="Página anterior"
+      >
+        <span aria-hidden="true">&larr;</span>
+      </button>
+
+      <span class="ag-pagination__page" aria-live="polite">
+        {{ pageDisplay }}
+      </span>
+
+      <button
+        class="ag-pagination__btn"
+        type="button"
+        (click)="onNextPage()"
+        [disabled]="isLastPage"
+        aria-label="Página siguiente"
+      >
+        <span aria-hidden="true">&rarr;</span>
+      </button>
+    </div>
+  </div>
+</div>
+

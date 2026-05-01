@@ -386,6 +386,10 @@ $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
   flex-direction: column;
 }
 
+.ses-pagination {
+  margin-top: 8px;
+}
+
 .ses-empty-mobile {
   display: flex;
   flex-direction: column;

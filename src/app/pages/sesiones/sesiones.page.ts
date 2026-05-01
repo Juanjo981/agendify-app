@@ -10,6 +10,7 @@ import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
 import { AdjuntosServiceApi } from 'src/app/services/adjuntos.service.api';
 import { SesionesApiService } from './sesiones-api.service';
 import { ArchivoAdjuntoDto, SesionDto, getSessionSummary } from './models/sesion.model';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 
 interface FiltrosSesiones {
   busqueda: string;
@@ -23,12 +24,16 @@ interface FiltrosSesiones {
   templateUrl: './sesiones.page.html',
   styleUrls: ['./sesiones.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule, AgfDatePickerComponent],
+  imports: [IonicModule, CommonModule, FormsModule, AgfDatePickerComponent, PaginationComponent],
 })
 export class SesionesPage implements OnInit {
   sesiones: SesionDto[] = [];
   sesionesFiltradas: SesionDto[] = [];
   totalSesiones = 0;
+  currentPage = 0;
+  pageSize = 20;
+  readonly pageSizeOptions = [10, 20, 50];
+  totalPages = 0;
   loading = false;
   errorMessage = '';
   cargandoAdjuntos = false;
@@ -51,20 +56,31 @@ export class SesionesPage implements OnInit {
     void this.cargarSesiones();
   }
 
-  async cargarSesiones() {
+  get shouldShowPagination(): boolean {
+    return !this.loading && !this.errorMessage && this.totalSesiones > 0;
+  }
+
+  async cargarSesiones(page = this.currentPage, pageSize = this.pageSize) {
+    const targetPage = Math.max(page, 0);
+    const targetSize = Number.isFinite(pageSize) && pageSize > 0 ? Math.floor(pageSize) : this.pageSize;
+
     this.loading = true;
     this.errorMessage = '';
 
     try {
-      const page = await this.sesionesApi.getAll({
+      const response = await this.sesionesApi.getAll({
         fechaDesde: this.filtros.fecha_desde ? `${this.filtros.fecha_desde}T00:00:00` : undefined,
         fechaHasta: this.filtros.fecha_hasta ? `${this.filtros.fecha_hasta}T23:59:59` : undefined,
-        size: 50,
+        page: targetPage,
+        size: targetSize,
         sort: 'fecha_sesion,desc',
       });
 
-      this.sesiones = page.content ?? [];
-      this.totalSesiones = page.total_elements ?? this.sesiones.length;
+      this.sesiones = response.content ?? [];
+      this.totalSesiones = response.total_elements ?? this.sesiones.length;
+      this.currentPage = response.number ?? targetPage;
+      this.pageSize = response.size ?? targetSize;
+      this.totalPages = response.total_pages ?? 0;
       await this.cargarResumenAdjuntos(this.sesiones);
       this.aplicarFiltrosLocales();
     } catch (err) {
@@ -102,12 +118,22 @@ export class SesionesPage implements OnInit {
   }
 
   onDateFiltersChanged() {
-    void this.cargarSesiones();
+    void this.cargarSesiones(0, this.pageSize);
   }
 
   limpiarFiltros() {
     this.filtros = { busqueda: '', fecha_desde: '', fecha_hasta: '', con_adjunto: 'todos' };
-    void this.cargarSesiones();
+    void this.cargarSesiones(0, this.pageSize);
+  }
+
+  onPaginationPageChange(page: number) {
+    if (page === this.currentPage || page < 0 || page >= this.totalPages || this.loading) return;
+    void this.cargarSesiones(page, this.pageSize);
+  }
+
+  onPaginationPageSizeChange(nextSize: number) {
+    if (!Number.isFinite(nextSize) || nextSize <= 0 || nextSize === this.pageSize) return;
+    void this.cargarSesiones(0, nextSize);
   }
 
   get tieneActivos(): boolean {

@@ -177,6 +177,24 @@ export class DetalleCitaPage implements OnInit {
     return this.sesionRelacionadaId ? 'Ver sesión' : 'Crear sesión';
   }
 
+  onEditarCita() {
+    console.log('[DetalleCita] onEditarCita triggered', { citaId: this.cita?.id_cita });
+
+    if (!this.cita) {
+      this.errorMessage = 'No se pudo abrir edición: la cita no está cargada.';
+      console.error('[DetalleCita] Intento de editar sin cita cargada.');
+      return;
+    }
+
+    if (!this.puedeEditar) {
+      this.errorMessage = 'Esta cita no se puede editar por su estado actual.';
+      return;
+    }
+
+    this.errorMessage = '';
+    this.showEditarModal = true;
+  }
+
   cambiarEstado(estado: EstadoCita, title: string) {
     this.openConfirm(
       {

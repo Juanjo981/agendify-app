@@ -90,7 +90,8 @@ export class ConfirmarCitaPage implements OnInit {
   ngOnInit(): void {
     this.token = this.route.snapshot.paramMap.get('token') ?? '';
     if (!this.token) {
-      this.setExpiredState('Enlace no valido', 'No se encontro un token valido para gestionar esta cita.');
+      // Load mock data for testing/development
+      this.cargarDatosMock();
       return;
     }
 
@@ -194,6 +195,36 @@ export class ConfirmarCitaPage implements OnInit {
     } catch (error) {
       this.manejarError(error);
     }
+  }
+
+  private cargarDatosMock(): void {
+    // Mock data for testing without token
+    const hoy = new Date();
+    const citaInicio = new Date(hoy);
+    citaInicio.setDate(citaInicio.getDate() + 3);
+    citaInicio.setHours(14, 30, 0, 0);
+
+    const citaFin = new Date(citaInicio);
+    citaFin.setHours(15, 30, 0, 0);
+
+    const mockResponse: CitaGestionPublicaResponseDto = {
+      fecha_inicio: citaInicio.toISOString(),
+      fecha_fin: citaFin.toISOString(),
+      estado_cita: 'pendiente_confirmacion',
+      paciente_nombre: 'Juan Carlos Pérez',
+      profesional_nombre: 'Dra. María González',
+      profesional_especialidad: 'Cardiología',
+      nombre_consulta: 'Consultorio Centro Médico, Piso 3, Sala 301',
+      motivo: 'Revisión cardiovascular de rutina',
+      puede_confirmar: true,
+      puede_cancelar: true,
+      puede_solicitar_reprogramacion: true,
+      token_valido: true,
+      accion_realizada: null,
+    };
+
+    this.token = 'mock-token-for-testing';
+    this.aplicarPayload(mockResponse);
   }
 
   private aplicarPayload(response: CitaGestionPublicaResponseDto): void {

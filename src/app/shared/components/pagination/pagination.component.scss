@@ -1,0 +1,126 @@
+.ag-pagination {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.ag-pagination__controls {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ag-pagination__size {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.ag-pagination__select {
+  min-width: 76px;
+  height: 24px;
+  padding: 0 16px 0 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #64748b);
+  font-size: 12px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  transition: color 0.15s ease;
+
+  &:hover,
+  &:focus {
+    color: var(--text-strong, #334155);
+  }
+}
+
+.ag-pagination__range {
+  min-width: 94px;
+  color: var(--text-muted, #7b8798);
+  font-size: 12.5px;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ag-pagination__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.ag-pagination__page {
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary-mid, #4f46e5);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.ag-pagination__btn {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.15s ease, background 0.15s ease;
+
+  &:hover:not(:disabled) {
+    color: var(--text-strong, #0f172a);
+    background: rgba(148, 163, 184, 0.12);
+  }
+
+  &:first-child:hover:not(:disabled) {
+    transform: translateX(-1px);
+  }
+
+  &:last-child:hover:not(:disabled) {
+    transform: translateX(1px);
+  }
+
+  &:disabled {
+    opacity: 0.32;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+.ag-pagination--compact {
+  margin-top: 6px;
+  padding-top: 6px;
+}
+
+@media (max-width: 540px) {
+  .ag-pagination__controls {
+    gap: 10px;
+  }
+}
+

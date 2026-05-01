@@ -2,7 +2,7 @@ import { Component, DestroyRef, ElementRef, OnDestroy, OnInit, ViewChild, inject
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, ToastController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { CitaCardComponent } from './components/cita-card/cita-card.component';
 import { CitaFiltrosComponent } from './components/cita-filtros/cita-filtros.component';
@@ -24,6 +24,7 @@ import {
 } from './models/cita.model';
 import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
 import { CitasRefreshService } from '../../shared/refresh/dashboard-module-refresh.services';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-citas',
@@ -39,6 +40,7 @@ import { CitasRefreshService } from '../../shared/refresh/dashboard-module-refre
     CitaFormModalComponent,
     EstadoBadgeComponent,
     PagoBadgeComponent,
+    PaginationComponent,
   ],
 })
 export class CitasPage implements OnInit, OnDestroy {
@@ -54,8 +56,6 @@ export class CitasPage implements OnInit, OnDestroy {
   currentPage = 0;
   pageSize = 10;
   totalPages = 0;
-  isFirstPage = true;
-  isLastPage = true;
   private hasReliableServerPagination = false;
 
   loading = false;
@@ -76,6 +76,7 @@ export class CitasPage implements OnInit, OnDestroy {
     private router: Router,
     private svc: CitasApiService,
     private refresh: CitasRefreshService,
+    private toastCtrl: ToastController,
   ) {}
 
   ngOnInit() {
@@ -88,10 +89,6 @@ export class CitasPage implements OnInit, OnDestroy {
 
   ionViewWillEnter() {
     this.refresh.enterSection('list');
-  }
-
-  get currentPageDisplay(): number {
-    return this.safePageNumber(this.currentPage) + 1;
   }
 
   get shouldShowPagination(): boolean {
@@ -124,79 +121,20 @@ export class CitasPage implements OnInit, OnDestroy {
     return this.summaryTotalCitas === 1 ? 'cita' : 'citas';
   }
 
-  get visiblePageItems(): Array<number | 'ellipsis'> {
-    if (this.totalPages <= 1) return [];
-
-    const current = this.currentPageDisplay;
-    const total = this.totalPages;
-    const siblingCount = this.isCompactPagination() ? 0 : 1;
-    const pages = new Set<number>([1, total, current]);
-
-    for (let offset = 1; offset <= siblingCount; offset++) {
-      pages.add(current - offset);
-      pages.add(current + offset);
-    }
-
-    if (current <= 2 + siblingCount) {
-      for (let page = 2; page <= Math.min(3 + siblingCount, total - 1); page++) {
-        pages.add(page);
-      }
-    }
-
-    if (current >= total - (1 + siblingCount)) {
-      for (let page = Math.max(total - (2 + siblingCount), 2); page < total; page++) {
-        pages.add(page);
-      }
-    }
-
-    const sortedPages = [...pages]
-      .filter(page => page >= 1 && page <= total)
-      .sort((a, b) => a - b);
-
-    const items: Array<number | 'ellipsis'> = [];
-
-    for (const page of sortedPages) {
-      const previous = items[items.length - 1];
-      if (typeof previous === 'number' && page - previous > 1) {
-        items.push('ellipsis');
-      }
-      items.push(page);
-    }
-
-    return items;
-  }
-
   aplicarFiltros(filtros: FiltroCitas) {
     this.filtrosActuales = { ...filtros };
     void this.cargar(true);
   }
 
-  goToPreviousPage() {
-    if (this.isFirstPage || this.loading) return;
-    void this.cargar(false, this.currentPage - 1, { scrollToResults: true });
+  onPaginationPageChange(page: number) {
+    if (page === this.currentPage || page < 0 || page >= this.totalPages || this.loading) return;
+    void this.cargar(false, page, { scrollToResults: true });
   }
 
-  goToNextPage() {
-    if (this.isLastPage || this.loading) return;
-    void this.cargar(false, this.currentPage + 1, { scrollToResults: true });
-  }
-
-  goToPage(page: number) {
-    const targetPage = page - 1;
-    if (targetPage === this.currentPage || targetPage < 0 || targetPage >= this.totalPages || this.loading) return;
-    void this.cargar(false, targetPage, { scrollToResults: true });
-  }
-
-  onPageSizeChange() {
+  onPaginationPageSizeChange(nextSize: number) {
+    if (!Number.isFinite(nextSize) || nextSize <= 0 || nextSize === this.pageSize) return;
+    this.pageSize = nextSize;
     void this.cargar(true, 0, { scrollToResults: true });
-  }
-
-  isPageNumber(item: number | 'ellipsis'): item is number {
-    return typeof item === 'number';
-  }
-
-  trackByPaginationItem(index: number, item: number | 'ellipsis'): string {
-    return `${item}-${index}`;
   }
 
   verDetalle(cita: CitaDto) {
@@ -216,6 +154,15 @@ export class CitasPage implements OnInit, OnDestroy {
     document.body.classList.add('modal-open');
   }
 
+  async onEditarClick(cita: CitaDto, event?: Event) {
+    event?.stopPropagation();
+    if (!this.puedeEditar(cita)) {
+      await this.presentToast('Esta cita no se puede editar por su estado actual.', 'danger');
+      return;
+    }
+    this.abrirEditar(cita);
+  }
+
   cerrarModal() {
     this.showFormModal = false;
     document.body.classList.remove('modal-open');
@@ -228,15 +175,18 @@ export class CitasPage implements OnInit, OnDestroy {
     try {
       const body = this.mapFormToRequest(data);
       if (this.citaEditando) {
-        await this.svc.update(this.citaEditando.id_cita, body);
+        await this.updateCita(this.citaEditando.id_cita, body);
       } else {
-        await this.svc.create(body);
+        await this.createCita(body);
       }
 
       this.cerrarModal();
       this.refresh.requestRefresh('list');
     } catch (err) {
-      this.errorMessage = mapApiError(err).userMessage;
+      const mapped = mapApiError(err);
+      this.errorMessage = mapped.userMessage;
+      console.error('[Citas][guardar] Error al guardar cita', err);
+      await this.presentToast(mapped.userMessage, 'danger');
     } finally {
       this.saving = false;
     }
@@ -303,8 +253,6 @@ export class CitasPage implements OnInit, OnDestroy {
       this.totalPages = Number(page.total_pages ?? 0);
       this.currentPage = this.resolvePageNumber(page);
       this.pageSize = this.resolvePageSize(page);
-      this.isFirstPage = Boolean(page.first ?? this.currentPage <= 0);
-      this.isLastPage = Boolean(page.last ?? this.currentPage >= Math.max(this.totalPages - 1, 0));
 
       if (options.scrollToResults) {
         setTimeout(() => this.scrollToResults(), 0);
@@ -315,8 +263,6 @@ export class CitasPage implements OnInit, OnDestroy {
       this.totalCitas = 0;
       this.totalPages = 0;
       this.currentPage = 0;
-      this.isFirstPage = true;
-      this.isLastPage = true;
       this.errorMessage = mapApiError(err).userMessage;
     } finally {
       this.loading = false;
@@ -325,15 +271,57 @@ export class CitasPage implements OnInit, OnDestroy {
   }
 
   private mapFormToRequest(data: CitaFormData): CitaUpsertRequest {
+    const fechaInicio = this.normalizeLocalDateTime(data.fecha_inicio);
+    const fechaFin = this.normalizeLocalDateTime(data.fecha_fin);
+
+    if (!data.id_paciente) {
+      throw new Error('id_paciente es obligatorio para guardar la cita.');
+    }
+
+    if (!this.isValidLocalDateTime(fechaInicio) || !this.isValidLocalDateTime(fechaFin)) {
+      throw new Error('Las fechas de la cita no tienen un formato LocalDateTime valido.');
+    }
+
     return {
       id_paciente: data.id_paciente,
-      fecha_inicio: data.fecha_inicio,
-      fecha_fin: data.fecha_fin,
+      fecha_inicio: fechaInicio,
+      fecha_fin: fechaFin,
       motivo: data.motivo?.trim() || undefined,
       notas_internas: data.notas_internas?.trim() || null,
-      observaciones: data.observaciones?.trim() || null,
       monto: data.monto,
     };
+  }
+
+  private async createCita(body: CitaUpsertRequest): Promise<void> {
+    console.log('[Citas][create] Payload', body);
+    const response = await this.svc.create(body);
+    console.log('[Citas][create] Response', response);
+  }
+
+  private async updateCita(id: number, body: CitaUpsertRequest): Promise<void> {
+    console.log('[Citas][update] Payload', { id, ...body });
+    const response = await this.svc.update(id, body);
+    console.log('[Citas][update] Response', response);
+  }
+
+  private normalizeLocalDateTime(value: string): string {
+    if (!value) return '';
+    const trimmed = value.trim();
+    return trimmed.length === 16 ? `${trimmed}:00` : trimmed;
+  }
+
+  private isValidLocalDateTime(value: string): boolean {
+    return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(value);
+  }
+
+  private async presentToast(message: string, color: 'success' | 'danger' = 'success') {
+    const toast = await this.toastCtrl.create({
+      message,
+      color,
+      duration: 2600,
+      position: 'top',
+    });
+    await toast.present();
   }
 
   private toBoundaryDateTime(dateIso: string, endOfDay: boolean): string | undefined {
@@ -343,10 +331,6 @@ export class CitasPage implements OnInit, OnDestroy {
 
   private scrollToResults() {
     this.citasResults?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-  private isCompactPagination(): boolean {
-    return typeof window !== 'undefined' && window.innerWidth < 640;
   }
 
   private resolvePageNumber(page: {

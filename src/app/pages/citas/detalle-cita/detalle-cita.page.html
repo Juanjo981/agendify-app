@@ -35,7 +35,7 @@
             </div>
           </div>
         </div>
-        <button class="dct-btn-edit" (click)="showEditarModal = true" [disabled]="!puedeEditar || saving">
+        <button class="dct-btn-edit" (click)="onEditarCita()" [disabled]="saving">
           <ion-icon name="pencil-outline"></ion-icon>
           <span>Editar</span>
         </button>

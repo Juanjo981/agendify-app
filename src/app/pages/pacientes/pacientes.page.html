@@ -151,49 +151,14 @@
       </div>
 
       <div *ngIf="shouldShowPagination" class="pac-pagination" aria-label="Paginación de pacientes">
-        <div class="pac-pagination__summary">Página {{ currentPageDisplay }} de {{ totalPages }}</div>
-
-        <div class="pac-pagination__controls">
-          <button
-            class="pac-pagination__nav"
-            type="button"
-            (click)="goToPreviousPage()"
-            [disabled]="isFirstPage"
-            aria-label="Página anterior"
-          >
-            <ion-icon name="chevron-back-outline"></ion-icon>
-            <span>Anterior</span>
-          </button>
-
-          <div class="pac-pagination__pages">
-            <ng-container *ngFor="let item of visiblePageItems; trackBy: trackByPaginationItem">
-              <button
-                *ngIf="isPageNumber(item); else paginationEllipsis"
-                class="pac-pagination__page"
-                type="button"
-                [class.active]="item === currentPageDisplay"
-                [attr.aria-current]="item === currentPageDisplay ? 'page' : null"
-                (click)="goToPage(item)"
-              >
-                {{ item }}
-              </button>
-              <ng-template #paginationEllipsis>
-                <span class="pac-pagination__ellipsis" aria-hidden="true">…</span>
-              </ng-template>
-            </ng-container>
-          </div>
-
-          <button
-            class="pac-pagination__nav"
-            type="button"
-            (click)="goToNextPage()"
-            [disabled]="isLastPage"
-            aria-label="Página siguiente"
-          >
-            <span>Siguiente</span>
-            <ion-icon name="chevron-forward-outline"></ion-icon>
-          </button>
-        </div>
+        <app-pagination
+          [page]="currentPage"
+          [pageSize]="pageSize"
+          [total]="totalPacientes"
+          [pageSizeOptions]="pageSizeOptions"
+          (pageChange)="onPaginationPageChange($event)"
+          (pageSizeChange)="onPaginationPageSizeChange($event)"
+        ></app-pagination>
       </div>
 
     </div>

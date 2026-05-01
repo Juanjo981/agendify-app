@@ -104,8 +104,8 @@
             </button>
             <button
               class="cit-action-btn cit-action-btn--edit"
-              [disabled]="!puedeEditar(c)"
-              (click)="abrirEditar(c)"
+              [attr.aria-disabled]="!puedeEditar(c)"
+              (click)="onEditarClick(c, $event)"
               title="Editar"
             >
               <ion-icon name="pencil-outline"></ion-icon>
@@ -120,7 +120,7 @@
         *ngFor="let c of citasFiltradas"
         [cita]="c"
         (ver)="verDetalle($event)"
-        (editar)="abrirEditar($event)"
+        (editar)="onEditarClick($event)"
       ></app-cita-card>
 
       <div *ngIf="citasFiltradas.length === 0 && !errorMessage" class="cit-empty-mobile">
@@ -129,61 +129,17 @@
       </div>
     </div>
 
-    <div *ngIf="shouldShowPagination" class="cit-pagination" aria-label="Paginaci&oacute;n de citas">
-      <div class="cit-pagination__summary">
-        <span>P&aacute;gina {{ currentPageDisplay }} de {{ totalPages || 1 }}</span>
-
-        <label class="cit-pagination__size" aria-label="Cantidad por p&aacute;gina">
-          <span>Mostrar</span>
-          <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
-            <option *ngFor="let option of pageSizeOptions" [ngValue]="option">{{ option }}</option>
-          </select>
-          <span>por p&aacute;gina</span>
-        </label>
-      </div>
-
-      <div class="cit-pagination__controls" *ngIf="totalPages > 1">
-        <button
-          class="cit-pagination__nav"
-          type="button"
-          (click)="goToPreviousPage()"
-          [disabled]="isFirstPage"
-          aria-label="P&aacute;gina anterior"
-        >
-          <ion-icon name="chevron-back-outline"></ion-icon>
-          <span>Anterior</span>
-        </button>
-
-        <div class="cit-pagination__pages">
-          <ng-container *ngFor="let item of visiblePageItems; trackBy: trackByPaginationItem">
-            <button
-              *ngIf="isPageNumber(item); else paginationEllipsis"
-              class="cit-pagination__page"
-              type="button"
-              [class.active]="item === currentPageDisplay"
-              [attr.aria-current]="item === currentPageDisplay ? 'page' : null"
-              (click)="goToPage(item)"
-            >
-              {{ item }}
-            </button>
-            <ng-template #paginationEllipsis>
-              <span class="cit-pagination__ellipsis" aria-hidden="true">&hellip;</span>
-            </ng-template>
-          </ng-container>
-        </div>
-
-        <button
-          class="cit-pagination__nav"
-          type="button"
-          (click)="goToNextPage()"
-          [disabled]="isLastPage"
-          aria-label="P&aacute;gina siguiente"
-        >
-          <span>Siguiente</span>
-          <ion-icon name="chevron-forward-outline"></ion-icon>
-        </button>
-      </div>
+    <div *ngIf="shouldShowPagination" class="cit-pagination" aria-label="Paginación de citas">
+      <app-pagination
+        [page]="currentPage"
+        [pageSize]="pageSize"
+        [total]="summaryTotalCitas"
+        [pageSizeOptions]="pageSizeOptions"
+        (pageChange)="onPaginationPageChange($event)"
+        (pageSizeChange)="onPaginationPageSizeChange($event)"
+      ></app-pagination>
     </div>
+
   </div>
 </ion-content>
 

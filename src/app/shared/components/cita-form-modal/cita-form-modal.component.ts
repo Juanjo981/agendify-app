@@ -244,7 +244,7 @@ export class CitaFormModalComponent implements OnInit, OnChanges {
   private validar(): boolean {
     this.errores = {};
 
-    if (this.modo === 'crear' && !this.form.id_paciente) {
+    if (!this.form.id_paciente) {
       this.errores['paciente'] = 'Selecciona un paciente';
     }
     if (!this.form.fecha) this.errores['fecha'] = 'Fecha requerida';
