@@ -35,6 +35,6 @@ export class HistorialSesionesComponent {
 
   resumenNotas(sesion: SesionDto): string {
     const resumen = getSessionSummary(sesion);
-    return resumen.length > 100 ? `${resumen.slice(0, 97)}...` : resumen || 'Sin resumen clínico';
+    return resumen.length > 100 ? `${resumen.slice(0, 97)}...` : resumen || 'Sin resumen clÃ­nico';
   }
 }

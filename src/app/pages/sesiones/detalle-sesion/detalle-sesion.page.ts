@@ -74,7 +74,7 @@ export class DetalleSesionPage implements OnInit {
   async recargar() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (!id) {
-      this.errorMessage = 'SesiÛn no encontrada';
+      this.errorMessage = 'Sesi√≥n no encontrada';
       return;
     }
 
@@ -180,7 +180,7 @@ export class DetalleSesionPage implements OnInit {
     this.openConfirm(
       {
         title: 'Eliminar adjunto',
-        message: `Se marcar· como inactivo "${adjunto.nombre_original}".`,
+        message: `Se marcar√° como inactivo "${adjunto.nombre_original}".`,
         confirmLabel: 'Eliminar',
         variant: 'danger',
         icon: 'trash-outline',

@@ -3,7 +3,7 @@
     <div class="ses-page-header">
       <div class="ses-page-header__text">
         <h1 class="ses-title">Sesiones</h1>
-        <p class="ses-subtitle">Registro clínico de sesiones realizadas</p>
+        <p class="ses-subtitle">Registro clÃ­nico de sesiones realizadas</p>
       </div>
     </div>
 
@@ -55,7 +55,7 @@
 
     <p class="ses-counter">
       Mostrando <strong>{{ sesionesFiltradas.length }}</strong> de <strong>{{ totalSesiones }}</strong> sesiones
-      <span *ngIf="cargandoAdjuntos"> · verificando adjuntos...</span>
+      <span *ngIf="cargandoAdjuntos"> Â· verificando adjuntos...</span>
     </p>
 
     <div *ngIf="loading" class="ses-empty">
@@ -73,7 +73,7 @@
       <div class="ses-table-wrapper">
         <div class="ses-table-head">
           <div class="ses-col ses-col--paciente">Paciente</div>
-          <div class="ses-col ses-col--fecha">Fecha sesión</div>
+          <div class="ses-col ses-col--fecha">Fecha sesiÃ³n</div>
           <div class="ses-col ses-col--notas">Resumen</div>
           <div class="ses-col ses-col--adj">Adjunto</div>
           <div class="ses-col ses-col--creada">Registrada</div>
@@ -103,13 +103,13 @@
           </div>
 
           <div class="ses-col ses-col--fecha">
-            <span class="ses-data-label">Fecha sesión</span>
+            <span class="ses-data-label">Fecha sesiÃ³n</span>
             <span class="ses-cell-text">{{ formatFecha(s.fecha_sesion) }}</span>
           </div>
 
           <div class="ses-col ses-col--notas">
             <span class="ses-data-label">Resumen</span>
-            <p class="ses-notas-cell">{{ getResumen(s) || 'Sin resumen clínico registrado.' }}</p>
+            <p class="ses-notas-cell">{{ getResumen(s) || 'Sin resumen clÃ­nico registrado.' }}</p>
           </div>
 
           <div class="ses-col ses-col--adj">
@@ -158,7 +158,7 @@
             </span>
           </div>
 
-          <p class="ses-card__notas">{{ resumenNotas(getResumen(s) || 'Sin resumen clínico registrado.') }}</p>
+          <p class="ses-card__notas">{{ resumenNotas(getResumen(s) || 'Sin resumen clÃ­nico registrado.') }}</p>
 
           <div class="ses-card__foot">
             <span class="ses-card__meta">Registrada {{ formatCreacion(s.created_at) }}</span>
@@ -169,7 +169,7 @@
         </div>
       </div>
 
-      <div *ngIf="shouldShowPagination" class="ses-pagination" aria-label="Paginación de sesiones">
+      <div *ngIf="shouldShowPagination" class="ses-pagination" aria-label="PaginaciÃ³n de sesiones">
         <app-pagination
           [page]="currentPage"
           [pageSize]="pageSize"

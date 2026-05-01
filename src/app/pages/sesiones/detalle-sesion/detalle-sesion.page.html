@@ -7,7 +7,7 @@
 
     <div *ngIf="loading" class="dse-not-found">
       <ion-spinner name="crescent"></ion-spinner>
-      <p>Cargando sesi髇...</p>
+      <p>Cargando sesi贸n...</p>
     </div>
 
     <div *ngIf="errorMessage && !loading" class="dse-not-found">
@@ -17,7 +17,7 @@
 
     <div *ngIf="!loading && !sesion && !errorMessage" class="dse-not-found">
       <ion-icon name="document-text-outline"></ion-icon>
-      <p>Sesi髇 no encontrada</p>
+      <p>Sesi贸n no encontrada</p>
     </div>
 
     <ng-container *ngIf="sesion && !loading">
@@ -25,12 +25,12 @@
         <div class="dse-hero__left">
           <div class="dse-avatar">{{ iniciales }}</div>
           <div class="dse-hero__info">
-            <span class="dse-hero__label">Sesi髇 cl韓ica {{ sesion.estatus }}</span>
+            <span class="dse-hero__label">Sesi贸n cl铆nica {{ sesion.estatus }}</span>
             <h1 class="dse-hero__name">{{ sesion.apellido_paciente }}, {{ sesion.nombre_paciente }}</h1>
             <div class="dse-hero__meta">
               <span class="dse-meta-item">
                 <ion-icon name="calendar-outline"></ion-icon>
-                Sesi髇: {{ formatFecha(sesion.fecha_sesion) }}
+                Sesi贸n: {{ formatFecha(sesion.fecha_sesion) }}
               </span>
               <span class="dse-meta-item">
                 <ion-icon name="albums-outline"></ion-icon>
@@ -50,7 +50,7 @@
       </div>
 
       <div class="dse-card">
-        <p class="dse-card__title">Resumen cl韓ico</p>
+        <p class="dse-card__title">Resumen cl铆nico</p>
         <div class="dse-notas" *ngIf="resumenSesion; else sinNotas">
           {{ resumenSesion }}
         </div>
@@ -105,8 +105,10 @@
   [fechaSesionInicial]="sesion.fecha_sesion.slice(0, 16)"
   [tipoSesionInicial]="sesion.tipo_sesion || 'INDIVIDUAL'"
   [resumenInicial]="resumenSesion"
+  [adjuntosExistentes]="adjuntos"
   [saving]="saving"
   [errorMessage]="formErrorMessage"
+  (verAdjuntoExistente)="verAdjunto($event)"
   (guardado)="onSesionEditada($event)"
   (cancelado)="showEditarModal = false"
 ></app-sesion-form>

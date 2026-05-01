@@ -21,14 +21,18 @@
 <div
   *ngIf="!adjunto"
   class="aa-zone"
-  [class.aa-zone--drag]="isDragOver"
+  [class.aa-zone--drag]="isDragOver && !disabled"
+  [class.aa-zone--disabled]="disabled"
   (click)="triggerPicker()"
   (dragover)="onDragOver($event)"
   (dragleave)="onDragLeave()"
   (drop)="onDrop($event)"
 >
   <ion-icon name="cloud-upload-outline" class="aa-zone__icon"></ion-icon>
-  <p class="aa-zone__text">Arrastra un archivo aquí o <span class="aa-zone__link">selecciona uno</span></p>
+  <p class="aa-zone__text">
+    Arrastra un archivo aquí o
+    <span class="aa-zone__link">{{ disabled ? 'selección deshabilitada' : 'selecciona uno' }}</span>
+  </p>
   <p class="aa-zone__hint">PDF, Word, imágenes · Máx. recomendado 10 MB</p>
 </div>
 
@@ -38,6 +42,7 @@
   #fileInput
   type="file"
   [accept]="'.txt,.doc,.docx,.pdf,.jpg,.jpeg,.png,.webp'"
+  [disabled]="disabled"
   hidden
   (change)="onFileSelected($event)"
 />

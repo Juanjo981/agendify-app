@@ -34,10 +34,8 @@
   <!-- ── Selects row ── -->
   <div class="fe-row fe-row--selects">
     <div class="fe-field">
-      <label class="fe-label">Profesional</label>
-      <select class="fe-select" [(ngModel)]="filtros.profesional" (change)="emitir()">
-        <option *ngFor="let p of profesionales" [value]="p.id">{{ p.nombre }}</option>
-      </select>
+      <label class="fe-label">Profesional:</label>
+      <div class="fe-static">{{ contextoUsuario }}</div>
     </div>
 
     <div class="fe-field">

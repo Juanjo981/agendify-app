@@ -833,5 +833,12 @@
 
     </div>
 
+    <app-confirm-dialog
+      *ngIf="confirmConfig"
+      [config]="confirmConfig"
+      (confirmed)="onConfirmConfirmed()"
+      (cancelled)="onConfirmCancelled()">
+    </app-confirm-dialog>
+
   </div>
 </ion-content>

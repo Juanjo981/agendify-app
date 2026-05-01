@@ -1,14 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, HostListener, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, NavigationStart, Router } from '@angular/router';
 import { IonicModule, ToastController } from '@ionic/angular';
 import { ConfiguracionApiService } from 'src/app/services/configuracion-api.service';
 import { EquipoApiService } from 'src/app/services/equipo-api.service';
 import { PERMISOS_DETALLES } from 'src/app/shared/constants/permisos-detalles';
 import { PerfilApiService } from 'src/app/services/perfil-api.service';
 import { SessionService } from 'src/app/services/session.service';
+import { ConfirmDialogComponent, ConfirmDialogConfig } from 'src/app/shared/confirm-dialog/confirm-dialog.component';
 import { PermisoDetalle, RecepcionistaEquipoViewModel } from 'src/app/shared/models/equipo.model';
 import { PermisosRecepcionista } from 'src/app/shared/models/permisos.model';
 import { UsuarioMock } from 'src/app/shared/models/usuario.model';
@@ -16,6 +17,7 @@ import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
 import { AgfTimePickerComponent } from '../../shared/components/agf-time-picker/agf-time-picker.component';
 import { ConfiguracionRecordatorioDto } from '../../shared/models/configuracion.models';
 import { ConfiguracionRefreshService, ConfiguracionTabId } from '../../shared/refresh/dashboard-module-refresh.services';
+import { filter } from 'rxjs/operators';
 
 const DEFAULTS = {
   vistaDefault: 'semana',
@@ -65,7 +67,7 @@ type ConfigState = typeof DEFAULTS;
 @Component({
   selector: 'app-configuracion',
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule, AgfTimePickerComponent],
+  imports: [IonicModule, CommonModule, FormsModule, AgfTimePickerComponent, ConfirmDialogComponent],
   templateUrl: './configuracion.page.html',
   styleUrls: ['./configuracion.page.scss']
 })
@@ -100,6 +102,10 @@ export class ConfiguracionPage implements OnInit {
   modalPermisos: RecepcionistaEquipoViewModel | null = null;
   permisosEditando: PermisosRecepcionista | null = null;
   readonly permisosDetalles: PermisoDetalle[] = PERMISOS_DETALLES;
+  confirmConfig: ConfirmDialogConfig | null = null;
+  private confirmCallback: (() => void) | null = null;
+  private pendingNavigationUrl: string | null = null;
+  private bypassUnsavedGuard = false;
 
   activeTab: ConfiguracionTabId = 'general';
   readonly cfgTabs: { id: ConfiguracionTabId; label: string; icon: string }[] = [
@@ -112,6 +118,7 @@ export class ConfiguracionPage implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private configuracionApi: ConfiguracionApiService,
     private equipoApi: EquipoApiService,
     private perfilApi: PerfilApiService,
@@ -156,8 +163,23 @@ export class ConfiguracionPage implements OnInit {
   }
 
   setTab(tab: ConfiguracionTabId): void {
+    if (tab === this.activeTab) return;
+    if (this.hasChanges()) {
+      this.openUnsavedChangesConfirm(() => {
+        this.activeTab = tab;
+        this.refresh.enterSection(tab);
+      });
+      return;
+    }
     this.activeTab = tab;
     this.refresh.enterSection(tab);
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (!this.hasChanges()) return;
+    event.preventDefault();
+    event.returnValue = '';
   }
 
   async guardar(): Promise<void> {
@@ -580,6 +602,33 @@ export class ConfiguracionPage implements OnInit {
   }
 
   private bindRefreshStreams(): void {
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationStart => event instanceof NavigationStart),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(event => {
+        if (this.bypassUnsavedGuard) return;
+        if (!this.hasChanges()) return;
+        if (event.url.startsWith('/dashboard/configuracion')) return;
+
+        this.pendingNavigationUrl = event.url;
+        this.openUnsavedChangesConfirm(() => {
+          const target = this.pendingNavigationUrl;
+          this.pendingNavigationUrl = null;
+          if (!target) return;
+          this.bypassUnsavedGuard = true;
+          void this.router.navigateByUrl(target).finally(() => {
+            this.bypassUnsavedGuard = false;
+          });
+        });
+
+        this.bypassUnsavedGuard = true;
+        void this.router.navigateByUrl(this.router.url, { replaceUrl: true }).finally(() => {
+          this.bypassUnsavedGuard = false;
+        });
+      });
+
     ['general', 'agenda', 'seguridad', 'sistema'].forEach(tab => {
       this.refresh.watchSection(tab as ConfiguracionTabId)
         .pipe(takeUntilDestroyed(this.destroyRef))
@@ -593,5 +642,36 @@ export class ConfiguracionPage implements OnInit {
       .subscribe(() => {
         void this.cargarEquipoReal();
       });
+  }
+
+  private openUnsavedChangesConfirm(onConfirm: () => void): void {
+    this.openConfirm(
+      {
+        title: 'Descartar cambios',
+        message: 'Tienes cambios sin guardar. ¿Deseas salir sin guardar?',
+        confirmLabel: 'Salir sin guardar',
+        cancelLabel: 'Seguir editando',
+        variant: 'danger',
+        icon: 'alert-circle-outline',
+      },
+      onConfirm,
+    );
+  }
+
+  private openConfirm(config: ConfirmDialogConfig, onConfirm: () => void): void {
+    this.confirmConfig = config;
+    this.confirmCallback = onConfirm;
+  }
+
+  onConfirmConfirmed(): void {
+    this.confirmCallback?.();
+    this.confirmConfig = null;
+    this.confirmCallback = null;
+  }
+
+  onConfirmCancelled(): void {
+    this.pendingNavigationUrl = null;
+    this.confirmConfig = null;
+    this.confirmCallback = null;
   }
 }

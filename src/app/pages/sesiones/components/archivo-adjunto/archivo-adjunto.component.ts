@@ -22,24 +22,37 @@ const ALLOWED_EXT = ['.txt', '.doc', '.docx', '.pdf', '.jpg', '.jpeg', '.png', '
 export class ArchivoAdjuntoComponent {
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @Input() adjunto?: SesionArchivoLocal;
+  @Input() disabled = false;
   @Output() archivoSeleccionado = new EventEmitter<SesionArchivoLocal>();
   @Output() archivoEliminado = new EventEmitter<void>();
 
   error = '';
   isDragOver = false;
 
-  triggerPicker() { this.fileInput?.nativeElement.click(); }
+  triggerPicker() {
+    if (this.disabled) return;
+    this.fileInput?.nativeElement.click();
+  }
 
-  onDragOver(e: DragEvent) { e.preventDefault(); this.isDragOver = true; }
+  onDragOver(e: DragEvent) {
+    e.preventDefault();
+    if (this.disabled) return;
+    this.isDragOver = true;
+  }
   onDragLeave() { this.isDragOver = false; }
   onDrop(e: DragEvent) {
     e.preventDefault();
     this.isDragOver = false;
+    if (this.disabled) return;
     const file = e.dataTransfer?.files?.[0];
     if (file) this.processFile(file);
   }
 
   onFileSelected(event: Event) {
+    if (this.disabled) {
+      (event.target as HTMLInputElement).value = '';
+      return;
+    }
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file) this.processFile(file);
     (event.target as HTMLInputElement).value = '';

@@ -14,6 +14,8 @@ import { EstadisticasApiService } from '../../estadisticas.service.api';
 })
 export class InsightsEstadisticasComponent implements OnInit {
   insights: InsightEstadistica[] = [];
+  loading = false;
+  loadError = false;
   private readonly destroyRef = inject(DestroyRef);
 
   constructor(private svc: EstadisticasApiService) {}
@@ -29,17 +31,19 @@ export class InsightsEstadisticasComponent implements OnInit {
   trackById(_: number, ins: InsightEstadistica): string { return ins.id; }
 
   private async cargarInsights(filtros: any) {
+    this.loading = true;
+    this.loadError = false;
+    console.debug('[InsightsEstadisticas] cargarInsights filtros:', filtros);
     try {
-      this.insights = await this.svc.getInsights(filtros);
-    } catch {
-      this.insights = [{
-        id: 'insight-error',
-        icono: 'alert-circle-outline',
-        titulo: 'Insights no disponibles',
-        valor: 'Sin datos',
-        descripcion: 'No fue posible obtener insights para este período.',
-        tipo: 'warning',
-      }];
+      const response = await this.svc.getInsights(filtros);
+      console.debug('[InsightsEstadisticas] response real /insights:', response);
+      this.insights = response ?? [];
+    } catch (error) {
+      console.error('[InsightsEstadisticas] Error cargando insights:', error);
+      this.insights = [];
+      this.loadError = true;
+    } finally {
+      this.loading = false;
     }
   }
 }

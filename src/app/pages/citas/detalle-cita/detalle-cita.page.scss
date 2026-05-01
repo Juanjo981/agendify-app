@@ -183,6 +183,118 @@
   &__warn { color: var(--danger, #ef4444); font-weight: 600; }
 }
 
+// ─── Aviso “no editable” (glass, alineado con confirm-dialog) ───────────────
+.dct-aviso-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(6px) saturate(130%);
+  -webkit-backdrop-filter: blur(6px) saturate(130%);
+  z-index: 1100;
+  animation: dctAvisoFade 0.15s ease;
+}
+
+.dct-aviso-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(380px, calc(100vw - 32px));
+
+  background: rgba(247, 249, 252, 0.98);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(209, 213, 219, 0.55);
+  border-radius: 24px;
+  box-shadow:
+    0 24px 64px rgba(15, 23, 42, 0.18),
+    0 4px 16px rgba(15, 23, 42, 0.07);
+
+  z-index: 1101;
+  padding: 28px 28px 24px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+
+  animation: dctAvisoSpring 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dct-aviso-icon-wrap {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366f1;
+
+  ion-icon {
+    font-size: 28px;
+  }
+}
+
+.dct-aviso-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 10px;
+  letter-spacing: -0.2px;
+}
+
+.dct-aviso-message {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 0 22px;
+}
+
+.dct-aviso-btn {
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: linear-gradient(135deg, #3b3f92, #6366f1);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 18px rgba(99, 102, 241, 0.4);
+  }
+
+  &:active {
+    transform: none;
+  }
+}
+
+@keyframes dctAvisoFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dctAvisoSpring {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
 // ─── Pago form (inline) ──────────────────────────────────────────────────────
 .dct-pago-form {
   background: var(--glass-bg, rgba(247,249,252,0.92));

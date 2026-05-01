@@ -9,7 +9,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "normalize:utf8": "node scripts/ensure-utf8-sources.mjs"
   },
   "private": true,
   "dependencies": {

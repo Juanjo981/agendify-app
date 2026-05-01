@@ -5,8 +5,8 @@
         <ion-icon name="document-text-outline"></ion-icon>
       </div>
       <div class="sf-header__text">
-        <h3 class="sf-header__title">Editar sesi髇</h3>
-        <p class="sf-header__sub">Actualiza el resumen cl韓ico y adjunta archivos reales</p>
+        <h3 class="sf-header__title">Editar sesi贸n</h3>
+        <p class="sf-header__sub">Actualiza el resumen cl铆nico y adjunta archivos reales</p>
       </div>
       <button class="sf-close" (click)="cancelado.emit()" [disabled]="saving">
         <ion-icon name="close-outline"></ion-icon>
@@ -14,19 +14,21 @@
     </div>
 
     <div class="sf-body">
-      <div class="sf-field">
-        <label class="sf-label">Fecha y hora de la sesi髇</label>
+      <div class="sf-field" [class.sf-field--error]="fechaError">
+        <label class="sf-label">Fecha y hora de la sesi贸n</label>
         <input
           class="sf-input"
+          [class.sf-input--error]="fechaError"
           type="datetime-local"
           [(ngModel)]="fechaSesion"
           (ngModelChange)="fechaError = ''"
         />
         <span *ngIf="fechaError" class="sf-error">{{ fechaError }}</span>
+        <span class="sf-hint sf-hint--left">Selecciona la fecha y hora real de la sesi贸n.</span>
       </div>
 
       <div class="sf-field">
-        <label class="sf-label">Tipo de sesi髇</label>
+        <label class="sf-label">Tipo de sesi贸n</label>
         <select class="sf-select" [(ngModel)]="tipoSesion">
           <option value="INDIVIDUAL">Individual</option>
           <option value="PAREJA">Pareja</option>
@@ -34,14 +36,15 @@
           <option value="GRUPAL">Grupal</option>
           <option value="SEGUIMIENTO">Seguimiento</option>
         </select>
+        <span class="sf-hint sf-hint--left">Usa la categor铆a principal para facilitar filtros y reportes.</span>
       </div>
 
-      <div class="sf-field">
-        <label class="sf-label">Resumen cl韓ico</label>
+      <div class="sf-field" [class.sf-field--error]="resumenError">
+        <label class="sf-label">Resumen cl铆nico</label>
         <textarea
           class="sf-textarea"
           rows="6"
-          placeholder="Escribe observaciones, evoluci髇 y acuerdos de la sesi髇..."
+          placeholder="Escribe observaciones, evoluci贸n y acuerdos de la sesi贸n..."
           [(ngModel)]="resumen"
           (ngModelChange)="resumenError = ''"
           [class.sf-textarea--error]="resumenError"
@@ -51,12 +54,35 @@
       </div>
 
       <div class="sf-field">
+        <label class="sf-label">Archivos adjuntos actuales</label>
+        <div class="sf-existing-files" *ngIf="adjuntosExistentes.length > 0; else sinAdjuntosExistentes">
+          <button
+            type="button"
+            class="sf-existing-file"
+            *ngFor="let adjunto of adjuntosExistentes"
+            (click)="onVerAdjuntoExistente(adjunto)"
+          >
+            <ion-icon name="attach-outline"></ion-icon>
+            <span>{{ adjunto.nombre_original }}</span>
+          </button>
+        </div>
+        <ng-template #sinAdjuntosExistentes>
+          <p class="sf-hint sf-hint--left">Esta sesi贸n no tiene archivos adjuntos guardados.</p>
+        </ng-template>
+      </div>
+
+      <div class="sf-field">
         <label class="sf-label">Adjuntar archivo <span class="sf-optional">(opcional)</span></label>
         <app-archivo-adjunto
           [adjunto]="adjunto"
+          [disabled]="uploadDisabled"
           (archivoSeleccionado)="onArchivoSeleccionado($event)"
           (archivoEliminado)="onArchivoEliminado()"
         ></app-archivo-adjunto>
+        <p *ngIf="uploadDisabled" class="sf-hint sf-hint--left">
+          Ya existe un archivo adjunto en esta sesi贸n. Para adjuntar uno nuevo, primero elimina el actual.
+        </p>
+        <span *ngIf="adjuntoError" class="sf-error">{{ adjuntoError }}</span>
       </div>
 
       <p *ngIf="errorMessage" class="sf-error">{{ errorMessage }}</p>
@@ -67,7 +93,7 @@
       <button class="sf-btn sf-btn--save" (click)="guardar()" [disabled]="saving">
         <ion-spinner *ngIf="saving" name="crescent"></ion-spinner>
         <ion-icon *ngIf="!saving" name="checkmark-circle-outline"></ion-icon>
-        Guardar sesi髇
+        Guardar sesi贸n
       </button>
     </div>
   </div>

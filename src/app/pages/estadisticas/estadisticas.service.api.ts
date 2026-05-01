@@ -62,7 +62,6 @@ interface ExportacionReportePayload {
   formato: 'pdf' | 'excel';
   fecha_desde: string;
   fecha_hasta: string;
-  id_profesional?: number;
   incluir_resumen: boolean;
   incluir_detalle: boolean;
   nombre_archivo: string;
@@ -271,12 +270,18 @@ export class EstadisticasApiService {
   }
 
   async getInsights(filtros: FiltroEstadisticas = this.filtrosActuales): Promise<InsightEstadistica[]> {
+    console.debug('[Estadisticas] GET /insights params:', this.buildStatsParams(filtros));
     try {
       const raw = await firstValueFrom(
-        this.http.get<InsightEstadisticaDto[]>(`${this.base}/insights`, { params: this.buildStatsParams(filtros) })
+        this.http.get<InsightEstadisticaDto[] | { insights?: InsightEstadisticaDto[] }>(`${this.base}/insights`, {
+          params: this.buildStatsParams(filtros),
+        })
       );
+      console.debug('[Estadisticas] /insights response:', raw);
 
-      return (raw ?? []).map((item, index) => ({
+      const rows = Array.isArray(raw) ? raw : (Array.isArray(raw?.insights) ? raw.insights : []);
+
+      return rows.map((item, index) => ({
         id: item.id || `insight-${index + 1}`,
         icono: item.icono || 'sparkles-outline',
         titulo: item.titulo || 'Insight',
@@ -286,8 +291,10 @@ export class EstadisticasApiService {
       }));
     } catch (error) {
       if (this.isNotFound(error)) {
+        console.warn('[Estadisticas] /insights 404, devolviendo []');
         return [];
       }
+      console.error('[Estadisticas] Error en /insights:', error);
       throw error;
     }
   }
@@ -358,7 +365,6 @@ export class EstadisticasApiService {
       formato: req.formato,
       fecha_desde: req.fechaDesde,
       fecha_hasta: req.fechaHasta,
-      id_profesional: req.profesionalId,
       incluir_resumen: req.incluirResumen,
       incluir_detalle: req.incluirDetalle,
       nombre_archivo: req.nombreArchivo,
@@ -400,7 +406,6 @@ export class EstadisticasApiService {
       rango: filtros.rango,
       fecha_desde: filtros.fechaDesde,
       fecha_hasta: filtros.fechaHasta,
-      id_profesional: filtros.profesional || undefined,
       estado_cita: this.mapEstadoFiltro(filtros.estadoCita),
       metodo_pago: this.mapMetodoPagoFiltro(filtros.metodoPago),
       ...extras,

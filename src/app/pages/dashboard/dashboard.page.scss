@@ -658,13 +658,13 @@ $secondary: #C4B5FD;
 
 .notification-panel {
   position: absolute;
-  top: 90px;                   // ← MÁS SEPARADO DEL HEADER
+  top: 76px;
   right: 20px;
   width: 340px;
-  max-height: 72vh;
+  max-height: calc(100dvh - 88px);
   padding: 0;
   border-radius: 22px;
-  overflow: visible;           // allow footer to be visible; scroll is on .notif-list
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 
@@ -703,8 +703,9 @@ $secondary: #C4B5FD;
 /* Listado */
 .notif-list {
   flex: 1;
-  min-height: 0;             // critical: allows flex child to shrink below content size
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 8px 12px 12px;
   scrollbar-width: thin;
 }
@@ -911,7 +912,8 @@ $secondary: #C4B5FD;
     right: auto;
     transform: translateX(-50%);
     width: 92%;
-    max-height: 78vh;
+    top: 72px;
+    max-height: calc(100dvh - 84px);
 
     animation: none !important;  // ← No animación = no salto
   }

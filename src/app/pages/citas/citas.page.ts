@@ -213,7 +213,7 @@ export class CitasPage implements OnInit, OnDestroy {
   }
 
   puedeEditar(cita: CitaDto): boolean {
-    return !['COMPLETADA', 'CANCELADA', 'NO_ASISTIO'].includes(cita.estado_cita);
+    return !['COMPLETADA', 'CANCELADA'].includes(cita.estado_cita);
   }
 
   private async cargar(

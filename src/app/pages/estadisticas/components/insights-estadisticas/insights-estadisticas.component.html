@@ -6,8 +6,20 @@
     <span class="ins-label">Insights del período</span>
   </div>
 
+  <div class="ins-empty" *ngIf="loading">
+    Cargando insights...
+  </div>
+
+  <div class="ins-empty" *ngIf="!loading && loadError">
+    Sin datos - No fue posible obtener insights para este período.
+  </div>
+
+  <div class="ins-empty" *ngIf="!loading && !loadError && insights.length === 0">
+    Sin insights para este período.
+  </div>
+
   <!-- ── Insights grid ───────────────────────────────────────────── -->
-  <div class="ins-grid">
+  <div class="ins-grid" *ngIf="!loading && insights.length > 0">
     <div
       *ngFor="let ins of insights; trackBy: trackById"
       class="ins-card"

@@ -8,9 +8,9 @@ import {
   ExportacionReporteRequest,
   ExportacionReporteResponse,
   FormatoExportacion,
-  ProfesionalFiltroOption,
 } from '../../models/estadisticas.model';
 import { EstadisticasApiService } from '../../estadisticas.service.api';
+import { SessionService } from 'src/app/services/session.service';
 
 @Component({
   selector: 'app-exportar-reporte-modal',
@@ -27,16 +27,18 @@ export class ExportarReporteModalComponent implements OnInit {
   formato: FormatoExportacion = 'pdf';
   incluirResumen = true;
   incluirDetalle = true;
-  profesional = '';
-  profesionales: ProfesionalFiltroOption[] = [{ id: '', nombre: 'Todos los profesionales' }];
   fechaDesde = '';
   fechaHasta = '';
   nombreArchivo = '';
+  contextoUsuario = 'Tus estadísticas';
 
   exportando = false;
   resultado: ExportacionReporteResponse | null = null;
 
-  constructor(private svc: EstadisticasApiService) {}
+  constructor(
+    private svc: EstadisticasApiService,
+    private session: SessionService,
+  ) {}
 
   async ngOnInit() {
     // Defaults based on current month
@@ -45,13 +47,8 @@ export class ExportarReporteModalComponent implements OnInit {
     this.fechaDesde = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
       .toISOString().slice(0, 10);
     this.nombreArchivo = this.buildNombreArchivo();
-    this.profesional = this.svc.filtrosActuales.profesional || '';
-
-    try {
-      this.profesionales = await this.svc.getProfesionalesFiltro();
-    } catch {
-      this.profesionales = [{ id: '', nombre: 'Todos los profesionales' }];
-    }
+    const nombre = this.session.getNombreCompleto().trim();
+    this.contextoUsuario = nombre || 'Tus estadísticas';
   }
 
   setFormato(f: FormatoExportacion) {
@@ -74,7 +71,6 @@ export class ExportarReporteModalComponent implements OnInit {
       formato: this.formato,
       fechaDesde: this.fechaDesde,
       fechaHasta: this.fechaHasta,
-      profesionalId: this.profesional ? Number(this.profesional) : undefined,
       incluirResumen: this.incluirResumen,
       incluirDetalle: this.incluirDetalle,
       nombreArchivo: this.nombreArchivo,

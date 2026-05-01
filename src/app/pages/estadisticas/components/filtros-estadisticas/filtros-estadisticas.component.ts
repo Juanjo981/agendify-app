@@ -10,7 +10,7 @@ import {
   MetodoPagoFiltro,
 } from '../../models/filtros-estadisticas.model';
 import { EstadisticasApiService } from '../../estadisticas.service.api';
-import { ProfesionalFiltroOption } from '../../models/estadisticas.model';
+import { SessionService } from 'src/app/services/session.service';
 
 @Component({
   selector: 'app-filtros-estadisticas',
@@ -23,6 +23,7 @@ export class FiltrosEstadisticasComponent implements OnInit {
   @Output() filtrosCambiados = new EventEmitter<FiltroEstadisticas>();
 
   filtros!: FiltroEstadisticas;
+  contextoUsuario = 'Tus estadísticas';
 
   rangos: Array<{ value: RangoFecha; label: string }> = [
     { value: 'hoy',           label: 'Hoy' },
@@ -49,19 +50,16 @@ export class FiltrosEstadisticasComponent implements OnInit {
     { value: 'Crédito',       label: 'Crédito' },
   ];
 
-  profesionales: ProfesionalFiltroOption[] = [
-    { id: '', nombre: 'Todos los profesionales' },
-  ];
-
-  constructor(private svc: EstadisticasApiService) {}
+  constructor(
+    private svc: EstadisticasApiService,
+    private session: SessionService,
+  ) {}
 
   async ngOnInit() {
     this.filtros = this.svc.getFiltrosIniciales();
-    try {
-      this.profesionales = await this.svc.getProfesionalesFiltro();
-    } catch {
-      this.profesionales = [{ id: '', nombre: 'Todos los profesionales' }];
-    }
+    this.filtros.profesional = '';
+    const nombre = this.session.getNombreCompleto().trim();
+    this.contextoUsuario = nombre || 'Tus estadísticas';
     this.emitir();
   }
 
@@ -98,7 +96,6 @@ export class FiltrosEstadisticasComponent implements OnInit {
   get tieneActivos(): boolean {
     return (
       this.filtros.rango !== 'mes' ||
-      !!this.filtros.profesional ||
       this.filtros.estadoCita !== 'todos' ||
       this.filtros.metodoPago !== 'todos'
     );

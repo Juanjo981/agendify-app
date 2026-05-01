@@ -61,6 +61,8 @@ export class DetalleCitaPage implements OnInit {
   showEditarModal = false;
   showReprogramarModal = false;
   showPagoForm = false;
+  /** Aviso in-place: cita no editable por estado (p. ej. cancelada) */
+  showNoEditarModal = false;
 
   pagoForm: { estado_pago: EstadoPago; monto: number } = {
     estado_pago: 'PENDIENTE',
@@ -140,7 +142,7 @@ export class DetalleCitaPage implements OnInit {
 
   get puedeEditar(): boolean {
     if (!this.cita) return false;
-    return !['COMPLETADA', 'CANCELADA', 'NO_ASISTIO'].includes(this.cita.estado_cita);
+    return !['COMPLETADA', 'CANCELADA'].includes(this.cita.estado_cita);
   }
 
   get puedeReprogramar(): boolean {
@@ -177,6 +179,10 @@ export class DetalleCitaPage implements OnInit {
     return this.sesionRelacionadaId ? 'Ver sesión' : 'Crear sesión';
   }
 
+  cerrarAvisoNoEditar(): void {
+    this.showNoEditarModal = false;
+  }
+
   onEditarCita() {
     console.log('[DetalleCita] onEditarCita triggered', { citaId: this.cita?.id_cita });
 
@@ -187,7 +193,7 @@ export class DetalleCitaPage implements OnInit {
     }
 
     if (!this.puedeEditar) {
-      this.errorMessage = 'Esta cita no se puede editar por su estado actual.';
+      this.showNoEditarModal = true;
       return;
     }
 

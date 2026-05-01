@@ -229,3 +229,18 @@
   (confirmed)="onConfirmConfirmed()"
   (cancelled)="onConfirmCancelled()"
 ></app-confirm-dialog>
+
+<!-- Aviso: no se puede editar por estado (mismo patrón glass que confirm-dialog) -->
+<ng-container *ngIf="showNoEditarModal">
+  <div class="dct-aviso-backdrop" (click)="cerrarAvisoNoEditar()"></div>
+  <div class="dct-aviso-dialog" role="alertdialog" aria-modal="true" aria-labelledby="dct-aviso-title">
+    <div class="dct-aviso-icon-wrap">
+      <ion-icon name="lock-closed-outline" aria-hidden="true"></ion-icon>
+    </div>
+    <h2 id="dct-aviso-title" class="dct-aviso-title">No se puede editar</h2>
+    <p class="dct-aviso-message">
+      Esta cita no se puede editar por su estado actual. Los cambios no están permitidos mientras la cita esté finalizada o cancelada.
+    </p>
+    <button type="button" class="dct-aviso-btn" (click)="cerrarAvisoNoEditar()">Entendido</button>
+  </div>
+</ng-container>

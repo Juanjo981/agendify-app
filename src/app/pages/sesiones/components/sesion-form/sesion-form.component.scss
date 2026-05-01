@@ -1,7 +1,7 @@
 .sf-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15,23,42,0.45);
+  background: rgba(15, 23, 42, 0.62);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -10,16 +10,25 @@
 }
 
 .sf-modal {
-  background: var(--glass-bg, #f7f9fc);
-  border: 1px solid var(--border-subtle, rgba(209,213,219,0.5));
+  background: rgba(248, 250, 252, 0.96);
+  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
+  border: 1px solid rgba(203, 213, 225, 0.78);
   border-radius: var(--radius-xl, 20px);
   width: 100%;
   max-width: 560px;
   max-height: 88vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  box-shadow: 0 24px 64px rgba(2, 6, 23, 0.26);
   display: flex;
   flex-direction: column;
+}
+
+.sf-modal::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 // ─── Header ──────────────────────────────────────────────────────────────────
@@ -28,10 +37,10 @@
   align-items: center;
   gap: 12px;
   padding: 20px 24px 16px;
-  border-bottom: 1px solid var(--border-subtle, rgba(209,213,219,0.4));
+  border-bottom: 1px solid rgba(203, 213, 225, 0.72);
   position: sticky;
   top: 0;
-  background: inherit;
+  background: rgba(248, 250, 252, 0.98);
   z-index: 1;
 
   &__icon {
@@ -72,6 +81,7 @@
 }
 
 .sf-field { display: flex; flex-direction: column; gap: 6px; }
+.sf-field--error .sf-label { color: var(--danger, #ef4444); }
 
 .sf-label {
   font-size: 13px; font-weight: 600;
@@ -85,8 +95,8 @@
 .sf-textarea {
   padding: 10px 12px;
   border-radius: var(--radius-md, 10px);
-  border: 1px solid var(--border-subtle, rgba(209,213,219,0.55));
-  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(203, 213, 225, 0.88);
+  background: rgba(255, 255, 255, 0.96);
   font-size: 14px;
   color: var(--text-strong, #0f172a);
   outline: none;
@@ -97,6 +107,7 @@
   width: 100%;
 
   &:focus { border-color: #059669; }
+  &.sf-input--error { border-color: var(--danger, #ef4444); }
   &--error { border-color: var(--danger, #ef4444) !important; }
   &::placeholder { color: var(--text-muted, #64748b); }
 }
@@ -109,6 +120,45 @@
 .sf-error { font-size: 12px; color: var(--danger, #ef4444); }
 
 .sf-hint { font-size: 11px; color: var(--text-muted, #94a3b8); text-align: right; }
+.sf-hint--left { text-align: left; }
+
+.sf-existing-files {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sf-existing-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: 1px solid rgba(16, 185, 129, 0.24);
+  background: rgba(16, 185, 129, 0.08);
+  color: var(--text-strong, #0f172a);
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s, border-color 0.15s;
+
+  ion-icon {
+    color: #059669;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &:hover {
+    background: rgba(16, 185, 129, 0.14);
+    border-color: rgba(16, 185, 129, 0.34);
+  }
+}
 
 // ─── Footer ──────────────────────────────────────────────────────────────────
 .sf-footer {
@@ -116,10 +166,10 @@
   justify-content: flex-end;
   gap: 10px;
   padding: 14px 24px 20px;
-  border-top: 1px solid var(--border-subtle, rgba(209,213,219,0.4));
+  border-top: 1px solid rgba(203, 213, 225, 0.72);
   position: sticky;
   bottom: 0;
-  background: inherit;
+  background: rgba(248, 250, 252, 0.98);
 }
 
 .sf-btn {

@@ -26,6 +26,11 @@
   letter-spacing: 0.6px;
 }
 
+.ins-empty {
+  font-size: 13px;
+  color: var(--text-muted, #64748b);
+}
+
 // ─── Insights grid ────────────────────────────────────────────────────────────
 .ins-grid {
   display: grid;
