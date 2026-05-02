@@ -262,7 +262,7 @@ export class DashboardPage implements OnInit, OnDestroy {
 
   cerrarSesion() {
     this.logoutConfirmAbierto = false;
-    localStorage.clear();
+    this.authService.forceLogout();
     this.navCtrl.navigateRoot('/login');
   }
 

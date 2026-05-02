@@ -578,40 +578,40 @@ export class EstadisticasApiService {
 
   private colorReporte(tipo: TipoReporte): string {
     const map: Record<TipoReporte, string> = {
-      citas: '#6366f1',
-      ingresos: '#059669',
-      pacientes: '#0ea5e9',
-      'pagos-pendientes': '#f59e0b',
-      'no-asistencias': '#ef4444',
+      citas: 'var(--chart-primary)',
+      ingresos: 'var(--success-strong)',
+      pacientes: 'var(--chart-info)',
+      'pagos-pendientes': 'var(--warning)',
+      'no-asistencias': 'var(--danger-bright)',
     };
     return map[tipo];
   }
 
   private colorEstado(estado: string): string {
     const map: Record<string, string> = {
-      Confirmada: '#6366f1',
-      Completada: '#10b981',
-      Pendiente: '#f59e0b',
-      Cancelada: '#ef4444',
-      'No asistió': '#64748b',
-      Pospuesta: '#8b5cf6',
+      Confirmada: 'var(--chart-primary)',
+      Completada: 'var(--success)',
+      Pendiente: 'var(--warning)',
+      Cancelada: 'var(--danger-bright)',
+      'No asistió': 'var(--text-muted)',
+      Pospuesta: 'var(--chart-purple)',
     };
-    return map[estado] ?? '#94a3b8';
+    return map[estado] ?? 'var(--text-faint)';
   }
 
   private colorMetodoPago(metodo: string): string {
     const map: Record<string, string> = {
-      Transferencia: '#6366f1',
-      Efectivo: '#10b981',
-      Débito: '#0ea5e9',
-      Crédito: '#f59e0b',
-      Tarjeta: '#0ea5e9',
+      Transferencia: 'var(--chart-primary)',
+      Efectivo: 'var(--success)',
+      Débito: 'var(--chart-info)',
+      Crédito: 'var(--warning)',
+      Tarjeta: 'var(--chart-info)',
     };
-    return map[metodo] ?? '#94a3b8';
+    return map[metodo] ?? 'var(--text-faint)';
   }
 
   private avatarColor(index: number): string {
-    const colors = ['#6366f1', '#10b981', '#0ea5e9', '#f59e0b', '#8b5cf6'];
+    const colors = ['var(--chart-primary)', 'var(--success)', 'var(--chart-info)', 'var(--warning)', 'var(--chart-purple)'];
     return colors[index % colors.length];
   }
 

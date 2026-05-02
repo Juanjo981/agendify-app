@@ -4,11 +4,11 @@
 
 .new-appointment-panel {
   --nap-radius: 26px;
-  --nap-bg: rgba(247, 249, 252, 0.97);
-  --nap-glass: rgba(255, 255, 255, 0.93);
-  --nap-border: rgba(209, 213, 219, 0.5);
-  --nap-shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --nap-shadow-elev: 0 28px 60px rgba(0, 0, 0, 0.14);
+  --nap-bg: var(--glass-bg-heavy);
+  --nap-glass: var(--surface-panel-heavy);
+  --nap-border: var(--border-subtle);
+  --nap-shadow-soft: 0 2px 8px var(--shadow-soft);
+  --nap-shadow-elev: 0 28px 60px var(--shadow-modal);
 
   position: fixed;
   left: 50%;
@@ -28,7 +28,7 @@
   box-shadow:
     var(--nap-shadow-soft),
     var(--nap-shadow-elev),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    inset 0 1px 0 var(--glass-white-heavy);
   opacity: 0;
   pointer-events: none;
   transition:
@@ -56,7 +56,7 @@
 .drag-handle {
   width: 40px;
   height: 4px;
-  background: rgba(0, 0, 0, 0.12);
+  background: var(--overlay-soft);
   border-radius: 4px;
   margin: 10px auto 4px;
   flex-shrink: 0;
@@ -70,9 +70,9 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(254, 242, 242, 0.96);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  color: #b91c1c;
+  background: var(--danger-soft);
+  border: 1px solid color-mix(in srgb, var(--danger-bright) 20%, transparent);
+  color: var(--danger-dark);
 }
 
 @media (max-width: 900px) {
@@ -98,7 +98,7 @@
     display: block;
     width: 48px;
     height: 5px;
-    background: rgba(0, 0, 0, 0.22);
+    background: var(--overlay-soft);
     margin: 12px auto 4px;
   }
 }

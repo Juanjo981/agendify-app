@@ -18,6 +18,7 @@ import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../shared/confir
 import { AgfDatePickerComponent } from '../../shared/components/agf-date-picker/agf-date-picker.component';
 import { mapApiError } from '../../shared/utils/api-error.mapper';
 import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
+import { PageResponse } from '../../shared/models/page.model';
 
 @Component({
   selector: 'app-pacientes',
@@ -128,16 +129,27 @@ export class PacientesPage implements OnInit {
         sort: this.getSortParam(),
       });
 
-      if (response.total_pages > 0 && targetPage >= response.total_pages && response.content.length === 0) {
-        await this.cargar(response.total_pages - 1, options);
+      const content = Array.isArray(response.content) ? response.content : [];
+      const totalElements = this.normalizePageNumber(response, 'total_elements', 'totalElements', content.length);
+      const totalPages = this.normalizePageNumber(
+        response,
+        'total_pages',
+        'totalPages',
+        totalElements > 0 ? Math.max(Math.ceil(totalElements / this.pageSize), 1) : 0
+      );
+      const responsePage = this.normalizePageNumber(response, 'number', 'pageNumber', targetPage);
+      const responseSize = this.normalizePageNumber(response, 'size', 'pageSize', this.pageSize);
+
+      if (totalPages > 0 && targetPage >= totalPages && content.length === 0) {
+        await this.cargar(totalPages - 1, options);
         return;
       }
 
-      this.pacientesFiltrados = response.content;
-      this.totalPacientes = response.total_elements;
-      this.totalPages = response.total_pages;
-      this.currentPage = response.number;
-      this.pageSize = response.size || this.pageSize;
+      this.pacientesFiltrados = content;
+      this.totalPacientes = totalElements;
+      this.totalPages = totalPages;
+      this.currentPage = responsePage;
+      this.pageSize = responseSize || this.pageSize;
 
       if (options.scrollToTable) {
         setTimeout(() => this.scrollToTable(), 0);
@@ -162,6 +174,16 @@ export class PacientesPage implements OnInit {
     if (!Number.isFinite(nextSize) || nextSize <= 0 || nextSize === this.pageSize) return;
     this.pageSize = nextSize;
     void this.cargar(0, { scrollToTable: true });
+  }
+
+  private normalizePageNumber(
+    response: PageResponse<PacienteDto>,
+    snakeKey: keyof PageResponse<PacienteDto>,
+    camelKey: string,
+    fallback: number,
+  ): number {
+    const raw = response[snakeKey] ?? (response as unknown as Record<string, unknown>)[camelKey];
+    return typeof raw === 'number' && Number.isFinite(raw) ? raw : fallback;
   }
 
   onBusquedaChange() {

@@ -19,8 +19,8 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff;
+  background: linear-gradient(135deg, var(--primary-mid), var(--accent-purple));
+  color: var(--text-on-primary);
   font-size: 12px;
   font-weight: 700;
   display: flex;
@@ -41,7 +41,7 @@
 .cpop-name {
   font-size: 13px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-strong);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -49,7 +49,7 @@
 
 .cpop-meta {
   font-size: 11.5px;
-  color: #64748b;
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -75,22 +75,22 @@
   white-space: nowrap;
   ion-icon { font-size: 10px; flex-shrink: 0; }
 
-  &--confirmada { background: #e0e7ff; color: #4338ca; }
-  &--completada { background: #d1fae5; color: #065f46; }
-  &--pendiente  { background: #fef3c7; color: #92400e; }
-  &--cancelada  { background: #fee2e2; color: #991b1b; }
-  &--no-asistio { background: #f1f5f9; color: #475569; }
-  &--pospuesta  { background: #ede9fe; color: #6d28d9; }
+  &--confirmada { background: var(--primary-soft); color: var(--primary); }
+  &--completada { background: var(--success-soft); color: var(--success-dark); }
+  &--pendiente  { background: var(--warning-soft); color: var(--warning-dark); }
+  &--cancelada  { background: var(--danger-soft); color: var(--danger-dark); }
+  &--no-asistio { background: var(--surface-muted); color: var(--text-secondary); }
+  &--pospuesta  { background: color-mix(in srgb, var(--accent-purple) 12%, transparent); color: var(--accent-purple-dark); }
 
-  &--pago-ok      { background: #d1fae5; color: #059669; }
-  &--pago-pend    { background: #fef3c7; color: #d97706; }
-  &--pago-parcial { background: #fffbeb; color: #b45309; }
+  &--pago-ok      { background: var(--success-soft); color: var(--success-strong); }
+  &--pago-pend    { background: var(--warning-soft); color: var(--warning-strong); }
+  &--pago-parcial { background: var(--text-on-primary)beb; color: var(--warning-dark); }
 }
 
 // ── Separator ─────────────────────────────────────────────────────────────────
 .cpop-sep {
   height: 1px;
-  background: rgba(226, 232, 240, 0.7);
+  background: var(--border-subtle);
   margin: 3px 10px;
 }
 
@@ -112,16 +112,16 @@
   font-family: inherit;
   font-size: 13.5px;
   font-weight: 500;
-  color: #1e293b;
+  color: var(--text-strong);
   text-align: left;
   transition: background 0.12s;
 
   &:hover:not(:disabled) {
-    background: rgba(99, 102, 241, 0.05);
-    .cpop-act-icon { background: rgba(99, 102, 241, 0.10); }
+    background: var(--primary-soft);
+    .cpop-act-icon { background: var(--primary-soft); }
   }
 
-  &:active:not(:disabled) { background: rgba(99, 102, 241, 0.09); }
+  &:active:not(:disabled) { background: var(--primary-soft); }
 
   &:disabled {
     opacity: 0.35;
@@ -131,33 +131,33 @@
   // ── Variants ──────────────────────────────────────────────
   &--primary {
     font-weight: 600;
-    color: #4f46e5;
-    .cpop-act-icon { background: rgba(99,102,241,0.08); ion-icon { color: #4f46e5; } }
-    &:hover:not(:disabled) { background: rgba(99,102,241,0.07); .cpop-act-icon { background: rgba(99,102,241,0.14); } }
+    color: var(--primary);
+    .cpop-act-icon { background: var(--primary-soft); ion-icon { color: var(--primary); } }
+    &:hover:not(:disabled) { background: var(--primary-soft); .cpop-act-icon { background: var(--primary-ring); } }
   }
 
   &--success {
-    color: #047857;
-    .cpop-act-icon { background: rgba(16,185,129,0.08); ion-icon { color: #059669; } }
-    &:hover:not(:disabled) { background: rgba(16,185,129,0.05); .cpop-act-icon { background: rgba(16,185,129,0.14); } }
+    color: var(--success-dark);
+    .cpop-act-icon { background: var(--success-soft); ion-icon { color: var(--success-strong); } }
+    &:hover:not(:disabled) { background: var(--success-soft); .cpop-act-icon { background: color-mix(in srgb, var(--success) 14%, transparent); } }
   }
 
   &--warning {
-    color: #b45309;
-    .cpop-act-icon { background: rgba(245,158,11,0.08); ion-icon { color: #d97706; } }
-    &:hover:not(:disabled) { background: rgba(245,158,11,0.05); .cpop-act-icon { background: rgba(245,158,11,0.14); } }
+    color: var(--warning-dark);
+    .cpop-act-icon { background: var(--warning-soft); ion-icon { color: var(--warning-strong); } }
+    &:hover:not(:disabled) { background: var(--warning-soft); .cpop-act-icon { background: color-mix(in srgb, var(--warning) 14%, transparent); } }
   }
 
   &--danger {
-    color: #dc2626;
-    .cpop-act-icon { background: rgba(239,68,68,0.08); ion-icon { color: #ef4444; } }
-    &:hover:not(:disabled) { background: rgba(239,68,68,0.05); .cpop-act-icon { background: rgba(239,68,68,0.14); } }
+    color: var(--danger);
+    .cpop-act-icon { background: var(--danger-soft); ion-icon { color: var(--danger-bright); } }
+    &:hover:not(:disabled) { background: var(--danger-soft); .cpop-act-icon { background: color-mix(in srgb, var(--danger-bright) 14%, transparent); } }
   }
 
   &--purple {
-    color: #6d28d9;
-    .cpop-act-icon { background: rgba(124,58,237,0.08); ion-icon { color: #7c3aed; } }
-    &:hover:not(:disabled) { background: rgba(124,58,237,0.05); .cpop-act-icon { background: rgba(124,58,237,0.14); } }
+    color: var(--accent-purple-dark);
+    .cpop-act-icon { background: color-mix(in srgb, var(--accent-purple-dark) 8%, transparent); ion-icon { color: var(--accent-purple-dark); } }
+    &:hover:not(:disabled) { background: color-mix(in srgb, var(--accent-purple-dark) 5%, transparent); .cpop-act-icon { background: color-mix(in srgb, var(--accent-purple-dark) 14%, transparent); } }
   }
 }
 
@@ -165,19 +165,19 @@
   width: 28px;
   height: 28px;
   border-radius: 7px;
-  background: rgba(241, 245, 249, 0.9);
+  background: var(--surface-muted);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   transition: background 0.12s;
-  ion-icon { font-size: 15px; color: #64748b; }
+  ion-icon { font-size: 15px; color: var(--text-muted); }
 }
 
 .cpop-act-label { flex: 1; }
 
 .cpop-act-arrow {
   font-size: 12px;
-  color: #cbd5e1;
+  color: var(--text-faint);
   flex-shrink: 0;
 }

@@ -1,10 +1,10 @@
 // ─── Card ─────────────────────────────────────────────────────────────────────
 .ci-card {
-  background: var(--glass-bg, rgba(247, 249, 252, 0.92));
+  background: var(--glass-bg);
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
-  border: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.45));
-  border-radius: var(--radius-lg, 16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
   padding: 20px 22px;
   display: flex;
   flex-direction: column;
@@ -25,13 +25,13 @@
 .ci-title {
   font-size: 15px;
   font-weight: 700;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
   margin: 0;
 }
 
 .ci-subtitle {
   font-size: 12px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -39,7 +39,7 @@
 .ci-tabs {
   display: flex;
   gap: 3px;
-  background: rgba(226, 232, 240, 0.55);
+  background: var(--surface-muted);
   border-radius: 10px;
   padding: 3px;
   flex-shrink: 0;
@@ -53,19 +53,19 @@
   font-weight: 500;
   cursor: pointer;
   background: transparent;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   transition: all 0.18s;
   white-space: nowrap;
 
   &.ci-tab--active {
-    background: #fff;
-    color: #059669;
+    background: var(--surface-panel-heavy);
+    color: var(--success-strong);
     font-weight: 600;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-soft);
   }
 
   &:not(.ci-tab--active):hover {
-    color: var(--text-strong, #0f172a);
+    color: var(--text-strong);
   }
 }
 
@@ -85,7 +85,7 @@
 .ci-section-label {
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin: 0;
@@ -101,13 +101,13 @@
   @media (max-width: 880px) {
     padding-right: 0;
     padding-bottom: 20px;
-    border-bottom: 1px solid rgba(209, 213, 219, 0.3);
+    border-bottom: 1px solid var(--border-soft);
   }
 }
 
 .ci-chart-area {
   height: 160px;
-  border-bottom: 1.5px solid rgba(209, 213, 219, 0.45);
+  border-bottom: 1.5px solid var(--border-subtle);
   position: relative;
 
   &::before {
@@ -115,7 +115,7 @@
     position: absolute;
     left: 0; right: 0;
     top: 50%;
-    border-top: 1px dashed rgba(209, 213, 219, 0.35);
+    border-top: 1px dashed var(--border-soft);
     pointer-events: none;
   }
 }
@@ -144,7 +144,7 @@
 .ci-col__val {
   font-size: 9px;
   font-weight: 600;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   line-height: 1;
   white-space: nowrap;
 }
@@ -152,7 +152,7 @@
 .ci-col__bar {
   width: 68%;
   max-width: 30px;
-  background: linear-gradient(to top, #059669 0%, #34d399 100%);
+  background: linear-gradient(to top, var(--success-strong) 0%, var(--chart-success) 100%);
   border-radius: 5px 5px 0 0;
   min-height: 3px;
   transition: height 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -166,7 +166,7 @@
     flex: 1;
     text-align: center;
     font-size: 10px;
-    color: var(--text-muted, #94a3b8);
+    color: var(--text-faint);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -177,7 +177,7 @@
 // ─── Vertical divider ─────────────────────────────────────────────────────────
 .ci-v-divider {
   width: 1px;
-  background: rgba(209, 213, 219, 0.35);
+  background: var(--border-soft);
   align-self: stretch;
   margin: 0 4px;
 
@@ -241,13 +241,13 @@
 .ci-donut-total {
   font-size: 17px;
   font-weight: 700;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
   line-height: 1.1;
 }
 
 .ci-donut-label {
   font-size: 10px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
@@ -277,7 +277,7 @@
 .ci-legend-name {
   font-size: 12px;
   font-weight: 500;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
   width: 90px;
   flex-shrink: 0;
   white-space: nowrap;
@@ -286,7 +286,7 @@
 .ci-legend-bar-wrap {
   flex: 1;
   height: 5px;
-  background: rgba(209, 213, 219, 0.3);
+  background: var(--border-soft);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -300,7 +300,7 @@
 .ci-legend-pct {
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   min-width: 36px;
   text-align: right;
 }
@@ -311,7 +311,7 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   padding-top: 8px;
-  border-top: 1px solid rgba(209, 213, 219, 0.3);
+  border-top: 1px solid var(--border-soft);
 
   @media (max-width: 640px) { grid-template-columns: repeat(2, 1fr); }
 }
@@ -331,13 +331,13 @@
   justify-content: center;
   flex-shrink: 0;
 
-  ion-icon { font-size: 18px; color: #fff; }
+  ion-icon { font-size: 18px; color: var(--text-on-primary); }
 }
 
-.ci-metric__icon--success { background: linear-gradient(135deg, #059669, #34d399); }
-.ci-metric__icon--warning { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
-.ci-metric__icon--primary { background: linear-gradient(135deg, #6366f1, #818cf8); }
-.ci-metric__icon--info    { background: linear-gradient(135deg, #0ea5e9, #38bdf8); }
+.ci-metric__icon--success { background: linear-gradient(135deg, var(--success-strong), var(--chart-success)); }
+.ci-metric__icon--warning { background: linear-gradient(135deg, var(--warning), var(--chart-warning)); }
+.ci-metric__icon--primary { background: linear-gradient(135deg, var(--primary-mid), var(--chart-primary)); }
+.ci-metric__icon--info    { background: linear-gradient(135deg, var(--chart-info), var(--chart-info)); }
 
 .ci-metric__body {
   display: flex;
@@ -349,7 +349,7 @@
 .ci-metric__val {
   font-size: 14px;
   font-weight: 700;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -357,13 +357,13 @@
   small {
     font-size: 11px;
     font-weight: 500;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
   }
 }
 
 .ci-metric__lbl {
   font-size: 10px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

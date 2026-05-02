@@ -9,6 +9,7 @@ import { EquipoApiService } from 'src/app/services/equipo-api.service';
 import { PERMISOS_DETALLES } from 'src/app/shared/constants/permisos-detalles';
 import { PerfilApiService } from 'src/app/services/perfil-api.service';
 import { SessionService } from 'src/app/services/session.service';
+import { ThemePreference, ThemeService } from 'src/app/services/theme.service';
 import { ConfirmDialogComponent, ConfirmDialogConfig } from 'src/app/shared/confirm-dialog/confirm-dialog.component';
 import { PermisoDetalle, RecepcionistaEquipoViewModel } from 'src/app/shared/models/equipo.model';
 import { PermisosRecepcionista } from 'src/app/shared/models/permisos.model';
@@ -64,6 +65,7 @@ const DEFAULTS = {
 };
 
 type ConfigState = typeof DEFAULTS;
+type ConfigTheme = 'claro' | 'oscuro' | 'auto';
 @Component({
   selector: 'app-configuracion',
   standalone: true,
@@ -123,6 +125,7 @@ export class ConfiguracionPage implements OnInit {
     private equipoApi: EquipoApiService,
     private perfilApi: PerfilApiService,
     private session: SessionService,
+    private themeService: ThemeService,
     private toastCtrl: ToastController,
     private refresh: ConfiguracionRefreshService,
   ) {
@@ -142,6 +145,10 @@ export class ConfiguracionPage implements OnInit {
       codigoVinculacion: user?.profesional?.codigo_vinculacion ?? '',
     };
     this.recepcionistas = [];
+
+    const currentTheme = this.toConfigTheme(this.themeService.getTheme());
+    this.config.tema = currentTheme;
+    this.configOriginal.tema = currentTheme;
   }
 
   ngOnInit(): void {
@@ -173,6 +180,11 @@ export class ConfiguracionPage implements OnInit {
     }
     this.activeTab = tab;
     this.refresh.enterSection(tab);
+  }
+
+  seleccionarTema(tema: ConfigTheme): void {
+    this.config.tema = tema;
+    this.applyThemeFromConfig(tema);
   }
 
   @HostListener('window:beforeunload', ['$event'])
@@ -235,6 +247,7 @@ export class ConfiguracionPage implements OnInit {
 
       this.config = this.mergeConfig(agendaGuardada, sistemaGuardado, this.recordatoriosActuales);
       this.configOriginal = { ...this.config };
+      this.applyThemeFromConfig(this.config.tema);
       this.refresh.requestRefresh(['general', 'agenda', 'seguridad', 'sistema']);
       this.savedToast = true;
       setTimeout(() => (this.savedToast = false), 2800);
@@ -330,6 +343,7 @@ export class ConfiguracionPage implements OnInit {
       this.codigoVinculacion = codigo ?? '';
       this.config = this.mergeConfig(agenda, sistema, recordatorios);
       this.configOriginal = { ...this.config };
+      this.applyThemeFromConfig(this.config.tema);
     } catch (error) {
       await this.presentToast(mapApiError(error).userMessage, 'danger');
     } finally {
@@ -352,7 +366,10 @@ export class ConfiguracionPage implements OnInit {
   }
 
   private mergeConfig(agenda: any, sistema: any, recordatorios: ConfiguracionRecordatorioDto[]): ConfigState {
-    const merged = { ...DEFAULTS };
+    const merged = {
+      ...DEFAULTS,
+      tema: this.toConfigTheme(this.themeService.getTheme()),
+    };
     const primaryRule = this.getPrimaryReminderRule(recordatorios);
     const sameDayRule = this.getSameDayReminderRule(recordatorios, primaryRule);
     const activeManagedRules = this.getActiveManagedRules(recordatorios);
@@ -397,7 +414,7 @@ export class ConfiguracionPage implements OnInit {
     merged.avisosCitasProximas = sistema?.avisos_citas_proximas ?? merged.avisosCitasProximas;
     merged.avisosPacientesNuevos = sistema?.avisos_pacientes_nuevos ?? merged.avisosPacientesNuevos;
     merged.avisosPagosPendientes = sistema?.avisos_pagos_pendientes ?? merged.avisosPagosPendientes;
-    merged.tema = sistema?.tema ?? merged.tema;
+    merged.tema = this.normalizeConfigTheme(sistema?.tema) ?? merged.tema;
     merged.tamanoInterfaz = sistema?.tamano_interfaz ?? merged.tamanoInterfaz;
     merged.animaciones = sistema?.animaciones ?? merged.animaciones;
     merged.idioma = sistema?.idioma ?? merged.idioma;
@@ -417,6 +434,41 @@ export class ConfiguracionPage implements OnInit {
   private async guardarRecordatorios(): Promise<void> {
     await this.syncRecordatoriosComoColeccion();
     this.recordatoriosActuales = await this.configuracionApi.getRecordatorios().catch(() => this.recordatoriosActuales);
+  }
+
+  private applyThemeFromConfig(tema: string): void {
+    this.themeService.setTheme(this.toThemePreference(tema));
+  }
+
+  private toThemePreference(tema: string): ThemePreference {
+    switch (tema) {
+      case 'oscuro':
+      case 'dark':
+        return 'dark';
+      case 'auto':
+        return 'auto';
+      case 'claro':
+      case 'light':
+      default:
+        return 'light';
+    }
+  }
+
+  private toConfigTheme(theme: ThemePreference): ConfigTheme {
+    switch (theme) {
+      case 'dark':
+        return 'oscuro';
+      case 'auto':
+        return 'auto';
+      case 'light':
+      default:
+        return 'claro';
+    }
+  }
+
+  private normalizeConfigTheme(value: unknown): ConfigTheme | null {
+    if (typeof value !== 'string') return null;
+    return this.toConfigTheme(this.toThemePreference(value));
   }
 
   private async syncRecordatoriosComoColeccion(): Promise<void> {

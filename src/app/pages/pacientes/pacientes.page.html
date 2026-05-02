@@ -88,8 +88,9 @@
       </div>
 
       <div
-        *ngFor="let p of pacientesFiltrados"
+        *ngFor="let p of pacientesFiltrados; let last = last"
         class="pac-row"
+        [class.pac-row--last]="last"
         (click)="verPaciente(p)"
         role="row"
       >

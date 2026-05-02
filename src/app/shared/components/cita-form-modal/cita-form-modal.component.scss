@@ -8,7 +8,7 @@
 .cfm-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
+  background: var(--overlay-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -17,8 +17,8 @@
 }
 
 .cfm-card {
-  background: #f7f9fc;
-  border: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.5));
+  background: var(--glass-bg-heavy);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl, 20px);
   width: 100%;
   max-width: 620px;
@@ -26,7 +26,7 @@
   // overflow must be hidden here so only .cfm-body scrolls internally.
   // overflow-y: auto on the card AND the body creates a double-scroll trap.
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-modal);
   display: flex;
   flex-direction: column;
 }
@@ -37,7 +37,7 @@
   align-items: center;
   gap: 12px;
   padding: 20px 24px 16px;
-  border-bottom: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.4));
+  border-bottom: 1px solid var(--border-soft);
   // No sticky needed — header is a flex sibling above .cfm-body, not inside it.
   flex-shrink: 0;
 
@@ -45,13 +45,13 @@
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(129, 140, 248, 0.06));
-    border: 1px solid rgba(99, 102, 241, 0.14);
+    background: linear-gradient(135deg, var(--primary-ring), color-mix(in srgb, var(--chart-primary) 6%, transparent));
+    border: 1px solid var(--primary-ring);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    ion-icon { font-size: 20px; color: var(--primary, #6366f1); }
+    ion-icon { font-size: 20px; color: var(--primary-mid); }
   }
 
   &__text { flex: 1; min-width: 0; }
@@ -59,13 +59,13 @@
   &__title {
     font-size: 16px;
     font-weight: 700;
-    color: var(--text-strong, #0f172a);
+    color: var(--text-strong);
     margin: 0 0 2px;
   }
 
   &__sub {
     font-size: 13px;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -78,11 +78,11 @@
     cursor: pointer;
     padding: 6px;
     border-radius: 8px;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     display: flex;
     align-items: center;
     transition: background 0.15s;
-    &:hover { background: rgba(0, 0, 0, 0.05); }
+    &:hover { background: var(--surface-muted); }
     ion-icon { font-size: 20px; }
   }
 }
@@ -93,24 +93,24 @@
   align-items: center;
   gap: 7px;
   padding: 9px 24px;
-  background: rgba(99, 102, 241, 0.06);
-  border-bottom: 1px solid rgba(99, 102, 241, 0.12);
+  background: var(--primary-soft);
+  border-bottom: 1px solid var(--primary-ring);
   flex-shrink: 0;
 
-  ion-icon { font-size: 14px; color: var(--primary, #6366f1); flex-shrink: 0; }
+  ion-icon { font-size: 14px; color: var(--primary-mid); flex-shrink: 0; }
 
   &__label {
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.6px;
-    color: var(--primary, #6366f1);
+    color: var(--primary-mid);
   }
 
   &__value {
     font-size: 13px;
     font-weight: 600;
-    color: var(--text-strong, #0f172a);
+    color: var(--text-strong);
   }
 }
 
@@ -134,7 +134,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   margin: 8px 0 0;
   position: relative;
   padding-left: 10px;
@@ -148,7 +148,7 @@
     width: 3px;
     height: 12px;
     border-radius: 2px;
-    background: var(--primary, #6366f1);
+    background: var(--primary-mid);
   }
 }
 
@@ -171,7 +171,7 @@
 .cfm-label {
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
 }
 
 .cfm-input,
@@ -179,24 +179,24 @@
 .cfm-textarea {
   padding: 9px 12px;
   border-radius: var(--radius-md, 10px);
-  border: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.55));
-  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-panel);
   font-size: 14px;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
   outline: none;
   width: 100%;
   font-family: inherit;
   transition: border-color 0.15s, box-shadow 0.15s;
 
   &:focus {
-    border-color: var(--primary, #6366f1);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+    border-color: var(--primary-mid);
+    box-shadow: 0 0 0 3px var(--primary-ring);
   }
-  &--error { border-color: var(--danger, #ef4444) !important; }
+  &--error { border-color: var(--danger-bright) !important; }
 }
 
 .cfm-textarea { resize: vertical; }
-.cfm-error    { font-size: 11px; color: var(--danger, #ef4444); }
+.cfm-error    { font-size: 11px; color: var(--danger-bright); }
 
 // ── Patient selector — empty state ────────────────────────────────────────────
 .cfm-pac-empty {
@@ -206,35 +206,35 @@
   gap: 14px;
   padding: 14px 16px;
   border-radius: var(--radius-lg, 14px);
-  border: 2px dashed var(--border-subtle, rgba(209, 213, 219, 0.7));
-  background: rgba(255, 255, 255, 0.4);
+  border: 2px dashed var(--border-subtle);
+  background: var(--surface-panel);
   cursor: pointer;
   text-align: left;
   transition: border-color 0.15s, background 0.15s;
 
   &:hover {
-    border-color: var(--primary, #6366f1);
-    background: rgba(99, 102, 241, 0.04);
+    border-color: var(--primary-mid);
+    background: color-mix(in srgb, var(--primary-mid) 4%, transparent);
   }
 
-  &--error { border-color: var(--danger, #ef4444); border-style: solid; }
+  &--error { border-color: var(--danger-bright); border-style: solid; }
 
   &__icon {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: rgba(99, 102, 241, 0.1);
+    background: var(--primary-soft);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    ion-icon { font-size: 20px; color: var(--primary, #6366f1); }
+    ion-icon { font-size: 20px; color: var(--primary-mid); }
   }
 
   &__text  { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-  &__label { font-size: 14px; font-weight: 600; color: var(--text-strong, #0f172a); }
-  &__hint  { font-size: 12px; color: var(--text-muted, #64748b); }
-  &__arrow { font-size: 18px; color: var(--text-muted, #64748b); flex-shrink: 0; }
+  &__label { font-size: 14px; font-weight: 600; color: var(--text-strong); }
+  &__hint  { font-size: 12px; color: var(--text-muted); }
+  &__arrow { font-size: 18px; color: var(--text-muted); flex-shrink: 0; }
 }
 
 // ── Patient selector — filled card ────────────────────────────────────────────
@@ -244,8 +244,8 @@
   gap: 12px;
   padding: 12px 16px;
   border-radius: var(--radius-lg, 14px);
-  border: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.55));
-  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-panel);
 
   &--static { cursor: default; }
 
@@ -253,7 +253,7 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    color: #fff;
+    color: var(--text-on-primary);
     font-size: 13px;
     font-weight: 700;
     display: flex;
@@ -267,7 +267,7 @@
   &__nombre {
     font-size: 14px;
     font-weight: 600;
-    color: var(--text-strong, #0f172a);
+    color: var(--text-strong);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -275,7 +275,7 @@
 
   &__hint {
     font-size: 12px;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -287,8 +287,8 @@
     gap: 5px;
     padding: 6px 12px;
     border-radius: var(--radius-md, 10px);
-    background: rgba(99, 102, 241, 0.08);
-    color: var(--primary, #6366f1);
+    background: var(--primary-soft);
+    color: var(--primary-mid);
     border: none;
     font-size: 12px;
     font-weight: 600;
@@ -298,7 +298,7 @@
     font-family: inherit;
     transition: background 0.15s;
     ion-icon { font-size: 14px; }
-    &:hover { background: rgba(99, 102, 241, 0.16); }
+    &:hover { background: var(--primary-ring); }
   }
 }
 
@@ -309,42 +309,42 @@
   gap: 12px;
   padding: 12px 14px;
   border-radius: var(--radius-md, 10px);
-  background: rgba(245, 243, 255, 0.85);
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  border-left: 3px solid var(--primary, #6366f1);
+  background: color-mix(in srgb, var(--accent-purple) 10%, var(--surface-panel));
+  border: 1px solid var(--primary-ring);
+  border-left: 3px solid var(--primary-mid);
 
   &--conflict {
-    background: rgba(255, 243, 243, 0.85);
-    border-color: rgba(239, 68, 68, 0.2);
-    border-left-color: var(--danger, #ef4444);
+    background: color-mix(in srgb, var(--danger-bright) 8%, var(--surface-panel));
+    border-color: color-mix(in srgb, var(--danger-bright) 20%, transparent);
+    border-left-color: var(--danger-bright);
   }
 
   &__icon {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: rgba(99, 102, 241, 0.12);
+    background: var(--primary-ring);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    ion-icon { font-size: 16px; color: var(--primary, #6366f1); }
+    ion-icon { font-size: 16px; color: var(--primary-mid); }
 
     &--conflict {
-      background: rgba(239, 68, 68, 0.12);
-      ion-icon { color: var(--danger, #ef4444); }
+      background: var(--danger-soft);
+      ion-icon { color: var(--danger-bright); }
     }
   }
 
   &__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-  &__title  { font-size: 13px; font-weight: 600; color: var(--text-strong, #0f172a); }
-  &__detail { font-size: 12px; color: var(--text-muted, #64748b); &--empty { font-style: italic; } }
+  &__title  { font-size: 13px; font-weight: 600; color: var(--text-strong); }
+  &__detail { font-size: 12px; color: var(--text-muted); &--empty { font-style: italic; } }
 
   &__btn {
     padding: 6px 14px;
     border-radius: var(--radius-pill, 9999px);
-    background: var(--primary, #6366f1);
-    color: #fff;
+    background: var(--primary-mid);
+    color: var(--text-on-primary);
     border: none;
     font-size: 12px;
     font-weight: 600;
@@ -353,7 +353,7 @@
     flex-shrink: 0;
     font-family: inherit;
     transition: background 0.15s, box-shadow 0.15s;
-    &:hover { background: #4f46e5; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35); }
+    &:hover { background: var(--primary); box-shadow: 0 4px 12px var(--primary-ring); }
   }
 }
 
@@ -364,11 +364,11 @@
   gap: 5px;
   padding: 4px 12px;
   border-radius: var(--radius-pill, 9999px);
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  background: var(--success-soft);
+  border: 1px solid color-mix(in srgb, var(--success) 25%, transparent);
   font-size: 12px;
   font-weight: 600;
-  color: #059669;
+  color: var(--success-strong);
   ion-icon { font-size: 13px; }
 }
 
@@ -379,9 +379,9 @@
 }
 
 .cfm-slot-chip {
-  border: 1px solid rgba(99, 102, 241, 0.24);
-  background: rgba(99, 102, 241, 0.08);
-  color: var(--primary, #6366f1);
+  border: 1px solid var(--primary-ring);
+  background: var(--primary-soft);
+  color: var(--primary-mid);
   font-size: 12px;
   font-weight: 600;
   border-radius: 9999px;
@@ -392,7 +392,7 @@
 }
 
 .cfm-slot-chip:hover {
-  background: rgba(99, 102, 241, 0.16);
+  background: var(--primary-ring);
 }
 
 // ── Footer ────────────────────────────────────────────────────────────────────
@@ -401,7 +401,7 @@
   justify-content: flex-end;
   gap: 10px;
   padding: 14px 24px 20px;
-  border-top: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.4));
+  border-top: 1px solid var(--border-soft);
   // No sticky needed — footer is a flex sibling below .cfm-body, always visible.
   flex-shrink: 0;
 }
@@ -422,18 +422,18 @@
 
   &--cancel {
     background: transparent;
-    color: var(--text-muted, #64748b);
-    border: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.55));
-    &:hover { background: rgba(0, 0, 0, 0.04); }
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+    &:hover { background: var(--surface-muted); }
   }
 
   &--save {
-    background: var(--primary, #6366f1);
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);
+    background: var(--primary-mid);
+    color: var(--text-on-primary);
+    box-shadow: 0 4px 14px var(--primary-ring);
     &:hover {
-      background: #4f46e5;
-      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+      background: var(--primary);
+      box-shadow: 0 6px 20px var(--primary-ring);
     }
   }
 }

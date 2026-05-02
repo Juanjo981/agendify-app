@@ -1,10 +1,10 @@
 // ─── Card ─────────────────────────────────────────────────────────────────────
 .rcd-card {
-  background: var(--glass-bg, rgba(247, 249, 252, 0.92));
+  background: var(--glass-bg);
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
-  border: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.45));
-  border-radius: var(--radius-lg, 16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
   padding: 20px 22px;
   display: flex;
   flex-direction: column;
@@ -25,13 +25,13 @@
 .rcd-title {
   font-size: 15px;
   font-weight: 700;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
   margin: 0;
 }
 
 .rcd-subtitle {
   font-size: 12px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -39,13 +39,13 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: rgba(99, 102, 241, 0.07);
-  border: 1px solid rgba(99, 102, 241, 0.15);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-ring);
   border-radius: 20px;
   padding: 4px 10px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--primary, #6366f1);
+  color: var(--primary-mid);
   white-space: nowrap;
   flex-shrink: 0;
 
@@ -57,8 +57,8 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  background: linear-gradient(135deg, rgba(5, 150, 105, 0.07) 0%, rgba(52, 211, 153, 0.05) 100%);
-  border: 1px solid rgba(5, 150, 105, 0.15);
+  background: linear-gradient(135deg, var(--success-soft) 0%, color-mix(in srgb, var(--chart-success) 5%, transparent) 100%);
+  border: 1px solid color-mix(in srgb, var(--success-strong) 15%, transparent);
   border-radius: 14px;
   padding: 16px 18px;
 }
@@ -67,13 +67,13 @@
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #059669, #34d399);
+  background: linear-gradient(135deg, var(--success-strong), var(--chart-success));
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 
-  ion-icon { font-size: 22px; color: #fff; }
+  ion-icon { font-size: 22px; color: var(--text-on-primary); }
 }
 
 .rcd-hero__body {
@@ -87,7 +87,7 @@
 .rcd-hero__label {
   font-size: 11px;
   font-weight: 500;
-  color: rgba(5, 150, 105, 0.8);
+  color: color-mix(in srgb, var(--success-strong) 80%, transparent);
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
@@ -95,7 +95,7 @@
 .rcd-hero__value {
   font-size: 28px;
   font-weight: 800;
-  color: #065f46;
+  color: var(--success-dark);
   line-height: 1.1;
   letter-spacing: -0.5px;
 }
@@ -104,12 +104,12 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(5, 150, 105, 0.12);
+  background: color-mix(in srgb, var(--success-strong) 12%, transparent);
   border-radius: 20px;
   padding: 5px 10px;
   font-size: 12px;
   font-weight: 600;
-  color: #059669;
+  color: var(--success-strong);
   flex-shrink: 0;
   white-space: nowrap;
 
@@ -161,53 +161,53 @@
 
 // Method color themes
 .met--cash {
-  background: rgba(5, 150, 105, 0.07);
+  background: var(--success-soft);
 
   .rcd-method__icon-wrap {
-    background: rgba(5, 150, 105, 0.12);
-    ion-icon { color: #059669; }
+    background: color-mix(in srgb, var(--success-strong) 12%, transparent);
+    ion-icon { color: var(--success-strong); }
   }
-  .rcd-method__val  { color: #065f46; }
-  .rcd-method__lbl  { color: rgba(5, 150, 105, 0.75); }
+  .rcd-method__val  { color: var(--success-dark); }
+  .rcd-method__lbl  { color: color-mix(in srgb, var(--success-strong) 75%, transparent); }
 }
 
 .met--transfer {
-  background: rgba(99, 102, 241, 0.07);
+  background: var(--primary-soft);
 
   .rcd-method__icon-wrap {
-    background: rgba(99, 102, 241, 0.12);
-    ion-icon { color: #6366f1; }
+    background: var(--primary-ring);
+    ion-icon { color: var(--primary-mid); }
   }
-  .rcd-method__val  { color: #3730a3; }
-  .rcd-method__lbl  { color: rgba(99, 102, 241, 0.75); }
+  .rcd-method__val  { color: var(--primary); }
+  .rcd-method__lbl  { color: color-mix(in srgb, var(--primary-mid) 75%, transparent); }
 }
 
 .met--debit {
-  background: rgba(14, 165, 233, 0.07);
+  background: color-mix(in srgb, var(--chart-info) 7%, transparent);
 
   .rcd-method__icon-wrap {
-    background: rgba(14, 165, 233, 0.12);
-    ion-icon { color: #0ea5e9; }
+    background: color-mix(in srgb, var(--chart-info) 12%, transparent);
+    ion-icon { color: var(--chart-info); }
   }
-  .rcd-method__val  { color: #0369a1; }
-  .rcd-method__lbl  { color: rgba(14, 165, 233, 0.75); }
+  .rcd-method__val  { color: var(--accent-blue-dark); }
+  .rcd-method__lbl  { color: color-mix(in srgb, var(--chart-info) 75%, transparent); }
 }
 
 .met--credit {
-  background: rgba(245, 158, 11, 0.07);
+  background: var(--warning-soft);
 
   .rcd-method__icon-wrap {
-    background: rgba(245, 158, 11, 0.12);
-    ion-icon { color: #f59e0b; }
+    background: var(--warning-soft);
+    ion-icon { color: var(--warning); }
   }
-  .rcd-method__val  { color: #92400e; }
-  .rcd-method__lbl  { color: rgba(245, 158, 11, 0.75); }
+  .rcd-method__val  { color: var(--warning-dark); }
+  .rcd-method__lbl  { color: color-mix(in srgb, var(--warning) 75%, transparent); }
 }
 
 // ─── Divider ──────────────────────────────────────────────────────────────────
 .rcd-divider {
   height: 1px;
-  background: rgba(209, 213, 219, 0.35);
+  background: var(--border-soft);
 }
 
 // ─── Bottom row ───────────────────────────────────────────────────────────────
@@ -254,25 +254,25 @@
 
 // Chip color themes
 .rcd-chip--neutral {
-  background: rgba(100, 116, 139, 0.07);
+  background: var(--surface-muted);
 
-  ion-icon    { color: #64748b; }
-  .rcd-chip__val { color: var(--text-strong, #0f172a); }
-  .rcd-chip__lbl { color: var(--text-muted, #64748b); }
+  ion-icon    { color: var(--text-muted); }
+  .rcd-chip__val { color: var(--text-strong); }
+  .rcd-chip__lbl { color: var(--text-muted); }
 }
 
 .rcd-chip--warning {
-  background: rgba(245, 158, 11, 0.08);
+  background: var(--warning-soft);
 
-  ion-icon    { color: #f59e0b; }
-  .rcd-chip__val { color: #92400e; }
-  .rcd-chip__lbl { color: rgba(245, 158, 11, 0.8); }
+  ion-icon    { color: var(--warning); }
+  .rcd-chip__val { color: var(--warning-dark); }
+  .rcd-chip__lbl { color: color-mix(in srgb, var(--warning) 80%, transparent); }
 }
 
 .rcd-chip--success {
-  background: rgba(5, 150, 105, 0.07);
+  background: var(--success-soft);
 
-  ion-icon    { color: #059669; }
-  .rcd-chip__val { color: #065f46; }
-  .rcd-chip__lbl { color: rgba(5, 150, 105, 0.75); }
+  ion-icon    { color: var(--success-strong); }
+  .rcd-chip__val { color: var(--success-dark); }
+  .rcd-chip__lbl { color: color-mix(in srgb, var(--success-strong) 75%, transparent); }
 }

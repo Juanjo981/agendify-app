@@ -5,7 +5,7 @@
 .cfd-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
+  background: var(--overlay-modal);
   backdrop-filter: blur(6px) saturate(130%);
   -webkit-backdrop-filter: blur(6px) saturate(130%);
   z-index: 1100;
@@ -20,14 +20,14 @@
   transform: translate(-50%, -50%);
   width: min(380px, calc(100vw - 32px));
 
-  background: rgba(247, 249, 252, 0.98);
+  background: var(--glass-bg-heavy);
   backdrop-filter: blur(32px) saturate(180%);
   -webkit-backdrop-filter: blur(32px) saturate(180%);
-  border: 1px solid rgba(209, 213, 219, 0.55);
+  border: 1px solid var(--border-subtle);
   border-radius: 24px;
   box-shadow:
-    0 24px 64px rgba(15, 23, 42, 0.18),
-    0 4px 16px rgba(15, 23, 42, 0.07);
+    0 24px 64px var(--overlay-soft),
+    0 4px 16px var(--shadow-soft);
 
   z-index: 1101;
   padding: 28px 28px 24px;
@@ -53,13 +53,13 @@
   ion-icon { font-size: 28px; }
 
   &--primary {
-    background: rgba(99, 102, 241, 0.12);
-    color: #6366f1;
+    background: var(--primary-ring);
+    color: var(--primary-mid);
   }
 
   &--danger {
-    background: rgba(220, 38, 38, 0.10);
-    color: #dc2626;
+    background: var(--danger-soft);
+    color: var(--danger);
   }
 }
 
@@ -67,20 +67,20 @@
 .cfd-title {
   font-size: 18px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-strong);
   margin: 0 0 10px;
   letter-spacing: -0.2px;
 }
 
 .cfd-message {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-muted);
   line-height: 1.6;
   margin: 0 0 24px;
 }
 
 .cfd-subject {
-  color: #0f172a;
+  color: var(--text-strong);
   font-weight: 700;
 }
 
@@ -103,27 +103,27 @@
   white-space: nowrap;
 
   &--cancel {
-    background: rgba(15, 23, 42, 0.06);
-    color: #64748b;
+    background: var(--surface-muted);
+    color: var(--text-muted);
 
-    &:hover { background: rgba(15, 23, 42, 0.09); color: #0f172a; }
+    &:hover { background: var(--surface-muted); color: var(--text-strong); }
   }
 
   &--primary {
-    background: linear-gradient(135deg, #3b3f92, #6366f1);
-    color: #fff;
-    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.30);
+    background: linear-gradient(135deg, var(--primary), var(--primary-mid));
+    color: var(--text-on-primary);
+    box-shadow: 0 2px 10px var(--primary-ring);
 
-    &:hover { transform: translateY(-1px); box-shadow: 0 5px 18px rgba(99, 102, 241, 0.40); }
+    &:hover { transform: translateY(-1px); box-shadow: 0 5px 18px var(--primary-ring); }
     &:active { transform: none; }
   }
 
   &--danger {
-    background: #dc2626;
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25);
+    background: var(--danger);
+    color: var(--text-on-primary);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--danger) 25%, transparent);
 
-    &:hover { background: #b91c1c; box-shadow: 0 5px 16px rgba(220, 38, 38, 0.35); }
+    &:hover { background: var(--danger-dark); box-shadow: 0 5px 16px color-mix(in srgb, var(--danger) 35%, transparent); }
   }
 }
 

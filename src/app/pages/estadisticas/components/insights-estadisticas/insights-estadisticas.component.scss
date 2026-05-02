@@ -14,21 +14,21 @@
 
 .ins-label-icon {
   font-size: 15px;
-  color: var(--primary, #6366f1);
+  color: var(--primary-mid);
   opacity: 0.8;
 }
 
 .ins-label {
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.6px;
 }
 
 .ins-empty {
   font-size: 13px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
 }
 
 // ─── Insights grid ────────────────────────────────────────────────────────────
@@ -56,7 +56,7 @@
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
+    box-shadow: var(--shadow-card);
   }
 }
 
@@ -102,67 +102,67 @@
 // ─── Color themes ─────────────────────────────────────────────────────────────
 
 .ins-card--success {
-  background: linear-gradient(140deg, rgba(5, 150, 105, 0.07) 0%, rgba(52, 211, 153, 0.04) 100%);
-  border-color: rgba(5, 150, 105, 0.14);
+  background: linear-gradient(140deg, var(--success-soft) 0%, color-mix(in srgb, var(--chart-success) 4%, transparent) 100%);
+  border-color: color-mix(in srgb, var(--success-strong) 14%, transparent);
 
   .ins-card__icon-wrap {
-    background: rgba(5, 150, 105, 0.12);
-    ion-icon { color: #059669; }
+    background: color-mix(in srgb, var(--success-strong) 12%, transparent);
+    ion-icon { color: var(--success-strong); }
   }
-  .ins-card__titulo { color: rgba(5, 150, 105, 0.8); }
-  .ins-card__valor  { color: #065f46; }
-  .ins-card__desc   { color: #047857; }
+  .ins-card__titulo { color: color-mix(in srgb, var(--success-strong) 80%, transparent); }
+  .ins-card__valor  { color: var(--success-dark); }
+  .ins-card__desc   { color: var(--success-dark); }
 }
 
 .ins-card--info {
-  background: linear-gradient(140deg, rgba(14, 165, 233, 0.07) 0%, rgba(56, 189, 248, 0.04) 100%);
-  border-color: rgba(14, 165, 233, 0.14);
+  background: linear-gradient(140deg, color-mix(in srgb, var(--chart-info) 7%, transparent) 0%, color-mix(in srgb, var(--chart-info) 4%, transparent) 100%);
+  border-color: color-mix(in srgb, var(--chart-info) 14%, transparent);
 
   .ins-card__icon-wrap {
-    background: rgba(14, 165, 233, 0.12);
-    ion-icon { color: #0ea5e9; }
+    background: color-mix(in srgb, var(--chart-info) 12%, transparent);
+    ion-icon { color: var(--chart-info); }
   }
-  .ins-card__titulo { color: rgba(14, 165, 233, 0.8); }
-  .ins-card__valor  { color: #0369a1; }
-  .ins-card__desc   { color: #0284c7; }
+  .ins-card__titulo { color: color-mix(in srgb, var(--chart-info) 80%, transparent); }
+  .ins-card__valor  { color: var(--accent-blue-dark); }
+  .ins-card__desc   { color: var(--chart-info); }
 }
 
 .ins-card--warning {
-  background: linear-gradient(140deg, rgba(245, 158, 11, 0.07) 0%, rgba(251, 191, 36, 0.04) 100%);
-  border-color: rgba(245, 158, 11, 0.14);
+  background: linear-gradient(140deg, var(--warning-soft) 0%, color-mix(in srgb, var(--chart-warning) 4%, transparent) 100%);
+  border-color: color-mix(in srgb, var(--warning) 14%, transparent);
 
   .ins-card__icon-wrap {
-    background: rgba(245, 158, 11, 0.12);
-    ion-icon { color: #f59e0b; }
+    background: var(--warning-soft);
+    ion-icon { color: var(--warning); }
   }
-  .ins-card__titulo { color: rgba(245, 158, 11, 0.85); }
-  .ins-card__valor  { color: #92400e; }
-  .ins-card__desc   { color: #b45309; }
+  .ins-card__titulo { color: color-mix(in srgb, var(--warning) 85%, transparent); }
+  .ins-card__valor  { color: var(--warning-dark); }
+  .ins-card__desc   { color: var(--warning-dark); }
 }
 
 .ins-card--purple {
-  background: linear-gradient(140deg, rgba(139, 92, 246, 0.07) 0%, rgba(167, 139, 250, 0.04) 100%);
-  border-color: rgba(139, 92, 246, 0.14);
+  background: linear-gradient(140deg, color-mix(in srgb, var(--accent-purple) 7%, transparent) 0%, color-mix(in srgb, var(--chart-purple) 4%, transparent) 100%);
+  border-color: color-mix(in srgb, var(--accent-purple) 14%, transparent);
 
   .ins-card__icon-wrap {
-    background: rgba(139, 92, 246, 0.12);
-    ion-icon { color: #8b5cf6; }
+    background: color-mix(in srgb, var(--accent-purple) 12%, transparent);
+    ion-icon { color: var(--accent-purple); }
   }
-  .ins-card__titulo { color: rgba(139, 92, 246, 0.8); }
-  .ins-card__valor  { color: #5b21b6; }
-  .ins-card__desc   { color: #7c3aed; }
+  .ins-card__titulo { color: color-mix(in srgb, var(--accent-purple) 80%, transparent); }
+  .ins-card__valor  { color: var(--accent-purple-dark); }
+  .ins-card__desc   { color: var(--accent-purple-dark); }
 }
 
 // primary alias used for "día más activo" insight
 .ins-card--primary {
-  background: linear-gradient(140deg, rgba(99, 102, 241, 0.07) 0%, rgba(129, 140, 248, 0.04) 100%);
-  border-color: rgba(99, 102, 241, 0.14);
+  background: linear-gradient(140deg, var(--primary-soft) 0%, color-mix(in srgb, var(--chart-primary) 4%, transparent) 100%);
+  border-color: var(--primary-ring);
 
   .ins-card__icon-wrap {
-    background: rgba(99, 102, 241, 0.12);
-    ion-icon { color: #6366f1; }
+    background: var(--primary-ring);
+    ion-icon { color: var(--primary-mid); }
   }
-  .ins-card__titulo { color: rgba(99, 102, 241, 0.8); }
-  .ins-card__valor  { color: #3730a3; }
-  .ins-card__desc   { color: #4f46e5; }
+  .ins-card__titulo { color: color-mix(in srgb, var(--primary-mid) 80%, transparent); }
+  .ins-card__valor  { color: var(--primary); }
+  .ins-card__desc   { color: var(--primary); }
 }

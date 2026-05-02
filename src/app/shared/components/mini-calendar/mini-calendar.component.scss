@@ -4,20 +4,20 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Tokens (local, no conflicts) ─────────────────────────────────────────────
-$low-bg:    rgba(34, 197, 94,  0.15);
-$low-fg:    #16a34a;
-$med-bg:    rgba(234, 179,  8,  0.18);
-$med-fg:    #b45309;
-$full-bg:   rgba(239,  68, 68,  0.18);
-$full-fg:   #dc2626;
-$sel-bg:    var(--primary, #6366f1);
-$today-ring: var(--primary, #6366f1);
+$low-bg:    var(--success-soft);
+$low-fg:    var(--success);
+$med-bg:    var(--warning-soft);
+$med-fg:    var(--warning-dark);
+$full-bg:   var(--danger-soft);
+$full-fg:   var(--danger);
+$sel-bg:    var(--primary-mid);
+$today-ring: var(--primary-mid);
 
 // ── Container ─────────────────────────────────────────────────────────────────
 .mcd {
-  border: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.5));
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg, 14px);
-  background: #ffffff;
+  background: var(--surface-white);
   overflow: hidden;
   user-select: none;
 }
@@ -28,12 +28,12 @@ $today-ring: var(--primary, #6366f1);
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px 9px;
-  border-bottom: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.4));
+  border-bottom: 1px solid var(--border-soft);
 
   &__label {
     font-size: 13px;
     font-weight: 700;
-    color: var(--text-strong, #0f172a);
+    color: var(--text-strong);
     letter-spacing: 0.15px;
   }
 
@@ -47,12 +47,12 @@ $today-ring: var(--primary, #6366f1);
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     transition: background 0.12s, color 0.12s;
 
     &:hover {
-      background: rgba(99, 102, 241, 0.08);
-      color: var(--primary, #6366f1);
+      background: var(--primary-soft);
+      color: var(--primary-mid);
     }
 
     ion-icon { font-size: 16px; }
@@ -72,7 +72,7 @@ $today-ring: var(--primary, #6366f1);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
 }
 
 // ── Day grid ──────────────────────────────────────────────────────────────────
@@ -95,7 +95,7 @@ $today-ring: var(--primary, #6366f1);
   // Typography
   font-size: 12.5px;
   font-weight: 500;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
   line-height: 1;
 
   // Reset button
@@ -106,15 +106,15 @@ $today-ring: var(--primary, #6366f1);
   transition: background 0.12s, color 0.12s, transform 0.08s;
 
   &:hover:not(:disabled):not(.mcd-day--selected) {
-    background: rgba(99, 102, 241, 0.08);
-    color: var(--primary, #6366f1);
+    background: var(--primary-soft);
+    color: var(--primary-mid);
     transform: scale(1.06);
   }
 
   // ── States ────────────────────────────────────────────────────────────────
 
   &--other-month {
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     opacity: 0.35;
     pointer-events: none;
   }
@@ -134,9 +134,9 @@ $today-ring: var(--primary, #6366f1);
   // Selected day — primary fill, white text, always on top of other states
   &--selected {
     background: $sel-bg !important;
-    color: #fff !important;
+    color: var(--text-on-primary) !important;
     font-weight: 700;
-    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.32);
+    box-shadow: 0 2px 10px var(--primary-ring);
     transform: none !important;
   }
 
@@ -155,7 +155,7 @@ $today-ring: var(--primary, #6366f1);
   justify-content: center;
   gap: 14px;
   padding: 6px 10px 9px;
-  border-top: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.35));
+  border-top: 1px solid var(--border-soft);
 }
 
 .mcd-legend__item {
@@ -164,7 +164,7 @@ $today-ring: var(--primary, #6366f1);
   gap: 5px;
   font-size: 10px;
   font-weight: 500;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   letter-spacing: 0.2px;
 }
 
@@ -175,6 +175,6 @@ $today-ring: var(--primary, #6366f1);
   flex-shrink: 0;
 }
 
-.mcd-legend__item--low    .mcd-legend__dot { background: $low-bg;  border: 1px solid rgba(34,197,94,0.3);  }
-.mcd-legend__item--medium .mcd-legend__dot { background: $med-bg;  border: 1px solid rgba(251,191,36,0.3); }
-.mcd-legend__item--full   .mcd-legend__dot { background: $full-bg; border: 1px solid rgba(239,68,68,0.3);  }
+.mcd-legend__item--low    .mcd-legend__dot { background: $low-bg;  border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);  }
+.mcd-legend__item--medium .mcd-legend__dot { background: $med-bg;  border: 1px solid color-mix(in srgb, var(--warning) 30%, transparent); }
+.mcd-legend__item--full   .mcd-legend__dot { background: $full-bg; border: 1px solid color-mix(in srgb, var(--danger-bright) 30%, transparent);  }

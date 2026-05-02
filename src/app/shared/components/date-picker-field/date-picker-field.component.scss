@@ -10,7 +10,7 @@
 .dpf-label {
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -23,9 +23,9 @@
   width: 100%;
   padding: 0 12px;
   height: 38px;
-  border: 1.5px solid var(--border-subtle, rgba(209, 213, 219, 0.7));
+  border: 1.5px solid var(--border-subtle);
   border-radius: var(--radius-md, 10px);
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--surface-panel);
   cursor: pointer;
   text-align: left;
   transition: border-color 0.15s, box-shadow 0.15s;
@@ -33,7 +33,7 @@
   // Calendar icon
   &__cal {
     font-size: 15px;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     flex-shrink: 0;
   }
 
@@ -41,7 +41,7 @@
   &__text {
     flex: 1;
     font-size: 13.5px;
-    color: var(--text-muted, #94a3b8);
+    color: var(--text-faint);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -50,7 +50,7 @@
   // Chevron
   &__arrow {
     font-size: 14px;
-    color: var(--text-muted, #94a3b8);
+    color: var(--text-faint);
     flex-shrink: 0;
     transition: transform 0.2s ease;
 
@@ -62,30 +62,30 @@
   // Open state (focused)
   &--open,
   &:focus {
-    border-color: var(--primary, #6366f1);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+    border-color: var(--primary-mid);
+    box-shadow: 0 0 0 3px var(--primary-ring);
     outline: none;
   }
 
   // Error state
   &--error {
-    border-color: var(--danger, #ef4444);
+    border-color: var(--danger-bright);
   }
 
   // Filled — value is selected
   &--filled &__text {
-    color: var(--text-strong, #0f172a);
+    color: var(--text-strong);
     font-weight: 500;
   }
 
   &--filled &__cal,
   &--filled &__arrow {
-    color: var(--primary, #6366f1);
+    color: var(--primary-mid);
   }
 }
 
 // ─── Inline error ─────────────────────────────────────────────────────────────
 .dpf-error {
   font-size: 11.5px;
-  color: var(--danger, #ef4444);
+  color: var(--danger-bright);
 }

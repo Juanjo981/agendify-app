@@ -1,12 +1,12 @@
 ﻿// ─── Host shell: gradient fills the ion-page frame (overscroll / safe-area) ──
 :host {
-  background: linear-gradient(160deg, #e8eeff 0%, #f0f4f8 50%, #dde8f5 100%);
+  background: var(--bg-auth);
 }
 
 // ─── ion-content: solid base color covers scroll container + overrides the
 //     global --padding-bottom (added for tab bar, not needed on auth pages)
 ion-content.reg-bg {
-  --background: #dde8f5;
+  --background: var(--surface-muted);
   --padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
@@ -14,7 +14,7 @@ ion-content.reg-bg {
 .auth-page {
   min-height: 100dvh;
   position: relative;
-  background: linear-gradient(160deg, #e8eeff 0%, #f0f4f8 50%, #dde8f5 100%);
+  background: var(--bg-auth);
 }
 
 // ─── Decorative background layer ─────────────────────────────────────────────
@@ -36,7 +36,7 @@ ion-content.reg-bg {
   height: 600px;
   top: -160px;
   right: -80px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.13) 0%, transparent 68%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--primary-mid) 13%, transparent) 0%, transparent 68%);
   filter: blur(48px);
 }
 
@@ -45,7 +45,7 @@ ion-content.reg-bg {
   height: 460px;
   bottom: -120px;
   right: 12%;
-  background: radial-gradient(circle, rgba(79, 70, 229, 0.09) 0%, transparent 68%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--primary-hover) 9%, transparent) 0%, transparent 68%);
   filter: blur(56px);
 }
 
@@ -54,7 +54,7 @@ ion-content.reg-bg {
   height: 320px;
   top: 38%;
   right: 4%;
-  background: radial-gradient(circle, rgba(165, 180, 252, 0.18) 0%, transparent 65%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--chart-primary) 18%, transparent) 0%, transparent 65%);
   filter: blur(36px);
 }
 
@@ -63,7 +63,7 @@ ion-content.reg-bg {
   height: 240px;
   top: 55%;
   right: 28%;
-  background: radial-gradient(circle, rgba(224, 231, 255, 0.4) 0%, transparent 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--primary-soft) 40%, transparent) 0%, transparent 70%);
   filter: blur(28px);
 }
 
@@ -81,7 +81,7 @@ ion-content.reg-bg {
   align-items: center;
   justify-content: center;
   flex: 0 0 42%;
-  background: linear-gradient(160deg, #3b3f92 0%, #4f46e5 55%, #6366f1 100%);
+  background: linear-gradient(160deg, var(--primary) 0%, var(--primary-hover) 55%, var(--primary-mid) 100%);
   padding: 48px 40px;
   position: relative;
   overflow: hidden;
@@ -93,7 +93,7 @@ ion-content.reg-bg {
     position: absolute;
     border-radius: 50%;
     opacity: 0.08;
-    background: #fff;
+    background: var(--text-on-primary);
   }
 
   &::before {
@@ -133,13 +133,13 @@ ion-content.reg-bg {
 .reg-brand__name {
   font-size: 28px;
   font-weight: 800;
-  color: #fff;
+  color: var(--text-on-primary);
   letter-spacing: -0.5px;
 }
 
 .reg-brand__tagline {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.75);
+  color: color-mix(in srgb, var(--text-on-primary) 75%, transparent);
   line-height: 1.55;
   margin: 4px 0 20px;
 }
@@ -158,11 +158,11 @@ ion-content.reg-bg {
     gap: 10px;
     font-size: 14px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.88);
+    color: color-mix(in srgb, var(--text-on-primary) 88%, transparent);
 
     ion-icon {
       font-size: 18px;
-      color: #a5b4fc;
+      color: var(--chart-primary);
       flex-shrink: 0;
     }
   }
@@ -171,7 +171,7 @@ ion-content.reg-bg {
 .reg-brand__version {
   margin-top: 32px;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.38);
+  color: color-mix(in srgb, var(--text-on-primary) 38%, transparent);
 }
 
 // ─── Form panel (right) ─────────────────────────────────────────────────────
@@ -188,13 +188,13 @@ ion-content.reg-bg {
 .reg-card {
   width: 100%;
   max-width: 520px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--surface-panel-heavy);
   backdrop-filter: blur(14px) saturate(160%);
   -webkit-backdrop-filter: blur(14px) saturate(160%);
-  border: 1px solid rgba(200, 208, 255, 0.35);
+  border: 1px solid var(--glass-border);
   border-radius: 24px;
   padding: 36px 32px 32px;
-  box-shadow: 0 8px 40px rgba(79, 70, 229, 0.09), 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 8px 40px color-mix(in srgb, var(--primary-hover) 9%, transparent), 0 2px 8px color-mix(in srgb, var(--text-strong) 5%, transparent);
   animation: reg-fadeIn 0.4s ease-out;
 }
 
@@ -211,14 +211,14 @@ ion-content.reg-bg {
 .reg-card__title {
   font-size: 24px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-strong);
   margin: 0 0 4px;
   letter-spacing: -0.4px;
 }
 
 .reg-card__subtitle {
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -240,18 +240,18 @@ ion-content.reg-bg {
 }
 
 .reg-item {
-  --background: rgba(240, 244, 255, 0.7);
+  --background: var(--primary-soft);
   --border-radius: 12px;
   --padding-start: 0;
   --inner-padding-end: 0;
   border-radius: 12px;
-  border: 1px solid rgba(209, 213, 219, 0.6);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--text-strong) 4%, transparent);
   transition: border-color 0.18s;
 
   &:focus-within {
-    border-color: rgba(79, 70, 229, 0.45);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+    border-color: color-mix(in srgb, var(--primary-hover) 45%, transparent);
+    box-shadow: 0 0 0 3px var(--primary-soft);
   }
 
   ion-input {
@@ -260,13 +260,13 @@ ion-content.reg-bg {
     --padding-top: 11px;
     --padding-bottom: 11px;
     font-size: 14px;
-    color: #0f172a;
+    color: var(--text-strong);
   }
 }
 
 .reg-icon {
   font-size: 15px;
-  color: #94a3b8;
+  color: var(--text-faint);
   margin-left: 14px;
   margin-right: 2px;
   flex-shrink: 0;
@@ -276,10 +276,10 @@ ion-content.reg-bg {
   font-size: 18px;
   margin-right: 12px;
   cursor: pointer;
-  color: #94a3b8;
+  color: var(--text-faint);
   transition: color 0.15s;
 
-  &:hover { color: #4f46e5; }
+  &:hover { color: var(--primary-hover); }
 }
 
 .reg-error {
@@ -287,14 +287,14 @@ ion-content.reg-bg {
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  color: #dc2626;
+  color: var(--danger);
   margin: 3px 4px 0;
 
   &--codigo {
     padding: 8px 12px;
     border-radius: 8px;
-    background: rgba(239, 68, 68, 0.06);
-    border: 1px solid rgba(239, 68, 68, 0.16);
+    background: var(--danger-soft);
+    border: 1px solid color-mix(in srgb, var(--danger-bright) 16%, transparent);
     font-size: 12px;
 
     ion-icon { font-size: 14px; flex-shrink: 0; }
@@ -309,7 +309,7 @@ ion-content.reg-bg {
 .rol-label {
   font-size: 12px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 8px;
@@ -328,43 +328,43 @@ ion-content.reg-bg {
   gap: 5px;
   padding: 14px 10px;
   border-radius: 14px;
-  border: 2px solid rgba(209, 213, 219, 0.7);
-  background: rgba(249, 250, 251, 0.8);
+  border: 2px solid var(--border-subtle);
+  background: var(--surface-subtle);
   cursor: pointer;
   transition: all 0.18s ease;
   text-align: center;
 
   ion-icon {
     font-size: 20px;
-    color: #9ca3af;
+    color: var(--text-faint);
     transition: color 0.18s;
   }
 
   &:hover {
-    border-color: #c4b5fd;
-    background: #f5f3ff;
+    border-color: var(--accent-purple);
+    background: color-mix(in srgb, var(--accent-purple) 10%, var(--surface-panel));
   }
 
   &--active {
-    border-color: #7c3aed;
-    background: #f5f3ff;
-    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    border-color: var(--accent-purple-dark);
+    background: color-mix(in srgb, var(--accent-purple) 10%, var(--surface-panel));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-purple-dark) 10%, transparent);
 
-    ion-icon { color: #7c3aed; }
-    .rol-card-title { color: #7c3aed; }
+    ion-icon { color: var(--accent-purple-dark); }
+    .rol-card-title { color: var(--accent-purple-dark); }
   }
 }
 
 .rol-card-title {
   font-size: 13px;
   font-weight: 700;
-  color: #374151;
+  color: var(--text-body);
   transition: color 0.18s;
 }
 
 .rol-card-desc {
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--text-faint);
   line-height: 1.3;
 }
 
@@ -378,30 +378,30 @@ ion-content.reg-bg {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.codigo-icon { color: #7c3aed !important; }
+.codigo-icon { color: var(--accent-purple-dark) !important; }
 
 .codigo-hint {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--text-faint);
   margin: 6px 4px 10px;
 }
 
 // ─── Beta invite code field ──────────────────────────────────────────────────
 .beta-icon {
-  color: #d97706 !important; // amber accent for beta badge feel
+  color: var(--warning-strong) !important; // amber accent for beta badge feel
 }
 
 .reg-item--beta {
-  border-color: rgba(217, 119, 6, 0.25) !important;
+  border-color: color-mix(in srgb, var(--warning-strong) 25%, transparent) !important;
 
   &:focus-within {
-    border-color: rgba(217, 119, 6, 0.5) !important;
-    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.08) !important;
+    border-color: color-mix(in srgb, var(--warning-strong) 50%, transparent) !important;
+    box-shadow: 0 0 0 3px var(--warning-soft) !important;
   }
 }
 
 .reg-item--error {
-  border-color: rgba(220, 38, 38, 0.4) !important;
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent) !important;
 }
 
 .reg-error--beta {
@@ -410,9 +410,9 @@ ion-content.reg-bg {
   gap: 6px;
   padding: 9px 12px;
   border-radius: 9px;
-  background: rgba(239, 68, 68, 0.06);
-  border: 1px solid rgba(239, 68, 68, 0.16);
-  color: #dc2626;
+  background: var(--danger-soft);
+  border: 1px solid color-mix(in srgb, var(--danger-bright) 16%, transparent);
+  color: var(--danger);
   font-size: 12px;
   margin-top: 4px;
 
@@ -424,9 +424,9 @@ ion-content.reg-bg {
   align-items: center;
   gap: 5px;
   font-size: 12px;
-  color: #92400e;
-  background: rgba(251, 191, 36, 0.1);
-  border: 1px solid rgba(217, 119, 6, 0.18);
+  color: var(--warning-strong);
+  background: var(--warning-soft);
+  border: 1px solid color-mix(in srgb, var(--warning-strong) 18%, transparent);
   border-radius: 8px;
   padding: 7px 10px;
   margin: 6px 0 4px;
@@ -434,7 +434,7 @@ ion-content.reg-bg {
 
   ion-icon {
     font-size: 14px;
-    color: #d97706;
+    color: var(--warning-strong);
     flex-shrink: 0;
   }
 }
@@ -450,20 +450,20 @@ ion-content.reg-bg {
   padding: 13px 20px;
   border: none;
   border-radius: 13px;
-  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-  color: #fff;
+  background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary-mid) 100%);
+  color: var(--text-on-primary);
   font-size: 15px;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.28);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--primary-hover) 28%, transparent);
   transition: opacity 0.18s, box-shadow 0.18s, transform 0.12s;
 
   ion-icon { font-size: 18px; }
 
   &:hover:not(:disabled) {
     opacity: 0.93;
-    box-shadow: 0 6px 22px rgba(79, 70, 229, 0.35);
+    box-shadow: 0 6px 22px color-mix(in srgb, var(--primary-hover) 35%, transparent);
     transform: translateY(-1px);
   }
 
@@ -492,9 +492,9 @@ ion-content.reg-bg {
   gap: 8px;
   padding: 10px 14px;
   border-radius: 10px;
-  background: rgba(239, 68, 68, 0.07);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  color: #dc2626;
+  background: var(--danger-soft);
+  border: 1px solid color-mix(in srgb, var(--danger-bright) 20%, transparent);
+  color: var(--danger);
   font-size: 13px;
   margin-top: 10px;
   line-height: 1.45;
@@ -509,14 +509,14 @@ ion-content.reg-bg {
   gap: 8px;
   padding: 10px 14px;
   border-radius: 10px;
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  color: #065f46;
+  background: var(--success-soft);
+  border: 1px solid color-mix(in srgb, var(--success) 25%, transparent);
+  color: var(--success-dark);
   font-size: 13px;
   font-weight: 600;
   margin-top: 10px;
 
-  ion-icon { font-size: 16px; color: #059669; flex-shrink: 0; }
+  ion-icon { font-size: 16px; color: var(--success-strong); flex-shrink: 0; }
 }
 
 
@@ -524,11 +524,11 @@ ion-content.reg-bg {
 .reg-login-link {
   text-align: center;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-muted);
   margin-top: 16px;
 
   a {
-    color: #4f46e5;
+    color: var(--primary-hover);
     font-weight: 600;
     text-decoration: none;
     cursor: pointer;
@@ -543,15 +543,15 @@ ion-content.reg-bg {
 
   // ── Clean light background for mobile ──────────────────────────────────────
   :host {
-    background: linear-gradient(175deg, #edf0ff 0%, #f5f7ff 60%, #eff2ff 100%);
+    background: var(--bg-auth);
   }
 
   ion-content.reg-bg {
-    --background: #f5f7ff;
+    --background: var(--surface-panel-heavy);
   }
 
   .auth-page {
-    background: linear-gradient(175deg, #edf0ff 0%, #f5f7ff 60%, #eff2ff 100%);
+    background: var(--bg-auth);
   }
 
   // ── Hide heavy blobs — single soft centered glow ──────────────────────────
@@ -569,7 +569,7 @@ ion-content.reg-bg {
     bottom: auto;
     right: auto;
     transform: translate(-50%, -50%);
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.07) 0%, transparent 65%);
+    background: radial-gradient(circle, var(--primary-soft) 0%, transparent 65%);
     filter: blur(64px);
   }
 
@@ -601,7 +601,7 @@ ion-content.reg-bg {
     text-align: left;
     gap: 10px;
     max-width: 100%;
-    background: linear-gradient(135deg, #3b3f92 0%, #4f46e5 55%, #6366f1 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 55%, var(--primary-mid) 100%);
     border-radius: 18px;
     padding: 16px 20px;
     position: relative;
@@ -612,7 +612,7 @@ ion-content.reg-bg {
       content: '';
       position: absolute;
       border-radius: 50%;
-      background: #fff;
+      background: var(--text-on-primary);
       opacity: 0.06;
       pointer-events: none;
     }
@@ -643,7 +643,7 @@ ion-content.reg-bg {
   .reg-brand__name {
     font-size: 18px;
     font-weight: 800;
-    color: #fff;
+    color: var(--text-on-primary);
     letter-spacing: -0.3px;
     margin-bottom: 0;
   }
@@ -653,7 +653,7 @@ ion-content.reg-bg {
     display: block;
     flex: 0 0 100%;
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.68);
+    color: color-mix(in srgb, var(--text-on-primary) 68%, transparent);
     line-height: 1.4;
     margin: 0;
   }
@@ -674,8 +674,8 @@ ion-content.reg-bg {
     padding: 24px 20px 22px;
     border-radius: 20px;
     box-shadow:
-      0 4px 24px rgba(79, 70, 229, 0.11),
-      0 1px 4px rgba(0, 0, 0, 0.05);
+      0 4px 24px color-mix(in srgb, var(--primary-hover) 11%, transparent),
+      0 1px 4px color-mix(in srgb, var(--text-strong) 4%, transparent);
   }
 
   .reg-row-2 {

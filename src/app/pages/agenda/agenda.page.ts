@@ -342,18 +342,18 @@ export class AgendaPage implements OnInit, OnDestroy {
 
   private mapCitaToEvent(cita: CitaDto): CalendarEvent {
     const colorMap: Record<string, string> = {
-      CONFIRMADA: '#6366f1',
-      COMPLETADA: '#10b981',
-      PENDIENTE: '#f59e0b',
-      CANCELADA: '#ef4444',
-      NO_ASISTIO: '#64748b',
-      REPROGRAMADA: '#8b5cf6',
+      CONFIRMADA: 'var(--chart-primary)',
+      COMPLETADA: 'var(--success)',
+      PENDIENTE: 'var(--warning)',
+      CANCELADA: 'var(--danger-bright)',
+      NO_ASISTIO: 'var(--text-muted)',
+      REPROGRAMADA: 'var(--chart-purple)',
     };
 
     return {
       title: `${cita.nombre_paciente} ${cita.apellido_paciente}`,
       time: cita.hora_inicio ?? this.toTimePart(cita.fecha_inicio),
-      color: colorMap[cita.estado_cita] ?? '#94a3b8',
+      color: colorMap[cita.estado_cita] ?? 'var(--text-faint)',
       kind: 'cita',
       status: cita.estado ?? cita.estado_cita,
       cita,
@@ -367,7 +367,7 @@ export class AgendaPage implements OnInit, OnDestroy {
     return {
       title: bloqueo.motivo || bloqueo.motivo_bloqueo || 'Bloqueo horario',
       time: bloqueo.todo_el_dia ? 'Todo el dia' : `${start || '--:--'}-${end || '--:--'}`,
-      color: '#334155',
+      color: 'var(--text-body)',
       kind: 'bloqueo',
       status: bloqueo.tipo_bloqueo || 'BLOQUEADO',
       bloqueo,
@@ -448,10 +448,10 @@ export class AgendaPage implements OnInit, OnDestroy {
   }
 
   getColorForDay(date: Date, citas: number): string {
-    if (!this.isDiaHabilitado(date)) return '#f8fafc';
-    if (citas >= this.maxCitasPorDia) return '#ffe4e1';
-    if (citas >= this.maxCitasPorDia / 2) return '#fcfcda';
-    return '#d8f8e1';
+    if (!this.isDiaHabilitado(date)) return 'var(--surface-muted)';
+    if (citas >= this.maxCitasPorDia) return 'var(--danger-soft)';
+    if (citas >= this.maxCitasPorDia / 2) return 'var(--warning-soft)';
+    return 'var(--success-soft)';
   }
 
   private isDiaHabilitado(date: Date): boolean {

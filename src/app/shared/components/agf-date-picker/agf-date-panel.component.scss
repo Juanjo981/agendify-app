@@ -4,10 +4,10 @@
 
 // ── Panel shell ────────────────────────────────────────────────────────────────
 .adp {
-  background:    rgba(250, 251, 253, 0.99);
+  background:    var(--glass-bg-heavy);
   border-radius: var(--radius-lg, 16px);
-  border:        1px solid var(--glass-border, rgba(209, 213, 219, 0.50));
-  box-shadow:    0 8px 32px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.06);
+  border:        1px solid var(--glass-border);
+  box-shadow:    var(--shadow-elevated);
   padding:       16px 16px 14px;
   width:         280px;
   user-select:   none;
@@ -25,7 +25,7 @@
   &__label {
     font-size:      14.5px;
     font-weight:    700;
-    color:          var(--text-strong, #0f172a);
+    color:          var(--text-strong);
     letter-spacing: -0.01em;
   }
 
@@ -33,9 +33,9 @@
     width:           30px;
     height:          30px;
     border:          none;
-    background:      rgba(99, 102, 241, 0.07);
+    background:      var(--primary-soft);
     border-radius:   8px;
-    color:           var(--primary-mid, #6366f1);
+    color:           var(--primary-mid);
     cursor:          pointer;
     display:         flex;
     align-items:     center;
@@ -44,8 +44,8 @@
 
     ion-icon { font-size: 15px; }
 
-    &:hover  { background: rgba(99, 102, 241, 0.14); }
-    &:active { background: rgba(99, 102, 241, 0.22); }
+    &:hover  { background: var(--primary-ring); }
+    &:active { background: var(--primary-ring); }
   }
 
   &__selectors {
@@ -67,8 +67,8 @@
       right: 12px;
       width: 8px;
       height: 8px;
-      border-right: 1.5px solid rgba(71, 85, 105, 0.8);
-      border-bottom: 1.5px solid rgba(71, 85, 105, 0.8);
+      border-right: 1.5px solid var(--text-secondary);
+      border-bottom: 1.5px solid var(--text-secondary);
       transform: translateY(-65%) rotate(45deg);
       pointer-events: none;
     }
@@ -79,20 +79,20 @@
     height: 36px;
     padding: 0 30px 0 12px;
     border-radius: 10px;
-    border: 1px solid rgba(99, 102, 241, 0.16);
-    background: rgba(255, 255, 255, 0.94);
-    color: var(--text-strong, #0f172a);
+    border: 1px solid var(--primary-ring);
+    background: var(--surface-panel-heavy);
+    color: var(--text-strong);
     font-family: 'Inter', sans-serif;
     font-size: 13px;
     font-weight: 600;
     outline: none;
     appearance: none;
     cursor: pointer;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    box-shadow: inset 0 1px 0 var(--surface-panel);
 
     &:focus {
-      border-color: rgba(99, 102, 241, 0.4);
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+      border-color: var(--primary-ring);
+      box-shadow: 0 0 0 3px var(--primary-ring);
     }
   }
 }
@@ -108,7 +108,7 @@
     font-weight:    700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color:          var(--text-muted, #64748b);
+    color:          var(--text-muted);
     text-align:     center;
     padding:        2px 0;
   }
@@ -128,7 +128,7 @@
   border-radius:   8px;
   font-size:       12.5px;
   font-weight:     500;
-  color:           var(--text-strong, #0f172a);
+  color:           var(--text-strong);
   cursor:          pointer;
   display:         flex;
   align-items:     center;
@@ -137,31 +137,31 @@
   font-family:     'Inter', sans-serif;
 
   &:hover:not(.adp-day--disabled):not(.adp-day--selected):not(.adp-day--other) {
-    background: var(--primary-soft, rgba(99, 102, 241, 0.10));
-    color:      var(--primary-mid, #6366f1);
+    background: var(--primary-soft);
+    color:      var(--primary-mid);
   }
 
   &--other {
-    color:           var(--text-faint, #cbd5e1);
+    color:           var(--text-faint);
     pointer-events:  none;
   }
 
   &--today:not(.adp-day--selected) {
-    color:       var(--primary-mid, #6366f1);
+    color:       var(--primary-mid);
     font-weight: 700;
-    background:  rgba(99, 102, 241, 0.06);
-    box-shadow:  inset 0 0 0 1.5px rgba(99, 102, 241, 0.25);
+    background:  var(--primary-soft);
+    box-shadow:  inset 0 0 0 1.5px var(--primary-ring);
   }
 
   &--selected {
-    background:  var(--primary-mid, #6366f1) !important;
-    color:       #fff !important;
+    background:  var(--primary-mid) !important;
+    color:       var(--text-on-primary) !important;
     font-weight: 700;
-    box-shadow:  0 2px 8px rgba(99, 102, 241, 0.38);
+    box-shadow:  0 2px 8px var(--primary-ring);
   }
 
   &--disabled {
-    color:          rgba(148, 163, 184, 0.5);
+    color:          var(--border-medium);
     cursor:         not-allowed;
     pointer-events: none;
   }

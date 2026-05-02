@@ -2,19 +2,19 @@
 // Pure function — no Angular dependencies.
 
 const AVATAR_COLORS = [
-  '#6366f1', // indigo
-  '#8b5cf6', // violet
-  '#3b82f6', // blue
-  '#0ea5e9', // sky
-  '#10b981', // emerald
-  '#f59e0b', // amber
-  '#ef4444', // red
+  'var(--primary-mid)',
+  'var(--accent-purple)',
+  'var(--chart-primary)',
+  'var(--chart-info)',
+  'var(--success)',
+  'var(--warning)',
+  'var(--danger-bright)',
 ];
 
 /**
  * Returns a deterministic color from the palette based on the
- * first character of the provided name. Falls back to indigo if
- * the name is empty or undefined.
+ * first character of the provided name. Values are CSS color tokens
+ * so avatars respond to the active theme.
  */
 export function getAvatarColor(nombre: string): string {
   if (!nombre) return AVATAR_COLORS[0];

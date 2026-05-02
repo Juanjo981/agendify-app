@@ -10,7 +10,7 @@
   flex-direction: column;
   align-items: center;
   padding: 40px 20px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   text-align: center;
   gap: 6px;
 
@@ -23,26 +23,26 @@
 .hs-item {
   display: flex;
   gap: 12px;
-  background: var(--glass-bg, rgba(247,249,252,0.82));
+  background: var(--glass-bg);
   backdrop-filter: blur(14px) saturate(150%);
   -webkit-backdrop-filter: blur(14px) saturate(150%);
-  border: 1px solid var(--border-subtle, rgba(209,213,219,0.45));
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md, 12px);
   padding: 14px 16px;
   cursor: pointer;
   transition: box-shadow 0.2s, transform 0.15s;
 
   &:hover {
-    box-shadow: 0 4px 20px rgba(16,185,129,0.1);
+    box-shadow: 0 4px 20px var(--success-soft);
     transform: translateY(-1px);
   }
 
   &__icon {
     width: 36px; height: 36px;
     border-radius: 10px;
-    background: rgba(16,185,129,0.1);
+    background: var(--success-soft);
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    ion-icon { font-size: 17px; color: #059669; }
+    ion-icon { font-size: 17px; color: var(--success-strong); }
   }
 
   &__body { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
@@ -57,16 +57,16 @@
 
   &__fecha {
     font-size: 13px; font-weight: 600;
-    color: var(--text-strong, #0f172a);
+    color: var(--text-strong);
   }
 
   &__creacion {
-    font-size: 11px; color: var(--text-muted, #94a3b8);
+    font-size: 11px; color: var(--text-faint);
   }
 
   &__notas {
     font-size: 13px;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     margin: 0;
     line-height: 1.5;
     display: -webkit-box;
@@ -89,7 +89,7 @@
     align-items: center;
     gap: 4px;
     font-size: 11px;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     ion-icon { font-size: 12px; }
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     max-width: 200px;
@@ -101,7 +101,7 @@
     gap: 3px;
     font-size: 12px;
     font-weight: 600;
-    color: #059669;
+    color: var(--success-strong);
     white-space: nowrap;
     margin-left: auto;
     ion-icon { font-size: 12px; }

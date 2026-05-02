@@ -9,15 +9,15 @@
   display: flex;
   align-items: center;
   gap: 0;
-  background: rgba(247, 249, 252, 0.88);
+  background: var(--glass-bg);
   backdrop-filter: blur(18px) saturate(160%);
   -webkit-backdrop-filter: blur(18px) saturate(160%);
-  border: 1px solid rgba(209, 213, 219, 0.45);
+  border: 1px solid var(--border-subtle);
   border-radius: 16px;
   padding: 6px 8px;
   box-shadow:
-    0 2px 12px rgba(15, 23, 42, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    0 2px 12px var(--surface-muted),
+    inset 0 1px 0 var(--surface-panel);
   margin-bottom: 20px;
   overflow-x: auto;
   scrollbar-width: none;
@@ -34,7 +34,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   flex-shrink: 0;
 
   ion-icon { font-size: 15px; }
@@ -43,7 +43,7 @@
 .psm-divider {
   width: 1px;
   height: 22px;
-  background: rgba(209, 213, 219, 0.6);
+  background: var(--border-subtle);
   margin-right: 8px;
   flex-shrink: 0;
 }
@@ -53,7 +53,7 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  background: rgba(241, 245, 249, 0.9);
+  background: var(--surface-muted);
   border-radius: 11px;
   padding: 3px;
   flex: 1;
@@ -68,7 +68,7 @@
   border-radius: 9px;
   border: none;
   background: none;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
@@ -78,20 +78,20 @@
   justify-content: center;
 
   &:hover:not(.psm-item--active) {
-    background: rgba(255, 255, 255, 0.6);
-    color: var(--text-strong, #0f172a);
+    background: var(--surface-panel);
+    color: var(--text-strong);
     transform: translateY(-0.5px);
   }
 
   &--active {
-    background: #fff;
-    color: var(--primary-mid, #6366f1);
+    background: var(--text-on-primary);
+    color: var(--primary-mid);
     font-weight: 600;
-    box-shadow: 0 1px 6px rgba(15, 23, 42, 0.1), 0 0 0 0.5px rgba(209, 213, 219, 0.5);
+    box-shadow: 0 1px 6px var(--shadow-soft), 0 0 0 0.5px var(--border-subtle);
     transform: translateY(-0.5px);
 
     .psm-item__icon-wrap {
-      background: rgba(99, 102, 241, 0.1);
+      background: var(--primary-soft);
     }
   }
 }

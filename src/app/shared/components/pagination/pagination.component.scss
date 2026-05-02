@@ -4,7 +4,7 @@
   width: 100%;
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid rgba(226, 232, 240, 0.9);
+  border-top: 1px solid var(--border-soft);
 }
 
 .ag-pagination__controls {
@@ -20,9 +20,9 @@
   align-items: center;
   height: 28px;
   padding: 0 8px;
-  border: 1px solid rgba(226, 232, 240, 0.9);
+  border: 1px solid var(--border-soft);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--surface-panel);
 }
 
 .ag-pagination__select {
@@ -31,7 +31,7 @@
   padding: 0 16px 0 0;
   border: none;
   background: transparent;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   font-size: 12px;
   font-weight: 600;
   outline: none;
@@ -40,13 +40,13 @@
 
   &:hover,
   &:focus {
-    color: var(--text-strong, #334155);
+    color: var(--text-strong);
   }
 }
 
 .ag-pagination__range {
   min-width: 94px;
-  color: var(--text-muted, #7b8798);
+  color: var(--text-muted);
   font-size: 12.5px;
   font-weight: 500;
   text-align: center;
@@ -58,9 +58,9 @@
   align-items: center;
   gap: 8px;
   padding: 2px 4px;
-  border: 1px solid rgba(226, 232, 240, 0.85);
+  border: 1px solid var(--border-soft);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--surface-panel);
 }
 
 .ag-pagination__page {
@@ -71,8 +71,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: rgba(99, 102, 241, 0.1);
-  color: var(--primary-mid, #4f46e5);
+  background: var(--primary-soft);
+  color: var(--primary-mid);
   font-size: 12px;
   font-weight: 700;
   line-height: 1;
@@ -87,15 +87,15 @@
   align-items: center;
   justify-content: center;
   background: transparent;
-  color: var(--text-muted, #94a3b8);
+  color: var(--text-faint);
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
   transition: color 0.15s ease, transform 0.15s ease, background 0.15s ease;
 
   &:hover:not(:disabled) {
-    color: var(--text-strong, #0f172a);
-    background: rgba(148, 163, 184, 0.12);
+    color: var(--text-strong);
+    background: color-mix(in srgb, var(--text-faint) 12%, transparent);
   }
 
   &:first-child:hover:not(:disabled) {

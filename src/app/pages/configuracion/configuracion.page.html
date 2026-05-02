@@ -57,22 +57,29 @@
           <div class="cfg-field">
             <label class="cfg-field-label">Tema visual</label>
             <div class="cfg-theme-selector">
-              <button class="cfg-theme-btn" [class.cfg-theme-btn--active]="config.tema === 'claro'"
-                      (click)="config.tema = 'claro'">
+              <button
+                class="cfg-theme-btn"
+                [class.cfg-theme-btn--active]="config.tema === 'claro'"
+                [attr.aria-pressed]="config.tema === 'claro'"
+                (click)="seleccionarTema('claro')">
                 <ion-icon name="sunny-outline"></ion-icon>
                 <span>Claro</span>
               </button>
-              <button class="cfg-theme-btn" [class.cfg-theme-btn--active]="config.tema === 'oscuro'"
-                      (click)="config.tema = 'oscuro'">
+              <button
+                class="cfg-theme-btn"
+                [class.cfg-theme-btn--active]="config.tema === 'oscuro'"
+                [attr.aria-pressed]="config.tema === 'oscuro'"
+                (click)="seleccionarTema('oscuro')">
                 <ion-icon name="moon-outline"></ion-icon>
                 <span>Oscuro</span>
-                <span class="cfg-badge-soon">Próx.</span>
               </button>
-              <button class="cfg-theme-btn" [class.cfg-theme-btn--active]="config.tema === 'auto'"
-                      (click)="config.tema = 'auto'">
+              <button
+                class="cfg-theme-btn"
+                [class.cfg-theme-btn--active]="config.tema === 'auto'"
+                [attr.aria-pressed]="config.tema === 'auto'"
+                (click)="seleccionarTema('auto')">
                 <ion-icon name="contrast-outline"></ion-icon>
                 <span>Auto</span>
-                <span class="cfg-badge-soon">Próx.</span>
               </button>
             </div>
           </div>

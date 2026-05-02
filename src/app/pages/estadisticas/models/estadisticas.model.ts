@@ -57,7 +57,7 @@ export interface IngresoPorMetodoPago {
   metodo: string;       // 'Efectivo', 'Transferencia', 'Débito', 'Crédito'
   total: number;
   porcentaje: number;   // 0–100
-  color: string;        // hex
+  color: string;        // CSS color token
 }
 
 export interface ResumenIngresosEstadistica {
@@ -85,7 +85,7 @@ export interface RankingPaciente {
   apellido: string;
   valor: number;       // citas count or no-asistencias count
   avatarInicial: string;
-  colorAvatar: string; // hex
+  colorAvatar: string; // CSS color token
 }
 
 export interface NuevosVsRecurrentesPunto {
@@ -140,7 +140,7 @@ export interface EstadoCitaEstadistica {
   estado: string;     // matches EstadoCita values
   total: number;
   porcentaje: number; // 0–100
-  color: string;      // hex
+  color: string;      // CSS color token
 }
 
 export interface ResumenCitasEstadistica {
@@ -166,7 +166,7 @@ export interface ReporteEstadistica {
   titulo: string;
   descripcion: string;
   icono: string;
-  colorIcono: string;        // hex
+  colorIcono: string;        // CSS color token
   totalRegistros: number;
   resumenTexto: string;      // e.g. '48 citas · €3,840 total'
   periodoLabel: string;      // e.g. 'Marzo 2026'

@@ -1,10 +1,10 @@
 // ─── Color tokens per variant ────────────────────────────────────────────────
-.kpi-card--primary  { --kpi-accent: #6366f1; --kpi-rgb: 99, 102, 241; }
-.kpi-card--info     { --kpi-accent: #0ea5e9; --kpi-rgb: 14, 165, 233; }
-.kpi-card--success  { --kpi-accent: #10b981; --kpi-rgb: 16, 185, 129; }
-.kpi-card--warning  { --kpi-accent: #f59e0b; --kpi-rgb: 245, 158, 11; }
-.kpi-card--danger   { --kpi-accent: #ef4444; --kpi-rgb: 239, 68, 68; }
-.kpi-card--purple   { --kpi-accent: #8b5cf6; --kpi-rgb: 139, 92, 246; }
+.kpi-card--primary  { --kpi-accent: var(--primary-mid); }
+.kpi-card--info     { --kpi-accent: var(--chart-info); }
+.kpi-card--success  { --kpi-accent: var(--success); }
+.kpi-card--warning  { --kpi-accent: var(--warning); }
+.kpi-card--danger   { --kpi-accent: var(--danger-bright); }
+.kpi-card--purple   { --kpi-accent: var(--accent-purple); }
 
 // ─── KPI Grid ────────────────────────────────────────────────────────────────
 .kpi-grid {
@@ -20,9 +20,9 @@
 .kpi-card {
   position: relative;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.55));
-  border-radius: var(--radius-lg, 16px);
+  background: var(--surface-panel-heavy);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
   padding: 20px 20px 18px;
   display: flex;
   flex-direction: column;
@@ -40,9 +40,9 @@
     background: linear-gradient(
       90deg,
       transparent 0%,
-      rgba(var(--kpi-rgb), 0.65) 20%,
+      color-mix(in srgb, var(--kpi-accent) 65%, transparent) 20%,
       var(--kpi-accent) 50%,
-      rgba(var(--kpi-rgb), 0.65) 80%,
+      color-mix(in srgb, var(--kpi-accent) 65%, transparent) 80%,
       transparent 100%
     );
     border-radius: 0 0 3px 3px;
@@ -58,7 +58,7 @@
     height: 130px;
     background: radial-gradient(
       circle,
-      rgba(var(--kpi-rgb), 0.07) 0%,
+      color-mix(in srgb, var(--kpi-accent) 7%, transparent) 0%,
       transparent 65%
     );
     pointer-events: none;
@@ -66,8 +66,8 @@
 
   &:hover {
     box-shadow:
-      0 4px 20px rgba(0, 0, 0, 0.07),
-      0 0 0 1px rgba(var(--kpi-rgb), 0.18);
+      var(--shadow-card),
+      0 0 0 1px color-mix(in srgb, var(--kpi-accent) 18%, transparent);
     transform: translateY(-2px);
   }
 }
@@ -85,7 +85,7 @@
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  background: rgba(var(--kpi-rgb), 0.09);
+  background: color-mix(in srgb, var(--kpi-accent) 9%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -113,7 +113,7 @@
 .kpi-label {
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.65px;
   margin: 0 0 5px;
@@ -123,7 +123,7 @@
 .kpi-value {
   font-size: 30px;
   font-weight: 700;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
   line-height: 1.1;
   letter-spacing: -0.6px;
   margin: 0 0 12px;
@@ -144,12 +144,12 @@
   ion-icon { font-size: 12px; }
 
   &--pos {
-    color: #059669;
-    background: rgba(16, 185, 129, 0.09);
+    color: var(--success-strong);
+    background: var(--success-soft);
   }
 
   &--neg {
-    color: #dc2626;
-    background: rgba(239, 68, 68, 0.09);
+    color: var(--danger);
+    background: var(--danger-soft);
   }
 }

@@ -1,10 +1,10 @@
 // ─── Card ─────────────────────────────────────────────────────────────────────
 .ces-card {
-  background: var(--glass-bg, rgba(247, 249, 252, 0.92));
+  background: var(--glass-bg);
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
-  border: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.45));
-  border-radius: var(--radius-lg, 16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
   padding: 20px 22px;
   display: flex;
   flex-direction: column;
@@ -17,13 +17,13 @@
 .ces-title {
   font-size: 15px;
   font-weight: 700;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
   margin: 0;
 }
 
 .ces-subtitle {
   font-size: 12px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -74,13 +74,13 @@
 .ces-donut-total {
   font-size: 26px;
   font-weight: 700;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
   line-height: 1.1;
 }
 
 .ces-donut-label {
   font-size: 11px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -110,7 +110,7 @@
 .ces-item__estado {
   font-size: 12px;
   font-weight: 500;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
   width: 78px;
   flex-shrink: 0;
   white-space: nowrap;
@@ -119,7 +119,7 @@
 .ces-item__bar-wrap {
   flex: 1;
   height: 6px;
-  background: rgba(209, 213, 219, 0.3);
+  background: var(--border-soft);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -141,11 +141,11 @@
 .ces-item__count {
   font-size: 12px;
   font-weight: 700;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
   line-height: 1.2;
 }
 
 .ces-item__pct {
   font-size: 10px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
 }

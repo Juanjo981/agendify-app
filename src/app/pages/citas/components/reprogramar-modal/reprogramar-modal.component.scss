@@ -1,7 +1,7 @@
 .rp-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15,23,42,0.45);
+  background: var(--overlay-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -10,12 +10,12 @@
 }
 
 .rp-modal {
-  background: var(--glass-bg, #f7f9fc);
-  border: 1px solid var(--border-subtle, rgba(209,213,219,0.5));
+  background: var(--glass-bg);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl, 20px);
   width: 100%;
   max-width: 460px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  box-shadow: var(--shadow-modal);
   overflow: hidden;
 
   &__header {
@@ -23,31 +23,31 @@
     align-items: center;
     gap: 12px;
     padding: 20px 24px 16px;
-    border-bottom: 1px solid var(--border-subtle, rgba(209,213,219,0.4));
+    border-bottom: 1px solid var(--border-soft);
   }
 
   &__icon {
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: rgba(99,102,241,0.1);
+    background: var(--primary-soft);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    ion-icon { font-size: 20px; color: var(--primary, #6366f1); }
+    ion-icon { font-size: 20px; color: var(--primary-mid); }
   }
 
   &__title {
     font-size: 16px;
     font-weight: 700;
-    color: var(--text-strong, #0f172a);
+    color: var(--text-strong);
     margin: 0 0 2px;
   }
 
   &__sub {
     font-size: 13px;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     margin: 0;
   }
 
@@ -58,11 +58,11 @@
     cursor: pointer;
     padding: 6px;
     border-radius: 8px;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     display: flex;
     align-items: center;
     transition: background 0.15s;
-    &:hover { background: rgba(0,0,0,0.05); }
+    &:hover { background: var(--surface-muted); }
     ion-icon { font-size: 20px; }
   }
 
@@ -78,7 +78,7 @@
     justify-content: flex-end;
     gap: 10px;
     padding: 14px 24px 20px;
-    border-top: 1px solid var(--border-subtle, rgba(209,213,219,0.4));
+    border-top: 1px solid var(--border-soft);
   }
 }
 
@@ -93,7 +93,7 @@
 .rp-label {
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
 }
 
 .rp-input {
@@ -102,22 +102,22 @@
   width: 100%;
   box-sizing: border-box;
   border-radius: var(--radius-md, 10px);
-  border: 1.5px solid var(--border-subtle, rgba(209, 213, 219, 0.65));
-  background: rgba(255, 255, 255, 0.82);
+  border: 1.5px solid var(--border-subtle);
+  background: var(--surface-panel);
   font-size: 13.5px;
   font-weight: 500;
   font-family: inherit;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
   outline: none;
   cursor: pointer;
   transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 
-  &:hover:not(:focus) { border-color: rgba(209, 213, 219, 0.90); }
+  &:hover:not(:focus) { border-color: var(--border-medium); }
 
   &:focus {
-    border-color: var(--primary-mid, #6366f1);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
-    background: rgba(255, 255, 255, 0.97);
+    border-color: var(--primary-mid);
+    box-shadow: 0 0 0 3px var(--primary-ring);
+    background: var(--surface-panel-heavy);
   }
 
   &::-webkit-calendar-picker-indicator {
@@ -128,12 +128,12 @@
     &:hover { opacity: 0.85; }
   }
 
-  &--error { border-color: var(--danger, #ef4444) !important; }
+  &--error { border-color: var(--danger-bright) !important; }
 }
 
 .rp-error {
   font-size: 11px;
-  color: var(--danger, #ef4444);
+  color: var(--danger-bright);
 }
 
 .rp-hint {
@@ -141,7 +141,7 @@
   align-items: center;
   gap: 5px;
   font-size: 13px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   margin: 0;
   ion-icon { font-size: 14px; }
 }
@@ -161,14 +161,14 @@
 
   &--cancel {
     background: transparent;
-    color: var(--text-muted, #64748b);
-    border: 1px solid var(--border-subtle, rgba(209,213,219,0.55));
-    &:hover { background: rgba(0,0,0,0.04); }
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+    &:hover { background: var(--surface-muted); }
   }
 
   &--confirm {
-    background: var(--primary, #6366f1);
-    color: #fff;
-    &:hover { background: #4f46e5; }
+    background: var(--primary-mid);
+    color: var(--text-on-primary);
+    &:hover { background: var(--primary); }
   }
 }

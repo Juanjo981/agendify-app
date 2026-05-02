@@ -1,6 +1,6 @@
 // ─── Shell ───────────────────────────────────────────────────────────────────
 .dct-content {
-  --background: linear-gradient(160deg, #f8fafc 0%, #f1f5f9 100%);
+  --background: var(--bg-page);
   --padding-top: 0;
   --padding-bottom: 0;
 }
@@ -23,11 +23,11 @@
   border: none;
   cursor: pointer;
   font-size: 14px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   padding: 0;
   transition: color 0.15s;
   ion-icon { font-size: 17px; }
-  &:hover { color: var(--primary, #6366f1); }
+  &:hover { color: var(--primary-mid); }
 }
 
 // ─── Not found ────────────────────────────────────────────────────────────────
@@ -36,7 +36,7 @@
   flex-direction: column;
   align-items: center;
   padding: 80px 20px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   gap: 12px;
   ion-icon { font-size: 48px; opacity: 0.35; }
   p { font-size: 17px; font-weight: 600; margin: 0; }
@@ -44,10 +44,10 @@
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 .dct-hero {
-  background: var(--glass-bg, rgba(247,249,252,0.85));
+  background: var(--glass-bg);
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
-  border: 1px solid var(--border-subtle, rgba(209,213,219,0.45));
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl, 20px);
   padding: 24px;
   display: flex;
@@ -57,16 +57,16 @@
 
   &__left { display: flex; align-items: flex-start; gap: 16px; flex: 1; min-width: 0; }
   &__info { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-  &__name { font-size: 22px; font-weight: 700; color: var(--text-strong, #0f172a); margin: 0; }
-  &__motivo { font-size: 14px; color: var(--text-muted, #64748b); margin: 0; }
+  &__name { font-size: 22px; font-weight: 700; color: var(--text-strong); margin: 0; }
+  &__motivo { font-size: 14px; color: var(--text-muted); margin: 0; }
   &__badges { display: flex; flex-wrap: wrap; gap: 6px; }
 }
 
 .dct-avatar {
   width: 56px; height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary, #6366f1), #8b5cf6);
-  color: #fff; font-size: 18px; font-weight: 700;
+  background: linear-gradient(135deg, var(--primary-mid), var(--accent-purple));
+  color: var(--text-on-primary); font-size: 18px; font-weight: 700;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 
@@ -74,9 +74,9 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(16,185,129,0.1);
-  color: #059669;
-  border: 1px solid rgba(16,185,129,0.25);
+  background: var(--success-soft);
+  color: var(--success-strong);
+  border: 1px solid color-mix(in srgb, var(--success) 25%, transparent);
   border-radius: 20px;
   padding: 3px 10px;
   font-size: 12px;
@@ -89,9 +89,9 @@
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: rgba(99,102,241,0.08);
-  color: var(--primary, #6366f1);
-  border: 1px solid rgba(99,102,241,0.2);
+  background: var(--primary-soft);
+  color: var(--primary-mid);
+  border: 1px solid var(--primary-ring);
   border-radius: var(--radius-md, 10px);
   font-size: 13px;
   font-weight: 600;
@@ -99,7 +99,7 @@
   transition: all 0.15s;
   white-space: nowrap;
   flex-shrink: 0;
-  &:hover { background: rgba(99,102,241,0.14); }
+  &:hover { background: var(--primary-ring); }
   ion-icon { font-size: 15px; }
 }
 
@@ -111,10 +111,10 @@
 }
 
 .dct-card {
-  background: var(--glass-bg, rgba(247,249,252,0.82));
+  background: var(--glass-bg);
   backdrop-filter: blur(16px) saturate(150%);
   -webkit-backdrop-filter: blur(16px) saturate(150%);
-  border: 1px solid var(--border-subtle, rgba(209,213,219,0.45));
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg, 16px);
   padding: 20px;
 
@@ -123,7 +123,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.6px;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     margin: 0 0 16px;
   }
 
@@ -140,14 +140,14 @@
     gap: 4px;
     font-size: 12px;
     font-weight: 600;
-    color: var(--primary, #6366f1);
+    color: var(--primary-mid);
     background: none;
     border: none;
     cursor: pointer;
     padding: 4px 8px;
     border-radius: 6px;
     transition: background 0.14s;
-    &:hover { background: rgba(99,102,241,0.08); }
+    &:hover { background: var(--primary-soft); }
     ion-icon { font-size: 13px; }
   }
 }
@@ -165,7 +165,7 @@
     align-items: center;
     gap: 5px;
     font-size: 12px;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     font-weight: 500;
     white-space: nowrap;
     ion-icon { font-size: 13px; }
@@ -173,21 +173,21 @@
 
   dd {
     font-size: 13px;
-    color: var(--text-strong, #0f172a);
+    color: var(--text-strong);
     margin: 0;
     display: flex;
     align-items: center;
   }
 
-  &__strong { font-weight: 700; color: var(--text-strong, #0f172a); }
-  &__warn { color: var(--danger, #ef4444); font-weight: 600; }
+  &__strong { font-weight: 700; color: var(--text-strong); }
+  &__warn { color: var(--danger-bright); font-weight: 600; }
 }
 
 // ─── Aviso “no editable” (glass, alineado con confirm-dialog) ───────────────
 .dct-aviso-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
+  background: var(--overlay-modal);
   backdrop-filter: blur(6px) saturate(130%);
   -webkit-backdrop-filter: blur(6px) saturate(130%);
   z-index: 1100;
@@ -201,14 +201,12 @@
   transform: translate(-50%, -50%);
   width: min(380px, calc(100vw - 32px));
 
-  background: rgba(247, 249, 252, 0.98);
+  background: var(--glass-bg-heavy);
   backdrop-filter: blur(32px) saturate(180%);
   -webkit-backdrop-filter: blur(32px) saturate(180%);
-  border: 1px solid rgba(209, 213, 219, 0.55);
+  border: 1px solid var(--border-subtle);
   border-radius: 24px;
-  box-shadow:
-    0 24px 64px rgba(15, 23, 42, 0.18),
-    0 4px 16px rgba(15, 23, 42, 0.07);
+  box-shadow: var(--shadow-modal);
 
   z-index: 1101;
   padding: 28px 28px 24px;
@@ -229,8 +227,8 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 18px;
-  background: rgba(99, 102, 241, 0.12);
-  color: #6366f1;
+  background: var(--primary-ring);
+  color: var(--primary-mid);
 
   ion-icon {
     font-size: 28px;
@@ -240,14 +238,14 @@
 .dct-aviso-title {
   font-size: 18px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-strong);
   margin: 0 0 10px;
   letter-spacing: -0.2px;
 }
 
 .dct-aviso-message {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-muted);
   line-height: 1.6;
   margin: 0 0 22px;
 }
@@ -260,14 +258,14 @@
   font-weight: 600;
   cursor: pointer;
   border: none;
-  background: linear-gradient(135deg, #3b3f92, #6366f1);
-  color: #fff;
-  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+  background: linear-gradient(135deg, var(--primary), var(--primary-mid));
+  color: var(--text-on-primary);
+  box-shadow: 0 2px 10px var(--primary-ring);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 5px 18px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 5px 18px var(--primary-ring);
   }
 
   &:active {
@@ -297,10 +295,10 @@
 
 // ─── Pago form (inline) ──────────────────────────────────────────────────────
 .dct-pago-form {
-  background: var(--glass-bg, rgba(247,249,252,0.92));
+  background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(99,102,241,0.25);
+  border: 1px solid var(--primary-ring);
   border-radius: var(--radius-lg, 16px);
   overflow: hidden;
 
@@ -309,19 +307,19 @@
     align-items: center;
     gap: 8px;
     padding: 14px 20px;
-    border-bottom: 1px solid var(--border-subtle, rgba(209,213,219,0.4));
+    border-bottom: 1px solid var(--border-soft);
     font-size: 14px;
     font-weight: 600;
-    color: var(--text-strong, #0f172a);
-    ion-icon { font-size: 16px; color: var(--primary, #6366f1); }
+    color: var(--text-strong);
+    ion-icon { font-size: 16px; color: var(--primary-mid); }
   }
 
   &__close {
     margin-left: auto;
     background: none; border: none; cursor: pointer;
-    color: var(--text-muted, #64748b); padding: 4px;
+    color: var(--text-muted); padding: 4px;
     border-radius: 6px; display: flex;
-    &:hover { background: rgba(0,0,0,0.05); }
+    &:hover { background: var(--surface-muted); }
     ion-icon { font-size: 18px; }
   }
 
@@ -332,7 +330,7 @@
     justify-content: flex-end;
     gap: 10px;
     padding: 12px 20px 16px;
-    border-top: 1px solid var(--border-subtle, rgba(209,213,219,0.4));
+    border-top: 1px solid var(--border-soft);
   }
 }
 
@@ -347,21 +345,21 @@
 .dct-pf-label {
   font-size: 12px;
   font-weight: 500;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
 }
 
 .dct-pf-input {
   padding: 8px 11px;
   border-radius: 10px;
-  border: 1px solid var(--border-subtle, rgba(209,213,219,0.55));
-  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-panel);
   font-size: 13px;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
   outline: none;
-  &:focus { border-color: var(--primary, #6366f1); }
+  &:focus { border-color: var(--primary-mid); }
 }
 
-.dct-pago-error { font-size: 12px; color: var(--danger, #ef4444); margin: 8px 0 0; }
+.dct-pago-error { font-size: 12px; color: var(--danger-bright); margin: 8px 0 0; }
 
 .dct-pf-btn {
   padding: 8px 16px;
@@ -378,24 +376,24 @@
 
   &--cancel {
     background: transparent;
-    color: var(--text-muted, #64748b);
-    border: 1px solid var(--border-subtle, rgba(209,213,219,0.55));
-    &:hover { background: rgba(0,0,0,0.04); }
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+    &:hover { background: var(--surface-muted); }
   }
 
   &--save {
-    background: var(--primary, #6366f1);
-    color: #fff;
-    &:hover { background: #4f46e5; }
+    background: var(--primary-mid);
+    color: var(--text-on-primary);
+    &:hover { background: var(--primary); }
   }
 }
 
 // ─── Actions section ─────────────────────────────────────────────────────────
 .dct-actions-section {
-  background: var(--glass-bg, rgba(247,249,252,0.82));
+  background: var(--glass-bg);
   backdrop-filter: blur(16px) saturate(150%);
   -webkit-backdrop-filter: blur(16px) saturate(150%);
-  border: 1px solid var(--border-subtle, rgba(209,213,219,0.45));
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg, 16px);
   padding: 20px;
 
@@ -404,7 +402,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.6px;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     margin: 0 0 14px;
   }
 }
@@ -428,14 +426,14 @@
   transition: all 0.15s;
   ion-icon { font-size: 15px; }
 
-  &--confirm  { background: rgba(99,102,241,0.1);  color: #4f46e5; border-color: rgba(99,102,241,0.2);  &:hover { background: rgba(99,102,241,0.18); } }
-  &--complete { background: rgba(16,185,129,0.1);  color: #059669; border-color: rgba(16,185,129,0.2);  &:hover { background: rgba(16,185,129,0.18); } }
-  &--cancel   { background: rgba(239,68,68,0.08);  color: #dc2626; border-color: rgba(239,68,68,0.2);   &:hover { background: rgba(239,68,68,0.14); }  }
-  &--postpone { background: rgba(168,85,247,0.1);  color: #7c3aed; border-color: rgba(168,85,247,0.2);  &:hover { background: rgba(168,85,247,0.18); } }
-  &--absent   { background: rgba(100,116,139,0.1); color: #475569; border-color: rgba(100,116,139,0.2); &:hover { background: rgba(100,116,139,0.16); } }
-  &--pago     { background: rgba(16,185,129,0.1);  color: #047857; border-color: rgba(16,185,129,0.2);  &:hover { background: rgba(16,185,129,0.18); } }
-  &--sesion   { background: var(--primary, #6366f1); color: #fff; border-color: transparent; &:hover { background: #4f46e5; } }
-  &--ver-sesion { background: rgba(14,165,233,0.1); color: #0369a1; border-color: rgba(14,165,233,0.2); &:hover { background: rgba(14,165,233,0.18); } }
+  &--confirm  { background: var(--primary-soft);  color: var(--primary); border-color: var(--primary-ring);  &:hover { background: var(--primary-ring); } }
+  &--complete { background: var(--success-soft);  color: var(--success-strong); border-color: color-mix(in srgb, var(--success) 20%, transparent);  &:hover { background: color-mix(in srgb, var(--success) 18%, transparent); } }
+  &--cancel   { background: var(--danger-soft);  color: var(--danger); border-color: color-mix(in srgb, var(--danger-bright) 20%, transparent);   &:hover { background: color-mix(in srgb, var(--danger-bright) 14%, transparent); }  }
+  &--postpone { background: color-mix(in srgb, var(--accent-purple) 10%, transparent);  color: var(--accent-purple-dark); border-color: color-mix(in srgb, var(--accent-purple) 20%, transparent);  &:hover { background: color-mix(in srgb, var(--accent-purple) 18%, transparent); } }
+  &--absent   { background: color-mix(in srgb, var(--text-secondary) 10%, transparent); color: var(--text-secondary); border-color: color-mix(in srgb, var(--text-secondary) 20%, transparent); &:hover { background: color-mix(in srgb, var(--text-secondary) 16%, transparent); } }
+  &--pago     { background: var(--success-soft);  color: var(--success-dark); border-color: color-mix(in srgb, var(--success) 20%, transparent);  &:hover { background: color-mix(in srgb, var(--success) 18%, transparent); } }
+  &--sesion   { background: var(--primary-mid); color: var(--text-on-primary); border-color: transparent; &:hover { background: var(--primary); } }
+  &--ver-sesion { background: color-mix(in srgb, var(--chart-info) 10%, transparent); color: var(--accent-blue-dark); border-color: color-mix(in srgb, var(--chart-info) 20%, transparent); &:hover { background: color-mix(in srgb, var(--chart-info) 18%, transparent); } }
 }
 
 .dct-sesion-hint {
@@ -443,7 +441,7 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   margin: 14px 0 0;
   ion-icon { font-size: 14px; flex-shrink: 0; }
 }

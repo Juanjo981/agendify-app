@@ -15,14 +15,14 @@
 
 .tr-label-icon {
   font-size: 15px;
-  color: var(--primary, #6366f1);
+  color: var(--primary-mid);
   opacity: 0.8;
 }
 
 .tr-label {
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.6px;
 }
@@ -31,9 +31,9 @@
   margin-left: auto;
   font-size: 11px;
   font-weight: 600;
-  color: var(--primary, #6366f1);
-  background: rgba(99, 102, 241, 0.08);
-  border: 1px solid rgba(99, 102, 241, 0.15);
+  color: var(--primary-mid);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-ring);
   border-radius: 20px;
   padding: 3px 10px;
 }
@@ -47,22 +47,22 @@
 
 // ─── Item card ────────────────────────────────────────────────────────────────
 .tr-item {
-  background: var(--glass-bg, rgba(247, 249, 252, 0.92));
+  background: var(--glass-bg);
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
-  border: 1px solid var(--border-subtle, rgba(209, 213, 219, 0.45));
-  border-radius: var(--radius-lg, 16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   transition: border-color 0.18s, box-shadow 0.18s;
 
   &:hover {
-    border-color: rgba(99, 102, 241, 0.2);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    border-color: var(--primary-ring);
+    box-shadow: var(--shadow-soft);
   }
 
   &.tr-item--expanded {
-    border-color: rgba(99, 102, 241, 0.25);
-    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.07);
+    border-color: var(--primary-ring);
+    box-shadow: var(--shadow-soft);
   }
 }
 
@@ -111,21 +111,21 @@
 .tr-titulo {
   font-size: 14px;
   font-weight: 700;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
 }
 
 .tr-periodo {
   font-size: 11px;
   font-weight: 600;
-  color: var(--primary, #6366f1);
-  background: rgba(99, 102, 241, 0.08);
+  color: var(--primary-mid);
+  background: var(--primary-soft);
   border-radius: 20px;
   padding: 2px 8px;
 }
 
 .tr-desc {
   font-size: 12px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   margin: 0;
   line-height: 1.5;
 }
@@ -144,19 +144,19 @@
   gap: 4px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
 
-  ion-icon { font-size: 12px; color: var(--text-muted, #64748b); }
+  ion-icon { font-size: 12px; color: var(--text-muted); }
 
   &.tr-meta__item--muted {
     font-weight: 400;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
   }
 }
 
 .tr-meta__sep {
   font-size: 11px;
-  color: rgba(209, 213, 219, 0.8);
+  color: var(--border-medium);
 }
 
 // ─── Action buttons ───────────────────────────────────────────────────────────
@@ -194,31 +194,31 @@
 }
 
 .tr-btn--ghost {
-  background: rgba(226, 232, 240, 0.5);
-  color: var(--text-muted, #64748b);
-  border: 1px solid rgba(209, 213, 219, 0.5);
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
 
   &:hover {
-    background: rgba(226, 232, 240, 0.85);
-    color: var(--text-strong, #0f172a);
+    background: var(--border-medium);
+    color: var(--text-strong);
   }
 }
 
 .tr-btn--export {
-  background: rgba(99, 102, 241, 0.07);
-  color: var(--primary, #6366f1);
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  background: var(--primary-soft);
+  color: var(--primary-mid);
+  border: 1px solid var(--primary-ring);
 
   &:hover {
-    background: rgba(99, 102, 241, 0.14);
-    border-color: rgba(99, 102, 241, 0.35);
+    background: var(--primary-ring);
+    border-color: var(--primary-ring);
   }
 }
 
 // ─── Detail preview ───────────────────────────────────────────────────────────
 .tr-detail {
-  border-top: 1px solid rgba(209, 213, 219, 0.35);
-  background: rgba(248, 250, 252, 0.7);
+  border-top: 1px solid var(--border-soft);
+  background: var(--surface-panel);
 }
 
 .tr-detail__inner {
@@ -233,17 +233,17 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   margin: 0;
 
-  ion-icon { font-size: 14px; flex-shrink: 0; color: #6366f1; }
+  ion-icon { font-size: 14px; flex-shrink: 0; color: var(--primary-mid); }
 }
 
 // ─── Preview table ────────────────────────────────────────────────────────────
 .tr-table-scroll {
   overflow-x: auto;
   border-radius: 10px;
-  border: 1px solid rgba(209, 213, 219, 0.4);
+  border: 1px solid var(--border-soft);
 }
 
 .tr-table {
@@ -253,7 +253,7 @@
   font-size: 12px;
 
   thead {
-    background: rgba(241, 245, 249, 0.9);
+    background: var(--surface-muted);
   }
 
   th {
@@ -261,17 +261,17 @@
     text-align: left;
     font-weight: 600;
     font-size: 11px;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.4px;
     white-space: nowrap;
-    border-bottom: 1px solid rgba(209, 213, 219, 0.4);
+    border-bottom: 1px solid var(--border-soft);
   }
 
   td {
     padding: 9px 14px;
-    color: var(--text-strong, #0f172a);
-    border-bottom: 1px solid rgba(209, 213, 219, 0.2);
+    color: var(--text-strong);
+    border-bottom: 1px solid var(--border-soft);
     white-space: nowrap;
 
     &:last-child { border-bottom: none; }
@@ -280,16 +280,16 @@
   tbody tr:last-child td { border-bottom: none; }
 
   tbody tr:hover td {
-    background: rgba(99, 102, 241, 0.03);
+    background: color-mix(in srgb, var(--primary-mid) 3%, transparent);
   }
 }
 
 // Estado badges inline
 .tr-td--estado {
-  &[data-estado="Cobrado"]    { color: #059669; font-weight: 600; }
-  &[data-estado="Pendiente"]  { color: #f59e0b; font-weight: 600; }
-  &[data-estado="Confirmada"] { color: #6366f1; font-weight: 600; }
-  &[data-estado="Completada"] { color: #10b981; font-weight: 600; }
-  &[data-estado="Cancelada"]  { color: #ef4444; font-weight: 600; }
-  &[data-estado="Sin aviso"]  { color: #ef4444; font-weight: 600; }
+  &[data-estado="Cobrado"]    { color: var(--success-strong); font-weight: 600; }
+  &[data-estado="Pendiente"]  { color: var(--warning); font-weight: 600; }
+  &[data-estado="Confirmada"] { color: var(--primary-mid); font-weight: 600; }
+  &[data-estado="Completada"] { color: var(--success); font-weight: 600; }
+  &[data-estado="Cancelada"]  { color: var(--danger-bright); font-weight: 600; }
+  &[data-estado="Sin aviso"]  { color: var(--danger-bright); font-weight: 600; }
 }

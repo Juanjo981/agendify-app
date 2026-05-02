@@ -1,6 +1,6 @@
 // ─── Shell ───────────────────────────────────────────────────────────────────
 .ses-content {
-  --background: linear-gradient(160deg, #f8fafc 0%, #f1f5f9 100%);
+  --background: var(--bg-page);
   --padding-top: 0;
   --padding-bottom: 0;
 }
@@ -24,23 +24,23 @@
 .ses-title {
   font-size: 26px;
   font-weight: 700;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
   margin: 0 0 2px;
   letter-spacing: -0.4px;
 }
 
 .ses-subtitle {
   font-size: 13px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   margin: 0;
 }
 
 // ─── Filter bar (same as .cf-bar) ────────────────────────────────────────────
 .sf-bar {
-  background: var(--glass-bg, rgba(247,249,252,0.82));
+  background: var(--glass-bg);
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
-  border: 1px solid var(--border-subtle, rgba(209,213,219,0.45));
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg, 16px);
   padding: 14px 18px;
   display: flex;
@@ -57,7 +57,7 @@
     position: absolute;
     left: 12px;
     font-size: 16px;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     pointer-events: none;
   }
 
@@ -65,15 +65,15 @@
     width: 100%;
     padding: 9px 36px;
     border-radius: var(--radius-md, 10px);
-    border: 1px solid var(--border-subtle, rgba(209,213,219,0.55));
-    background: rgba(255,255,255,0.6);
+    border: 1px solid var(--border-subtle);
+    background: var(--surface-panel);
     font-size: 14px;
-    color: var(--text-strong, #0f172a);
+    color: var(--text-strong);
     outline: none;
     transition: border-color 0.15s;
 
-    &:focus { border-color: var(--primary, #6366f1); }
-    &::placeholder { color: var(--text-muted, #64748b); }
+    &:focus { border-color: var(--primary-mid); }
+    &::placeholder { color: var(--text-muted); }
   }
 
   &__clear {
@@ -82,13 +82,13 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     display: flex;
     align-items: center;
     padding: 4px;
     border-radius: 6px;
     transition: color 0.15s;
-    &:hover { color: var(--text-strong, #0f172a); }
+    &:hover { color: var(--text-strong); }
     ion-icon { font-size: 16px; }
   }
 }
@@ -104,8 +104,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1.5px solid var(--border-subtle, rgba(209, 213, 219, 0.65));
+  background: var(--surface-panel);
+  border: 1.5px solid var(--border-subtle);
   border-radius: var(--radius-md, 10px);
   padding: 0 10px;
   height: 38px;
@@ -114,15 +114,15 @@
   max-width: 210px;
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
 
-  &:hover:not(:focus-within) { border-color: rgba(209, 213, 219, 0.90); }
+  &:hover:not(:focus-within) { border-color: var(--border-medium); }
 
   &:focus-within {
-    border-color: var(--primary-mid, #6366f1);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
-    background: rgba(255, 255, 255, 0.97);
+    border-color: var(--primary-mid);
+    box-shadow: 0 0 0 3px var(--primary-ring);
+    background: var(--surface-panel-heavy);
   }
 
-  ion-icon { color: var(--text-muted, #64748b); font-size: 15px; flex-shrink: 0; }
+  ion-icon { color: var(--text-muted); font-size: 15px; flex-shrink: 0; }
 }
 
 // agf-date-picker participates in the flex row with the same sizing as the old sf-date-wrap
@@ -138,7 +138,7 @@ agf-date-picker.sf-date-picker {
   border: none;
   outline: none;
   font-size: 13px;
-  color: var(--text-strong, #0f172a);
+  color: var(--text-strong);
   font-family: inherit;
   cursor: pointer;
   flex: 1;
@@ -160,25 +160,25 @@ agf-date-picker.sf-date-picker {
   align-items: center;
   gap: 4px;
   background: none;
-  border: 1px solid var(--border-subtle, rgba(209,213,219,0.55));
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md, 10px);
   padding: 6px 12px;
   font-size: 13px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
 
-  &:hover { color: var(--primary, #6366f1); border-color: var(--primary, #6366f1); }
+  &:hover { color: var(--primary-mid); border-color: var(--primary-mid); }
   ion-icon { font-size: 14px; }
 }
 
 // ─── Counter ─────────────────────────────────────────────────────────────────
 .ses-counter {
   font-size: 13px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   margin: 12px 0;
-  strong { color: var(--text-strong, #0f172a); }
+  strong { color: var(--text-strong); }
 }
 
 // ─── Desktop table ───────────────────────────────────────────────────────────
@@ -191,12 +191,13 @@ agf-date-picker.sf-date-picker {
 $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
 
 .ses-table-wrapper {
-  background: var(--glass-bg, rgba(247,249,252,0.82));
+  background: var(--glass-bg);
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
-  border: 1px solid var(--border-subtle, rgba(209,213,219,0.45));
-  border-radius: var(--radius-lg, 16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl, 22px);
   overflow: hidden;
+  box-shadow: var(--shadow-soft);
 }
 
 .ses-table-head {
@@ -205,12 +206,16 @@ $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
   align-items: center;
   padding: 0 20px;
   height: 40px;
-  border-bottom: 1px solid var(--border-subtle, rgba(209,213,219,0.4));
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--text-muted, #64748b);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-panel);
+
+  .ses-col {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+  }
 }
 
 .ses-row {
@@ -219,14 +224,16 @@ $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
   align-items: center;
   padding: 0 20px;
   min-height: 56px;
-  border-bottom: 1px solid var(--border-subtle, rgba(209,213,219,0.3));
+  border-bottom: 1px solid var(--border-subtle);
   cursor: pointer;
-  transition: background 0.15s;
-  font-size: 14px;
-  color: var(--text-strong, #0f172a);
+  transition: background 0.18s, transform 0.18s;
+  font-size: 13.5px;
+  color: var(--text-strong);
 
   &:last-child { border-bottom: none; }
-  &:hover { background: rgba(5, 150, 105, 0.04); }
+  &--last { border-bottom: none; }
+  &:hover { background: color-mix(in srgb, var(--primary-mid) 4%, transparent); transform: translateY(-1px); }
+  &:active { background: var(--primary-soft); transform: none; }
 }
 
 .ses-data-label { display: none; }
@@ -261,7 +268,7 @@ $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  color: #fff;
+  color: var(--text-on-primary);
   font-size: 12px;
   font-weight: 700;
   display: flex;
@@ -289,7 +296,7 @@ $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
 // ── Celda: texto genérico (fecha, creada) ─────────────────────────────────────
 .ses-cell-text {
   font-size: 13px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -302,7 +309,7 @@ $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
   min-width: 0;
   width: 100%;
   font-size: 13px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   line-height: 1.5;
   word-break: break-word;
   display: -webkit-box;
@@ -324,8 +331,8 @@ $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
   max-width: 100%;   // no desborda la celda
 
   &--con {
-    background: rgba(5, 150, 105, 0.1);
-    color: #059669;
+    background: var(--success-soft);
+    color: var(--success-strong);
     ion-icon { font-size: 13px; flex-shrink: 0; }
   }
 }
@@ -341,7 +348,7 @@ $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
 
 .ses-adj-no {
   font-size: 13px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
 }
 
 // ── Acciones ─────────────────────────────────────────────────────────────────
@@ -357,14 +364,14 @@ $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
   cursor: pointer;
   padding: 6px;
   border-radius: 8px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   flex-shrink: 0;
   transition: background 0.15s, color 0.15s;
   ion-icon { font-size: 16px; }
 
-  &--view:hover { background: rgba(5, 150, 105, 0.08); color: #059669; }
+  &--view:hover { background: var(--success-soft); color: var(--success-strong); }
 }
 
 // Empty
@@ -373,7 +380,7 @@ $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
   flex-direction: column;
   align-items: center;
   padding: 56px 24px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   ion-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
   p { font-size: 16px; font-weight: 600; margin: 0 0 6px; }
   span { font-size: 13px; }
@@ -387,7 +394,15 @@ $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
 }
 
 .ses-pagination {
-  margin-top: 8px;
+  padding: 8px 20px 10px;
+  margin-top: 0;
+  background: var(--surface-panel);
+}
+
+.ses-pagination ::ng-deep .ag-pagination {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
 
 .ses-empty-mobile {
@@ -395,22 +410,22 @@ $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
   flex-direction: column;
   align-items: center;
   padding: 48px 24px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   ion-icon { font-size: 40px; margin-bottom: 10px; opacity: 0.4; }
   p { font-size: 15px; font-weight: 600; margin: 0; }
 }
 
 .ses-card {
-  background: var(--glass-bg, rgba(247,249,252,0.82));
+  background: var(--glass-bg);
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
-  border: 1px solid var(--border-subtle, rgba(209,213,219,0.45));
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg, 16px);
   padding: 16px;
   cursor: pointer;
   transition: background 0.15s;
 
-  &:hover { background: rgba(5, 150, 105, 0.04); }
+  &:hover { background: color-mix(in srgb, var(--success-strong) 4%, transparent); }
 
   &__head {
     display: flex;
@@ -430,7 +445,7 @@ $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
   &__nombre {
     font-size: 14px;
     font-weight: 600;
-    color: var(--text-strong, #0f172a);
+    color: var(--text-strong);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -438,7 +453,7 @@ $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
 
   &__fecha {
     font-size: 12px;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     display: flex;
     align-items: center;
     gap: 4px;
@@ -448,8 +463,8 @@ $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
   &__adj-dot {
     width: 26px; height: 26px;
     border-radius: 50%;
-    background: rgba(5, 150, 105, 0.1);
-    color: #059669;
+    background: var(--success-soft);
+    color: var(--success-strong);
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
     ion-icon { font-size: 14px; }
@@ -457,7 +472,7 @@ $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
 
   &__notas {
     font-size: 13px;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
     margin: 0 0 12px;
     line-height: 1.5;
     display: -webkit-box;
@@ -473,18 +488,28 @@ $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
     justify-content: space-between;
     gap: 8px;
     padding-top: 10px;
-    border-top: 1px solid var(--border-subtle, rgba(209,213,219,0.3));
+    border-top: 1px solid var(--border-soft);
   }
 
   &__meta {
     font-size: 12px;
-    color: var(--text-muted, #64748b);
+    color: var(--text-muted);
   }
 }
 
 // ─── Responsive ──────────────────────────────────────────────────────────────
 @media (max-width: 900px) {
-  .ses-table-wrapper { display: none; }
+  .ses-table-wrapper {
+    display: block;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+  .ses-table-head,
+  .ses-row,
+  .ses-table-wrapper .ses-empty { display: none; }
   .ses-cards-grid { display: flex; }
 }
 
@@ -492,4 +517,8 @@ $ses-col-tpl: minmax(160px, 1.8fr) 108px minmax(0, 2fr) 148px 108px 52px;
   .ses-wrapper { padding: 20px 12px 80px; }
   .ses-page-header { flex-direction: column; align-items: flex-start; }
   .sf-select-wrap, agf-date-picker.sf-date-picker { max-width: none; }
+  .ses-pagination {
+    padding: 6px 0 0;
+    background: transparent;
+  }
 }

@@ -50,8 +50,9 @@
       </div>
 
       <div
-        *ngFor="let c of citasFiltradas"
+        *ngFor="let c of citasFiltradas; let last = last"
         class="cit-row"
+        [class.cit-row--last]="last"
         (click)="verDetalle(c)"
         role="row"
       >
@@ -113,6 +114,17 @@
           </div>
         </div>
       </div>
+
+      <div *ngIf="shouldShowPagination" class="cit-pagination" aria-label="Paginación de citas">
+        <app-pagination
+          [page]="currentPage"
+          [pageSize]="pageSize"
+          [total]="summaryTotalCitas"
+          [pageSizeOptions]="pageSizeOptions"
+          (pageChange)="onPaginationPageChange($event)"
+          (pageSizeChange)="onPaginationPageSizeChange($event)"
+        ></app-pagination>
+      </div>
     </div>
 
     <div class="cit-cards-grid" *ngIf="!loading">
@@ -127,17 +139,6 @@
         <ion-icon name="calendar-outline"></ion-icon>
         <p>No se encontraron citas</p>
       </div>
-    </div>
-
-    <div *ngIf="shouldShowPagination" class="cit-pagination" aria-label="Paginación de citas">
-      <app-pagination
-        [page]="currentPage"
-        [pageSize]="pageSize"
-        [total]="summaryTotalCitas"
-        [pageSizeOptions]="pageSizeOptions"
-        (pageChange)="onPaginationPageChange($event)"
-        (pageSizeChange)="onPaginationPageSizeChange($event)"
-      ></app-pagination>
     </div>
 
   </div>

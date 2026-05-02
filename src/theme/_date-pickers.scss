@@ -18,13 +18,15 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Design tokens (resolved from :root, with Agendify fallbacks) ─────────────
-$_border:       var(--border-subtle, rgba(209, 213, 219, 0.65));
-$_bg:           rgba(255, 255, 255, 0.82);
-$_bg-focus:     rgba(255, 255, 255, 0.97);
-$_primary:      var(--primary-mid, #6366f1);
-$_primary-ring: rgba(99, 102, 241, 0.12);
-$_text:         var(--text-strong, #0f172a);
-$_radius:       var(--radius-md, 10px);
+$_border:       var(--border-subtle);
+$_border-hover: var(--border-medium);
+$_bg:           var(--surface-panel);
+$_bg-focus:     var(--surface-panel-heavy);
+$_primary:      var(--primary-mid);
+$_primary-ring: var(--primary-ring);
+$_text:         var(--text-strong);
+$_muted:        var(--text-muted);
+$_radius:       var(--radius-md);
 
 // ── Mixin: canonical native date / time input ─────────────────────────────────
 @mixin agf-date-time-input {
@@ -43,7 +45,7 @@ $_radius:       var(--radius-md, 10px);
   transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 
   &:hover:not(:focus) {
-    border-color: rgba(209, 213, 219, 0.9);
+    border-color: $_border-hover;
   }
 
   &:focus {
@@ -68,7 +70,7 @@ $_radius:       var(--radius-md, 10px);
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--surface-panel);
   border: 1.5px solid $_border;
   border-radius: $_radius;
   padding: 0 10px;
@@ -82,7 +84,7 @@ $_radius:       var(--radius-md, 10px);
   }
 
   ion-icon {
-    color: var(--text-muted, #64748b);
+    color: $_muted;
     font-size: 15px;
     flex-shrink: 0;
   }

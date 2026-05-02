@@ -9,9 +9,9 @@
   white-space: nowrap;
   line-height: 1.6;
 
-  &--pending { background: rgba(245,158,11,0.1);  color: #b45309; border: 1px solid rgba(245,158,11,0.22); }
-  &--partial  { background: rgba(14,165,233,0.1);  color: #0369a1; border: 1px solid rgba(14,165,233,0.22); }
-  &--paid    { background: rgba(16,185,129,0.1);  color: #047857; border: 1px solid rgba(16,185,129,0.22); }
-  &--na      { background: rgba(148,163,184,0.14); color: #475569; border: 1px solid rgba(148,163,184,0.3); }
-  &--refund  { background: rgba(239,68,68,0.1); color: #b91c1c; border: 1px solid rgba(239,68,68,0.22); }
+  &--pending { background: var(--warning-soft);  color: var(--warning-dark); border: 1px solid color-mix(in srgb, var(--warning) 22%, transparent); }
+  &--partial  { background: color-mix(in srgb, var(--chart-info) 10%, transparent);  color: var(--accent-blue-dark); border: 1px solid color-mix(in srgb, var(--chart-info) 22%, transparent); }
+  &--paid    { background: var(--success-soft);  color: var(--success-dark); border: 1px solid color-mix(in srgb, var(--success) 22%, transparent); }
+  &--na      { background: color-mix(in srgb, var(--text-faint) 14%, transparent); color: var(--text-secondary); border: 1px solid color-mix(in srgb, var(--text-faint) 30%, transparent); }
+  &--refund  { background: var(--danger-soft); color: var(--danger-dark); border: 1px solid color-mix(in srgb, var(--danger-bright) 22%, transparent); }
 }

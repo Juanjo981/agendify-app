@@ -8,29 +8,69 @@
 // in angular.json as a global stylesheet before any component CSS runs).
 // ─────────────────────────────────────────────────────────────────────────────
 :root {
+  color-scheme: light;
 
   // ── Brand / Primary ────────────────────────────────────────────────────────
   --primary:          #3b3f92;
   --primary-mid:      #6366f1;
+  --primary-hover:    #4f46e5;
+  --primary-strong:   #3730a3;
   --primary-soft:     rgba(99, 102, 241, 0.10);
   --primary-ring:     rgba(99, 102, 241, 0.12);
 
+  // ── Accents ────────────────────────────────────────────────────────────────
+  --accent-blue:        #2563eb;
+  --accent-blue-dark:   #1d4ed8;
+  --accent-sky:         #0ea5e9;
+  --accent-teal:        #14b8a6;
+  --accent-teal-dark:   #0d9488;
+  --accent-purple:      #8b5cf6;
+  --accent-purple-dark: #7c3aed;
+  --accent-orange:      #f97316;
+
   // ── Semantic ───────────────────────────────────────────────────────────────
   --danger:           #dc2626;
+  --danger-bright:    #ef4444;
+  --danger-dark:      #b91c1c;
   --danger-soft:      rgba(220, 38, 38, 0.10);
   --success:          #10b981;
+  --success-strong:   #059669;
+  --success-dark:     #047857;
+  --success-soft:     rgba(16, 185, 129, 0.10);
   --warning:          #f59e0b;
+  --warning-strong:   #d97706;
+  --warning-dark:     #b45309;
+  --warning-soft:     rgba(245, 158, 11, 0.10);
+  --info:             #0ea5e9;
+  --info-dark:        #0369a1;
+  --info-soft:        rgba(14, 165, 233, 0.10);
 
   // ── Text ───────────────────────────────────────────────────────────────────
   --text-strong:      #0f172a;
+  --text-heading:     #1e293b;
   --text-body:        #334155;
+  --text-secondary:   #475569;
   --text-muted:       #64748b;
   --text-faint:       #94a3b8;
+  --text-placeholder: #9ca3af;
+  --text-on-primary:  #fff;
+
+  // ── Backgrounds / Surfaces ─────────────────────────────────────────────────
+  --bg-app:           #dde8f5;
+  --bg-page:          linear-gradient(160deg, #f8fafc 0%, #f1f5f9 100%);
+  --bg-auth:          linear-gradient(160deg, #e8eeff 0%, #f0f4f8 50%, #dde8f5 100%);
+  --surface-white:    #ffffff;
+  --surface-subtle:   #f8fafc;
+  --surface-muted:    #f1f5f9;
+  --surface-panel:    rgba(255, 255, 255, 0.82);
+  --surface-panel-heavy: rgba(255, 255, 255, 0.97);
 
   // ── Borders ────────────────────────────────────────────────────────────────
   --border-subtle:    rgba(209, 213, 219, 0.55);
   --border-soft:      rgba(209, 213, 219, 0.40);
   --border-medium:    rgba(209, 213, 219, 0.70);
+  --border-strong:    rgba(203, 213, 225, 0.88);
+  --divider:          rgba(226, 232, 240, 0.85);
 
   // ── Radii ──────────────────────────────────────────────────────────────────
   --radius-xs:        6px;
@@ -49,6 +89,138 @@
   // ── Glass / Backdrop ───────────────────────────────────────────────────────
   --glass-bg:         rgba(247, 249, 252, 0.82);
   --glass-bg-heavy:   rgba(247, 249, 252, 0.97);
+  --glass-white:      rgba(255, 255, 255, 0.82);
+  --glass-white-heavy: rgba(255, 255, 255, 0.97);
   --glass-border:     rgba(209, 213, 219, 0.45);
   --glass-blur:       blur(18px) saturate(150%);
+
+  // ── Overlays ───────────────────────────────────────────────────────────────
+  --overlay-soft:         rgba(15, 23, 42, 0.35);
+  --overlay-modal:        rgba(15, 23, 42, 0.45);
+  --overlay-modal-strong: rgba(15, 23, 42, 0.62);
+
+  // ── Data visualisation ─────────────────────────────────────────────────────
+  --chart-primary: #6366f1;
+  --chart-success: #10b981;
+  --chart-info:    #0ea5e9;
+  --chart-warning: #f59e0b;
+  --chart-danger:  #ef4444;
+  --chart-purple:  #8b5cf6;
+  --chart-neutral: #64748b;
+
+  // ── Ionic baseline ─────────────────────────────────────────────────────────
+  --ion-background-color: var(--bg-app);
+  --ion-text-color:       var(--text-strong);
+  --ion-color-primary:    var(--primary-mid);
+  --ion-color-success:    var(--success);
+  --ion-color-warning:    var(--warning);
+  --ion-color-danger:     var(--danger);
+  --ion-toolbar-background: var(--surface-panel-heavy);
+  --ion-item-background:    var(--surface-panel);
+  --ion-card-background:    var(--surface-panel);
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+
+  // ── Brand / Primary ────────────────────────────────────────────────────────
+  --primary:          #818cf8;
+  --primary-mid:      #a5b4fc;
+  --primary-hover:    #c4b5fd;
+  --primary-strong:   #6366f1;
+  --primary-soft:     rgba(129, 140, 248, 0.16);
+  --primary-ring:     rgba(129, 140, 248, 0.24);
+
+  // ── Accents ────────────────────────────────────────────────────────────────
+  --accent-blue:        #60a5fa;
+  --accent-blue-dark:   #3b82f6;
+  --accent-sky:         #38bdf8;
+  --accent-teal:        #2dd4bf;
+  --accent-teal-dark:   #14b8a6;
+  --accent-purple:      #a78bfa;
+  --accent-purple-dark: #8b5cf6;
+  --accent-orange:      #fb923c;
+
+  // ── Semantic ───────────────────────────────────────────────────────────────
+  --danger:           #f87171;
+  --danger-bright:    #fb7185;
+  --danger-dark:      #ef4444;
+  --danger-soft:      rgba(248, 113, 113, 0.16);
+  --success:          #34d399;
+  --success-strong:   #10b981;
+  --success-dark:     #059669;
+  --success-soft:     rgba(52, 211, 153, 0.16);
+  --warning:          #fbbf24;
+  --warning-strong:   #f59e0b;
+  --warning-dark:     #d97706;
+  --warning-soft:     rgba(251, 191, 36, 0.16);
+  --info:             #38bdf8;
+  --info-dark:        #0ea5e9;
+  --info-soft:        rgba(56, 189, 248, 0.16);
+
+  // ── Text ───────────────────────────────────────────────────────────────────
+  --text-strong:      #f8fafc;
+  --text-heading:     #f1f5f9;
+  --text-body:        #cbd5e1;
+  --text-secondary:   #94a3b8;
+  --text-muted:       #94a3b8;
+  --text-faint:       #64748b;
+  --text-placeholder: #64748b;
+  --text-on-primary:  #f8fafc;
+
+  // ── Backgrounds / Surfaces ─────────────────────────────────────────────────
+  --bg-app:           #0f172a;
+  --bg-page:          linear-gradient(160deg, #0f172a 0%, #111827 52%, #1e1b4b 100%);
+  --bg-auth:          linear-gradient(160deg, #111827 0%, #1e1b4b 55%, #0f172a 100%);
+  --surface-white:    #111827;
+  --surface-subtle:   #1e293b;
+  --surface-muted:    #334155;
+  --surface-panel:    rgba(15, 23, 42, 0.86);
+  --surface-panel-heavy: rgba(15, 23, 42, 0.96);
+
+  // ── Borders ────────────────────────────────────────────────────────────────
+  --border-subtle:    rgba(148, 163, 184, 0.24);
+  --border-soft:      rgba(148, 163, 184, 0.16);
+  --border-medium:    rgba(148, 163, 184, 0.34);
+  --border-strong:    rgba(203, 213, 225, 0.38);
+  --divider:          rgba(148, 163, 184, 0.20);
+
+  // ── Shadows ────────────────────────────────────────────────────────────────
+  --shadow-soft:      0 2px 12px rgba(2, 6, 23, 0.22);
+  --shadow-card:      0 4px 20px rgba(2, 6, 23, 0.28);
+  --shadow-elevated:  0 10px 34px rgba(2, 6, 23, 0.34);
+  --shadow-modal:     0 18px 54px rgba(2, 6, 23, 0.48);
+
+  // ── Glass / Backdrop ───────────────────────────────────────────────────────
+  --glass-bg:         rgba(15, 23, 42, 0.78);
+  --glass-bg-heavy:   rgba(15, 23, 42, 0.94);
+  --glass-white:      rgba(30, 41, 59, 0.78);
+  --glass-white-heavy: rgba(30, 41, 59, 0.94);
+  --glass-border:     rgba(148, 163, 184, 0.22);
+  --glass-blur:       blur(18px) saturate(140%);
+
+  // ── Overlays ───────────────────────────────────────────────────────────────
+  --overlay-soft:         rgba(2, 6, 23, 0.48);
+  --overlay-modal:        rgba(2, 6, 23, 0.64);
+  --overlay-modal-strong: rgba(2, 6, 23, 0.76);
+
+  // ── Data visualisation ─────────────────────────────────────────────────────
+  --chart-primary: #a5b4fc;
+  --chart-success: #34d399;
+  --chart-info:    #38bdf8;
+  --chart-warning: #fbbf24;
+  --chart-danger:  #f87171;
+  --chart-purple:  #c4b5fd;
+  --chart-neutral: #94a3b8;
+
+  // ── Ionic baseline ─────────────────────────────────────────────────────────
+  --ion-background-color: var(--bg-app);
+  --ion-text-color:       var(--text-strong);
+  --ion-color-primary:    var(--primary-mid);
+  --ion-color-success:    var(--success);
+  --ion-color-warning:    var(--warning);
+  --ion-color-danger:     var(--danger);
+  --ion-toolbar-background: var(--surface-white);
+  --ion-item-background:    var(--surface-panel);
+  --ion-card-background:    var(--surface-panel);
 }

@@ -1,12 +1,12 @@
 ﻿// ─── Host shell: gradient fills the ion-page frame (overscroll / safe-area) ─
 :host {
-  background: linear-gradient(160deg, #e8eeff 0%, #f0f4f8 50%, #dde8f5 100%);
+  background: var(--bg-auth);
 }
 
 // ─── ion-content: solid base color covers scroll container + overrides the
 //     global --padding-bottom (added for tab bar, not needed on auth pages)
 ion-content.login-bg {
-  --background: #dde8f5;
+  --background: var(--surface-muted);
   --padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
@@ -14,7 +14,7 @@ ion-content.login-bg {
 .auth-page {
   min-height: 100dvh;
   position: relative;
-  background: linear-gradient(160deg, #e8eeff 0%, #f0f4f8 50%, #dde8f5 100%);
+  background: var(--bg-auth);
 }
 
 // ─── Decorative background layer ────────────────────────────────────────────
@@ -36,7 +36,7 @@ ion-content.login-bg {
   height: 600px;
   top: -160px;
   right: -80px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.13) 0%, transparent 68%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--primary-mid) 13%, transparent) 0%, transparent 68%);
   filter: blur(48px);
 }
 
@@ -45,7 +45,7 @@ ion-content.login-bg {
   height: 460px;
   bottom: -120px;
   right: 12%;
-  background: radial-gradient(circle, rgba(79, 70, 229, 0.09) 0%, transparent 68%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--primary-hover) 9%, transparent) 0%, transparent 68%);
   filter: blur(56px);
 }
 
@@ -54,7 +54,7 @@ ion-content.login-bg {
   height: 320px;
   top: 38%;
   right: 4%;
-  background: radial-gradient(circle, rgba(165, 180, 252, 0.18) 0%, transparent 65%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--chart-primary) 18%, transparent) 0%, transparent 65%);
   filter: blur(36px);
 }
 
@@ -63,7 +63,7 @@ ion-content.login-bg {
   height: 240px;
   top: 55%;
   right: 28%;
-  background: radial-gradient(circle, rgba(224, 231, 255, 0.4) 0%, transparent 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--primary-soft) 40%, transparent) 0%, transparent 70%);
   filter: blur(28px);
 }
 
@@ -81,7 +81,7 @@ ion-content.login-bg {
   align-items: center;
   justify-content: center;
   flex: 0 0 42%;
-  background: linear-gradient(160deg, #3b3f92 0%, #4f46e5 55%, #6366f1 100%);
+  background: linear-gradient(160deg, var(--primary) 0%, var(--primary-hover) 55%, var(--primary-mid) 100%);
   padding: 48px 40px;
   position: relative;
   overflow: hidden;
@@ -92,7 +92,7 @@ ion-content.login-bg {
     position: absolute;
     border-radius: 50%;
     opacity: 0.08;
-    background: #fff;
+    background: var(--text-on-primary);
   }
 
   &::before {
@@ -131,13 +131,13 @@ ion-content.login-bg {
 .login-brand__name {
   font-size: 28px;
   font-weight: 800;
-  color: #fff;
+  color: var(--text-on-primary);
   letter-spacing: -0.5px;
 }
 
 .login-brand__tagline {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.75);
+  color: color-mix(in srgb, var(--text-on-primary) 75%, transparent);
   line-height: 1.55;
   margin: 4px 0 20px;
 }
@@ -156,11 +156,11 @@ ion-content.login-bg {
     gap: 10px;
     font-size: 14px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.88);
+    color: color-mix(in srgb, var(--text-on-primary) 88%, transparent);
 
     ion-icon {
       font-size: 18px;
-      color: #a5b4fc;
+      color: var(--chart-primary);
       flex-shrink: 0;
     }
   }
@@ -169,7 +169,7 @@ ion-content.login-bg {
 .login-brand__version {
   margin-top: 32px;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.38);
+  color: color-mix(in srgb, var(--text-on-primary) 38%, transparent);
 }
 
 // ─── Form panel (right) ─────────────────────────────────────────────────────
@@ -185,13 +185,13 @@ ion-content.login-bg {
 .login-card {
   width: 100%;
   max-width: 420px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--surface-panel-heavy);
   backdrop-filter: blur(14px) saturate(160%);
   -webkit-backdrop-filter: blur(14px) saturate(160%);
-  border: 1px solid rgba(200, 208, 255, 0.35);
+  border: 1px solid var(--glass-border);
   border-radius: 24px;
   padding: 40px 32px 36px;
-  box-shadow: 0 8px 40px rgba(79, 70, 229, 0.09), 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 8px 40px color-mix(in srgb, var(--primary-hover) 9%, transparent), 0 2px 8px color-mix(in srgb, var(--text-strong) 5%, transparent);
   animation: lf-fadeIn 0.4s ease-out;
 }
 
@@ -208,14 +208,14 @@ ion-content.login-bg {
 .login-card__title {
   font-size: 24px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-strong);
   margin: 0 0 4px;
   letter-spacing: -0.4px;
 }
 
 .login-card__subtitle {
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -225,18 +225,18 @@ ion-content.login-bg {
 }
 
 .lf-item {
-  --background: rgba(240, 244, 255, 0.7);
+  --background: var(--primary-soft);
   --border-radius: 12px;
   --padding-start: 0;
   --inner-padding-end: 0;
   border-radius: 12px;
-  border: 1px solid rgba(209, 213, 219, 0.6);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--text-strong) 4%, transparent);
   transition: border-color 0.18s;
 
   &:focus-within {
-    border-color: rgba(79, 70, 229, 0.45);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+    border-color: color-mix(in srgb, var(--primary-hover) 45%, transparent);
+    box-shadow: 0 0 0 3px var(--primary-soft);
   }
 
   ion-input {
@@ -245,13 +245,13 @@ ion-content.login-bg {
     --padding-top: 12px;
     --padding-bottom: 12px;
     font-size: 14px;
-    color: #0f172a;
+    color: var(--text-strong);
   }
 }
 
 .lf-icon {
   font-size: 16px;
-  color: #94a3b8;
+  color: var(--text-faint);
   margin-left: 14px;
   margin-right: 2px;
   flex-shrink: 0;
@@ -261,10 +261,10 @@ ion-content.login-bg {
   font-size: 18px;
   margin-right: 12px;
   cursor: pointer;
-  color: #94a3b8;
+  color: var(--text-faint);
   transition: color 0.15s;
 
-  &:hover { color: #4f46e5; }
+  &:hover { color: var(--primary-hover); }
 }
 
 // ─── Recordarme checkbox ────────────────────────────────────────────────────
@@ -282,8 +282,8 @@ ion-content.login-bg {
     height: 0;
 
     &:checked + .lf-remember__box {
-      background: #4f46e5;
-      border-color: #4f46e5;
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
 
       &::after { opacity: 1; }
     }
@@ -293,8 +293,8 @@ ion-content.login-bg {
     width: 17px;
     height: 17px;
     border-radius: 5px;
-    border: 1.5px solid #cbd5e1;
-    background: #fff;
+    border: 1.5px solid var(--border-medium);
+    background: var(--surface-white);
     flex-shrink: 0;
     position: relative;
     transition: background 0.15s, border-color 0.15s;
@@ -306,7 +306,7 @@ ion-content.login-bg {
       top: 1px;
       width: 5px;
       height: 9px;
-      border: 2px solid #fff;
+      border: 2px solid var(--text-on-primary);
       border-top: none;
       border-left: none;
       transform: rotate(45deg);
@@ -317,7 +317,7 @@ ion-content.login-bg {
 
   &__lbl {
     font-size: 13px;
-    color: #64748b;
+    color: var(--text-muted);
     user-select: none;
   }
 }
@@ -332,21 +332,21 @@ ion-content.login-bg {
   padding: 13px 20px;
   border: none;
   border-radius: 13px;
-  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-  color: #fff;
+  background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary-mid) 100%);
+  color: var(--text-on-primary);
   font-size: 15px;
   font-weight: 700;
   font-family: inherit;
   letter-spacing: 0.2px;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.28);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--primary-hover) 28%, transparent);
   transition: opacity 0.18s, box-shadow 0.18s, transform 0.12s;
 
   ion-icon { font-size: 18px; }
 
   &:hover:not(:disabled) {
     opacity: 0.93;
-    box-shadow: 0 6px 22px rgba(79, 70, 229, 0.35);
+    box-shadow: 0 6px 22px color-mix(in srgb, var(--primary-hover) 35%, transparent);
     transform: translateY(-1px);
   }
 
@@ -376,9 +376,9 @@ ion-content.login-bg {
   margin-top: 12px;
   padding: 10px 14px;
   border-radius: 10px;
-  background: rgba(239, 68, 68, 0.07);
-  border: 1px solid rgba(239, 68, 68, 0.18);
-  color: #dc2626;
+  background: var(--danger-soft);
+  border: 1px solid color-mix(in srgb, var(--danger-bright) 18%, transparent);
+  color: var(--danger);
   font-size: 13px;
   font-weight: 500;
 
@@ -395,21 +395,21 @@ ion-content.login-bg {
 }
 
 .login-link-forgot {
-  color: #6b7280;
+  color: var(--text-muted);
   text-decoration: underline;
   cursor: pointer;
   margin: 0;
   transition: color 0.15s;
 
-  &:hover { color: #4f46e5; }
+  &:hover { color: var(--primary-hover); }
 }
 
 .login-link-register {
-  color: #6b7280;
+  color: var(--text-muted);
   margin: 0;
 
   a {
-    color: #4f46e5;
+    color: var(--primary-hover);
     font-weight: 600;
     text-decoration: none;
     cursor: pointer;
@@ -424,15 +424,15 @@ ion-content.login-bg {
 
   // ── Clean light background for mobile ──────────────────────────────────────
   :host {
-    background: linear-gradient(175deg, #edf0ff 0%, #f5f7ff 60%, #eff2ff 100%);
+    background: var(--bg-auth);
   }
 
   ion-content.login-bg {
-    --background: #f5f7ff;
+    --background: var(--surface-panel-heavy);
   }
 
   .auth-page {
-    background: linear-gradient(175deg, #edf0ff 0%, #f5f7ff 60%, #eff2ff 100%);
+    background: var(--bg-auth);
   }
 
   // ── Hide heavy blobs — single soft centered glow ──────────────────────────
@@ -450,7 +450,7 @@ ion-content.login-bg {
     bottom: auto;
     right: auto;
     transform: translate(-50%, -50%);
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.07) 0%, transparent 65%);
+    background: radial-gradient(circle, var(--primary-soft) 0%, transparent 65%);
     filter: blur(64px);
   }
 
@@ -482,7 +482,7 @@ ion-content.login-bg {
     text-align: left;
     gap: 10px;
     max-width: 100%;
-    background: linear-gradient(135deg, #3b3f92 0%, #4f46e5 55%, #6366f1 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 55%, var(--primary-mid) 100%);
     border-radius: 18px;
     padding: 16px 20px;
     position: relative;
@@ -493,7 +493,7 @@ ion-content.login-bg {
       content: '';
       position: absolute;
       border-radius: 50%;
-      background: #fff;
+      background: var(--text-on-primary);
       opacity: 0.06;
       pointer-events: none;
     }
@@ -524,7 +524,7 @@ ion-content.login-bg {
   .login-brand__name {
     font-size: 18px;
     font-weight: 800;
-    color: #fff;
+    color: var(--text-on-primary);
     letter-spacing: -0.3px;
     margin-bottom: 0;
   }
@@ -534,7 +534,7 @@ ion-content.login-bg {
     display: block;
     flex: 0 0 100%;
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.68);
+    color: color-mix(in srgb, var(--text-on-primary) 68%, transparent);
     line-height: 1.4;
     margin: 0;
   }
@@ -558,8 +558,8 @@ ion-content.login-bg {
     padding: 28px 20px 24px;
     border-radius: 20px;
     box-shadow:
-      0 4px 24px rgba(79, 70, 229, 0.11),
-      0 1px 4px rgba(0, 0, 0, 0.05);
+      0 4px 24px color-mix(in srgb, var(--primary-hover) 11%, transparent),
+      0 1px 4px color-mix(in srgb, var(--text-strong) 4%, transparent);
   }
 }
 

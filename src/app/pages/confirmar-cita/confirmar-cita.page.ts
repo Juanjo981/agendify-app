@@ -67,7 +67,7 @@ export class ConfirmarCitaPage implements OnInit {
   cita: ConfirmarCitaData = {
     nombrePaciente: '',
     inicialesPaciente: '',
-    avatarColor: '#6366f1',
+    avatarColor: 'var(--primary-mid)',
     profesional: '',
     especialidad: '',
     fechaLarga: '',
@@ -387,7 +387,7 @@ export class ConfirmarCitaPage implements OnInit {
     return {
       nombrePaciente,
       inicialesPaciente: this.getInitials(nombrePaciente),
-      avatarColor: '#6366f1',
+      avatarColor: 'var(--primary-mid)',
       profesional: response.profesional_nombre ?? 'Profesional',
       especialidad: response.profesional_especialidad ?? '',
       fechaLarga: this.formatLongDate(start),

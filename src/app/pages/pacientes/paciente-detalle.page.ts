@@ -26,6 +26,30 @@ import { mapApiError } from '../../shared/utils/api-error.mapper';
 import html2pdf from 'html2pdf.js';
 import { PacienteDetailRefreshService } from '../../shared/refresh/dashboard-module-refresh.services';
 
+// PDF export is rendered outside the app stylesheet, so it cannot rely on CSS variables.
+const PDF_COLORS = {
+  brand: '#3b3f92',
+  textStrong: '#1e293b',
+  textBody: '#334155',
+  textMuted: '#64748b',
+  textFaint: '#94a3b8',
+  border: '#e2e8f0',
+  surfaceMuted: '#f1f5f9',
+  purpleSoft: '#ede9fe',
+  purpleStrong: '#5b21b6',
+  warningSoft: '#fef3c7',
+  warningBorder: '#fde68a',
+  warningText: '#92400e',
+  events: {
+    green: '#059669',
+    red: '#dc2626',
+    yellow: '#d97706',
+    purple: '#7c3aed',
+    blue: '#0369a1',
+    slate: '#475569',
+  },
+} as const;
+
 @Component({
   selector: 'app-paciente-detalle',
   templateUrl: './paciente-detalle.page.html',
@@ -213,7 +237,7 @@ export class PacienteDetallePage implements OnInit {
   }
 
   getAvatarColor(): string {
-    if (!this.paciente) return '#6366f1';
+    if (!this.paciente) return 'var(--primary-mid)';
     return avatarColorUtil(this.paciente.nombre);
   }
 
@@ -861,12 +885,12 @@ export class PacienteDetallePage implements OnInit {
     const eventosHTML = eventos.map(ev => {
       const label = this.getEventoLabel(ev.tipo);
       const colorMap: Record<string, string> = {
-        ev__green:  '#059669', ev__red:    '#dc2626',
-        ev__yellow: '#d97706', ev__purple: '#7c3aed',
-        ev__blue:   '#0369a1', ev__slate:  '#475569',
+        ev__green:  PDF_COLORS.events.green, ev__red:    PDF_COLORS.events.red,
+        ev__yellow: PDF_COLORS.events.yellow, ev__purple: PDF_COLORS.events.purple,
+        ev__blue:   PDF_COLORS.events.blue, ev__slate:  PDF_COLORS.events.slate,
       };
       const cssClass = this.getEventoColorClass(ev.tipo).replace('ev--', 'ev__');
-      const color = colorMap[cssClass] ?? '#475569';
+      const color = colorMap[cssClass] ?? PDF_COLORS.events.slate;
       return `
         <div class="pdf-event">
           <div class="pdf-event-dot" style="background:${color}"></div>
@@ -882,7 +906,7 @@ export class PacienteDetallePage implements OnInit {
     }).join('');
 
     const html = `
-      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; color: #1e293b; padding: 32px 40px; max-width: 700px; margin: 0 auto;">
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; color: ${PDF_COLORS.textStrong}; padding: 32px 40px; max-width: 700px; margin: 0 auto;">
         <div class="pdf-header">
           <div class="pdf-logo">Agendify</div>
           <div class="pdf-header-meta">
@@ -914,30 +938,30 @@ export class PacienteDetallePage implements OnInit {
         <style>
           * { box-sizing: border-box; }
           .pdf-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px; }
-          .pdf-logo { font-size: 22px; font-weight: 800; color: #3b3f92; letter-spacing: -0.5px; }
-          .pdf-header-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 11px; color: #64748b; }
-          .pdf-divider { border: none; border-top: 1px solid #e2e8f0; margin: 18px 0; }
+          .pdf-logo { font-size: 22px; font-weight: 800; color: ${PDF_COLORS.brand}; letter-spacing: -0.5px; }
+          .pdf-header-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 11px; color: ${PDF_COLORS.textMuted}; }
+          .pdf-divider { border: none; border-top: 1px solid ${PDF_COLORS.border}; margin: 18px 0; }
           .pdf-section { margin-bottom: 22px; }
-          .pdf-section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: #3b3f92; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-          .pdf-count { font-size: 11px; font-weight: 500; background: #ede9fe; color: #5b21b6; padding: 2px 8px; border-radius: 999px; text-transform: none; letter-spacing: 0; }
+          .pdf-section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: ${PDF_COLORS.brand}; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+          .pdf-count { font-size: 11px; font-weight: 500; background: ${PDF_COLORS.purpleSoft}; color: ${PDF_COLORS.purpleStrong}; padding: 2px 8px; border-radius: 999px; text-transform: none; letter-spacing: 0; }
           .pdf-patient-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; }
           .pdf-data-item { display: flex; flex-direction: column; gap: 2px; }
           .pdf-data-item--full { grid-column: 1 / -1; }
-          .pdf-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: #94a3b8; }
-          .pdf-value { font-size: 13px; color: #0f172a; }
+          .pdf-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: ${PDF_COLORS.textFaint}; }
+          .pdf-value { font-size: 13px; color: ${PDF_COLORS.textStrong}; }
           .pdf-alerts { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
-          .pdf-alerts li { font-size: 12.5px; color: #92400e; background: #fef3c7; border: 1px solid #fde68a; padding: 6px 10px; border-radius: 6px; }
+          .pdf-alerts li { font-size: 12.5px; color: ${PDF_COLORS.warningText}; background: ${PDF_COLORS.warningSoft}; border: 1px solid ${PDF_COLORS.warningBorder}; padding: 6px 10px; border-radius: 6px; }
           .pdf-events { display: flex; flex-direction: column; gap: 12px; }
           .pdf-event { display: flex; gap: 12px; align-items: flex-start; }
           .pdf-event-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
-          .pdf-event-body { flex: 1; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
+          .pdf-event-body { flex: 1; border-bottom: 1px solid ${PDF_COLORS.surfaceMuted}; padding-bottom: 10px; }
           .pdf-event-header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 2px; }
           .pdf-event-label { font-size: 12px; font-weight: 700; }
-          .pdf-event-date { font-size: 11px; color: #64748b; white-space: nowrap; }
-          .pdf-event-desc { font-size: 12.5px; color: #334155; margin: 0 0 2px; }
-          .pdf-event-detail { font-size: 11.5px; color: #64748b; margin: 2px 0 0; }
-          .pdf-empty { font-size: 13px; color: #94a3b8; font-style: italic; }
-          .pdf-footer { margin-top: 32px; font-size: 10px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+          .pdf-event-date { font-size: 11px; color: ${PDF_COLORS.textMuted}; white-space: nowrap; }
+          .pdf-event-desc { font-size: 12.5px; color: ${PDF_COLORS.textBody}; margin: 0 0 2px; }
+          .pdf-event-detail { font-size: 11.5px; color: ${PDF_COLORS.textMuted}; margin: 2px 0 0; }
+          .pdf-empty { font-size: 13px; color: ${PDF_COLORS.textFaint}; font-style: italic; }
+          .pdf-footer { margin-top: 32px; font-size: 10px; color: ${PDF_COLORS.textFaint}; text-align: center; border-top: 1px solid ${PDF_COLORS.border}; padding-top: 12px; }
         </style>
       </div>`;
 
