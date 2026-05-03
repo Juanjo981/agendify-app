@@ -1,163 +1,154 @@
-﻿<ion-content class="dbh-content">
+﻿<ion-content class="home-premium">
   <ion-refresher slot="fixed" (ionRefresh)="cargarDashboard($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
 
-  <div class="dbh-shell">
-    <section class="dbh-hero">
-      <div class="dbh-hero__copy">
-        <span class="dbh-hero__eyebrow">Inicio del consultorio</span>
-        <h1>{{ saludo }}, este es el pulso del día.</h1>
-        <p class="dbh-hero__subtitle">{{ fechaHero }} · {{ heroSummary }}</p>
-
-        <div class="dbh-hero__meta" *ngIf="proximaCita as proxima; else heroIdle">
-          <div class="dbh-hero__meta-card">
-            <span class="dbh-hero__meta-label">Próxima atención</span>
-            <strong>{{ formatTime(proxima.fecha_inicio) }}</strong>
-            <small>{{ formatPatientName(proxima) }}</small>
-          </div>
-          <div class="dbh-hero__meta-card dbh-hero__meta-card--soft">
-            <span class="dbh-hero__meta-label">Pendientes de hoy</span>
-            <strong>{{ confirmacionesPendientes }}</strong>
-            <small>{{ agendaItems.length }} citas en la agenda actual</small>
-          </div>
-        </div>
-
-        <ng-template #heroIdle>
-          <div class="dbh-hero__empty-pill">
-            <ion-icon name="sparkles-outline"></ion-icon>
-            <span>Sin próximas citas inmediatas. Puedes aprovechar para preparar pacientes y agenda.</span>
-          </div>
-        </ng-template>
+  <div class="home-shell">
+    <section class="home-hero">
+      <div class="home-hero__copy">
+        <span class="home-kicker">Hoy en tu consultorio</span>
+        <h1>{{ saludo }}. {{ todayStatus.title }}</h1>
+        <p>{{ fechaHero }} · {{ todayStatus.description }}</p>
       </div>
 
-      <div class="dbh-hero__actions">
-        <button class="dbh-btn dbh-btn--ghost" (click)="irACitas()">
-          <ion-icon name="clipboard-outline"></ion-icon>
-          Ver citas
+      <div class="home-hero__actions">
+        <button class="home-btn home-btn--primary" (click)="abrirNuevaCita()">
+          <ion-icon name="add-outline"></ion-icon>
+          Nueva cita
         </button>
-        <button class="dbh-btn dbh-btn--primary" (click)="irAAgenda()">
+        <button class="home-btn home-btn--ghost" (click)="irAAgenda()">
           <ion-icon name="calendar-outline"></ion-icon>
           Abrir agenda
         </button>
       </div>
     </section>
 
-    <section class="dbh-section">
-      <div class="dbh-section__head">
-        <div>
-          <h2>Panorama rápido</h2>
-          <p>Indicadores útiles para decidir qué atender primero.</p>
-        </div>
-        <button class="dbh-link" (click)="cargarDashboard()">Actualizar</button>
-      </div>
-
-      <div *ngIf="resumenLoading" class="dbh-state dbh-state--loading">
-        <ion-spinner name="crescent"></ion-spinner>
-        <p>Cargando indicadores del inicio...</p>
-      </div>
-
-      <div *ngIf="resumenError && !resumenLoading" class="dbh-state dbh-state--error">
-        <ion-icon name="alert-circle-outline"></ion-icon>
-        <p>{{ resumenError }}</p>
-      </div>
-
-      <div *ngIf="resumen && !resumenLoading" class="dbh-kpis">
-        <article *ngFor="let card of cards" class="dbh-kpi-card" [attr.data-tone]="card.tone">
-          <div class="dbh-kpi-card__icon">
-            <ion-icon [name]="card.icon"></ion-icon>
-          </div>
-          <div class="dbh-kpi-card__body">
-            <span class="dbh-kpi-card__label">{{ card.label }}</span>
-            <strong>{{ card.value }}</strong>
-            <small>{{ card.helper }}</small>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="dbh-layout">
-      <article class="dbh-panel dbh-panel--agenda">
-        <div class="dbh-section__head dbh-section__head--stacked">
-          <div>
-            <h2>{{ agendaHeadline }}</h2>
-            <p>{{ agendaCaption }}</p>
-          </div>
-        </div>
-
-        <div *ngIf="agendaLoading" class="dbh-state dbh-state--loading">
-          <ion-spinner name="crescent"></ion-spinner>
-          <p>Cargando agenda del día...</p>
-        </div>
-
-        <div *ngIf="agendaError && !agendaLoading" class="dbh-state dbh-state--error">
-          <ion-icon name="alert-circle-outline"></ion-icon>
-          <p>{{ agendaError }}</p>
-        </div>
-
-        <div *ngIf="agendaHoy && !agendaLoading" class="dbh-agenda-wrap">
-          <div class="dbh-next" *ngIf="proximaCita as proxima">
-            <div class="dbh-next__content">
-              <span class="dbh-next__label">Siguiente en la agenda</span>
-              <strong>{{ formatPatientName(proxima) }}</strong>
-              <p>{{ formatTime(proxima.fecha_inicio) }} · {{ proxima.motivo || 'Sin motivo especificado' }}</p>
-            </div>
-            <span class="dbh-chip" [ngClass]="getEstadoClass(proxima.estado_cita)">{{ proxima.estado_cita }}</span>
-          </div>
-
-          <div *ngIf="agendaItems.length === 0" class="dbh-empty-premium">
-            <div class="dbh-empty-premium__icon">
-              <ion-icon name="calendar-clear-outline"></ion-icon>
-            </div>
-            <div class="dbh-empty-premium__copy">
-              <strong>La agenda de hoy está despejada</strong>
-              <p>No hay citas registradas para hoy. Puedes usar este momento para avanzar seguimiento, pacientes o próximas programaciones.</p>
-            </div>
-            <button class="dbh-btn dbh-btn--primary" (click)="abrirNuevaCita()">
-              <ion-icon name="add-outline"></ion-icon>
-              Programar cita
-            </button>
-          </div>
-
-          <div *ngIf="agendaItems.length > 0" class="dbh-agenda-list">
-            <button *ngFor="let cita of agendaItems" class="dbh-agenda-item" (click)="verCita(cita)">
-              <div class="dbh-agenda-item__time">
-                <strong>{{ formatTime(cita.fecha_inicio) }}</strong>
-                <span>{{ formatTime(cita.fecha_fin) }}</span>
-              </div>
-              <div class="dbh-agenda-item__body">
-                <div class="dbh-agenda-item__topline">
-                  <strong>{{ formatPatientName(cita) }}</strong>
-                  <span class="dbh-agenda-item__type">{{ cita.motivo || 'Consulta general' }}</span>
-                </div>
-                <p>{{ cita.motivo || 'Sin motivo especificado' }}</p>
-              </div>
-              <span class="dbh-chip" [ngClass]="getEstadoClass(cita.estado_cita)">{{ cita.estado_cita }}</span>
-            </button>
-          </div>
-        </div>
-      </article>
-
-      <aside class="dbh-side">
-        <article class="dbh-panel dbh-panel--quick">
-          <div class="dbh-section__head dbh-section__head--stacked">
+    <section class="home-grid">
+      <main class="home-main">
+        <article class="home-card home-next">
+          <div class="home-section-head">
             <div>
-              <h2>Accesos rápidos</h2>
-              <p>Acciones frecuentes para destrabar la operación en segundos.</p>
+              <span class="home-section-label">Siguiente acción</span>
+              <h2>{{ nextActionTitle }}</h2>
+            </div>
+            <button class="home-icon-btn" (click)="cargarDashboard()" aria-label="Actualizar inicio">
+              <ion-icon name="refresh-outline"></ion-icon>
+            </button>
+          </div>
+
+          <div *ngIf="agendaLoading" class="home-state">
+            <ion-spinner name="crescent"></ion-spinner>
+            <p>Preparando tu vista del día...</p>
+          </div>
+
+          <div *ngIf="agendaError && !agendaLoading" class="home-state home-state--error">
+            <ion-icon name="alert-circle-outline"></ion-icon>
+            <p>{{ agendaError }}</p>
+          </div>
+
+          <ng-container *ngIf="!agendaLoading && !agendaError">
+            <div *ngIf="proximaCita as proxima; else noNextAction" class="home-next__body">
+              <div class="home-next__time">
+                <span>{{ formatTime(proxima.fecha_inicio) }}</span>
+                <small>{{ formatTime(proxima.fecha_fin) }}</small>
+              </div>
+
+              <div class="home-next__content">
+                <h3>{{ formatPatientName(proxima) }}</h3>
+                <p>{{ proxima.motivo || 'Consulta general' }}</p>
+                <span class="home-chip" [ngClass]="getEstadoClass(proxima.estado_cita)">
+                  {{ proxima.estado_cita }}
+                </span>
+              </div>
+
+              <div class="home-next__actions">
+                <button class="home-btn home-btn--primary" (click)="verCita(proxima)">
+                  Ver cita
+                </button>
+                <button class="home-btn home-btn--ghost" (click)="irAAgenda()">
+                  Agenda
+                </button>
+              </div>
+            </div>
+
+            <ng-template #noNextAction>
+              <div class="home-empty-action">
+                <div class="home-empty-action__icon">
+                  <ion-icon name="calendar-clear-outline"></ion-icon>
+                </div>
+                <div>
+                  <h3>Agenda despejada</h3>
+                  <p>No hay próximas atenciones hoy. Puedes programar una nueva cita o revisar pacientes pendientes.</p>
+                </div>
+                <button class="home-btn home-btn--primary" (click)="abrirNuevaCita()">
+                  Programar cita
+                </button>
+              </div>
+            </ng-template>
+          </ng-container>
+        </article>
+
+        <article class="home-card home-agenda">
+          <div class="home-section-head">
+            <div>
+              <span class="home-section-label">Agenda inmediata</span>
+              <h2>{{ agendaHeadline }}</h2>
+              <p>{{ agendaCaption }}</p>
             </div>
           </div>
 
-          <div class="dbh-quick-grid">
+          <div *ngIf="agendaLoading" class="home-state">
+            <ion-spinner name="crescent"></ion-spinner>
+            <p>Cargando agenda del día...</p>
+          </div>
+
+          <div *ngIf="agendaError && !agendaLoading" class="home-state home-state--error">
+            <ion-icon name="alert-circle-outline"></ion-icon>
+            <p>{{ agendaError }}</p>
+          </div>
+
+          <ng-container *ngIf="agendaHoy && !agendaLoading && !agendaError">
+            <div *ngIf="agendaPreview.length > 0; else emptyAgenda" class="home-agenda-list">
+              <button *ngFor="let cita of agendaPreview" class="home-agenda-item" (click)="verCita(cita)">
+                <span class="home-agenda-item__time">{{ formatTime(cita.fecha_inicio) }}</span>
+                <span class="home-agenda-item__patient">{{ formatPatientName(cita) }}</span>
+                <span class="home-agenda-item__reason">{{ cita.motivo || 'Consulta general' }}</span>
+                <span class="home-chip" [ngClass]="getEstadoClass(cita.estado_cita)">
+                  {{ cita.estado_cita }}
+                </span>
+              </button>
+            </div>
+
+            <ng-template #emptyAgenda>
+              <div class="home-agenda-empty">
+                <ion-icon name="sparkles-outline"></ion-icon>
+                <p>Sin citas registradas para hoy.</p>
+              </div>
+            </ng-template>
+          </ng-container>
+        </article>
+      </main>
+
+      <aside class="home-rail">
+        <article class="home-card home-quick">
+          <div class="home-section-head">
+            <div>
+              <span class="home-section-label">Accesos rápidos</span>
+              <h2>Lo más usado</h2>
+            </div>
+          </div>
+
+          <div class="home-quick-list">
             <button
-              *ngFor="let item of quickActions"
-              class="dbh-quick-action"
-              [class.dbh-quick-action--primary]="item.primary"
+              *ngFor="let item of primaryQuickActions"
+              class="home-quick-action"
+              [class.home-quick-action--primary]="item.primary"
               (click)="item.action()"
             >
-              <span class="dbh-quick-action__icon">
+              <span class="home-quick-action__icon">
                 <ion-icon [name]="item.icon"></ion-icon>
               </span>
-              <span class="dbh-quick-action__body">
+              <span>
                 <strong>{{ item.label }}</strong>
                 <small>{{ item.helper }}</small>
               </span>
@@ -165,48 +156,33 @@
           </div>
         </article>
 
-        <article class="dbh-panel dbh-panel--alerts">
-          <div class="dbh-section__head dbh-section__head--stacked">
+        <article class="home-card home-status">
+          <div class="home-section-head">
             <div>
-              <h2>Alertas útiles</h2>
-              <p>Señales rápidas para priorizar seguimiento.</p>
+              <span class="home-section-label">Estado del consultorio</span>
+              <h2>Señales clave</h2>
             </div>
           </div>
 
-          <div class="dbh-alert-list">
-            <div *ngFor="let alert of alertItems" class="dbh-alert-item" [attr.data-tone]="alert.tone">
-              <div class="dbh-alert-item__copy">
-                <span>{{ alert.label }}</span>
-                <small>{{ alert.helper }}</small>
-              </div>
-              <strong>{{ alert.value }}</strong>
+          <div *ngIf="resumenLoading" class="home-state">
+            <ion-spinner name="crescent"></ion-spinner>
+            <p>Actualizando estado...</p>
+          </div>
+
+          <div *ngIf="resumenError && !resumenLoading" class="home-state home-state--error">
+            <ion-icon name="alert-circle-outline"></ion-icon>
+            <p>{{ resumenError }}</p>
+          </div>
+
+          <div *ngIf="!resumenLoading && !resumenError" class="home-status-list">
+            <div *ngFor="let stat of consultorioStats" class="home-status-item" [attr.data-tone]="stat.tone">
+              <span>{{ stat.label }}</span>
+              <strong>{{ stat.value }}</strong>
+              <small>{{ stat.helper }}</small>
             </div>
           </div>
         </article>
       </aside>
-    </section>
-
-    <section class="dbh-bottom">
-      <article class="dbh-panel dbh-panel--rhythm">
-        <div class="dbh-section__head dbh-section__head--stacked">
-          <div>
-            <h2>Ritmo del día</h2>
-            <p>Distribución rápida del estado operativo actual.</p>
-          </div>
-        </div>
-
-        <div *ngIf="agendaHoy && !agendaLoading" class="dbh-rhythm-grid">
-          <div *ngFor="let item of ritmoItems" class="dbh-rhythm-card" [attr.data-tone]="item.tone">
-            <span>{{ item.label }}</span>
-            <strong>{{ item.value }}</strong>
-          </div>
-        </div>
-
-        <div *ngIf="!agendaHoy && !agendaLoading" class="dbh-state">
-          <ion-icon name="pulse-outline"></ion-icon>
-          <p>Cuando haya actividad del día, aquí verás su distribución operativa.</p>
-        </div>
-      </article>
     </section>
   </div>
 

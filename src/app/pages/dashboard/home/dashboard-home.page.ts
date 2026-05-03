@@ -12,11 +12,25 @@ import { CitaUpsertRequest } from '../../citas/models/cita.model';
 import {
   DashboardAgendaCitaDto,
   DashboardAgendaHoyDto,
-  DashboardCardItem,
   DashboardResumenDto,
 } from '../dashboard.models';
 import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
 import { formatFecha } from 'src/app/shared/utils/date.utils';
+
+interface HomeQuickAction {
+  label: string;
+  helper: string;
+  icon: string;
+  action: () => void;
+  primary?: boolean;
+}
+
+interface HomeStatusItem {
+  label: string;
+  value: string;
+  helper: string;
+  tone: 'primary' | 'success' | 'warning' | 'neutral';
+}
 
 @Component({
   selector: 'app-dashboard-home',
@@ -77,50 +91,12 @@ export class DashboardHomePage implements OnInit {
     event?.detail?.complete?.();
   }
 
-  get cards(): DashboardCardItem[] {
-    if (!this.resumen) return [];
-
-    const proxima = this.proximaCita;
-    const pendientesOperacion = this.agendaHoy?.citas_pendientes_hoy ?? this.resumen.citas_pendientes ?? 0;
-
-    return [
-      {
-        key: 'citas_hoy',
-        label: 'Citas hoy',
-        value: String(this.resumen.citas_hoy ?? 0),
-        icon: 'today-outline',
-        tone: 'primary',
-        helper: this.resumen.citas_hoy > 0 ? 'Vista operativa del día' : 'Sin actividad agendada',
-      },
-      {
-        key: 'proxima_cita',
-        label: 'Próxima cita',
-        value: proxima ? this.formatTime(proxima.fecha_inicio) : 'Sin citas',
-        icon: 'alarm-outline',
-        tone: 'accent',
-        helper: proxima ? this.formatPatientName(proxima) : 'No hay próximos turnos hoy',
-      },
-      {
-        key: 'pendientes_operacion',
-        label: 'Pendientes por atender',
-        value: String(pendientesOperacion),
-        icon: 'hourglass-outline',
-        tone: 'warning',
-        helper: pendientesOperacion > 0 ? 'Turnos que siguen abiertos hoy' : 'Día operativo en orden',
-      },
-      {
-        key: 'ingresos',
-        label: 'Ingresos acumulados',
-        value: this.formatCurrency(this.resumen.ingresos_totales ?? 0),
-        icon: 'wallet-outline',
-        tone: 'success',
-        helper: `${this.resumen.total_pacientes_activos ?? 0} pacientes activos`,
-      },
-    ];
-  }
-
   get agendaItems(): DashboardAgendaCitaDto[] {
     return this.agendaHoy?.citas_del_dia ?? [];
+  }
+
+  get agendaPreview(): DashboardAgendaCitaDto[] {
+    return this.agendaItems.slice(0, 6);
   }
 
   get proximaCita(): DashboardAgendaCitaDto | null {
@@ -138,9 +114,12 @@ export class DashboardHomePage implements OnInit {
     return 'Buenas noches';
   }
 
-  get heroSummary(): string {
+  get todayStatus(): { title: string; description: string } {
     if (this.agendaLoading || this.resumenLoading) {
-      return 'Actualizando la vista operativa del consultorio.';
+      return {
+        title: 'Estamos preparando tu día.',
+        description: 'Actualizando agenda, pendientes y señales operativas.',
+      };
     }
 
     const citasHoy = this.resumen?.citas_hoy ?? 0;
@@ -148,14 +127,29 @@ export class DashboardHomePage implements OnInit {
     const proxima = this.proximaCita;
 
     if (!citasHoy) {
-      return 'No hay citas programadas hoy. Buen momento para revisar pendientes y preparar la semana.';
+      return {
+        title: 'Agenda despejada.',
+        description: 'Buen momento para programar nuevas citas o revisar expedientes pendientes.',
+      };
     }
 
     if (proxima) {
-      return `${citasHoy} citas previstas hoy, ${pendientes} pendientes y próxima atención a las ${this.formatTime(proxima.fecha_inicio)}.`;
+      return {
+        title: `Tu próxima atención es a las ${this.formatTime(proxima.fecha_inicio)}.`,
+        description: `${citasHoy} citas hoy y ${pendientes} pendientes por atender.`,
+      };
     }
 
-    return `${citasHoy} citas previstas hoy y ${pendientes} siguen pendientes por atender.`;
+    return {
+      title: 'Tu agenda de hoy está activa.',
+      description: `${citasHoy} citas previstas y ${pendientes} pendientes por resolver.`,
+    };
+  }
+
+  get nextActionTitle(): string {
+    if (this.agendaLoading) return 'Calculando prioridad';
+    if (this.proximaCita) return 'Atiende lo que sigue';
+    return 'Crea la siguiente prioridad';
   }
 
   get agendaHeadline(): string {
@@ -177,65 +171,61 @@ export class DashboardHomePage implements OnInit {
     return this.agendaItems.filter(cita => cita.estado_cita === 'CONFIRMADA' || cita.estado_cita === 'PENDIENTE').length;
   }
 
-  get quickActions(): Array<{ label: string; helper: string; icon: string; action: () => void; primary?: boolean }> {
+  get primaryQuickActions(): HomeQuickAction[] {
     return [
       {
         label: 'Nueva cita',
-        helper: 'Abrir el formulario real de alta',
+        helper: 'Programa en segundos',
         icon: 'add-circle-outline',
         action: () => this.abrirNuevaCita(),
         primary: true,
       },
       {
-        label: 'Nuevo paciente',
-        helper: 'Abrir pacientes y registrar expediente',
-        icon: 'person-add-outline',
-        action: () => this.irAPacientes(),
-      },
-      {
-        label: 'Abrir agenda',
-        helper: 'Revisar el calendario completo',
+        label: 'Agenda',
+        helper: 'Revisa el calendario',
         icon: 'calendar-outline',
         action: () => this.irAAgenda(),
       },
       {
-        label: 'Registrar sesión',
-        helper: 'Entrar a sesiones clínicas',
-        icon: 'pulse-outline',
-        action: () => this.irASesiones(),
+        label: 'Pacientes',
+        helper: 'Expedientes y seguimiento',
+        icon: 'people-outline',
+        action: () => this.irAPacientes(),
       },
     ];
   }
 
-  get alertItems(): Array<{ label: string; value: string; helper: string; tone: 'warning' | 'success' | 'neutral' }> {
+  get consultorioStats(): HomeStatusItem[] {
+    const citasHoy = this.agendaHoy?.total_citas_hoy ?? this.resumen?.citas_hoy ?? 0;
+    const pendientes = this.agendaHoy?.citas_pendientes_hoy ?? this.resumen?.citas_pendientes ?? 0;
+    const completadas = this.agendaHoy?.citas_completadas_hoy ?? 0;
+    const pacientesActivos = this.resumen?.total_pacientes_activos ?? 0;
+
     return [
       {
-        label: 'Pacientes por confirmar',
+        label: 'Citas hoy',
+        value: String(citasHoy),
+        helper: citasHoy > 0 ? 'Carga operativa del día' : 'Sin actividad agendada',
+        tone: citasHoy > 0 ? 'primary' : 'neutral',
+      },
+      {
+        label: 'Pendientes',
         value: String(this.confirmacionesPendientes),
-        helper: this.confirmacionesPendientes > 0 ? 'Conviene revisar confirmación y asistencia' : 'Sin confirmaciones pendientes',
-        tone: this.confirmacionesPendientes > 0 ? 'warning' : 'success',
+        helper: pendientes > 0 ? 'Requieren revisión' : 'Todo en orden',
+        tone: pendientes > 0 ? 'warning' : 'success',
       },
       {
-        label: 'Pagos por revisar',
-        value: String(this.pagosPendientes),
-        helper: this.pagosPendientes > 0 ? 'Citas activas que pueden requerir seguimiento' : 'Sin pagos operativos urgentes',
-        tone: this.pagosPendientes > 0 ? 'neutral' : 'success',
+        label: 'Completadas',
+        value: String(completadas),
+        helper: completadas > 0 ? 'Atenciones cerradas hoy' : 'Aún sin cierres',
+        tone: completadas > 0 ? 'success' : 'neutral',
       },
       {
-        label: 'Próxima atención',
-        value: this.proximaCita ? this.formatTime(this.proximaCita.fecha_inicio) : 'Libre',
-        helper: this.proximaCita ? this.formatPatientName(this.proximaCita) : 'No hay más citas inmediatas hoy',
-        tone: this.proximaCita ? 'neutral' : 'success',
+        label: 'Pacientes activos',
+        value: String(pacientesActivos),
+        helper: 'Base actual de seguimiento',
+        tone: 'neutral',
       },
-    ];
-  }
-
-  get ritmoItems(): Array<{ label: string; value: number; tone: 'primary' | 'warning' | 'success' | 'danger' }> {
-    return [
-      { label: 'Confirmadas', value: this.agendaHoy?.citas_confirmadas_hoy ?? 0, tone: 'primary' },
-      { label: 'Pendientes', value: this.agendaHoy?.citas_pendientes_hoy ?? 0, tone: 'warning' },
-      { label: 'Completadas', value: this.agendaHoy?.citas_completadas_hoy ?? 0, tone: 'success' },
-      { label: 'Canceladas', value: this.agendaHoy?.citas_canceladas_hoy ?? 0, tone: 'danger' },
     ];
   }
 

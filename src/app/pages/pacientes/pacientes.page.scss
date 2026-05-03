@@ -312,14 +312,17 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-md, 12px);
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.18s ease;
 
-  ion-icon { font-size: 16px; }
+  ion-icon {
+    color: currentColor;
+    font-size: 16px;
+  }
 
   &--view {
     background: var(--primary-soft);
@@ -337,6 +340,25 @@
     background: var(--danger-soft);
     color: var(--danger);
     &:hover { background: var(--danger); color: var(--text-on-primary); }
+  }
+}
+
+:host-context(html[data-theme='dark']) .pac-action-btn {
+  border-color: var(--border-soft);
+
+  &--view {
+    background: color-mix(in srgb, var(--primary-mid) 22%, var(--surface-panel));
+    color: var(--primary-mid);
+  }
+
+  &--edit {
+    background: color-mix(in srgb, var(--warning) 22%, var(--surface-panel));
+    color: var(--warning);
+  }
+
+  &--delete {
+    background: color-mix(in srgb, var(--danger) 22%, var(--surface-panel));
+    color: var(--danger-bright);
   }
 }
 
