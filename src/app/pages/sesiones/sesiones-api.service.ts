@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { normalizeApiBaseUrl } from 'src/environments/api-url';
 import { buildQueryParams } from 'src/app/shared/utils/query-params.utils';
 import { PageResponse } from 'src/app/shared/models/page.model';
 import {
@@ -13,8 +14,9 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class SesionesApiService {
-  private readonly base = `${environment.apiUrl}/sesiones`;
-  private readonly citasBase = `${environment.apiUrl}/citas`;
+  private readonly apiRoot = normalizeApiBaseUrl(environment.apiUrl);
+  private readonly base = `${this.apiRoot}/sesiones`;
+  private readonly citasBase = `${this.apiRoot}/citas`;
 
   constructor(private http: HttpClient) {}
 

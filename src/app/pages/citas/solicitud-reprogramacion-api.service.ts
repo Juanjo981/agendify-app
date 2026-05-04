@@ -53,27 +53,22 @@ export class SolicitudReprogramacionApiService {
     this.cacheBySolicitud.clear();
   }
 
+  /**
+   * Prefetch opcional: solo invocar desde vistas que muestren solicitudes (no agenda/citas genéricas).
+   */
   async preloadPendientes(citaIds: number[]): Promise<void> {
     const ids = [...new Set(citaIds.filter(id => Number.isFinite(id) && id > 0))];
     this.clearCache();
-
     if (ids.length === 0) {
-      this.clearCache();
       return;
     }
 
-    try {
-      const solicitudes = await this.list({ estado: 'PENDIENTE', size: 500 });
-      const idsSet = new Set(ids);
-
-      this.clearCache();
-      for (const solicitud of solicitudes) {
-        if (idsSet.has(solicitud.id_cita) && solicitud.estado === 'PENDIENTE') {
-          this.storeSolicitud(solicitud);
-        }
+    const solicitudes = await this.list({ estado: 'PENDIENTE', size: 500 });
+    const idsSet = new Set(ids);
+    for (const solicitud of solicitudes) {
+      if (idsSet.has(solicitud.id_cita) && solicitud.estado === 'PENDIENTE') {
+        this.storeSolicitud(solicitud);
       }
-    } catch {
-      this.clearCache();
     }
   }
 
@@ -134,12 +129,15 @@ export class SolicitudReprogramacionApiService {
       sort: params.sort ?? 'fecha_solicitud,desc',
     });
 
-    const response = await firstValueFrom(
-      this.http.get<SolicitudListResponse>(this.base, { params: query })
-    );
-
-    const items = Array.isArray(response) ? response : (response.content ?? []);
-    return items.map(item => this.mapSolicitud(item));
+    try {
+      const response = await firstValueFrom(
+        this.http.get<SolicitudListResponse>(this.base, { params: query })
+      );
+      const items = Array.isArray(response) ? response : (response.content ?? []);
+      return items.map(item => this.mapSolicitud(item));
+    } catch {
+      return [];
+    }
   }
 
   private mapSolicitud(dto: SolicitudReprogramacionDto): SolicitudReprogramacion {

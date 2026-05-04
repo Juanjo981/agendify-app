@@ -85,6 +85,11 @@
   &--pago-ok      { background: var(--success-soft); color: var(--success-strong); }
   &--pago-pend    { background: var(--warning-soft); color: var(--warning-strong); }
   &--pago-parcial { background: var(--text-on-primary)beb; color: var(--warning-dark); }
+  &--tipo-pago {
+    background: var(--primary-soft);
+    border: 1px solid var(--primary-ring);
+    color: var(--primary-mid);
+  }
 }
 
 // ── Separator ─────────────────────────────────────────────────────────────────

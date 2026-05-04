@@ -173,7 +173,7 @@ export class CitasPage implements OnInit, OnDestroy {
     this.errorMessage = '';
 
     try {
-      const body = this.mapFormToRequest(data);
+      const body = this.mapFormToRequest(data, Boolean(this.citaEditando));
       if (this.citaEditando) {
         await this.updateCita(this.citaEditando.id_cita, body);
       } else {
@@ -270,7 +270,7 @@ export class CitasPage implements OnInit, OnDestroy {
     }
   }
 
-  private mapFormToRequest(data: CitaFormData): CitaUpsertRequest {
+  private mapFormToRequest(data: CitaFormData, includeTipoPago = false): CitaUpsertRequest {
     const fechaInicio = this.normalizeLocalDateTime(data.fecha_inicio);
     const fechaFin = this.normalizeLocalDateTime(data.fecha_fin);
 
@@ -282,14 +282,21 @@ export class CitasPage implements OnInit, OnDestroy {
       throw new Error('Las fechas de la cita no tienen un formato LocalDateTime valido.');
     }
 
-    return {
+    const body: CitaUpsertRequest = {
       id_paciente: data.id_paciente,
       fecha_inicio: fechaInicio,
       fecha_fin: fechaFin,
       motivo: data.motivo?.trim() || undefined,
       notas_internas: data.notas_internas?.trim() || null,
+      observaciones: data.observaciones?.trim() || null,
       monto: data.monto,
     };
+
+    if (includeTipoPago && data.tipoPago) {
+      body.tipoPago = data.tipoPago;
+    }
+
+    return body;
   }
 
   private async createCita(body: CitaUpsertRequest): Promise<void> {

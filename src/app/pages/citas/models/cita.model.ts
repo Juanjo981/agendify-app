@@ -15,6 +15,12 @@ export type EstadoPago =
   | 'NO_APLICA'
   | 'REEMBOLSADO';
 
+export type TipoPago =
+  | 'EFECTIVO'
+  | 'TRANSFERENCIA'
+  | 'TARJETA'
+  | 'OTRO';
+
 export type EstadoCitaLabel =
   | 'Pendiente'
   | 'Confirmada'
@@ -30,6 +36,12 @@ export type EstadoPagoLabel =
   | 'No aplica'
   | 'Reembolsado';
 
+export type TipoPagoLabel =
+  | 'Efectivo'
+  | 'Transferencia'
+  | 'Tarjeta'
+  | 'Otro';
+
 export interface CitaDto {
   id_cita: number;
   id_profesional?: number;
@@ -42,6 +54,8 @@ export interface CitaDto {
   observaciones?: string | null;
   estado_cita: EstadoCita;
   estado_pago: EstadoPago;
+  tipoPago?: TipoPago | null;
+  tipo_pago?: TipoPago | null;
   monto: number;
   origen_cita?: string;
   confirmado_por_paciente?: boolean;
@@ -81,11 +95,14 @@ export interface CitaUpsertRequest {
   notas_internas?: string | null;
   observaciones?: string | null;
   monto?: number;
+  tipoPago?: TipoPago;
 }
 
 export interface CitaPagoRequest {
   estado_pago: EstadoPago;
   monto: number;
+  /** Opcional; `null` limpia el tipo en backend si lo soporta. */
+  tipoPago?: TipoPago | null;
 }
 
 export interface CitaEstadoRequest {
@@ -140,6 +157,13 @@ export const ESTADO_PAGO_LABEL: Record<EstadoPago, EstadoPagoLabel> = {
   REEMBOLSADO: 'Reembolsado',
 };
 
+export const TIPO_PAGO_LABEL: Record<TipoPago, TipoPagoLabel> = {
+  EFECTIVO: 'Efectivo',
+  TRANSFERENCIA: 'Transferencia',
+  TARJETA: 'Tarjeta',
+  OTRO: 'Otro',
+};
+
 export const ESTADO_CITA_VALUES: EstadoCita[] = [
   'PENDIENTE',
   'CONFIRMADA',
@@ -157,8 +181,19 @@ export const ESTADO_PAGO_VALUES: EstadoPago[] = [
   'REEMBOLSADO',
 ];
 
+export const TIPO_PAGO_VALUES: TipoPago[] = [
+  'EFECTIVO',
+  'TRANSFERENCIA',
+  'TARJETA',
+  'OTRO',
+];
+
 export function isEstadoPago(value: unknown): value is EstadoPago {
   return ESTADO_PAGO_VALUES.includes(value as EstadoPago);
+}
+
+export function isTipoPago(value: unknown): value is TipoPago {
+  return TIPO_PAGO_VALUES.includes(normalizeTipoPagoValue(value) as TipoPago);
 }
 
 export function estadoCitaToLabel(estado: EstadoCita): EstadoCitaLabel {
@@ -167,6 +202,40 @@ export function estadoCitaToLabel(estado: EstadoCita): EstadoCitaLabel {
 
 export function estadoPagoToLabel(estado: EstadoPago): EstadoPagoLabel {
   return ESTADO_PAGO_LABEL[estado] ?? 'Pendiente';
+}
+
+export function tipoPagoToLabel(tipoPago: TipoPago | null | undefined): string {
+  return tipoPago ? TIPO_PAGO_LABEL[tipoPago] ?? '' : '';
+}
+
+export function normalizeTipoPagoValue(value: unknown): TipoPago | null {
+  if (value === null || value === undefined || value === '') return null;
+  const normalized = String(value).trim().toUpperCase().replace(/\s+/g, '_');
+
+  if (normalized === 'EFECTIVO') return 'EFECTIVO';
+  if (normalized === 'TRANSFERENCIA') return 'TRANSFERENCIA';
+  if (normalized === 'TARJETA') return 'TARJETA';
+  if (normalized === 'OTRO') return 'OTRO';
+
+  return null;
+}
+
+/** Lee el tipo de pago tal como puede venir del API (varias claves habituales). */
+export function readTipoPagoRawFromCita(cita: unknown): unknown {
+  if (!cita || typeof cita !== 'object') return undefined;
+  const o = cita as Record<string, unknown>;
+  return (
+    o['tipoPago'] ??
+    o['tipo_pago'] ??
+    o['tipo_de_pago'] ??
+    o['tipoDePago'] ??
+    o['metodo_pago'] ??
+    o['metodoPago']
+  );
+}
+
+export function resolveTipoPagoCita(cita: unknown): TipoPago | null {
+  return normalizeTipoPagoValue(readTipoPagoRawFromCita(cita));
 }
 
 export function toDatePart(isoDateTime: string): string {
@@ -200,6 +269,7 @@ export function withLegacyCitaFields<T extends CitaDto>(cita: T): T {
   const horaFin = toTimePart(cita.fecha_fin);
   const duracion = durationInMinutes(cita.fecha_inicio, cita.fecha_fin);
   const notasRapidas = cita.notas_internas ?? cita.observaciones ?? '';
+  const tipoPago = resolveTipoPagoCita(cita);
   const montoPagadoRaw = (cita as any).monto_pagado;
   const montoPagado = typeof montoPagadoRaw === 'number'
     ? montoPagadoRaw
@@ -216,6 +286,8 @@ export function withLegacyCitaFields<T extends CitaDto>(cita: T): T {
     estado: estadoCitaToLabel(cita.estado_cita),
     notas_rapidas: notasRapidas,
     monto_pagado: montoPagado,
-    metodo_pago: (cita as any).metodo_pago ?? '',
+    tipoPago,
+    tipo_pago: tipoPago,
+    metodo_pago: tipoPago ?? (cita as any).metodo_pago ?? '',
   };
 }

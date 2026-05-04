@@ -1,0 +1,42 @@
+<div class="tsp">
+  <div class="tsp-head">
+    <div class="tsp-title">
+      <span>Horarios disponibles</span>
+      <small *ngIf="nextAvailable && !loading">Proximo horario disponible: {{ nextAvailable.horaInicio }} - {{ nextAvailable.horaFin }}</small>
+    </div>
+
+    <label class="tsp-toggle" *ngIf="hasOccupiedSlots && !loading && !error">
+      <input type="checkbox" [checked]="showOccupied" (change)="showOccupied = !showOccupied" />
+      <span>Ver ocupados</span>
+    </label>
+  </div>
+
+  <div class="tsp-loading" *ngIf="loading">
+    <ion-spinner name="crescent"></ion-spinner>
+    <span>Calculando disponibilidad...</span>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <div class="tsp-grid" *ngIf="visibleSlots.length > 0; else emptyState">
+      <button
+        *ngFor="let slot of visibleSlots"
+        type="button"
+        class="tsp-slot"
+        [class.tsp-slot--selected]="slot.key === selectedKey"
+        [class.tsp-slot--occupied]="slot.occupied"
+        [disabled]="disabled || !slot.available"
+        (click)="selectSlot(slot)"
+      >
+        <span>{{ slot.horaInicio }} - {{ slot.horaFin }}</span>
+        <small *ngIf="slot.occupied">Ocupado</small>
+      </button>
+    </div>
+
+    <ng-template #emptyState>
+      <div class="tsp-empty" [class.tsp-empty--error]="!!error">
+        <ion-icon [name]="error ? 'warning-outline' : 'time-outline'"></ion-icon>
+        <span>{{ emptyMessage }}</span>
+      </div>
+    </ng-template>
+  </ng-container>
+</div>

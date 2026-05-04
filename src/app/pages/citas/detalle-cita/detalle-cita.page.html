@@ -32,6 +32,10 @@
             <div class="dct-hero__badges">
               <app-estado-badge [estado]="cita.estado_cita"></app-estado-badge>
               <app-pago-badge [estado]="cita.estado_pago"></app-pago-badge>
+              <span class="dct-tipo-pago-badge" *ngIf="tipoPagoResumen">
+                <ion-icon [name]="getTipoPagoIcon(tipoPagoResumen)"></ion-icon>
+                {{ getTipoPagoLabel(tipoPagoResumen) }}
+              </span>
             </div>
           </div>
         </div>
@@ -72,9 +76,13 @@
         <div class="dct-card">
           <div class="dct-card__header">
             <p class="dct-card__title">Información de pago</p>
-            <button class="dct-card__action" (click)="abrirPagoForm()" title="Registrar pago">
+            <button
+              class="dct-card__action"
+              (click)="abrirPagoForm()"
+              [attr.title]="tituloFormularioPago"
+            >
               <ion-icon name="cash-outline"></ion-icon>
-              Registrar pago
+              {{ tituloFormularioPago }}
             </button>
           </div>
 
@@ -84,6 +92,15 @@
 
             <dt><ion-icon name="cash-outline"></ion-icon> Monto</dt>
             <dd class="dct-dl__strong">{{ formatMonto(cita.monto) }}</dd>
+
+            <dt><ion-icon name="card-outline"></ion-icon> Tipo de pago</dt>
+            <dd>
+              <span class="dct-tipo-pago-badge" *ngIf="tipoPagoResumen; else sinTipoPago">
+                <ion-icon [name]="getTipoPagoIcon(tipoPagoResumen)"></ion-icon>
+                {{ getTipoPagoLabel(tipoPagoResumen) }}
+              </span>
+              <ng-template #sinTipoPago>-</ng-template>
+            </dd>
           </dl>
         </div>
       </div>
@@ -91,17 +108,17 @@
       <div *ngIf="showPagoForm" class="dct-pago-form">
         <div class="dct-pago-form__header">
           <ion-icon name="cash-outline"></ion-icon>
-          <span>Registrar pago</span>
+          <span>{{ tituloFormularioPago }}</span>
           <button class="dct-pago-form__close" (click)="showPagoForm = false">
             <ion-icon name="close-outline"></ion-icon>
           </button>
         </div>
 
-        <div class="dct-pago-form__body">
+        <div class="dct-pago-form__body" [formGroup]="pagoFormGroup">
           <div class="dct-pf-row">
             <div class="dct-pf-field">
-              <label class="dct-pf-label">Estado pago</label>
-              <select class="dct-pf-input" [(ngModel)]="pagoForm.estado_pago">
+              <label class="dct-pf-label" for="dct-pago-estado">Estado pago</label>
+              <select id="dct-pago-estado" class="dct-pf-input" formControlName="estado_pago">
                 <option value="PENDIENTE">Pendiente</option>
                 <option value="PARCIAL">Parcial</option>
                 <option value="PAGADO">Pagado</option>
@@ -110,8 +127,28 @@
               </select>
             </div>
             <div class="dct-pf-field">
-              <label class="dct-pf-label">Monto (€)</label>
-              <input class="dct-pf-input" type="number" min="0" step="0.01" [(ngModel)]="pagoForm.monto" />
+              <label class="dct-pf-label" for="dct-pago-monto">Monto (€)</label>
+              <input
+                id="dct-pago-monto"
+                class="dct-pf-input"
+                type="number"
+                min="0"
+                step="0.01"
+                formControlName="monto"
+              />
+            </div>
+            <div class="dct-pf-field">
+              <label class="dct-pf-label" for="dct-pago-tipo">Tipo de pago</label>
+              <select id="dct-pago-tipo" class="dct-pf-input" formControlName="tipoPago">
+                <option [ngValue]="null">Seleccionar tipo de pago</option>
+                <option *ngFor="let t of tipoPagoOptions" [ngValue]="t">{{ labelTipoPagoOption(t) }}</option>
+              </select>
+              <p
+                *ngIf="pagoFormGroup.get('tipoPago')?.hasError('tipoPagoInvalido') && pagoFormGroup.get('tipoPago')?.touched"
+                class="dct-pf-field-hint"
+              >
+                Valor no permitido para tipo de pago.
+              </p>
             </div>
           </div>
           <p *ngIf="pagoError" class="dct-pago-error">{{ pagoError }}</p>
@@ -186,9 +223,10 @@
             class="dct-action-btn dct-action-btn--pago"
             (click)="abrirPagoForm()"
             [disabled]="saving"
+            [attr.title]="tituloFormularioPago"
           >
             <ion-icon name="cash-outline"></ion-icon>
-            Registrar pago
+            {{ tituloFormularioPago }}
           </button>
 
           <button

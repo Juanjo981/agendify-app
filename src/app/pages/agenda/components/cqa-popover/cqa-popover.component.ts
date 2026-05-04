@@ -1,7 +1,12 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule, PopoverController } from '@ionic/angular';
-import { CitaDto } from '../../../citas/models/cita.model';
+import {
+  CitaDto,
+  TipoPago,
+  normalizeTipoPagoValue,
+  tipoPagoToLabel,
+} from '../../../citas/models/cita.model';
 
 export type CqaAction =
   | 'verDetalle'
@@ -44,6 +49,25 @@ export class CqaPopoverComponent {
       (this.citaActiva.nombre_paciente.charAt(0) ?? '') +
       (this.citaActiva.apellido_paciente.charAt(0) ?? '')
     ).toUpperCase();
+  }
+
+  getTipoPagoLabel(tipoPago: TipoPago | null | undefined): string {
+    return tipoPagoToLabel(normalizeTipoPagoValue(tipoPago));
+  }
+
+  getTipoPagoIcon(tipoPago: TipoPago | null | undefined): string {
+    switch (normalizeTipoPagoValue(tipoPago)) {
+      case 'EFECTIVO':
+        return 'cash-outline';
+      case 'TRANSFERENCIA':
+        return 'swap-horizontal-outline';
+      case 'TARJETA':
+        return 'card-outline';
+      case 'OTRO':
+        return 'ellipsis-horizontal-outline';
+      default:
+        return 'wallet-outline';
+    }
   }
 
   isDisabled(action: CqaAction): boolean {

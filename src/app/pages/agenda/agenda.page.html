@@ -96,14 +96,10 @@
         <ion-label>
           <h2>{{ ev.title }}</h2>
           <p>{{ ev.time }}</p>
-          <!-- Badge: solicitud de reprogramación pendiente -->
-          <button class="cita-repro-badge"
-                  *ngIf="getSolicitudPendiente(ev.cita?.id_cita)"
-                  (click)="$event.stopPropagation(); abrirSolicitudDesdeAgenda(ev)"
-                  title="Ver solicitud de reprogramación">
-            <ion-icon name="swap-horizontal-outline"></ion-icon>
-            Solicitud de cambio
-          </button>
+          <span class="agenda-tipo-pago-badge" *ngIf="ev.cita?.tipoPago">
+            <ion-icon [name]="getTipoPagoIcon(ev.cita?.tipoPago)"></ion-icon>
+            {{ getTipoPagoLabel(ev.cita?.tipoPago) }}
+          </span>
         </ion-label>
 
         <div class="right-section">
@@ -427,6 +423,10 @@
         <ion-icon name="cash-outline"></ion-icon>
         {{ citaActiva.estado_pago }} · €{{ citaActiva.monto_pagado }}/{{ citaActiva.monto }}
       </span>
+      <span class="cqa-tipo-pago-badge" *ngIf="citaActiva.tipoPago">
+        <ion-icon [name]="getTipoPagoIcon(citaActiva.tipoPago)"></ion-icon>
+        {{ getTipoPagoLabel(citaActiva.tipoPago) }}
+      </span>
     </div>
 
     <div class="cqa-sep"></div>
@@ -526,17 +526,6 @@
       </ion-content>
     </ng-template>
   </ion-modal>
-
-
-  <!-- ─── MODAL: Solicitud de reprogramación ──────────────────────────────────── -->
-  <app-solicitud-reprogramacion-modal
-    *ngIf="showSolicitudModal && solicitudSeleccionada"
-    [solicitud]="solicitudSeleccionada!"
-    (aceptada)="onSolicitudAceptada()"
-    (rechazada)="onSolicitudRechazada($event)"
-    (verAgenda)="onVerAgendaDesdeModal()"
-    (cerrado)="cerrarSolicitudModal()">
-  </app-solicitud-reprogramacion-modal>
 
 </ion-content>
 

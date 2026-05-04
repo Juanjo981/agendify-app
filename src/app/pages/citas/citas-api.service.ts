@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { normalizeApiBaseUrl } from 'src/environments/api-url';
 import { buildQueryParams } from 'src/app/shared/utils/query-params.utils';
 import { PageResponse } from 'src/app/shared/models/page.model';
 import {
@@ -25,11 +26,30 @@ export interface CitasPageResponse<T> extends PageResponse<T> {
   };
 }
 
+/**
+ * Cliente REST de citas (colección `/api/citas`).
+ *
+ * Contrato: solo **GET** y **POST** sobre la raíz `{apiUrl}/citas`.
+ * Actualización: **PUT** `{apiUrl}/citas/{id}`. Pago: **PATCH** `{apiUrl}/citas/{id}/pago`.
+ * No usar PATCH/PUT/DELETE sobre la colección sin `id`.
+ *
+ * `environment.apiUrl` debe ser la base del API **con** `/api` (ej. `http://localhost:8080/api`),
+ * sin barra final; esta clase usa `${apiUrl}/citas`, no `${apiUrl}/api/citas`.
+ */
 @Injectable({ providedIn: 'root' })
 export class CitasApiService {
-  private readonly base = `${environment.apiUrl}/citas`;
+  private readonly base = `${normalizeApiBaseUrl(environment.apiUrl)}/citas`;
 
   constructor(private http: HttpClient) {}
+
+  /** URL de un recurso cita: `{base}/{id}/{subpath}`. Valida `id` para evitar rutas inválidas. */
+  private urlCita(id: number, subpath?: string): string {
+    if (!Number.isFinite(id) || id <= 0) {
+      throw new RangeError(`CitasApiService: id de cita inválido (${id})`);
+    }
+    const tail = subpath?.replace(/^\/+/, '').replace(/\/+$/, '');
+    return tail ? `${this.base}/${id}/${tail}` : `${this.base}/${id}`;
+  }
 
   getAll(params: CitasListParams = {}): Promise<CitasPageResponse<CitaDto>> {
     const estadoPago = this.normalizeEstadoPagoParam(params.estadoPago);
@@ -54,7 +74,7 @@ export class CitasApiService {
 
   getById(id: number): Promise<CitaDto> {
     return firstValueFrom(
-      this.http.get<CitaDto>(`${this.base}/${id}`)
+      this.http.get<CitaDto>(this.urlCita(id))
     ).then(cita => this.normalizeCita(cita));
   }
 
@@ -66,37 +86,37 @@ export class CitasApiService {
 
   update(id: number, body: CitaUpsertRequest): Promise<CitaDto> {
     return firstValueFrom(
-      this.http.put<CitaDto>(`${this.base}/${id}`, body)
+      this.http.put<CitaDto>(this.urlCita(id), body)
     ).then(cita => this.normalizeCita(cita));
   }
 
   delete(id: number): Promise<void> {
     return firstValueFrom(
-      this.http.delete<void>(`${this.base}/${id}`)
+      this.http.delete<void>(this.urlCita(id))
     );
   }
 
   confirmar(id: number): Promise<CitaDto> {
     return firstValueFrom(
-      this.http.patch<CitaDto>(`${this.base}/${id}/confirmar`, {})
+      this.http.patch<CitaDto>(this.urlCita(id, 'confirmar'), {})
     ).then(cita => this.normalizeCita(cita));
   }
 
   cancelar(id: number): Promise<CitaDto> {
     return firstValueFrom(
-      this.http.patch<CitaDto>(`${this.base}/${id}/cancelar`, {})
+      this.http.patch<CitaDto>(this.urlCita(id, 'cancelar'), {})
     ).then(cita => this.normalizeCita(cita));
   }
 
   completar(id: number): Promise<CitaDto> {
     return firstValueFrom(
-      this.http.patch<CitaDto>(`${this.base}/${id}/completar`, {})
+      this.http.patch<CitaDto>(this.urlCita(id, 'completar'), {})
     ).then(cita => this.normalizeCita(cita));
   }
 
   noAsistio(id: number): Promise<CitaDto> {
     return firstValueFrom(
-      this.http.patch<CitaDto>(`${this.base}/${id}/no-asistio`, {})
+      this.http.patch<CitaDto>(this.urlCita(id, 'no-asistio'), {})
     ).then(cita => this.normalizeCita(cita));
   }
 
@@ -112,14 +132,14 @@ export class CitasApiService {
         return this.noAsistio(id);
       default:
         return firstValueFrom(
-          this.http.patch<CitaDto>(`${this.base}/${id}/estado`, { estado })
+          this.http.patch<CitaDto>(this.urlCita(id, 'estado'), { estado })
         ).then(cita => this.normalizeCita(cita));
     }
   }
 
   updatePago(id: number, body: CitaPagoRequest): Promise<CitaDto> {
     return firstValueFrom(
-      this.http.patch<CitaDto>(`${this.base}/${id}/pago`, body)
+      this.http.patch<CitaDto>(this.urlCita(id, 'pago'), body)
     ).then(cita => this.normalizeCita(cita));
   }
 

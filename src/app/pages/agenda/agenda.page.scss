@@ -705,32 +705,24 @@ ion-content {
   justify-content: space-between;
 }
 
-// ─── Solicitud de reprogramación badge ───────────────────────────────────────
-.cita-repro-badge {
+.agenda-tipo-pago-badge,
+.cqa-tipo-pago-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin-top: 5px;
+  width: fit-content;
   padding: 3px 9px;
   border-radius: 999px;
-  background: var(--warning-soft);
-  border: 1px solid color-mix(in srgb, var(--warning) 32%, transparent);
-  color: var(--warning-dark);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-ring);
+  color: var(--primary-mid);
   font-size: 11px;
   font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.18s, border-color 0.18s;
+  ion-icon { font-size: 12px; flex-shrink: 0; }
+}
 
-  ion-icon {
-    font-size: 12px;
-    flex-shrink: 0;
-  }
-
-  &:hover {
-    background: color-mix(in srgb, var(--warning) 18%, transparent);
-    border-color: color-mix(in srgb, var(--warning) 55%, transparent);
-  }
+.agenda-tipo-pago-badge {
+  margin-top: 5px;
 }
 
 .right-section {

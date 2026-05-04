@@ -84,6 +84,26 @@
   ion-icon { font-size: 12px; }
 }
 
+.dct-tipo-pago-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill, 9999px);
+  border: 1px solid var(--primary-ring);
+  background: var(--primary-soft);
+  color: var(--primary-mid);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+
+  ion-icon {
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+}
+
 .dct-btn-edit {
   display: flex;
   align-items: center;
@@ -336,11 +356,17 @@
 
 .dct-pf-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
 .dct-pf-field { display: flex; flex-direction: column; gap: 5px; }
+
+.dct-pf-field-hint {
+  font-size: 11px;
+  color: var(--danger-bright);
+  margin: 0;
+}
 
 .dct-pf-label {
   font-size: 12px;

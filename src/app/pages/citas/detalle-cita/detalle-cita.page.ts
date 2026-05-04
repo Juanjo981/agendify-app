@@ -1,7 +1,13 @@
 ﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DestroyRef, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -22,7 +28,13 @@ import {
   CitaUpsertRequest,
   EstadoCita,
   EstadoPago,
+  TipoPago,
+  TIPO_PAGO_VALUES,
   durationInMinutes,
+  isTipoPago,
+  normalizeTipoPagoValue,
+  resolveTipoPagoCita,
+  tipoPagoToLabel,
   toDatePart,
   toIsoDateTime,
   toTimePart,
@@ -30,6 +42,12 @@ import {
 import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
 import { SesionesApiService } from '../../sesiones/sesiones-api.service';
 import { AgendaRefreshService, CitasRefreshService } from '../../../shared/refresh/dashboard-module-refresh.services';
+
+function optionalTipoPagoValidator(control: AbstractControl): ValidationErrors | null {
+  const raw = control.value;
+  if (raw === null || raw === undefined || raw === '') return null;
+  return isTipoPago(raw) ? null : { tipoPagoInvalido: true };
+}
 
 @Component({
   selector: 'app-detalle-cita',
@@ -39,7 +57,7 @@ import { AgendaRefreshService, CitasRefreshService } from '../../../shared/refre
   imports: [
     IonicModule,
     CommonModule,
-    FormsModule,
+    ReactiveFormsModule,
     EstadoBadgeComponent,
     PagoBadgeComponent,
     CitaFormModalComponent,
@@ -49,6 +67,9 @@ import { AgendaRefreshService, CitasRefreshService } from '../../../shared/refre
 })
 export class DetalleCitaPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly fb = inject(FormBuilder);
+
+  readonly tipoPagoOptions = TIPO_PAGO_VALUES;
   cita: CitaDto | null = null;
   citaId = 0;
   sesionRelacionadaId: number | null = null;
@@ -64,10 +85,11 @@ export class DetalleCitaPage implements OnInit {
   /** Aviso in-place: cita no editable por estado (p. ej. cancelada) */
   showNoEditarModal = false;
 
-  pagoForm: { estado_pago: EstadoPago; monto: number } = {
-    estado_pago: 'PENDIENTE',
-    monto: 0,
-  };
+  readonly pagoFormGroup = this.fb.group({
+    estado_pago: this.fb.nonNullable.control<EstadoPago>('PENDIENTE', Validators.required),
+    monto: this.fb.nonNullable.control<number>(0),
+    tipoPago: this.fb.control<TipoPago | null>(null, optionalTipoPagoValidator),
+  });
   pagoError = '';
 
   confirmConfig: ConfirmDialogConfig | null = null;
@@ -126,6 +148,25 @@ export class DetalleCitaPage implements OnInit {
     return `€${Number(n || 0).toFixed(2)}`;
   }
 
+  getTipoPagoLabel(tipoPago: TipoPago | null | undefined): string {
+    return tipoPagoToLabel(normalizeTipoPagoValue(tipoPago));
+  }
+
+  getTipoPagoIcon(tipoPago: TipoPago | null | undefined): string {
+    switch (normalizeTipoPagoValue(tipoPago)) {
+      case 'EFECTIVO':
+        return 'cash-outline';
+      case 'TRANSFERENCIA':
+        return 'swap-horizontal-outline';
+      case 'TARJETA':
+        return 'card-outline';
+      case 'OTRO':
+        return 'ellipsis-horizontal-outline';
+      default:
+        return 'wallet-outline';
+    }
+  }
+
   get iniciales(): string {
     if (!this.cita) return '';
     return `${this.cita.apellido_paciente.charAt(0)}${this.cita.nombre_paciente.charAt(0)}`.toUpperCase();
@@ -177,6 +218,22 @@ export class DetalleCitaPage implements OnInit {
 
   get sesionButtonLabel(): string {
     return this.sesionRelacionadaId ? 'Ver sesión' : 'Crear sesión';
+  }
+
+  /** Tipo de pago unificado para badges y resumen (varias claves API). */
+  get tipoPagoResumen(): TipoPago | null {
+    return this.cita ? resolveTipoPagoCita(this.cita) : null;
+  }
+
+  /** Hay datos de pago cargados: mostrar "Editar pago" en lugar de "Registrar". */
+  get esEdicionPago(): boolean {
+    if (!this.cita) return false;
+    const monto = Number(this.cita.monto ?? 0);
+    return this.cita.estado_pago !== 'PENDIENTE' || monto > 0;
+  }
+
+  get tituloFormularioPago(): string {
+    return this.esEdicionPago ? 'Editar pago' : 'Registrar pago';
   }
 
   cerrarAvisoNoEditar(): void {
@@ -249,6 +306,12 @@ export class DetalleCitaPage implements OnInit {
         observaciones: this.cita.observaciones ?? null,
         monto: this.cita.monto,
       };
+      const tipoPagoActual = normalizeTipoPagoValue(
+        this.cita.tipoPago ?? this.cita.tipo_pago ?? this.cita.metodo_pago
+      );
+      if (tipoPagoActual) {
+        body.tipoPago = tipoPagoActual;
+      }
       this.cita = await this.citasSvc.update(this.cita.id_cita, body);
       this.showReprogramarModal = false;
       await this.cargarSesionRelacionada();
@@ -264,28 +327,49 @@ export class DetalleCitaPage implements OnInit {
 
   abrirPagoForm() {
     if (!this.cita) return;
-    this.pagoForm = {
+    const tipoInicial = resolveTipoPagoCita(this.cita);
+    this.pagoFormGroup.patchValue({
       estado_pago: this.cita.estado_pago,
       monto: Number(this.cita.monto || 0),
-    };
+      tipoPago: tipoInicial,
+    });
+    this.pagoFormGroup.markAsPristine();
     this.pagoError = '';
     this.showPagoForm = true;
   }
 
+  labelTipoPagoOption(value: TipoPago): string {
+    return tipoPagoToLabel(value);
+  }
+
   async guardarPago() {
     if (!this.cita) return;
-    if (!this.pagoForm.estado_pago) {
-      this.pagoError = 'Selecciona un estado de pago';
+    this.pagoFormGroup.markAllAsTouched();
+    if (this.pagoFormGroup.invalid) {
+      if (this.pagoFormGroup.get('tipoPago')?.hasError('tipoPagoInvalido')) {
+        this.pagoError = 'El tipo de pago no es válido';
+      } else if (this.pagoFormGroup.get('estado_pago')?.invalid) {
+        this.pagoError = 'Selecciona un estado de pago';
+      } else {
+        this.pagoError = 'Revisa los datos del pago';
+      }
       return;
     }
 
+    this.pagoError = '';
     this.saving = true;
     this.errorMessage = '';
     try {
-      this.cita = await this.citasSvc.updatePago(this.cita.id_cita, {
-        estado_pago: this.pagoForm.estado_pago,
-        monto: Number(this.pagoForm.monto || 0),
+      const { estado_pago, monto, tipoPago } = this.pagoFormGroup.getRawValue();
+      const tipoNorm = normalizeTipoPagoValue(tipoPago);
+      const updated = await this.citasSvc.updatePago(this.cita.id_cita, {
+        estado_pago,
+        monto: Number(monto || 0),
+        tipoPago: tipoNorm,
       });
+      const tipoFromApi = resolveTipoPagoCita(updated);
+      const tipoFinal = tipoFromApi ?? tipoNorm ?? null;
+      this.cita = { ...updated, tipoPago: tipoFinal, tipo_pago: tipoFinal };
       this.showPagoForm = false;
       this.citasRefresh.requestRefresh('list');
       this.citasRefresh.requestRefresh('detail');
@@ -394,7 +478,7 @@ export class DetalleCitaPage implements OnInit {
   }
 
   private mapToUpsertRequest(data: CitaFormData): CitaUpsertRequest {
-    return {
+    const body: CitaUpsertRequest = {
       id_paciente: data.id_paciente,
       fecha_inicio: data.fecha_inicio,
       fecha_fin: data.fecha_fin,
@@ -403,6 +487,12 @@ export class DetalleCitaPage implements OnInit {
       observaciones: data.observaciones?.trim() || null,
       monto: Number(data.monto || 0),
     };
+
+    if (data.tipoPago) {
+      body.tipoPago = data.tipoPago;
+    }
+
+    return body;
   }
 
   private openConfirm(config: ConfirmDialogConfig, onConfirm: () => void) {

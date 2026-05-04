@@ -1,4 +1,7 @@
+import { normalizeApiBaseUrl } from './api-url';
+
+/** Ver `environment.ts`: misma convención de `apiUrl`. */
 export const environment = {
   production: true,
-  apiUrl: 'https://api.agendify.com/api',
+  apiUrl: normalizeApiBaseUrl('https://api.agendify.com/api'),
 };

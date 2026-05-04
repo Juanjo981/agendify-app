@@ -18,15 +18,15 @@ import {
   CqaAction,
   CqaPopoverComponent,
 } from './components/cqa-popover/cqa-popover.component';
-import { SolicitudReprogramacionModalComponent } from '../../shared/components/solicitud-reprogramacion-modal/solicitud-reprogramacion-modal.component';
-import { SolicitudReprogramacion } from '../../shared/models/solicitud-reprogramacion.model';
 import { PacientesApiService } from '../pacientes/pacientes-api.service';
 import { CitasApiService } from '../citas/citas-api.service';
-import { SolicitudReprogramacionApiService } from '../citas/solicitud-reprogramacion-api.service';
 import {
   CitaDto,
   CitaUpsertRequest,
   EstadoCita,
+  TipoPago,
+  normalizeTipoPagoValue,
+  tipoPagoToLabel,
 } from '../citas/models/cita.model';
 import { mapApiError } from '../../shared/utils/api-error.mapper';
 import { AgendaApiService } from './agenda-api.service';
@@ -68,7 +68,6 @@ interface CalendarDay {
     FormsModule,
     CitaFormPanelComponent,
     ConfirmDialogComponent,
-    SolicitudReprogramacionModalComponent,
   ],
   standalone: true,
   styleUrls: ['./agenda.page.scss'],
@@ -134,9 +133,6 @@ export class AgendaPage implements OnInit, OnDestroy {
   showQuickActions = false;
   private openPopover: HTMLIonPopoverElement | null = null;
 
-  solicitudSeleccionada: SolicitudReprogramacion | null = null;
-  showSolicitudModal = false;
-
   showCqaConfirm = false;
   cqaConfirmConfig: ConfirmDialogConfig | null = null;
   private cqaConfirmFn: (() => void) | null = null;
@@ -180,7 +176,6 @@ export class AgendaPage implements OnInit, OnDestroy {
     private citasSvc: CitasApiService,
     private agendaApi: AgendaApiService,
     private popoverCtrl: PopoverController,
-    private solicitudSvc: SolicitudReprogramacionApiService,
     private agendaRefresh: AgendaRefreshService,
     private citasRefresh: CitasRefreshService,
   ) {
@@ -225,78 +220,25 @@ export class AgendaPage implements OnInit, OnDestroy {
     return `Jornada ${this.toDisplayHour(this.configuracionJornada.hora_inicio)}-${this.toDisplayHour(this.configuracionJornada.hora_fin)} · intervalo ${intervalo} min`;
   }
 
-  getSolicitudPendiente(idCita: number | undefined): SolicitudReprogramacion | undefined {
-    if (!idCita) return undefined;
-    return this.solicitudSvc.getByCita(idCita);
+  getTipoPagoLabel(tipoPago: TipoPago | null | undefined): string {
+    return tipoPagoToLabel(normalizeTipoPagoValue(tipoPago));
   }
 
-  abrirSolicitudDesdeAgenda(ev: CalendarEvent): void {
-    if (!ev.cita) return;
-    const solicitud = this.solicitudSvc.getByCita(ev.cita.id_cita);
-    if (!solicitud) return;
-    this.solicitudSeleccionada = solicitud;
-    this.showSolicitudModal = true;
-  }
-
-  async onSolicitudAceptada(): Promise<void> {
-    if (!this.solicitudSeleccionada) return;
-
-    const solicitud = this.solicitudSeleccionada;
-
-    try {
-      this.saving = true;
-      await this.solicitudSvc.aprobar(solicitud.id_solicitud);
-      const cita = this.citasMes.find(c => c.id_cita === solicitud.id_cita);
-      if (cita) {
-        this.citaActiva = cita;
-        this.apptPrefill = {
-          fecha: cita.fecha,
-          horaInicio: cita.hora_inicio,
-          horaFin: cita.hora_fin,
-        };
-        this.apptShowBanner = true;
-        this.apptContextLabel = 'Reprogramando cita aceptada';
-        this.showNewAppointmentPanel = true;
-      }
-
-      this.showSolicitudModal = false;
-      this.solicitudSeleccionada = null;
-      this.successMessage = 'Solicitud aprobada correctamente.';
-      this.generateCalendar();
-    } catch (err) {
-      this.errorMessage = mapApiError(err).userMessage;
-    } finally {
-      this.saving = false;
+  getTipoPagoIcon(tipoPago: TipoPago | null | undefined): string {
+    switch (normalizeTipoPagoValue(tipoPago)) {
+      case 'EFECTIVO':
+        return 'cash-outline';
+      case 'TRANSFERENCIA':
+        return 'swap-horizontal-outline';
+      case 'TARJETA':
+        return 'card-outline';
+      case 'OTRO':
+        return 'ellipsis-horizontal-outline';
+      default:
+        return 'wallet-outline';
     }
   }
 
-  async onSolicitudRechazada(motivo: string): Promise<void> {
-    if (!this.solicitudSeleccionada) return;
-
-    const solicitud = this.solicitudSeleccionada;
-    try {
-      this.saving = true;
-      await this.solicitudSvc.rechazar(solicitud.id_solicitud, motivo);
-      this.showSolicitudModal = false;
-      this.solicitudSeleccionada = null;
-      this.successMessage = 'Solicitud rechazada correctamente.';
-      this.generateCalendar();
-    } catch (err) {
-      this.errorMessage = mapApiError(err).userMessage;
-    } finally {
-      this.saving = false;
-    }
-  }
-
-  onVerAgendaDesdeModal(): void {
-    this.showSolicitudModal = false;
-    this.solicitudSeleccionada = null;
-  }
-
-  cerrarSolicitudModal(): void {
-    this.showSolicitudModal = false;
-    this.solicitudSeleccionada = null;
-  }
   updateHeaderInfo() {
     const today = new Date();
     const weekNames = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
@@ -320,7 +262,6 @@ export class AgendaPage implements OnInit, OnDestroy {
       this.bloqueosMes = agenda.bloqueos ?? [];
       this.configuracionJornada = agenda.configuracion_jornada ?? null;
       this.maxCitasPorDia = this.calcularCapacidadJornada(this.configuracionJornada);
-      await this.solicitudSvc.preloadPendientes(this.citasMes.map(cita => cita.id_cita));
       this.horas = this.buildHourOptions(this.configuracionJornada ?? undefined);
       this.generateCalendar();
       this.updateHeaderInfo();
@@ -331,7 +272,6 @@ export class AgendaPage implements OnInit, OnDestroy {
       this.bloqueosMes = [];
       this.configuracionJornada = null;
       this.maxCitasPorDia = this.calcularCapacidadJornada(null);
-      this.solicitudSvc.clearCache();
       this.horas = this.buildHourOptions();
       this.generateCalendar();
       this.updateHeaderInfo();
@@ -915,6 +855,12 @@ export class AgendaPage implements OnInit, OnDestroy {
       };
 
       if (this.citaActiva?.id_cita) {
+        const tipoPagoActual = normalizeTipoPagoValue(
+          this.citaActiva.tipoPago ?? this.citaActiva.tipo_pago ?? this.citaActiva.metodo_pago
+        );
+        if (tipoPagoActual) {
+          body.tipoPago = tipoPagoActual;
+        }
         await this.citasSvc.update(this.citaActiva.id_cita, body);
       } else {
         await this.citasSvc.create(body);
@@ -943,9 +889,7 @@ export class AgendaPage implements OnInit, OnDestroy {
     this.showQuickActions = false;
     this.showCqaConfirm = false;
     this.showBlockModal = false;
-    this.showSolicitudModal = false;
     this.citaActiva = null;
-    this.solicitudSeleccionada = null;
     this.cqaConfirmConfig = null;
     this.cqaConfirmFn = null;
     if (this.openPopover) {

@@ -1,0 +1,73 @@
+.qmf {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.qmf-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.qmf-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 70px;
+  overflow: hidden;
+}
+
+.qmf-chip {
+  min-height: 30px;
+  max-width: 190px;
+  padding: 5px 11px;
+  border-radius: var(--radius-pill, 9999px);
+  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--surface-muted) 72%, transparent);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    transform 0.16s ease;
+
+  &:hover {
+    background: color-mix(in srgb, var(--primary-mid) 7%, var(--surface-panel));
+    border-color: var(--primary-ring);
+    color: var(--text-strong);
+    transform: translateY(-1px);
+  }
+}
+
+.qmf-chip--selected {
+  background: var(--primary-soft);
+  border-color: var(--primary-ring);
+  color: var(--primary-mid);
+}
+
+@media (max-width: 540px) {
+  .qmf-list {
+    flex-wrap: nowrap;
+    max-height: none;
+    overflow-x: auto;
+    padding-bottom: 3px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .qmf-chip {
+    flex: 0 0 auto;
+    max-width: 170px;
+  }
+}

@@ -1,0 +1,15 @@
+<div class="qmf" *ngIf="shouldShow">
+  <span class="qmf-label">Motivos frecuentes</span>
+
+  <div class="qmf-list" role="list">
+    <button
+      *ngFor="let motivo of motivosVisibles"
+      type="button"
+      class="qmf-chip"
+      [class.qmf-chip--selected]="isSelected(motivo)"
+      (click)="seleccionar(motivo)"
+    >
+      {{ motivo }}
+    </button>
+  </div>
+</div>
