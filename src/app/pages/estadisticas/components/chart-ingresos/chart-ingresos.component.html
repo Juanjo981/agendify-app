@@ -53,21 +53,23 @@
         <!-- SVG Donut -->
         <div class="ci-donut-wrap">
           <svg class="ci-donut-svg" viewBox="0 0 200 200">
-            <circle
-              cx="100" cy="100" [attr.r]="RADIUS"
-              fill="none"
-              stroke="var(--border-soft)"
-              stroke-width="28" />
-            <circle
-              *ngFor="let seg of donutSegments; trackBy: trackByIndex"
-              cx="100" cy="100"
-              [attr.r]="RADIUS"
-              fill="none"
-              [attr.stroke]="seg.color"
-              stroke-width="28"
-              stroke-linecap="butt"
-              [attr.stroke-dasharray]="seg.dasharray"
-              [attr.stroke-dashoffset]="seg.dashoffset" />
+            <g transform="rotate(-90 100 100)">
+              <circle
+                cx="100" cy="100" [attr.r]="RADIUS"
+                fill="none"
+                stroke="var(--border-soft)"
+                stroke-width="28" />
+              <circle
+                *ngFor="let seg of donutSegments; trackBy: trackByIndex"
+                cx="100" cy="100"
+                [attr.r]="RADIUS"
+                fill="none"
+                [attr.stroke]="seg.color"
+                stroke-width="28"
+                stroke-linecap="butt"
+                [attr.stroke-dasharray]="seg.dasharray"
+                [attr.stroke-dashoffset]="seg.dashoffset" />
+            </g>
           </svg>
           <div class="ci-donut-center">
             <span class="ci-donut-total">{{ formatCurrency(totalMetodos) }}</span>

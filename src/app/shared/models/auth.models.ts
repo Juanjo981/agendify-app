@@ -57,6 +57,8 @@ export interface AuthMeResponse {
   fecha_nacimiento: string;
   domicilio:        string;
   numero_telefono:  string;
+  /** ISO 4217 opcional si el backend lo incluye en /auth/me (p. ej. MXN). */
+  moneda?:          string | null;
   profesional:      ProfesionalInfo | null;
   permisos:         Record<string, boolean> | null;
 }

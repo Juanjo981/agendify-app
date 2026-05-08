@@ -20,7 +20,7 @@
     [class.cpop-badge--pago-pend]="citaActiva.estado_pago === 'PENDIENTE'"
     [class.cpop-badge--pago-parcial]="citaActiva.estado_pago === 'PARCIAL'">
     <ion-icon name="cash-outline"></ion-icon>
-    {{ citaActiva.estado_pago }}&nbsp;·&nbsp;€{{ citaActiva.monto_pagado }}/{{ citaActiva.monto }}
+    {{ citaActiva.estado_pago }}&nbsp;·&nbsp;{{ formatMonto(citaActiva.monto_pagado) }}/{{ formatMonto(citaActiva.monto) }}
   </span>
   <span class="cpop-badge cpop-badge--tipo-pago" *ngIf="citaActiva.tipoPago">
     <ion-icon [name]="getTipoPagoIcon(citaActiva.tipoPago)"></ion-icon>

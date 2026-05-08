@@ -48,9 +48,9 @@
       </div>
     </div>
 
-    <!-- COUNTER -->
+    <!-- COUNTER (mismo patrón que Citas) -->
     <p class="pac-counter" *ngIf="!loading">
-      Mostrando <strong>{{ pacientesFiltrados.length }}</strong> de <strong>{{ totalPacientes }}</strong> pacientes
+      Mostrando <strong>{{ currentRangeStart }}</strong>-<strong>{{ currentRangeEnd }}</strong> de <strong>{{ summaryTotalPacientes }}</strong> {{ pacientesSummaryLabel }}
     </p>
 
     <!-- ERROR STATE -->
@@ -155,7 +155,7 @@
         <app-pagination
           [page]="currentPage"
           [pageSize]="pageSize"
-          [total]="totalPacientes"
+          [total]="summaryTotalPacientes"
           [pageSizeOptions]="pageSizeOptions"
           (pageChange)="onPaginationPageChange($event)"
           (pageSizeChange)="onPaginationPageSizeChange($event)"

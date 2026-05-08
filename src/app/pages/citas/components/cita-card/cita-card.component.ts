@@ -1,9 +1,10 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { CitaDto, durationInMinutes, toDatePart, toTimePart } from '../../models/cita.model';
 import { EstadoBadgeComponent } from '../estado-badge/estado-badge.component';
 import { PagoBadgeComponent } from '../pago-badge/pago-badge.component';
+import { CurrencyPreferenceService } from 'src/app/services/currency-preference.service';
 
 @Component({
   selector: 'app-cita-card',
@@ -13,6 +14,8 @@ import { PagoBadgeComponent } from '../pago-badge/pago-badge.component';
   imports: [CommonModule, IonicModule, EstadoBadgeComponent, PagoBadgeComponent],
 })
 export class CitaCardComponent {
+  private readonly currencyPreference = inject(CurrencyPreferenceService);
+
   @Input({ required: true }) cita!: CitaDto;
   @Output() ver = new EventEmitter<CitaDto>();
   @Output() editar = new EventEmitter<CitaDto>();
@@ -46,6 +49,9 @@ export class CitaCardComponent {
   }
 
   formatMonto(n: number): string {
-    return `€${Number(n || 0).toFixed(2)}`;
+    return this.currencyPreference.format(Number(n || 0), {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   }
 }

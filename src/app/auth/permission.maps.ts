@@ -43,6 +43,7 @@ export const MODULO_PERMISO: Readonly<Partial<Record<Modulo, Permiso>>> = {
  */
 export const SEGMENTO_MODULO: Readonly<Partial<Record<string, Modulo>>> = {
   'agenda':        Modulo.AGENDA,
+  'actividad':     Modulo.CITAS,
   'citas':         Modulo.CITAS,
   'citas/:id':     Modulo.CITAS,
   'pacientes':     Modulo.PACIENTES,
@@ -62,6 +63,7 @@ export const SEGMENTO_MODULO: Readonly<Partial<Record<string, Modulo>>> = {
  */
 export const RUTA_MODULO: Readonly<Partial<Record<string, Modulo>>> = {
   '/dashboard/agenda':        Modulo.AGENDA,
+  '/dashboard/actividad':     Modulo.CITAS,
   '/dashboard/citas':         Modulo.CITAS,
   '/dashboard/pacientes':     Modulo.PACIENTES,
   '/dashboard/sesiones':      Modulo.SESIONES,

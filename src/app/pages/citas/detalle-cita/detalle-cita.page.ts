@@ -31,6 +31,7 @@ import {
   TipoPago,
   TIPO_PAGO_VALUES,
   durationInMinutes,
+  estadoPagoToLabel,
   isTipoPago,
   normalizeTipoPagoValue,
   resolveTipoPagoCita,
@@ -40,6 +41,8 @@ import {
   toTimePart,
 } from '../models/cita.model';
 import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
+import { InAppNotifyService } from 'src/app/services/in-app-notify.service';
+import { CurrencyPreferenceService } from 'src/app/services/currency-preference.service';
 import { SesionesApiService } from '../../sesiones/sesiones-api.service';
 import { AgendaRefreshService, CitasRefreshService } from '../../../shared/refresh/dashboard-module-refresh.services';
 
@@ -102,6 +105,8 @@ export class DetalleCitaPage implements OnInit {
     private sesionesSvc: SesionesApiService,
     private citasRefresh: CitasRefreshService,
     private agendaRefresh: AgendaRefreshService,
+    private inAppNotify: InAppNotifyService,
+    private currencyPreference: CurrencyPreferenceService,
   ) {}
 
   ngOnInit() {
@@ -145,7 +150,15 @@ export class DetalleCitaPage implements OnInit {
   }
 
   formatMonto(n: number): string {
-    return `€${Number(n || 0).toFixed(2)}`;
+    return this.currencyPreference.format(Number(n || 0), {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  /** Etiqueta de campo sin símbolo fijo (ISO dinámico). */
+  get etiquetaMonto(): string {
+    return `Monto (${this.currencyPreference.currencyCode()})`;
   }
 
   getTipoPagoLabel(tipoPago: TipoPago | null | undefined): string {
@@ -285,6 +298,7 @@ export class DetalleCitaPage implements OnInit {
       this.citasRefresh.requestRefresh('list');
       this.citasRefresh.requestRefresh('detail');
       this.agendaRefresh.requestRefresh('agenda');
+      void this.inAppNotify.success('Cita actualizada correctamente.');
     } catch (err) {
       this.errorMessage = mapApiError(err).userMessage;
     } finally {
@@ -318,6 +332,7 @@ export class DetalleCitaPage implements OnInit {
       this.citasRefresh.requestRefresh('list');
       this.citasRefresh.requestRefresh('detail');
       this.agendaRefresh.requestRefresh('agenda');
+      void this.inAppNotify.success('Cita reprogramada correctamente.');
     } catch (err) {
       this.errorMessage = mapApiError(err).userMessage;
     } finally {
@@ -374,6 +389,10 @@ export class DetalleCitaPage implements OnInit {
       this.citasRefresh.requestRefresh('list');
       this.citasRefresh.requestRefresh('detail');
       this.agendaRefresh.requestRefresh('agenda');
+      const tipoTxt = tipoFinal ? ` · ${tipoPagoToLabel(tipoFinal)}` : '';
+      void this.inAppNotify.success(
+        `Pago actualizado · ${estadoPagoToLabel(this.cita.estado_pago)} · ${this.formatMonto(this.cita.monto)}${tipoTxt}`,
+      );
     } catch (err) {
       this.pagoError = mapApiError(err).userMessage;
     } finally {
@@ -443,6 +462,10 @@ export class DetalleCitaPage implements OnInit {
       this.citasRefresh.requestRefresh('list');
       this.citasRefresh.requestRefresh('detail');
       this.agendaRefresh.requestRefresh('agenda');
+      void this.inAppNotify.success('Estado de la cita actualizado.', {
+        throttleKey: `cita-estado-${this.cita.id_cita}`,
+        throttleMs: 45_000,
+      });
     } catch (err) {
       this.errorMessage = mapApiError(err).userMessage;
     } finally {
@@ -450,7 +473,7 @@ export class DetalleCitaPage implements OnInit {
     }
   }
 
-  private async cargarSesionRelacionada() {
+  private async cargarSesionRelacionada(): Promise<void> {
     if (!this.cita) {
       this.sesionRelacionadaId = null;
       return;

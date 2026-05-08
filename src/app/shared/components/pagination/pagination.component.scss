@@ -38,6 +38,16 @@
   cursor: pointer;
   transition: color 0.15s ease;
 
+  // Con `html[data-theme="dark"]` + `color-scheme: dark`, Chromium (p. ej. Windows) a veces
+  // pinta la lista nativa con fondo claro pero texto “para oscuro” → opciones ilegibles.
+  color-scheme: light;
+
+  // Lista nativa: suele ser clara aun en app oscura; no usar tokens de tema oscuro aquí.
+  option {
+    color: #0f172a;
+    background-color: #ffffff;
+  }
+
   &:hover,
   &:focus {
     color: var(--text-strong);

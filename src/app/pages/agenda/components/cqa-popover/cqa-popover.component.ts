@@ -7,6 +7,7 @@ import {
   normalizeTipoPagoValue,
   tipoPagoToLabel,
 } from '../../../citas/models/cita.model';
+import { CurrencyPreferenceService } from 'src/app/services/currency-preference.service';
 
 export type CqaAction =
   | 'verDetalle'
@@ -38,7 +39,17 @@ export class CqaPopoverComponent {
     REPROGRAMADA:  'cpop-badge--pospuesta',
   };
 
-  constructor(private popoverCtrl: PopoverController) {}
+  constructor(
+    private popoverCtrl: PopoverController,
+    private currencyPreference: CurrencyPreferenceService,
+  ) {}
+
+  formatMonto(n: number | null | undefined): string {
+    return this.currencyPreference.format(Number(n ?? 0), {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
 
   act(action: CqaAction) {
     this.popoverCtrl.dismiss({ action });

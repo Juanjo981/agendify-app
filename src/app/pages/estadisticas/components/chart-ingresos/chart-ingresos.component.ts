@@ -1,21 +1,31 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IonicModule } from '@ionic/angular';
 import {
-  IngresoPorPeriodo,
   IngresoPorMetodoPago,
-  ResumenIngresosEstadistica,
+  IngresoPorPeriodo,
   PeriodoCitas,
+  ResumenIngresosEstadistica,
 } from '../../models/estadisticas.model';
 import { EstadisticasApiService } from '../../estadisticas.service.api';
 import { FiltroEstadisticas } from '../../models/filtros-estadisticas.model';
+import { CurrencyPreferenceService } from 'src/app/services/currency-preference.service';
+import { rellenarSerieIngresosPorPeriodo } from './ingresos-periodo-buckets.util';
 
 interface DonutSegment {
   dasharray: string;
   dashoffset: number;
   color: string;
 }
+
+type IngresosPayload = Awaited<ReturnType<EstadisticasApiService['getIngresosStats']>>;
 
 @Component({
   selector: 'app-chart-ingresos',
@@ -39,28 +49,35 @@ export class ChartIngresosComponent implements OnInit {
   totalMetodos = 0;
   private filtros: FiltroEstadisticas | null = null;
   private readonly destroyRef = inject(DestroyRef);
+  private readonly ingresosCache = new Map<string, IngresosPayload>();
 
   readonly RADIUS = 70;
-  get CIRCUMFERENCE(): number { return 2 * Math.PI * this.RADIUS; }
+  get CIRCUMFERENCE(): number {
+    return 2 * Math.PI * this.RADIUS;
+  }
 
   periodoTabs: Array<{ value: PeriodoCitas; label: string }> = [
-    { value: 'dia',    label: '7 días' },
+    { value: 'dia', label: '7 días' },
     { value: 'semana', label: 'Semanas' },
-    { value: 'mes',    label: 'Meses' },
+    { value: 'mes', label: 'Meses' },
   ];
 
-  constructor(private svc: EstadisticasApiService) {}
+  constructor(
+    private svc: EstadisticasApiService,
+    private cdr: ChangeDetectorRef,
+    private currencyPreference: CurrencyPreferenceService,
+  ) {}
 
   ngOnInit() {
-    this.svc.filtros$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(filtros => {
-        this.filtros = filtros;
-        void this.cargar();
-      });
+    this.svc.filtros$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(filtros => {
+      this.filtros = filtros;
+      this.ingresosCache.clear();
+      void this.cargar();
+    });
   }
 
   cambiarPeriodo(periodo: PeriodoCitas) {
+    if (periodo === this.periodoActivo) return;
     this.periodoActivo = periodo;
     void this.cargar();
   }
@@ -89,31 +106,52 @@ export class ChartIngresosComponent implements OnInit {
   }
 
   formatCurrency(val: number): string {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN',
-      maximumFractionDigits: 0,
-    }).format(val);
+    return this.currencyPreference.format(val, { maximumFractionDigits: 0 });
   }
 
-  trackByFecha(_: number, b: IngresoPorPeriodo): string { return b.fecha; }
-  trackByMetodo(_: number, m: IngresoPorMetodoPago): string { return m.metodo; }
-  trackByIndex(i: number): number { return i; }
+  trackByFecha(_: number, b: IngresoPorPeriodo): string {
+    return b.fecha;
+  }
+  trackByMetodo(_: number, m: IngresoPorMetodoPago): string {
+    return m.metodo;
+  }
+  trackByIndex(i: number): number {
+    return i;
+  }
+
+  private cacheKey(f: FiltroEstadisticas, p: PeriodoCitas): string {
+    return [p, f.rango, f.fechaDesde, f.fechaHasta, f.profesional, f.estadoCita, f.metodoPago].join('|');
+  }
 
   private async cargar() {
     if (!this.filtros) {
       return;
     }
 
+    const key = this.cacheKey(this.filtros, this.periodoActivo);
+
     try {
-      const data = await this.svc.getIngresosStats(this.periodoActivo, this.filtros);
-      this.barras = data.barras;
+      let data = this.ingresosCache.get(key);
+      if (!data) {
+        data = await this.svc.getIngresosStats(this.periodoActivo, this.filtros);
+        this.ingresosCache.set(key, data);
+      }
+
+      this.barras = rellenarSerieIngresosPorPeriodo(
+        data.barras,
+        this.filtros.fechaDesde,
+        this.filtros.fechaHasta,
+        this.periodoActivo,
+      );
       this.metodos = data.metodos;
       this.resumen = data.resumen;
       this.totalMetodos = this.metodos.reduce((s, m) => s + m.total, 0);
       this.donutSegments = this.buildDonut();
     } catch {
-      this.barras = [];
+      const emptySeries = this.filtros
+        ? rellenarSerieIngresosPorPeriodo([], this.filtros.fechaDesde, this.filtros.fechaHasta, this.periodoActivo)
+        : [];
+      this.barras = emptySeries;
       this.metodos = [];
       this.resumen = {
         totalPeriodo: 0,
@@ -125,7 +163,7 @@ export class ChartIngresosComponent implements OnInit {
       this.totalMetodos = 0;
       this.donutSegments = [];
     }
+
+    this.cdr.markForCheck();
   }
 }
-
-

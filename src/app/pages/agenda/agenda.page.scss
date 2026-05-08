@@ -24,20 +24,42 @@
     border-radius: 14px;
     position: relative;
     cursor: pointer;
+    border: 1px solid var(--border-subtle);
     background: var(--surface-muted);
-    transition: 0.2s;
+    transition: transform 0.2s, filter 0.2s, border-color 0.2s;
 
     &.inactive {
       opacity: 0.35;
     }
 
-    &.today {
-      border: 2px solid var(--primary);
+    &:hover:not(.selected) {
+      transform: scale(1.03);
+      filter: brightness(0.96);
     }
 
-    &:hover {
-      transform: scale(1.05);
-      background: var(--primary-soft);
+    /* Tonos más visibles que --*-soft al 10% (antes todo parecía verde/gris). */
+    &.day--green {
+      background: color-mix(in srgb, var(--success) 30%, var(--surface-white));
+      border-color: color-mix(in srgb, var(--success) 55%, var(--border-subtle));
+    }
+
+    &.day--yellow {
+      background: color-mix(in srgb, var(--warning) 34%, var(--surface-white));
+      border-color: color-mix(in srgb, var(--warning) 65%, var(--border-subtle));
+    }
+
+    &.day--red {
+      background: color-mix(in srgb, var(--danger-bright) 30%, var(--surface-white));
+      border-color: color-mix(in srgb, var(--danger-bright) 55%, var(--border-subtle));
+    }
+
+    &.day--empty {
+      background: var(--surface-muted);
+      border-color: var(--border-subtle);
+    }
+
+    &.today {
+      border: 2px solid var(--primary);
     }
   }
 

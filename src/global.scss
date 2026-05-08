@@ -81,3 +81,9 @@ body.modal-open .bottom-menu {
     -webkit-backdrop-filter: blur(28px) saturate(180%);
   }
 }
+
+// ── In-app notify (ToastController, InAppNotifyService) ────────────────────────
+ion-toast.agf-inapp-toast::part(container) {
+  border-radius: 14px;
+  box-shadow: var(--shadow-elevated);
+}

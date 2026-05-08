@@ -165,7 +165,7 @@
 .pac-counter {
   font-size: 13px;
   color: var(--text-muted);
-  margin: 0 0 12px;
+  margin: 12px 0;
 
   strong { color: var(--text-strong); }
 }
@@ -223,8 +223,10 @@
   &:active { background: var(--primary-soft); transform: none; }
 }
 
+// Pie de tabla: mismo tratamiento visual que `.cit-pagination` en Citas
 .pac-pagination {
   padding: 8px 20px 10px;
+  margin-top: 0;
   background: var(--surface-panel);
 }
 
@@ -863,20 +865,10 @@
   .pac-wrapper { padding: 20px 12px 80px; }
   .pac-page-header { flex-direction: column; align-items: flex-start; }
   .pac-select-wrap { margin-left: 0; }
-}
 
-.pac-pagination {
-  margin-top: 0;
-}
-
-@media (max-width: 860px) {
   .pac-pagination {
     margin-top: 0;
-  }
-}
-
-@media (max-width: 640px) {
-  .pac-pagination {
-    margin-top: 0;
+    padding: 6px 0 0;
+    background: transparent;
   }
 }

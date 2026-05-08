@@ -76,6 +76,18 @@
   gap: 6px;
 }
 
+.ccp-chart-area--canvas {
+  height: 200px;
+  position: relative;
+  padding: 4px 0 0;
+
+  canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+  }
+}
+
 .ccp-chart-area {
   height: 168px;
   border-bottom: 1.5px solid var(--border-subtle);

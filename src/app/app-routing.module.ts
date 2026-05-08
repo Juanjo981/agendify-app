@@ -90,6 +90,7 @@ const routes: Routes = [
       },
       {
         path: 'actividad',
+        canActivate: [permisosGuard],
         loadComponent: () => import('./pages/actividad/actividad.page.integrated').then(m => m.ActividadPageIntegrated)
       },
     ]

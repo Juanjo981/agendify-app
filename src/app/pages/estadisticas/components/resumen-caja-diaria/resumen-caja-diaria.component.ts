@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IonicModule } from '@ionic/angular';
 import { ResumenCajaDiaria } from '../../models/estadisticas.model';
 import { EstadisticasApiService } from '../../estadisticas.service.api';
+import { CurrencyPreferenceService } from 'src/app/services/currency-preference.service';
 
 interface MetodoItem {
   label: string;
@@ -35,7 +36,14 @@ export class ResumenCajaDiariaComponent implements OnInit {
   fechaDisplay = '';
   private readonly destroyRef = inject(DestroyRef);
 
-  constructor(private svc: EstadisticasApiService) {}
+  constructor(
+    private svc: EstadisticasApiService,
+    private currencyPreference: CurrencyPreferenceService,
+  ) {}
+
+  formatMoney(n: number): string {
+    return this.currencyPreference.format(n, { maximumFractionDigits: 0 });
+  }
 
   ngOnInit() {
     this.svc.filtros$

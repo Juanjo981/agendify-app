@@ -2,18 +2,26 @@ import { HttpClient, HttpErrorResponse, HttpResponse } from '@angular/common/htt
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, firstValueFrom } from 'rxjs';
 import { SessionService } from 'src/app/services/session.service';
+import { CurrencyPreferenceService } from 'src/app/services/currency-preference.service';
 import { buildQueryParams } from 'src/app/shared/utils/query-params.utils';
 import { environment } from 'src/environments/environment';
 import {
   CitasPorPeriodo,
+  CitasPorPeriodoDto,
   CitasStatsDto,
+  CitasStatsMetaDto,
+  DiaOcupadoDto,
+  EstadoCitaConteoDto,
   EstadoCitaEstadistica,
+  HoraOcupadaDto,
   EstadisticasResumen,
   EstadisticasResumenDto,
   ExportacionReporteRequest,
   ExportacionReporteResponse,
   IngresoPorMetodoPago,
   IngresoPorPeriodo,
+  IngresoPorPeriodoDto,
+  IngresoMetodoPagoDto,
   IngresosStatsDto,
   InsightEstadistica,
   InsightEstadisticaDto,
@@ -34,13 +42,18 @@ import {
   ResumenIngresosEstadistica,
   ResumenPacientesEstadistica,
   TipoReporte,
+  NuevosVsRecurrentesPuntoDto,
+  PacienteEstadisticaDto,
 } from './models/estadisticas.model';
 import { EstadoCitaFiltro, FiltroEstadisticas, MetodoPagoFiltro } from './models/filtros-estadisticas.model';
+import { normalizeUltimos6MesesPacientes, RANKING_PACIENTES_TOP_N } from './components/chart-pacientes/pacientes-semester.util';
 
 interface CitasStatsViewModel {
   barras: CitasPorPeriodo[];
   estados: EstadoCitaEstadistica[];
   resumen: ResumenCitasEstadistica;
+  /** Opcional: TZ del consultorio y texto de desempate (backend dashboard). */
+  meta?: CitasStatsMetaDto;
 }
 
 interface IngresosStatsViewModel {
@@ -78,6 +91,7 @@ export class EstadisticasApiService {
   constructor(
     private http: HttpClient,
     private session: SessionService,
+    private currencyPreference: CurrencyPreferenceService,
   ) {}
 
   getFiltrosIniciales(): FiltroEstadisticas {
@@ -163,11 +177,13 @@ export class EstadisticasApiService {
   }
 
   async getCitasStats(periodo: PeriodoCitas, filtros: FiltroEstadisticas = this.filtrosActuales): Promise<CitasStatsViewModel> {
-    const raw = await firstValueFrom(
-      this.http.get<CitasStatsDto>(`${this.base}/citas`, {
+    const httpRaw = await firstValueFrom(
+      this.http.get<unknown>(`${this.base}/citas`, {
         params: this.buildStatsParams(filtros, { periodo }),
       })
     );
+
+    const raw = this.normalizeCitasStatsDto(httpRaw);
 
     const barras = (raw.serie ?? []).map(item => ({
       fecha: item.fecha,
@@ -196,15 +212,18 @@ export class EstadisticasApiService {
           citas: item.citas ?? 0,
         })),
       },
+      meta: raw.meta,
     };
   }
 
   async getIngresosStats(periodo: PeriodoCitas, filtros: FiltroEstadisticas = this.filtrosActuales): Promise<IngresosStatsViewModel> {
-    const raw = await firstValueFrom(
-      this.http.get<IngresosStatsDto>(`${this.base}/ingresos`, {
+    const httpRaw = await firstValueFrom(
+      this.http.get<unknown>(`${this.base}/ingresos`, {
         params: this.buildStatsParams(filtros, { periodo }),
       })
     );
+
+    const raw = this.normalizeIngresosStatsDto(httpRaw);
 
     const barras = (raw.serie ?? []).map(item => ({
       fecha: item.fecha,
@@ -216,12 +235,20 @@ export class EstadisticasApiService {
       pendiente: item.pendiente ?? 0,
     }));
 
-    const metodos = (raw.por_metodo_pago ?? []).map(item => ({
+    let metodos = (raw.por_metodo_pago ?? []).map(item => ({
       metodo: this.normalizeMetodoPagoLabel(item.metodo),
       total: item.total ?? 0,
       porcentaje: item.porcentaje ?? 0,
       color: this.colorMetodoPago(this.normalizeMetodoPagoLabel(item.metodo)),
     }));
+
+    const sumMontos = metodos.reduce((acc, m) => acc + m.total, 0);
+    if (sumMontos > 0) {
+      metodos = metodos.map(m => ({
+        ...m,
+        porcentaje: Number(((m.total / sumMontos) * 100).toFixed(1)),
+      }));
+    }
 
     return {
       barras,
@@ -237,26 +264,37 @@ export class EstadisticasApiService {
   }
 
   async getPacientesStats(filtros: FiltroEstadisticas = this.filtrosActuales): Promise<PacientesStatsViewModel> {
-    const raw = await firstValueFrom(
-      this.http.get<PacientesStatsDto>(`${this.base}/pacientes`, { params: this.buildStatsParams(filtros) })
+    const httpRaw = await firstValueFrom(
+      this.http.get<unknown>(`${this.base}/pacientes`, { params: this.buildStatsParams(filtros) })
     );
 
-    const rankingNoAsistenciasSource = raw.ranking_no_asistencias ?? raw.ranking_por_ingresos ?? [];
+    const raw = this.normalizePacientesStatsDto(httpRaw);
+    const rankingNoAsistenciasSource = raw.ranking_no_asistencias ?? [];
+
+    const puntosRaw: NuevosVsRecurrentesPunto[] = (raw.nuevos_vs_recurrentes ?? []).map(item => ({
+      label: item.label || '',
+      nuevos: item.nuevos ?? 0,
+      recurrentes: item.recurrentes ?? 0,
+      ...(item.fecha ? { fecha: item.fecha } : {}),
+    }));
+
+    const puntos = normalizeUltimos6MesesPacientes(puntosRaw, filtros.fechaHasta);
+
+    const mapRankTop = (rows: RankingPacienteDto[]) =>
+      rows.slice(0, RANKING_PACIENTES_TOP_N).map((item, index) =>
+        this.mapRankingPaciente({ ...item, posicion: index + 1 }, index),
+      );
 
     return {
-      puntos: (raw.nuevos_vs_recurrentes ?? []).map(item => ({
-        label: item.label || 'Sin datos',
-        nuevos: item.nuevos ?? 0,
-        recurrentes: item.recurrentes ?? 0,
-      })),
+      puntos,
       resumen: {
         totalActivos: raw.total_activos ?? 0,
         nuevosEsteMes: raw.nuevos_este_mes ?? 0,
         recurrentesEsteMes: raw.recurrentes_este_mes ?? 0,
         tasaRetencion: raw.tasa_retencion ?? 0,
       },
-      rankingCitas: (raw.ranking_mas_citas ?? []).map((item, index) => this.mapRankingPaciente(item, index)),
-      rankingNoAsistencias: rankingNoAsistenciasSource.map((item, index) => this.mapRankingPaciente(item, index)),
+      rankingCitas: mapRankTop(raw.ranking_mas_citas ?? []),
+      rankingNoAsistencias: mapRankTop(rankingNoAsistenciasSource),
       pacientes: (raw.pacientes ?? []).map(item => ({
         id: item.id_paciente ?? 0,
         nombre: item.nombre_paciente || 'Sin datos',
@@ -402,32 +440,310 @@ export class EstadisticasApiService {
   }
 
   private buildStatsParams(filtros: FiltroEstadisticas, extras: Record<string, string | number | undefined> = {}) {
+    const pid = filtros.profesional?.trim();
+    const profesionalId = pid ? Number(pid) : NaN;
     return buildQueryParams({
       rango: filtros.rango,
       fecha_desde: filtros.fechaDesde,
       fecha_hasta: filtros.fechaHasta,
       estado_cita: this.mapEstadoFiltro(filtros.estadoCita),
       metodo_pago: this.mapMetodoPagoFiltro(filtros.metodoPago),
+      ...(Number.isFinite(profesionalId) && profesionalId > 0 ? { profesional_id: profesionalId } : {}),
       ...extras,
     });
   }
 
+  /** Spring suele serializar camelCase; el front histórico esperaba snake_case. */
+  private normalizeCitasStatsDto(raw: unknown): CitasStatsDto {
+    if (!raw || typeof raw !== 'object') {
+      return {
+        serie: [],
+        conteo_por_estado: [],
+        total_citas: 0,
+        horas_mas_ocupadas: [],
+        dias_mas_ocupados: [],
+        meta: undefined,
+      };
+    }
+    const r = raw as Record<string, unknown>;
+    const serieIn = r['serie'] ?? r['series'];
+    const serie = Array.isArray(serieIn) ? serieIn.map(row => this.normalizeCitasPorPeriodoRow(row)) : [];
+    const estadosIn = r['conteo_por_estado'] ?? r['conteoPorEstado'];
+    const conteo_por_estado = Array.isArray(estadosIn)
+      ? estadosIn.map(row => this.normalizeEstadoConteoRow(row))
+      : [];
+    const horasIn = r['horas_mas_ocupadas'] ?? r['horasMasOcupadas'];
+    const horas_mas_ocupadas = Array.isArray(horasIn)
+      ? horasIn.map(row => this.normalizeHoraOcupadaRow(row))
+      : [];
+    const diasIn = r['dias_mas_ocupados'] ?? r['diasMasOcupados'];
+    const dias_mas_ocupados = Array.isArray(diasIn)
+      ? diasIn.map(row => this.normalizeDiaOcupadoRow(row))
+      : [];
+    const total_citas = this.pickNum(r['total_citas'] ?? r['totalCitas'], serie.reduce((a, x) => a + (x.total ?? 0), 0));
+
+    return {
+      serie,
+      conteo_por_estado,
+      total_citas,
+      horas_mas_ocupadas,
+      dias_mas_ocupados,
+      meta: this.normalizeCitasStatsMeta(r['meta']),
+    };
+  }
+
+  private normalizeCitasStatsMeta(raw: unknown): CitasStatsMetaDto | undefined {
+    if (!raw || typeof raw !== 'object') return undefined;
+    const m = raw as Record<string, unknown>;
+    const zona = m['zona_horaria'] ?? m['zonaHoraria'];
+    const des = m['desempate_conteo_estado'] ?? m['desempateConteoEstado'];
+    if (zona == null && des == null) return undefined;
+    const out: CitasStatsMetaDto = {
+      zona_horaria: typeof zona === 'string' ? zona : zona != null ? String(zona) : '',
+    };
+    if (des != null) out.desempate_conteo_estado = typeof des === 'string' ? des : String(des);
+    return out;
+  }
+
+  private normalizeCitasPorPeriodoRow(row: unknown): CitasPorPeriodoDto {
+    if (!row || typeof row !== 'object') {
+      return { fecha: '', label: '', total: 0, confirmadas: 0, completadas: 0, canceladas: 0, no_asistio: 0 };
+    }
+    const o = row as Record<string, unknown>;
+    return {
+      fecha: String(o['fecha'] ?? ''),
+      label: String(o['label'] ?? ''),
+      total: this.pickNum(o['total'], 0),
+      confirmadas: this.pickNum(o['confirmadas'], 0),
+      completadas: this.pickNum(o['completadas'], 0),
+      canceladas: this.pickNum(o['canceladas'], 0),
+      no_asistio: this.pickNum(o['no_asistio'] ?? o['noAsistio'], 0),
+    };
+  }
+
+  private normalizeEstadoConteoRow(row: unknown): EstadoCitaConteoDto {
+    if (!row || typeof row !== 'object') {
+      return { estado: '', cantidad: 0 };
+    }
+    const o = row as Record<string, unknown>;
+    return {
+      estado: String(o['estado'] ?? ''),
+      cantidad: this.pickNum(o['cantidad'], 0),
+    };
+  }
+
+  private normalizeHoraOcupadaRow(row: unknown): HoraOcupadaDto {
+    if (!row || typeof row !== 'object') {
+      return { hora: '', citas: 0 };
+    }
+    const o = row as Record<string, unknown>;
+    return {
+      hora: String(o['hora'] ?? ''),
+      citas: this.pickNum(o['citas'], 0),
+    };
+  }
+
+  private normalizeDiaOcupadoRow(row: unknown): DiaOcupadoDto {
+    if (!row || typeof row !== 'object') {
+      return { dia: '', citas: 0 };
+    }
+    const o = row as Record<string, unknown>;
+    return {
+      dia: String(o['dia'] ?? ''),
+      citas: this.pickNum(o['citas'], 0),
+    };
+  }
+
+  private normalizeIngresosStatsDto(raw: unknown): IngresosStatsDto {
+    if (!raw || typeof raw !== 'object') {
+      return {
+        serie: [],
+        por_metodo_pago: [],
+        total_periodo: 0,
+        monto_pendiente: 0,
+        citas_pagadas: 0,
+        citas_pendientes: 0,
+        metodo_principal: null,
+      };
+    }
+    const r = raw as Record<string, unknown>;
+    const serieIn = r['serie'] ?? r['series'];
+    const serie = Array.isArray(serieIn) ? serieIn.map(row => this.normalizeIngresoPorPeriodoRow(row)) : [];
+    const pmIn = r['por_metodo_pago'] ?? r['porMetodoPago'];
+    const por_metodo_pago = Array.isArray(pmIn) ? pmIn.map(row => this.normalizeIngresoMetodoPagoRow(row)) : [];
+    const mp = r['metodo_principal'] ?? r['metodoPrincipal'];
+
+    return {
+      serie,
+      por_metodo_pago,
+      total_periodo: this.pickNum(r['total_periodo'] ?? r['totalPeriodo'], serie.reduce((a, x) => a + (x.total ?? 0), 0)),
+      monto_pendiente: this.pickNum(r['monto_pendiente'] ?? r['montoPendiente'], 0),
+      citas_pagadas: this.pickNum(r['citas_pagadas'] ?? r['citasPagadas'], 0),
+      citas_pendientes: this.pickNum(r['citas_pendientes'] ?? r['citasPendientes'], 0),
+      metodo_principal: mp != null && mp !== '' ? String(mp) : null,
+    };
+  }
+
+  private normalizeIngresoPorPeriodoRow(row: unknown): IngresoPorPeriodoDto {
+    if (!row || typeof row !== 'object') {
+      return { fecha: '', label: '', total: 0, efectivo: 0, transferencia: 0, tarjeta: 0, pendiente: 0 };
+    }
+    const o = row as Record<string, unknown>;
+    return {
+      fecha: String(o['fecha'] ?? ''),
+      label: String(o['label'] ?? ''),
+      total: this.pickNum(o['total'], 0),
+      efectivo: this.pickNum(o['efectivo'], 0),
+      transferencia: this.pickNum(o['transferencia'], 0),
+      tarjeta: this.pickNum(o['tarjeta'], 0),
+      pendiente: this.pickNum(o['pendiente'], 0),
+    };
+  }
+
+  private normalizeIngresoMetodoPagoRow(row: unknown): IngresoMetodoPagoDto {
+    if (!row || typeof row !== 'object') {
+      return { metodo: '', total: 0, porcentaje: 0 };
+    }
+    const o = row as Record<string, unknown>;
+    return {
+      metodo: String(o['metodo'] ?? ''),
+      total: this.pickNum(o['total'], 0),
+      porcentaje: this.pickNum(o['porcentaje'], 0),
+    };
+  }
+
+  private normalizePacientesStatsDto(raw: unknown): PacientesStatsDto {
+    if (!raw || typeof raw !== 'object') {
+      return {
+        nuevos_vs_recurrentes: [],
+        total_activos: 0,
+        nuevos_este_mes: 0,
+        recurrentes_este_mes: 0,
+        tasa_retencion: 0,
+        ranking_mas_citas: [],
+        ranking_no_asistencias: [],
+        ranking_por_ingresos: [],
+        pacientes: [],
+      };
+    }
+    const r = raw as Record<string, unknown>;
+    const nvrIn = r['nuevos_vs_recurrentes'] ?? r['nuevosVsRecurrentes'];
+    const nuevos_vs_recurrentes = Array.isArray(nvrIn)
+      ? nvrIn.map(row => this.normalizeNuevosVsRecurrentesRow(row))
+      : [];
+
+    const rnkCitas = r['ranking_mas_citas'] ?? r['rankingMasCitas'];
+    const ranking_mas_citas = Array.isArray(rnkCitas) ? rnkCitas.map(row => this.normalizeRankingPacienteRow(row)) : [];
+
+    const rnkNa = r['ranking_no_asistencias'] ?? r['rankingNoAsistencias'];
+    const ranking_no_asistencias = Array.isArray(rnkNa) ? rnkNa.map(row => this.normalizeRankingPacienteRow(row)) : [];
+
+    const rnkIng = r['ranking_por_ingresos'] ?? r['rankingPorIngresos'];
+    const ranking_por_ingresos = Array.isArray(rnkIng) ? rnkIng.map(row => this.normalizeRankingPacienteRow(row)) : [];
+
+    const pacIn = r['pacientes'];
+    const pacientes = Array.isArray(pacIn) ? pacIn.map(row => this.normalizePacienteEstadisticaRow(row)) : [];
+
+    return {
+      nuevos_vs_recurrentes,
+      ranking_mas_citas,
+      ranking_no_asistencias,
+      ranking_por_ingresos,
+      pacientes,
+      total_activos: this.pickNum(r['total_activos'] ?? r['totalActivos'], 0),
+      nuevos_este_mes: this.pickNum(r['nuevos_este_mes'] ?? r['nuevosEsteMes'], 0),
+      recurrentes_este_mes: this.pickNum(r['recurrentes_este_mes'] ?? r['recurrentesEsteMes'], 0),
+      tasa_retencion: this.pickNum(r['tasa_retencion'] ?? r['tasaRetencion'], 0),
+    };
+  }
+
+  private normalizeNuevosVsRecurrentesRow(row: unknown): NuevosVsRecurrentesPuntoDto {
+    if (!row || typeof row !== 'object') {
+      return { label: '', nuevos: 0, recurrentes: 0 };
+    }
+    const o = row as Record<string, unknown>;
+    const fechaRaw = o['fecha'] ?? o['periodo'];
+    const dto: NuevosVsRecurrentesPuntoDto = {
+      label: String(o['label'] ?? ''),
+      nuevos: this.pickNum(o['nuevos'], 0),
+      recurrentes: this.pickNum(o['recurrentes'], 0),
+    };
+    if (typeof fechaRaw === 'string' && fechaRaw.trim().length >= 7) {
+      dto.fecha = fechaRaw.trim().slice(0, 7);
+    }
+    return dto;
+  }
+
+  private normalizeRankingPacienteRow(row: unknown): RankingPacienteDto {
+    if (!row || typeof row !== 'object') {
+      return { posicion: 0, id_paciente: 0, nombre_paciente: '', valor: 0 };
+    }
+    const o = row as Record<string, unknown>;
+    const ap = o['apellido_paciente'] ?? o['apellidoPaciente'];
+    return {
+      posicion: this.pickNum(o['posicion'] ?? o['position'], 0),
+      id_paciente: this.pickNum(o['id_paciente'] ?? o['idPaciente'], 0),
+      nombre_paciente: String(o['nombre_paciente'] ?? o['nombrePaciente'] ?? ''),
+      apellido_paciente: ap != null && String(ap).trim() !== '' ? String(ap) : null,
+      valor: this.pickNum(o['valor'] ?? o['value'], 0),
+    };
+  }
+
+  private normalizePacienteEstadisticaRow(row: unknown): PacienteEstadisticaDto {
+    if (!row || typeof row !== 'object') {
+      return {
+        id_paciente: 0,
+        nombre_paciente: '',
+        total_citas: 0,
+        no_asistencias: 0,
+        ingresos: 0,
+        es_nuevo: false,
+      };
+    }
+    const o = row as Record<string, unknown>;
+    const ap = o['apellido_paciente'] ?? o['apellidoPaciente'];
+    return {
+      id_paciente: this.pickNum(o['id_paciente'] ?? o['idPaciente'], 0),
+      nombre_paciente: String(o['nombre_paciente'] ?? o['nombrePaciente'] ?? ''),
+      apellido_paciente: ap != null && String(ap).trim() !== '' ? String(ap) : null,
+      total_citas: this.pickNum(o['total_citas'] ?? o['totalCitas'], 0),
+      no_asistencias: this.pickNum(o['no_asistencias'] ?? o['noAsistencias'], 0),
+      ingresos: this.pickNum(o['ingresos'], 0),
+      es_nuevo: o['es_nuevo'] === true || o['esNuevo'] === true,
+    };
+  }
+
+  private pickNum(v: unknown, fallback: number): number {
+    if (typeof v === 'number' && Number.isFinite(v)) return v;
+    if (typeof v === 'string' && v.trim() !== '') {
+      const n = Number(v.replace(',', '.'));
+      return Number.isFinite(n) ? n : fallback;
+    }
+    return fallback;
+  }
+
   private mapEstados(raw: CitasStatsDto): EstadoCitaEstadistica[] {
-    const conteos = raw.conteo_por_estado ?? [];
+    const conteos = [...(raw.conteo_por_estado ?? [])];
     const total = conteos.reduce((acc, item) => acc + (item.cantidad ?? 0), 0);
 
-    return conteos
-      .map(item => {
-        const estado = this.normalizeEstadoLabel(item.estado);
-        const cantidad = item.cantidad ?? 0;
-        return {
-          estado,
-          total: cantidad,
-          porcentaje: total > 0 ? Number(((cantidad / total) * 100).toFixed(1)) : 0,
-          color: this.colorEstado(estado),
-        };
-      })
-      .sort((a, b) => b.total - a.total);
+    // Misma regla que SQL backend: total DESC, estado ASC (desempate).
+    conteos.sort((a, b) => {
+      const ca = a.cantidad ?? 0;
+      const cb = b.cantidad ?? 0;
+      if (cb !== ca) return cb - ca;
+      return String(a.estado ?? '').localeCompare(String(b.estado ?? ''));
+    });
+
+    return conteos.map(item => {
+      const estado = this.normalizeEstadoLabel(item.estado);
+      const cantidad = item.cantidad ?? 0;
+      return {
+        estado,
+        total: cantidad,
+        porcentaje: total > 0 ? Number(((cantidad / total) * 100).toFixed(1)) : 0,
+        color: this.colorEstado(estado),
+      };
+    });
   }
 
   private mapRankingPaciente(item: RankingPacienteDto, index: number): RankingPaciente {
@@ -487,11 +803,7 @@ export class EstadisticasApiService {
   }
 
   private formatCurrency(value: number): string {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN',
-      maximumFractionDigits: 0,
-    }).format(value);
+    return this.currencyPreference.format(value, { maximumFractionDigits: 0 });
   }
 
   private normalizeInsightTipo(value: string): InsightEstadistica['tipo'] {

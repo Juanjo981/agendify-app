@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { KpiCard } from '../../models/estadisticas.model';
+import { CurrencyPreferenceService } from 'src/app/services/currency-preference.service';
 
 @Component({
   selector: 'app-resumen-kpis',
@@ -11,13 +12,15 @@ import { KpiCard } from '../../models/estadisticas.model';
   imports: [CommonModule, IonicModule],
 })
 export class ResumenKpisComponent {
+  constructor(private currencyPreference: CurrencyPreferenceService) {}
+
   @Input() kpis: KpiCard[] = [];
 
   formatValor(kpi: KpiCard): string {
     const v = kpi.valor;
     if (typeof v === 'number') {
-      if (kpi.sufijo === '€') {
-        return '€\u202f' + v.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      if (kpi.sufijo === 'currency') {
+        return this.currencyPreference.format(v, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
       }
       if (kpi.sufijo === '%') {
         return v.toFixed(1) + '%';

@@ -5,8 +5,8 @@ export interface KpiCard {
   id: string;
   label: string;
   valor: number | string;
-  /** '€' | '%' — prefix/suffix handled by the component */
-  sufijo?: '€' | '%';
+  /** Indicador de formato para valores numéricos en KPI. */
+  sufijo?: 'currency' | '%';
   icono: string;
   color: KpiColor;
   tendencia?: {
@@ -168,7 +168,7 @@ export interface ReporteEstadistica {
   icono: string;
   colorIcono: string;        // CSS color token
   totalRegistros: number;
-  resumenTexto: string;      // e.g. '48 citas · €3,840 total'
+  resumenTexto: string;      // e.g. '48 citas · $3,840 total' (símbolo depende de moneda)
   periodoLabel: string;      // e.g. 'Marzo 2026'
   ultimaActualizacion: string; // ISO datetime
   filas: Record<string, string | number>[];
@@ -239,12 +239,19 @@ export interface DiaOcupadoDto {
   citas: number;
 }
 
+/** Meta devuelta por GET /estadisticas/citas (dashboard). */
+export interface CitasStatsMetaDto {
+  zona_horaria: string;
+  desempate_conteo_estado?: string;
+}
+
 export interface CitasStatsDto {
   serie: CitasPorPeriodoDto[];
   conteo_por_estado: EstadoCitaConteoDto[];
   total_citas: number;
   horas_mas_ocupadas: HoraOcupadaDto[];
   dias_mas_ocupados: DiaOcupadoDto[];
+  meta?: CitasStatsMetaDto;
 }
 
 export interface IngresoPorPeriodoDto {
@@ -277,6 +284,8 @@ export interface NuevosVsRecurrentesPuntoDto {
   label: string;
   nuevos: number;
   recurrentes: number;
+  /** Opcional YYYY-MM del backend para fusionar con el semestre visual */
+  fecha?: string;
 }
 
 export interface RankingPacienteDto {

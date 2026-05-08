@@ -30,7 +30,7 @@
             <span class="cp-summary-chip__lbl">Nuevos</span>
           </div>
         </div>
-        <div class="cp-summary-chip cp-summary-chip--info">
+        <div class="cp-summary-chip cp-summary-chip--recurrent">
           <ion-icon name="repeat-outline"></ion-icon>
           <div class="cp-summary-chip__body">
             <span class="cp-summary-chip__val">{{ resumen.recurrentesEsteMes }}</span>
@@ -97,15 +97,17 @@
         <p class="cp-section-label">Ranking de pacientes</p>
         <div class="cp-ranking-tabs">
           <button
+            type="button"
             class="cp-rtab"
             [class.cp-rtab--active]="rankingTab === 'citas'"
-            (click)="rankingTab = 'citas'">
+            (click)="setRankingTab('citas')">
             Más citas
           </button>
           <button
+            type="button"
             class="cp-rtab"
             [class.cp-rtab--active]="rankingTab === 'no-asistencias'"
-            (click)="rankingTab = 'no-asistencias'">
+            (click)="setRankingTab('no-asistencias')">
             No asistió
           </button>
         </div>
@@ -152,12 +154,11 @@
 
         </div>
 
-        <!-- Estado vacío para no-asistencias si lista es corta -->
         <p
           *ngIf="rankingActivo.length === 0"
           class="cp-ranking-empty">
-          <ion-icon name="checkmark-circle-outline"></ion-icon>
-          Sin no asistencias registradas
+          <ion-icon name="albums-outline"></ion-icon>
+          Sin registros
         </p>
 
       </div>

@@ -16,6 +16,8 @@ import {
 } from '../dashboard.models';
 import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
 import { formatFecha } from 'src/app/shared/utils/date.utils';
+import { InAppNotifyService } from 'src/app/services/in-app-notify.service';
+import { CurrencyPreferenceService } from 'src/app/services/currency-preference.service';
 
 interface HomeQuickAction {
   label: string;
@@ -55,6 +57,8 @@ export class DashboardHomePage implements OnInit {
     private dashboardApi: DashboardApiService,
     private citasApi: CitasApiService,
     private router: Router,
+    private inAppNotify: InAppNotifyService,
+    private currencyPreference: CurrencyPreferenceService,
   ) {}
 
   ngOnInit() {
@@ -89,6 +93,10 @@ export class DashboardHomePage implements OnInit {
     this.resumenLoading = false;
     this.agendaLoading = false;
     event?.detail?.complete?.();
+
+    if (agendaResult.ok) {
+      this.maybeProximaCitaHint();
+    }
   }
 
   get agendaItems(): DashboardAgendaCitaDto[] {
@@ -246,11 +254,7 @@ export class DashboardHomePage implements OnInit {
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN',
-      maximumFractionDigits: 0,
-    }).format(Number(value || 0));
+    return this.currencyPreference.format(Number(value || 0), { maximumFractionDigits: 0 });
   }
 
   getEstadoClass(estado: string): string {
@@ -294,6 +298,7 @@ export class DashboardHomePage implements OnInit {
       await this.citasApi.create(this.mapFormToRequest(data));
       this.cerrarNuevaCita();
       await this.cargarDashboard();
+      void this.inAppNotify.success('Cita creada correctamente.');
     } catch (error) {
       this.citaError = mapApiError(error).userMessage;
       this.citaSaving = false;
@@ -322,6 +327,29 @@ export class DashboardHomePage implements OnInit {
       observaciones: data.observaciones?.trim() || null,
       monto: data.monto,
     };
+  }
+
+  /**
+   * Aviso discreto si la próxima cita de hoy está dentro de la próxima hora.
+   * Una vez por sesión por combinación cita + ventana de inicio (ver InAppNotifyService).
+   */
+  private maybeProximaCitaHint(): void {
+    const proxima = this.proximaCita;
+    if (!proxima?.fecha_inicio) return;
+    if (['COMPLETADA', 'CANCELADA', 'NO_ASISTIO'].includes(proxima.estado_cita)) return;
+
+    const start = new Date(proxima.fecha_inicio).getTime();
+    const now = Date.now();
+    const diffMin = (start - now) / 60000;
+    if (diffMin <= 0 || diffMin > 60) return;
+
+    const sessionKey = `proxima-${proxima.id_cita}-${proxima.fecha_inicio.slice(0, 16)}`;
+    this.inAppNotify.runOncePerSession(sessionKey, () => {
+      void this.inAppNotify.info(
+        `Próxima cita en ~${Math.max(1, Math.round(diffMin))} min · ${this.formatTime(proxima.fecha_inicio)}`,
+        { duration: 2800 },
+      );
+    });
   }
 
   private async wrapResult<T>(promise: Promise<T>): Promise<{ ok: true; value: T } | { ok: false; error: unknown }> {

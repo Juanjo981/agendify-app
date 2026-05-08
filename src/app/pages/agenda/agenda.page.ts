@@ -23,7 +23,10 @@ import { CitasApiService } from '../citas/citas-api.service';
 import {
   CitaDto,
   CitaUpsertRequest,
+  ESTADO_CITA_LABEL,
+  ESTADO_CITA_VALUES,
   EstadoCita,
+  EstadoCitaLabel,
   TipoPago,
   normalizeTipoPagoValue,
   tipoPagoToLabel,
@@ -37,6 +40,7 @@ import {
   ConfiguracionJornadaDto,
 } from './agenda.models';
 import { AgendaRefreshService, CitasRefreshService } from '../../shared/refresh/dashboard-module-refresh.services';
+import { CurrencyPreferenceService } from 'src/app/services/currency-preference.service';
 
 interface CalendarEvent {
   title: string;
@@ -48,6 +52,8 @@ interface CalendarEvent {
   bloqueo?: BloqueoHorarioDto;
 }
 
+type DayOccupancyStatus = 'green' | 'yellow' | 'red' | 'empty';
+
 interface CalendarDay {
   date: Date;
   number: number;
@@ -55,7 +61,12 @@ interface CalendarDay {
   isToday: boolean;
   fullDate: string;
   events: CalendarEvent[];
+  /** Citas del día que cuentan para ocupación: todas excepto CANCELADA. */
   citas: number;
+  slotsTotal: number;
+  ocupacion: number;
+  status: DayOccupancyStatus;
+  /** Color para ion-datetime (applyCalendarColors). */
   colorCitas: string;
 }
 
@@ -74,6 +85,9 @@ interface CalendarDay {
 })
 export class AgendaPage implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
+  /** Activar para depurar ocupación por día en consola. */
+  private debugDayStatus = false;
+
   nombreUsuario = 'Juan Jose';
   showNewAppointmentPanel = false;
 
@@ -88,11 +102,11 @@ export class AgendaPage implements OnInit, OnDestroy {
     'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
   ];
 
-  maxCitasPorDia = 8;
   loading = false;
   saving = false;
   deletingBlockId: number | null = null;
   errorMessage = '';
+  /** Feedback de acciones en agenda: solo este banner (no duplicar con InAppNotifyService / toasts). */
   successMessage = '';
 
   pacientes: { id: number; nombre: string }[] = [];
@@ -178,10 +192,18 @@ export class AgendaPage implements OnInit, OnDestroy {
     private popoverCtrl: PopoverController,
     private agendaRefresh: AgendaRefreshService,
     private citasRefresh: CitasRefreshService,
+    private currencyPreference: CurrencyPreferenceService,
   ) {
     this.horas = this.buildHourOptions();
     this.generateCalendar();
     this.updateHeaderInfo();
+  }
+
+  formatMonto(n: number | null | undefined): string {
+    return this.currencyPreference.format(Number(n ?? 0), {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   }
 
   async ngOnInit() {
@@ -261,7 +283,6 @@ export class AgendaPage implements OnInit, OnDestroy {
       this.citasMes = agenda.citas ?? [];
       this.bloqueosMes = agenda.bloqueos ?? [];
       this.configuracionJornada = agenda.configuracion_jornada ?? null;
-      this.maxCitasPorDia = this.calcularCapacidadJornada(this.configuracionJornada);
       this.horas = this.buildHourOptions(this.configuracionJornada ?? undefined);
       this.generateCalendar();
       this.updateHeaderInfo();
@@ -271,7 +292,6 @@ export class AgendaPage implements OnInit, OnDestroy {
       this.citasMes = [];
       this.bloqueosMes = [];
       this.configuracionJornada = null;
-      this.maxCitasPorDia = this.calcularCapacidadJornada(null);
       this.horas = this.buildHourOptions();
       this.generateCalendar();
       this.updateHeaderInfo();
@@ -367,17 +387,134 @@ export class AgendaPage implements OnInit, OnDestroy {
   }
 
   buildDay(date: Date, inMonth: boolean, events: CalendarEvent[] = []): CalendarDay {
-    const citas = events.filter(e => e.kind === 'cita').length;
+    const isoDate = this.formatDateLocal(date);
+    const citasCount = events.filter(
+      e => e.kind === 'cita' && this.cuentaCitaParaOcupacion(e.cita),
+    ).length;
+    const slotsTotal = this.slotsTotalParaDia(date, inMonth, isoDate);
+    const ocupacion = slotsTotal ? citasCount / slotsTotal : 0;
+    const status = this.getDayStatus(citasCount, slotsTotal);
+
+    if (this.debugDayStatus && inMonth) {
+      console.log({ fecha: isoDate, citas: citasCount, slots: slotsTotal, ocupacion });
+    }
+
     return {
       date,
       number: date.getDate(),
       inCurrentMonth: inMonth,
       isToday: this.isToday(date),
-      fullDate: this.formatDateLocal(date),
+      fullDate: isoDate,
       events,
-      citas,
-      colorCitas: this.getColorForDay(date, citas),
+      citas: citasCount,
+      slotsTotal,
+      ocupacion,
+      status,
+      colorCitas: this.colorPorStatus(status),
     };
+  }
+
+  /** Todas las citas cuentan para la ocupación salvo las canceladas. */
+  private cuentaCitaParaOcupacion(cita: CitaDto | undefined): boolean {
+    if (!cita) return false;
+    const estado = this.resolveEstadoCita(cita);
+    if (estado === null) return true;
+    return estado !== 'CANCELADA';
+  }
+
+  /**
+   * Une `estado_cita` (código) y `estado` (etiqueta legacy del API) para que el conteo no quede en 0
+   * cuando el backend envía solo uno de los dos o distinta capitalización.
+   */
+  private resolveEstadoCita(cita: CitaDto): EstadoCita | null {
+    const raw = cita.estado_cita;
+    if (raw != null && String(raw).trim() !== '') {
+      const u = String(raw).trim().toUpperCase().replace(/\s+/g, '_');
+      if (ESTADO_CITA_VALUES.includes(u as EstadoCita)) {
+        return u as EstadoCita;
+      }
+    }
+    const label = cita.estado;
+    if (label) {
+      const norm = String(label).trim().toLowerCase();
+      const found = (Object.entries(ESTADO_CITA_LABEL) as [EstadoCita, EstadoCitaLabel][]).find(
+        ([, l]) => l.toLowerCase() === norm,
+      );
+      if (found) return found[0];
+    }
+    return null;
+  }
+
+  /**
+   * Minutos entre huecos del calendario.
+   * Prioriza intervalo explícito; si coexisten intervalo y duración de cita, usa el mayor
+   * para no contar demasiados slots (duración corta sin intervalo inflaba capacidad).
+   */
+  private minutosPasoGrilla(cfg: ConfiguracionJornadaDto | null): number {
+    if (!cfg) return 30;
+    const intv = cfg.intervalo_minutos ?? cfg.intervalo;
+    const dur = cfg.duracion_cita_default_min;
+    const intvOk = typeof intv === 'number' && intv > 0 ? intv : null;
+    const durOk = typeof dur === 'number' && dur > 0 ? dur : null;
+    if (intvOk != null && durOk != null) return Math.max(intvOk, durOk);
+    if (intvOk != null) return intvOk;
+    if (durOk != null) return durOk;
+    return 30;
+  }
+
+  private getDayStatus(citas: number, slots: number): DayOccupancyStatus {
+    if (!slots) return 'empty';
+    const ocupacion = citas / slots;
+    if (ocupacion >= 1) return 'red';
+    if (ocupacion >= 0.5) return 'yellow';
+    return 'green';
+  }
+
+  private colorPorStatus(status: DayOccupancyStatus): string {
+    switch (status) {
+      case 'green':
+        return 'var(--success-soft)';
+      case 'yellow':
+        return 'var(--warning-soft)';
+      case 'red':
+        return 'var(--danger-soft)';
+      default:
+        return 'var(--surface-muted)';
+    }
+  }
+
+  private capacidadJornada(): number {
+    const cfg = this.configuracionJornada;
+    if (!cfg?.hora_inicio || !cfg?.hora_fin) return 0;
+    const ini = this.toMinutes(cfg.hora_inicio);
+    const fin = this.toMinutes(cfg.hora_fin);
+    const paso = this.minutosPasoGrilla(cfg);
+    if (ini === null || fin === null || fin <= ini || !paso) return 0;
+    return Math.max(0, Math.floor((fin - ini) / paso));
+  }
+
+  private slotsTotalParaDia(date: Date, inMonth: boolean, isoDate: string): number {
+    if (!inMonth) return 0;
+    if (!this.isDiaHabilitado(date)) return 0;
+    const capacidad = this.capacidadJornada();
+    if (!capacidad || !this.configuracionJornada) return 0;
+
+    const intervalo = this.minutosPasoGrilla(this.configuracionJornada);
+    const jornadaIni = this.toMinutes(this.configuracionJornada.hora_inicio)!;
+    const jornadaFin = this.toMinutes(this.configuracionJornada.hora_fin)!;
+
+    let bloqueados = 0;
+    for (const b of this.bloqueosMes) {
+      const fechaB = b.fecha || this.toDatePart(b.fecha_inicio);
+      if (fechaB !== isoDate) continue;
+      if (b.todo_el_dia) return 0;
+      const ini = this.toMinutes(b.hora_inicio || this.toTimePart(b.fecha_inicio));
+      const fin = this.toMinutes(b.hora_fin || this.toTimePart(b.fecha_fin));
+      if (ini === null || fin === null) continue;
+      const overlap = Math.max(0, Math.min(fin, jornadaFin) - Math.max(ini, jornadaIni));
+      bloqueados += Math.ceil(overlap / intervalo);
+    }
+    return Math.max(0, capacidad - bloqueados);
   }
 
   private getSortTime(event: CalendarEvent): string {
@@ -387,28 +524,12 @@ export class AgendaPage implements OnInit, OnDestroy {
     return event.bloqueo?.hora_inicio || this.toTimePart(event.bloqueo?.fecha_inicio) || '99:99';
   }
 
-  getColorForDay(date: Date, citas: number): string {
-    if (!this.isDiaHabilitado(date)) return 'var(--surface-muted)';
-    if (citas >= this.maxCitasPorDia) return 'var(--danger-soft)';
-    if (citas >= this.maxCitasPorDia / 2) return 'var(--warning-soft)';
-    return 'var(--success-soft)';
-  }
-
   private isDiaHabilitado(date: Date): boolean {
     if (!this.configuracionJornada) return true;
     const day = date.getDay();
     if (day === 6 && this.configuracionJornada.mostrar_sabados === false) return false;
     if (day === 0 && this.configuracionJornada.mostrar_domingos === false) return false;
     return true;
-  }
-
-  private calcularCapacidadJornada(config: ConfiguracionJornadaDto | null): number {
-    if (!config?.hora_inicio || !config?.hora_fin) return 8;
-    const inicio = this.toMinutes(config.hora_inicio);
-    const fin = this.toMinutes(config.hora_fin);
-    const intervalo = config.intervalo_minutos ?? config.intervalo ?? config.duracion_cita_default_min ?? 30;
-    if (inicio === null || fin === null || fin <= inicio || !intervalo) return 8;
-    return Math.max(1, Math.floor((fin - inicio) / intervalo));
   }
 
   prevMonth() {

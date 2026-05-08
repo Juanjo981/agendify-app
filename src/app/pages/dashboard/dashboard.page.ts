@@ -7,7 +7,6 @@ import { AuthorizationService } from 'src/app/auth/authorization.service';
 import { HasPermissionDirective } from 'src/app/auth/has-permission.directive';
 import { ConfirmDialogComponent, ConfirmDialogConfig } from 'src/app/shared/confirm-dialog/confirm-dialog.component';
 import { tiempoRelativo } from '../../shared/utils/date.utils';
-import { DashboardApiService } from 'src/app/services/dashboard-api.service';
 import { NotificacionesApiService } from 'src/app/services/notificaciones.service.api';
 import { NotificacionDto } from './dashboard.models';
 import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
@@ -47,7 +46,6 @@ export class DashboardPage implements OnInit, OnDestroy {
   notificaciones: DashboardNotificationItem[] = [];
   notificacionesLoading = false;
   notificacionesError = '';
-  solicitudesPendientesCount = 0;
   notificacionesPendientesCount = 0;
 
   logoutConfirmAbierto = false;
@@ -65,7 +63,6 @@ export class DashboardPage implements OnInit, OnDestroy {
     private authService: AuthService,
     private router: Router,
     public authSvc: AuthorizationService,
-    private dashboardApi: DashboardApiService,
     private notificacionesApi: NotificacionesApiService,
   ) {}
 
@@ -109,7 +106,7 @@ export class DashboardPage implements OnInit, OnDestroy {
 
   verTodasNotificaciones() {
     this.notificacionesAbiertas = false;
-    this.navCtrl.navigateForward('dashboard/actividad');
+    this.navCtrl.navigateForward('/dashboard/actividad');
   }
 
   @HostListener('window:resize')
@@ -164,15 +161,10 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.notificacionesLoading = true;
     this.notificacionesError = '';
 
-    const [consolidadoResult, unreadCountResult, notificacionesResult] = await Promise.all([
-      this.wrapResult(this.dashboardApi.getConsolidado()),
+    const [unreadCountResult, notificacionesResult] = await Promise.all([
       this.wrapResult(this.notificacionesApi.getUnreadCount()),
       this.wrapResult(this.notificacionesApi.getAll({ size: 8, sort: 'created_at,desc' })),
     ]);
-
-    if (consolidadoResult.ok) {
-      this.solicitudesPendientesCount = consolidadoResult.value.solicitudes_pendientes_count ?? 0;
-    }
 
     if (unreadCountResult.ok) {
       this.notificacionesPendientesCount = unreadCountResult.value ?? 0;
@@ -193,10 +185,6 @@ export class DashboardPage implements OnInit, OnDestroy {
 
     if (!unreadCountResult.ok && !notificacionesResult.ok && !this.notificacionesError) {
       this.notificacionesError = mapApiError(unreadCountResult.error).userMessage;
-    }
-
-    if (!consolidadoResult.ok && !unreadCountResult.ok && !this.notificacionesError) {
-      this.notificacionesError = mapApiError(consolidadoResult.error).userMessage;
     }
 
     this.notificacionesLoading = false;

@@ -1,14 +1,14 @@
 <div class="ccp-card">
 
-  <!-- ── Header ──────────────────────────────────────────────────── -->
   <div class="ccp-header">
     <div class="ccp-header__left">
       <h3 class="ccp-title">Citas por período</h3>
-      <p class="ccp-subtitle">Evolución temporal de la actividad</p>
+      <p class="ccp-subtitle">{{ subtituloVista }}</p>
     </div>
     <div class="ccp-tabs">
       <button
         *ngFor="let t of periodoTabs"
+        type="button"
         class="ccp-tab"
         [class.ccp-tab--active]="periodoActivo === t.value"
         (click)="cambiarPeriodo(t.value)">
@@ -17,26 +17,12 @@
     </div>
   </div>
 
-  <!-- ── Bar chart ───────────────────────────────────────────────── -->
   <div class="ccp-chart-wrap">
-    <div class="ccp-chart-area">
-      <div class="ccp-bars">
-        <div
-          *ngFor="let b of barras; trackBy: trackByFecha"
-          class="ccp-col">
-          <span class="ccp-col__val" *ngIf="b.total > 0">{{ b.total }}</span>
-          <div class="ccp-col__bar" [style.height]="getPct(b.total) + '%'"></div>
-        </div>
-      </div>
-    </div>
-    <div class="ccp-axis-labels">
-      <span *ngFor="let b of barras; trackBy: trackByFecha" class="ccp-axis-label">
-        {{ b.label }}
-      </span>
+    <div class="ccp-chart-area ccp-chart-area--canvas">
+      <canvas #chartCitas [attr.aria-label]="'Gráfico de citas — vista ' + periodoActivo"></canvas>
     </div>
   </div>
 
-  <!-- ── Complementary stats ─────────────────────────────────────── -->
   <div class="ccp-footer-stats">
     <div class="ccp-stat">
       <div class="ccp-stat__icon-wrap ccp-stat__icon-wrap--primary">

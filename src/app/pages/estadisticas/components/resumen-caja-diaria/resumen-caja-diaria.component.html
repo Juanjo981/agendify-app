@@ -19,7 +19,7 @@
     </div>
     <div class="rcd-hero__body">
       <span class="rcd-hero__label">Total cobrado</span>
-      <span class="rcd-hero__value">€{{ data.totalCobrado }}</span>
+      <span class="rcd-hero__value">{{ formatMoney(data.totalCobrado) }}</span>
     </div>
     <div class="rcd-hero__citas-badge">
       <ion-icon name="checkmark-done-outline"></ion-icon>
@@ -36,7 +36,7 @@
       <div class="rcd-method__icon-wrap">
         <ion-icon [name]="m.icon"></ion-icon>
       </div>
-      <span class="rcd-method__val">€{{ m.valor }}</span>
+        <span class="rcd-method__val">{{ formatMoney(m.valor) }}</span>
       <span class="rcd-method__lbl">{{ m.label }}</span>
     </div>
   </div>
@@ -50,7 +50,7 @@
     <div class="rcd-chip rcd-chip--neutral">
       <ion-icon name="shield-checkmark-outline"></ion-icon>
       <div class="rcd-chip__body">
-        <span class="rcd-chip__val">€{{ data.pagosExentos }}</span>
+        <span class="rcd-chip__val">{{ formatMoney(data.pagosExentos) }}</span>
         <span class="rcd-chip__lbl">Exentos</span>
       </div>
     </div>
@@ -58,7 +58,7 @@
     <div class="rcd-chip rcd-chip--warning">
       <ion-icon name="hourglass-outline"></ion-icon>
       <div class="rcd-chip__body">
-        <span class="rcd-chip__val">€{{ data.pagosPendientes }}</span>
+        <span class="rcd-chip__val">{{ formatMoney(data.pagosPendientes) }}</span>
         <span class="rcd-chip__lbl">Pendientes</span>
       </div>
     </div>

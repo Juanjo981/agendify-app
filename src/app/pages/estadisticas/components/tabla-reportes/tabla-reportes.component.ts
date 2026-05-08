@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IonicModule } from '@ionic/angular';
 import { ReporteEstadistica } from '../../models/estadisticas.model';
 import { EstadisticasApiService } from '../../estadisticas.service.api';
+import { CurrencyPreferenceService } from 'src/app/services/currency-preference.service';
 
 @Component({
   selector: 'app-tabla-reportes',
@@ -23,7 +24,10 @@ export class TablaReportesComponent implements OnInit {
   // Columns to show in the detail preview table (derived from first row keys)
   columnasPorReporte: Record<string, string[]> = {};
 
-  constructor(private svc: EstadisticasApiService) {}
+  constructor(
+    private svc: EstadisticasApiService,
+    private currencyPreference: CurrencyPreferenceService,
+  ) {}
 
   ngOnInit() {
     this.svc.filtros$
@@ -77,7 +81,13 @@ export class TablaReportesComponent implements OnInit {
   }
 
   formatVal(key: string, val: string | number): string {
-    if (key === 'monto') return `€${val}`;
+    if (key === 'monto') {
+      const n = typeof val === 'number' ? val : Number(val);
+      return this.currencyPreference.format(Number.isFinite(n) ? n : 0, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      });
+    }
     return String(val);
   }
 

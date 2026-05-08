@@ -170,7 +170,6 @@
       <ion-item *appHasPermission="'citas'" button routerLink="/dashboard/citas" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
         <ion-icon slot="start" name="clipboard-outline"></ion-icon>
         <ion-label>Citas</ion-label>
-        <ion-badge *ngIf="solicitudesPendientesCount > 0 && !sidebarContraido" color="warning">{{ solicitudesPendientesCount }}</ion-badge>
       </ion-item>
 
       <ion-item *appHasPermission="'sesiones'" button routerLink="/dashboard/sesiones" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }" [class.contraido]="sidebarContraido" lines="none">
@@ -231,7 +230,6 @@
     <ion-item *appHasPermission="'citas'" button lines="none" (click)="irA('/dashboard/citas')">
       <ion-icon slot="start" name="clipboard-outline"></ion-icon>
       <ion-label>Citas</ion-label>
-      <ion-badge *ngIf="solicitudesPendientesCount > 0" color="warning">{{ solicitudesPendientesCount }}</ion-badge>
     </ion-item>
     <ion-item *appHasPermission="'sesiones'" button lines="none" (click)="irA('/dashboard/sesiones')">
       <ion-icon slot="start" name="pulse-outline"></ion-icon>

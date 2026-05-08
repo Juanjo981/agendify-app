@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IonicModule } from '@ionic/angular';
@@ -8,6 +8,7 @@ import {
   ResumenPacientesEstadistica,
 } from '../../models/estadisticas.model';
 import { EstadisticasApiService } from '../../estadisticas.service.api';
+import { FiltroEstadisticas } from '../../models/filtros-estadisticas.model';
 
 @Component({
   selector: 'app-chart-pacientes',
@@ -15,6 +16,7 @@ import { EstadisticasApiService } from '../../estadisticas.service.api';
   styleUrls: ['./chart-pacientes.component.scss'],
   standalone: true,
   imports: [CommonModule, IonicModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChartPacientesComponent implements OnInit {
   puntos: NuevosVsRecurrentesPunto[] = [];
@@ -30,7 +32,10 @@ export class ChartPacientesComponent implements OnInit {
 
   rankingTab: 'citas' | 'no-asistencias' = 'citas';
 
-  constructor(private svc: EstadisticasApiService) {}
+  constructor(
+    private svc: EstadisticasApiService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit() {
     this.svc.filtros$
@@ -67,13 +72,20 @@ export class ChartPacientesComponent implements OnInit {
   trackByLabel(_: number, p: NuevosVsRecurrentesPunto): string { return p.label; }
   trackByPosicion(_: number, r: RankingPaciente): number { return r.posicion; }
 
-  private async cargar(filtros: any) {
+  setRankingTab(tab: 'citas' | 'no-asistencias'): void {
+    if (this.rankingTab === tab) return;
+    this.rankingTab = tab;
+    this.cdr.markForCheck();
+  }
+
+  private async cargar(filtros: FiltroEstadisticas) {
     try {
       const data = await this.svc.getPacientesStats(filtros);
       this.puntos = data.puntos;
       this.resumen = data.resumen;
       this.rankingCitas = data.rankingCitas;
       this.rankingNoAsist = data.rankingNoAsistencias;
+      this.cdr.markForCheck();
     } catch {
       this.puntos = [];
       this.resumen = {
@@ -84,6 +96,7 @@ export class ChartPacientesComponent implements OnInit {
       };
       this.rankingCitas = [];
       this.rankingNoAsist = [];
+      this.cdr.markForCheck();
     }
   }
 }

@@ -3,10 +3,15 @@
     <label *ngIf="showPageSizeSelector" class="ag-pagination__size" aria-label="Tamaño de página">
       <select
         class="ag-pagination__select"
-        [value]="safePageSize"
         (change)="onPageSizeSelect($event)"
       >
-        <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} / pág</option>
+        <option
+          *ngFor="let size of pageSizeOptions"
+          [value]="size"
+          [selected]="size === safePageSize"
+        >
+          {{ size }} / pág
+        </option>
       </select>
     </label>
 

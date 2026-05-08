@@ -54,9 +54,15 @@
 
     <!-- 🔹 GRID DE DÍAS -->
     <div class="calendar-grid">
-      <div class="day" *ngFor="let day of calendarDays" [class.inactive]="!day.inCurrentMonth"
-        [class.today]="day.isToday" [class.selected]="selectedDay?.fullDate === day.fullDate" (click)="selectDay(day)"
-        [ngStyle]="{ 'background-color': day.colorCitas }">
+      <div class="day" *ngFor="let day of calendarDays"
+        [ngClass]="{
+          'day--green': day.status === 'green',
+          'day--yellow': day.status === 'yellow',
+          'day--red': day.status === 'red',
+          'day--empty': day.status === 'empty'
+        }"
+        [class.inactive]="!day.inCurrentMonth"
+        [class.today]="day.isToday" [class.selected]="selectedDay?.fullDate === day.fullDate" (click)="selectDay(day)">
 
         <span class="day-number">{{ day.number }}</span>
 
@@ -421,7 +427,7 @@
         [class.cqa-pago-badge--pend]="citaActiva.estado_pago === 'PENDIENTE'"
         [class.cqa-pago-badge--parcial]="citaActiva.estado_pago === 'PARCIAL'">
         <ion-icon name="cash-outline"></ion-icon>
-        {{ citaActiva.estado_pago }} · €{{ citaActiva.monto_pagado }}/{{ citaActiva.monto }}
+        {{ citaActiva.estado_pago }} · {{ formatMonto(citaActiva.monto_pagado) }}/{{ formatMonto(citaActiva.monto) }}
       </span>
       <span class="cqa-tipo-pago-badge" *ngIf="citaActiva.tipoPago">
         <ion-icon [name]="getTipoPagoIcon(citaActiva.tipoPago)"></ion-icon>

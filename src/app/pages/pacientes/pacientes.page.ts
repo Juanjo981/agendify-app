@@ -40,9 +40,12 @@ export class PacientesPage implements OnInit {
   ordenamiento: 'az' | 'za' | 'recientes' | 'antiguos' = 'az';
 
   currentPage = 0;
-  pageSize = 20;
+  pageSize = 10;
   readonly pageSizeOptions = [10, 20, 50];
   totalPages = 0;
+
+  /** Igual que Citas: el contador usa totales del API cuando vienen explícitos. */
+  private hasReliableServerPagination = false;
 
   loading = false;
   errorMessage = '';
@@ -68,8 +71,33 @@ export class PacientesPage implements OnInit {
     return this.currentPage + 1;
   }
 
+  /** Total mostrado en el footer `app-pagination` y en el contador (misma lógica que Citas). */
+  get summaryTotalPacientes(): number {
+    if (this.hasReliableServerPagination) {
+      return this.totalPacientes;
+    }
+    return Array.isArray(this.pacientesFiltrados) ? this.pacientesFiltrados.length : 0;
+  }
+
+  get currentRangeStart(): number {
+    if (this.summaryTotalPacientes === 0) return 0;
+    if (!this.hasReliableServerPagination) return 1;
+    return this.currentPage * this.pageSize + 1;
+  }
+
+  get currentRangeEnd(): number {
+    if (this.summaryTotalPacientes === 0) return 0;
+    const visibleItems = Array.isArray(this.pacientesFiltrados) ? this.pacientesFiltrados.length : 0;
+    if (!this.hasReliableServerPagination) return visibleItems;
+    return Math.min(this.currentRangeStart + visibleItems - 1, this.summaryTotalPacientes);
+  }
+
+  get pacientesSummaryLabel(): string {
+    return this.summaryTotalPacientes === 1 ? 'paciente' : 'pacientes';
+  }
+
   get shouldShowPagination(): boolean {
-    return !this.loading && !this.errorMessage && this.totalPacientes > 0;
+    return !this.loading && !this.errorMessage && this.summaryTotalPacientes > 0;
   }
 
   emptyForm() {
@@ -130,26 +158,43 @@ export class PacientesPage implements OnInit {
       });
 
       const content = Array.isArray(response.content) ? response.content : [];
-      const totalElements = this.normalizePageNumber(response, 'total_elements', 'totalElements', content.length);
-      const totalPages = this.normalizePageNumber(
-        response,
-        'total_pages',
-        'totalPages',
-        totalElements > 0 ? Math.max(Math.ceil(totalElements / this.pageSize), 1) : 0
-      );
-      const responsePage = this.normalizePageNumber(response, 'number', 'pageNumber', targetPage);
-      const responseSize = this.normalizePageNumber(response, 'size', 'pageSize', this.pageSize);
+      const requestedPageSize = this.pageSize;
+
+      const totalElements = this.resolveTotalElements(response, content.length, requestedPageSize);
+      /** Totales inferidos (última página, `last`, etc.) también alimentan el mismo pie que Citas. */
+      this.hasReliableServerPagination = totalElements > 0;
+
+      const totalPagesFromApi = this.readPagedInt(response, 'total_pages', 'totalPages');
+      let totalPages =
+        totalPagesFromApi != null && totalPagesFromApi >= 0
+          ? totalPagesFromApi
+          : totalElements > 0
+            ? Math.max(Math.ceil(totalElements / requestedPageSize), 1)
+            : 0;
+
+      const responsePage = this.readPagedInt(response, 'number', 'pageNumber') ?? targetPage;
+      const responsePageClamped =
+        totalPages > 0 ? Math.min(Math.max(responsePage, 0), totalPages - 1) : responsePage;
 
       if (totalPages > 0 && targetPage >= totalPages && content.length === 0) {
         await this.cargar(totalPages - 1, options);
         return;
       }
 
-      this.pacientesFiltrados = content;
+      /** Si el backend ignora `size` y devuelve más filas, limitar en cliente para coincidir con la página solicitada. */
+      const pacientesVisibles =
+        content.length > requestedPageSize ? content.slice(0, requestedPageSize) : content;
+
+      if (totalPages === 0 && pacientesVisibles.length > 0) {
+        totalPages = Math.max(Math.ceil(Math.max(totalElements, pacientesVisibles.length) / requestedPageSize), 1);
+      }
+
+      this.pacientesFiltrados = pacientesVisibles;
       this.totalPacientes = totalElements;
       this.totalPages = totalPages;
-      this.currentPage = responsePage;
-      this.pageSize = responseSize || this.pageSize;
+      this.currentPage = responsePageClamped;
+      /** El tamaño de página lo decide la UI; no sobrescribir con `response.size` (el API a veces ignora `size` y devuelve otro valor). */
+      this.pageSize = requestedPageSize;
 
       if (options.scrollToTable) {
         setTimeout(() => this.scrollToTable(), 0);
@@ -159,6 +204,7 @@ export class PacientesPage implements OnInit {
       this.totalPacientes = 0;
       this.totalPages = 0;
       this.currentPage = 0;
+      this.hasReliableServerPagination = false;
       this.errorMessage = mapApiError(err).userMessage;
     } finally {
       this.loading = false;
@@ -166,7 +212,8 @@ export class PacientesPage implements OnInit {
   }
 
   onPaginationPageChange(page: number) {
-    if (page === this.currentPage || page < 0 || page >= this.totalPages || this.loading) return;
+    if (page === this.currentPage || page < 0 || this.loading) return;
+    if (this.totalPages > 0 && page >= this.totalPages) return;
     void this.cargar(page, { scrollToTable: true });
   }
 
@@ -176,14 +223,78 @@ export class PacientesPage implements OnInit {
     void this.cargar(0, { scrollToTable: true });
   }
 
-  private normalizePageNumber(
+  /**
+   * Total de registros: nunca usar `content.length` como total (solo cuenta la página actual).
+   * Acepta números como string (p.ej. `"49"`).
+   * Si solo falta el total pero sabemos que es la última página, se puede derivar con índice × tamaño + filas.
+   */
+  private resolveTotalElements(
     response: PageResponse<PacienteDto>,
-    snakeKey: keyof PageResponse<PacienteDto>,
-    camelKey: string,
-    fallback: number,
+    contentLength: number,
+    pageSize: number,
   ): number {
-    const raw = response[snakeKey] ?? (response as unknown as Record<string, unknown>)[camelKey];
-    return typeof raw === 'number' && Number.isFinite(raw) ? raw : fallback;
+    const direct = this.readTotalElementsDirect(response);
+    if (direct != null && direct >= 0) return direct;
+
+    const totalPagesVal = this.readPagedInt(response, 'total_pages', 'totalPages');
+    const pageIndex = this.readPagedInt(response, 'number', 'pageNumber') ?? 0;
+
+    if (response.last === false && pageSize > 0 && contentLength > 0) {
+      return pageIndex * pageSize + contentLength + 1;
+    }
+
+    if (response.last === true && pageSize > 0 && pageIndex >= 0) {
+      return pageIndex * pageSize + contentLength;
+    }
+
+    if (
+      response.last === undefined &&
+      totalPagesVal != null &&
+      totalPagesVal > 0 &&
+      pageSize > 0
+    ) {
+      if (pageIndex === totalPagesVal - 1) {
+        return (totalPagesVal - 1) * pageSize + contentLength;
+      }
+      if (pageIndex < totalPagesVal - 1 && contentLength > 0) {
+        return pageIndex * pageSize + contentLength + 1;
+      }
+    }
+
+    if (pageIndex === 0 && contentLength > 0 && response.last !== false) {
+      return contentLength;
+    }
+
+    return 0;
+  }
+
+  /** Intenta varios nombres habituales del total (Spring y APIs alternativas). */
+  private readTotalElementsDirect(response: PageResponse<PacienteDto>): number | null {
+    const r = response as unknown as Record<string, unknown>;
+    for (const key of ['total_elements', 'totalElements', 'total', 'total_records', 'totalRecords']) {
+      const v = this.parsePagedScalar(r[key]);
+      if (v != null && v >= 0) return v;
+    }
+    return null;
+  }
+
+  private parsePagedScalar(raw: unknown): number | null {
+    if (raw === null || raw === undefined) return null;
+    if (typeof raw === 'number' && Number.isFinite(raw)) return Math.trunc(raw);
+    if (typeof raw === 'string' && raw.trim() !== '') {
+      const n = Number(raw.trim().replace(',', '.'));
+      if (Number.isFinite(n)) return Math.trunc(n);
+    }
+    return null;
+  }
+
+  private readPagedInt(
+    response: PageResponse<PacienteDto>,
+    snakeKey: string,
+    camelKey: string,
+  ): number | null {
+    const r = response as unknown as Record<string, unknown>;
+    return this.parsePagedScalar(r[snakeKey] ?? r[camelKey]);
   }
 
   onBusquedaChange() {

@@ -10,6 +10,7 @@ import {
   RegisterRequest, RegisterResponse, AuthMeResponse,
 } from '../shared/models/auth.models';
 import { SessionService } from './session.service';
+import { CurrencyPreferenceService } from './currency-preference.service';
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
@@ -40,6 +41,7 @@ export class AuthService {
     private http:    HttpClient,
     private router:  Router,
     private session: SessionService,
+    private currencyPreference: CurrencyPreferenceService,
   ) {}
 
   // ── Core auth ──────────────────────────────────────────────────────────────
@@ -66,6 +68,9 @@ export class AuthService {
     );
     this.session.setUser(user);
     this.saveUser(user);
+    if (user.moneda) {
+      this.currencyPreference.setCurrencyCode(user.moneda);
+    }
     return user;
   }
 
@@ -151,6 +156,7 @@ export class AuthService {
     localStorage.removeItem(AuthService.ACCESS_TOKEN_KEY);
     localStorage.removeItem(AuthService.REFRESH_TOKEN_KEY);
     localStorage.removeItem(AuthService.USER_KEY);
+    this.currencyPreference.resetSessionCurrency();
   }
 
   // ── Session state ─────────────────────────────────────────────────────────

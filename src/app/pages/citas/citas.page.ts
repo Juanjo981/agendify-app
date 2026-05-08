@@ -25,6 +25,7 @@ import {
 import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
 import { CitasRefreshService } from '../../shared/refresh/dashboard-module-refresh.services';
 import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
+import { CurrencyPreferenceService } from 'src/app/services/currency-preference.service';
 
 @Component({
   selector: 'app-citas',
@@ -77,6 +78,7 @@ export class CitasPage implements OnInit, OnDestroy {
     private svc: CitasApiService,
     private refresh: CitasRefreshService,
     private toastCtrl: ToastController,
+    private currencyPreference: CurrencyPreferenceService,
   ) {}
 
   ngOnInit() {
@@ -209,7 +211,7 @@ export class CitasPage implements OnInit, OnDestroy {
 
   formatMonto(n: number): string {
     const safe = Number.isFinite(n) ? n : 0;
-    return `€${safe.toFixed(2)}`;
+    return this.currencyPreference.format(safe, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
   puedeEditar(cita: CitaDto): boolean {

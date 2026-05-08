@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule, ToastController } from '@ionic/angular';
 import { AuthService } from 'src/app/services/auth';
 import { ConfiguracionApiService } from 'src/app/services/configuracion-api.service';
+import { CurrencyPreferenceService } from 'src/app/services/currency-preference.service';
 import { PerfilApiService } from 'src/app/services/perfil-api.service';
 import { SessionService } from 'src/app/services/session.service';
 import { ConfiguracionRecordatorioDto, ConfiguracionSistemaDto } from 'src/app/shared/models/configuracion.models';
@@ -87,6 +88,7 @@ export class PerfilPage implements OnInit, OnDestroy {
     private session: SessionService,
     private auth: AuthService,
     private toastCtrl: ToastController,
+    private currencyPreference: CurrencyPreferenceService,
   ) {}
 
   ngOnInit(): void {
@@ -275,6 +277,7 @@ export class PerfilPage implements OnInit, OnDestroy {
     this.originalPerfil = JSON.stringify(this.perfil);
     this.originalPerfilProfesional = JSON.stringify(this.perfilProfesional);
     this.originalHorarios = JSON.stringify(this.horarios);
+    this.currencyPreference.setCurrencyCode(sistema?.moneda);
   }
 
   private perfilCambio(): boolean {

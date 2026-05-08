@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationStart, Router } from '@angular/router';
 import { IonicModule, ToastController } from '@ionic/angular';
 import { ConfiguracionApiService } from 'src/app/services/configuracion-api.service';
+import { CurrencyPreferenceService } from 'src/app/services/currency-preference.service';
 import { EquipoApiService } from 'src/app/services/equipo-api.service';
 import { PERMISOS_DETALLES } from 'src/app/shared/constants/permisos-detalles';
 import { PerfilApiService } from 'src/app/services/perfil-api.service';
@@ -128,6 +129,7 @@ export class ConfiguracionPage implements OnInit {
     private themeService: ThemeService,
     private toastCtrl: ToastController,
     private refresh: ConfiguracionRefreshService,
+    private currencyPreference: CurrencyPreferenceService,
   ) {
     const user = this.session.getUser();
     this.profesionalActual = {
@@ -248,6 +250,7 @@ export class ConfiguracionPage implements OnInit {
       this.config = this.mergeConfig(agendaGuardada, sistemaGuardado, this.recordatoriosActuales);
       this.configOriginal = { ...this.config };
       this.applyThemeFromConfig(this.config.tema);
+      this.currencyPreference.setCurrencyCode(this.config.moneda);
       this.refresh.requestRefresh(['general', 'agenda', 'seguridad', 'sistema']);
       this.savedToast = true;
       setTimeout(() => (this.savedToast = false), 2800);
@@ -344,6 +347,7 @@ export class ConfiguracionPage implements OnInit {
       this.config = this.mergeConfig(agenda, sistema, recordatorios);
       this.configOriginal = { ...this.config };
       this.applyThemeFromConfig(this.config.tema);
+      this.currencyPreference.setCurrencyCode(this.config.moneda);
     } catch (error) {
       await this.presentToast(mapApiError(error).userMessage, 'danger');
     } finally {

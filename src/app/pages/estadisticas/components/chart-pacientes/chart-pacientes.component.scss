@@ -114,11 +114,11 @@
   .cp-summary-chip__lbl { color: color-mix(in srgb, var(--success-strong) 70%, transparent); }
 }
 
-.cp-summary-chip--info {
-  background: color-mix(in srgb, var(--chart-info) 7%, transparent);
-  ion-icon { color: var(--chart-info); }
-  .cp-summary-chip__val { color: var(--accent-blue-dark); }
-  .cp-summary-chip__lbl { color: color-mix(in srgb, var(--chart-info) 70%, transparent); }
+.cp-summary-chip--recurrent {
+  background: color-mix(in srgb, var(--accent-purple) 10%, transparent);
+  ion-icon { color: var(--accent-purple); }
+  .cp-summary-chip__val { color: var(--accent-purple-dark); }
+  .cp-summary-chip__lbl { color: color-mix(in srgb, var(--accent-purple) 70%, transparent); }
 }
 
 .cp-summary-chip--purple {
@@ -188,7 +188,7 @@
 }
 
 .cp-bar--new  { background: linear-gradient(to top, var(--success-strong), var(--chart-success)); }
-.cp-bar--rec  { background: linear-gradient(to top, var(--primary-mid), var(--chart-primary)); }
+.cp-bar--rec  { background: linear-gradient(to top, var(--accent-purple-dark), var(--accent-purple)); }
 
 .cp-bar__tip {
   font-size: 9px;
@@ -226,7 +226,7 @@
   border-radius: 50%;
 
   &.cp-legend-dot--new { background: var(--success-strong); }
-  &.cp-legend-dot--rec { background: var(--primary-mid); }
+  &.cp-legend-dot--rec { background: var(--accent-purple); }
 }
 
 // ─── Vertical divider ─────────────────────────────────────────────────────────
@@ -394,5 +394,5 @@
   margin: 0;
   padding: 12px 0;
 
-  ion-icon { font-size: 18px; color: var(--success); }
+  ion-icon { font-size: 18px; color: var(--text-muted); }
 }
