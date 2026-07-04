@@ -25,7 +25,14 @@ export class ConfiguracionApiService {
   }
 
   saveAgenda(body: ConfiguracionAgendaRequest): Promise<ConfiguracionAgendaDto> {
-    return firstValueFrom(this.http.put<any>(this.agendaUrl, body)).then(raw => this.normalizeAgenda(raw));
+    return firstValueFrom(
+      this.http.put<any>(this.agendaUrl, body, { observe: 'response' }),
+    ).then(res => {
+      if (res.status !== 200) {
+        throw new Error(`configuracion/agenda: respuesta ${res.status}, se esperaba 200`);
+      }
+      return this.normalizeAgenda(res.body ?? {});
+    });
   }
 
   getSistema(): Promise<ConfiguracionSistemaDto> {
@@ -33,15 +40,25 @@ export class ConfiguracionApiService {
   }
 
   saveSistema(body: ConfiguracionSistemaRequest, currentId?: number | null): Promise<ConfiguracionSistemaDto> {
-    if (currentId) {
+    if (currentId != null && currentId > 0) {
       return firstValueFrom(
-        this.http.put<any>(`${this.sistemaCollectionUrl}/${currentId}`, body),
-      ).then(raw => this.normalizeSistema(raw));
+        this.http.put<any>(`${this.sistemaCollectionUrl}/${currentId}`, body, { observe: 'response' }),
+      ).then(res => {
+        if (res.status !== 200) {
+          throw new Error(`configuracion-sistema PUT: respuesta ${res.status}, se esperaba 200`);
+        }
+        return this.normalizeSistema(res.body ?? {});
+      });
     }
 
     return firstValueFrom(
-      this.http.post<any>(this.sistemaCollectionUrl, body),
-    ).then(raw => this.normalizeSistema(raw));
+      this.http.post<any>(this.sistemaCollectionUrl, body, { observe: 'response' }),
+    ).then(res => {
+      if (res.status !== 200 && res.status !== 201) {
+        throw new Error(`configuracion-sistema POST: respuesta ${res.status}, se esperaba 200 o 201`);
+      }
+      return this.normalizeSistema(res.body ?? {});
+    });
   }
 
   getRecordatorios(): Promise<ConfiguracionRecordatorioDto[]> {
@@ -80,7 +97,9 @@ export class ConfiguracionApiService {
       citas_superpuestas: this.normalizeBoolean(raw?.citas_superpuestas),
       mostrar_sabados: this.normalizeBoolean(raw?.mostrar_sabados),
       mostrar_domingos: this.normalizeBoolean(raw?.mostrar_domingos),
-      vista_default: raw?.vista_default ?? null,
+      costo_cita_predeterminado: this.normalizeNumber(
+        raw?.costo_cita_predeterminado ?? raw?.costoCitaPredeterminado,
+      ),
     };
   }
 
@@ -115,6 +134,9 @@ export class ConfiguracionApiService {
       animaciones: this.normalizeBoolean(raw?.animaciones),
       vista_previa_datos: this.normalizeBoolean(raw?.vista_previa_datos),
       bloquear_cambios_criticos: this.normalizeBoolean(raw?.bloquear_cambios_criticos),
+      costo_cita_predeterminado: this.normalizeNumber(
+        raw?.costo_cita_predeterminado ?? raw?.costoCitaPredeterminado,
+      ),
     };
   }
 

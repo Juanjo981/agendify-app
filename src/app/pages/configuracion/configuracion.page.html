@@ -135,12 +135,20 @@
         </div>
         <div class="cfg-fields">
           <div class="cfg-field">
-            <label class="cfg-field-label">Vista predeterminada</label>
-            <ion-select [(ngModel)]="config.vistaDefault" interface="popover" class="cfg-select">
-              <ion-select-option value="dia">Día</ion-select-option>
-              <ion-select-option value="semana">Semana</ion-select-option>
-              <ion-select-option value="mes">Mes</ion-select-option>
-            </ion-select>
+            <label class="cfg-field-label">Costo predeterminado de cita</label>
+            <input
+              type="number"
+              id="cfg-costo-cita-predeterminado"
+              name="costoCitaPredeterminado"
+              class="cfg-input-time cfg-input-number"
+              min="0"
+              step="0.01"
+              inputmode="decimal"
+              [(ngModel)]="config.costoCitaPredeterminado"
+              [placeholder]="ejemploCostoCitaPlaceholder"
+              [attr.aria-describedby]="'hint-costo-cita'"
+            />
+            <p id="hint-costo-cita" class="cfg-field-hint">{{ ejemploCostoCitaAyuda }}</p>
           </div>
           <div class="cfg-field">
             <label class="cfg-field-label">Intervalo visual</label>

@@ -22,7 +22,7 @@ import { ConfiguracionRefreshService, ConfiguracionTabId } from '../../shared/re
 import { filter } from 'rxjs/operators';
 
 const DEFAULTS = {
-  vistaDefault: 'semana',
+  costoCitaPredeterminado: 0,
   inicioJornada: '09:00',
   finJornada: '18:00',
   intervaloCalendario: 30,
@@ -189,6 +189,30 @@ export class ConfiguracionPage implements OnInit {
     this.applyThemeFromConfig(tema);
   }
 
+  /** Placeholder con formato de moneda según preferencias (Intl). */
+  get ejemploCostoCitaPlaceholder(): string {
+    return this.currencyPreference.format(0, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  /** Ayuda visible con moneda ISO activa. */
+  get ejemploCostoCitaAyuda(): string {
+    const code = this.currencyPreference.currencyCode();
+    const muestra = this.currencyPreference.format(0, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    return `Ejemplo con la moneda actual: ${muestra} (${code})`;
+  }
+
+  private normalizeCostoInput(value: unknown): number {
+    const n = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(n) || n < 0) return 0;
+    return Math.round(n * 100) / 100;
+  }
+
   @HostListener('window:beforeunload', ['$event'])
   onBeforeUnload(event: BeforeUnloadEvent): void {
     if (!this.hasChanges()) return;
@@ -211,7 +235,7 @@ export class ConfiguracionPage implements OnInit {
         citas_superpuestas: this.config.citasSuperpuestas,
         mostrar_sabados: this.config.mostrarSabados,
         mostrar_domingos: this.config.mostrarDomingos,
-        vista_default: this.config.vistaDefault,
+        costoCitaPredeterminado: this.normalizeCostoInput(this.config.costoCitaPredeterminado),
       });
 
       const sistemaGuardado = await this.configuracionApi.saveSistema({
@@ -378,7 +402,18 @@ export class ConfiguracionPage implements OnInit {
     const sameDayRule = this.getSameDayReminderRule(recordatorios, primaryRule);
     const activeManagedRules = this.getActiveManagedRules(recordatorios);
 
-    merged.vistaDefault = agenda?.vista_default ?? merged.vistaDefault;
+    const costoAgendaRaw =
+      agenda?.costo_cita_predeterminado ??
+      (agenda as { costoCitaPredeterminado?: number | null })?.costoCitaPredeterminado;
+    const costoSistemaRaw =
+      sistema?.costo_cita_predeterminado ??
+      (sistema as { costoCitaPredeterminado?: number | null })?.costoCitaPredeterminado;
+    const costoPickRaw =
+      costoAgendaRaw != null && Number.isFinite(Number(costoAgendaRaw)) ? costoAgendaRaw : costoSistemaRaw;
+    merged.costoCitaPredeterminado =
+      costoPickRaw != null && Number.isFinite(Number(costoPickRaw))
+        ? Number(costoPickRaw)
+        : merged.costoCitaPredeterminado;
     merged.inicioJornada = this.normalizeTime(agenda?.hora_inicio_jornada ?? agenda?.hora_inicio) ?? merged.inicioJornada;
     merged.finJornada = this.normalizeTime(agenda?.hora_fin_jornada ?? agenda?.hora_fin) ?? merged.finJornada;
     merged.intervaloCalendario = Number(

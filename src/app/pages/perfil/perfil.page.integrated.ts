@@ -139,6 +139,8 @@ export class PerfilPage implements OnInit, OnDestroy {
       }
 
       if (this.horariosCambio()) {
+        const costoGuardado = Number(this.sistemaActual?.costo_cita_predeterminado ?? 0);
+        const costoNum = Number.isFinite(costoGuardado) && costoGuardado >= 0 ? Math.round(costoGuardado * 100) / 100 : 0;
         await this.configuracionApi.saveAgenda({
           hora_inicio_jornada: this.horarios.inicio,
           hora_fin_jornada: this.horarios.fin,
@@ -148,7 +150,7 @@ export class PerfilPage implements OnInit, OnDestroy {
           citas_superpuestas: false,
           mostrar_sabados: true,
           mostrar_domingos: false,
-          vista_default: 'semana',
+          costoCitaPredeterminado: costoNum,
         });
       }
 

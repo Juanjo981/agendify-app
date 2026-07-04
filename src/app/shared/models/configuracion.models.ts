@@ -11,7 +11,7 @@ export interface ConfiguracionAgendaDto {
   citas_superpuestas?: boolean | null;
   mostrar_sabados?: boolean | null;
   mostrar_domingos?: boolean | null;
-  vista_default?: string | null;
+  costo_cita_predeterminado?: number | null;
 }
 
 export interface ConfiguracionAgendaRequest {
@@ -23,12 +23,15 @@ export interface ConfiguracionAgendaRequest {
   citas_superpuestas: boolean;
   mostrar_sabados: boolean;
   mostrar_domingos: boolean;
-  vista_default: string;
+  /** Número JSON (no string); backend Spring camelCase. */
+  costoCitaPredeterminado: number;
 }
 
 export interface ConfiguracionSistemaDto {
   id_configuracion_sistema?: number | null;
   id_profesional?: number | null;
+  /** Monto por defecto para nuevas citas (backend puede usar snake_case). */
+  costo_cita_predeterminado?: number | null;
   notif_in_app?: boolean | null;
   alertas_sonoras?: boolean | null;
   avisos_citas_proximas?: boolean | null;
