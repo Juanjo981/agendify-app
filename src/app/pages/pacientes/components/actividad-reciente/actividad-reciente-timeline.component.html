@@ -1,0 +1,40 @@
+<section class="art" aria-label="Actividad reciente">
+  <header class="art__header">
+    <div class="art__title-wrap">
+      <div class="art__icon">
+        <ion-icon name="time-outline"></ion-icon>
+      </div>
+      <div>
+        <h3 class="art__title">{{ title }}</h3>
+        <p class="art__subtitle" *ngIf="subtitle">{{ subtitle }}</p>
+      </div>
+    </div>
+  </header>
+
+  <ol class="art__timeline" *ngIf="items.length > 0; else emptyTimeline">
+    <li
+      class="art__item"
+      *ngFor="let item of items; let last = last"
+      [class.art__item--last]="last"
+      [attr.data-tone]="item.tone || 'primary'">
+      <div class="art__track" aria-hidden="true">
+        <span class="art__dot">
+          <ion-icon [name]="item.icono || 'ellipse-outline'"></ion-icon>
+        </span>
+        <span class="art__line" *ngIf="!last"></span>
+      </div>
+
+      <div class="art__content">
+        <span class="art__when">{{ item.cuando }}</span>
+        <strong class="art__event">{{ item.titulo }}</strong>
+      </div>
+    </li>
+  </ol>
+
+  <ng-template #emptyTimeline>
+    <div class="art__empty">
+      <ion-icon name="time-outline"></ion-icon>
+      <p>Sin actividad reciente</p>
+    </div>
+  </ng-template>
+</section>

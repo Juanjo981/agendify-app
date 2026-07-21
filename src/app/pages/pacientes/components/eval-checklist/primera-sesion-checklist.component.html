@@ -1,0 +1,32 @@
+<section class="psc" aria-label="Primera sesión">
+  <header class="psc__header">
+    <div class="psc__title-wrap">
+      <div class="psc__icon">
+        <ion-icon name="list-outline"></ion-icon>
+      </div>
+      <div>
+        <h3 class="psc__title">{{ title }}</h3>
+        <p class="psc__subtitle">{{ subtitle }}</p>
+      </div>
+    </div>
+    <span class="psc__progress">{{ completedCount }}/{{ items.length }}</span>
+  </header>
+
+  <div class="psc__list">
+    <app-eval-checklist-item
+      *ngFor="let item of items; let i = index"
+      [id]="item.id"
+      [label]="item.label"
+      [checked]="!!item.checked"
+      (checkedChange)="onItemToggle(i, $event)">
+    </app-eval-checklist-item>
+  </div>
+
+  <div class="psc__summary">
+    <app-eval-risk-level
+      title="Nivel inicial"
+      [selected]="riskLevel"
+      (selectedChange)="onRiskChange($event)">
+    </app-eval-risk-level>
+  </div>
+</section>

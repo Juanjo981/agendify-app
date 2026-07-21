@@ -1,0 +1,13 @@
+<button
+  type="button"
+  class="eci"
+  [class.eci--checked]="checked"
+  (click)="toggle()"
+  [attr.aria-checked]="checked"
+  role="checkbox"
+>
+  <span class="eci__box" aria-hidden="true">
+    <ion-icon *ngIf="checked" name="checkmark-outline"></ion-icon>
+  </span>
+  <span class="eci__label">{{ label }}</span>
+</button>

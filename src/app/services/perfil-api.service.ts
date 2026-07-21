@@ -84,6 +84,7 @@ export class PerfilApiService {
     return {
       id_profesional: this.normalizeNumber(source?.id_profesional),
       especialidad: source?.especialidad ?? null,
+      cedula_profesional: source?.cedula_profesional ?? source?.cedulaProfesional ?? null,
       nombre_consulta: source?.nombre_consulta ?? null,
       tipo_servicio: source?.tipo_servicio ?? null,
       descripcion: source?.descripcion ?? null,

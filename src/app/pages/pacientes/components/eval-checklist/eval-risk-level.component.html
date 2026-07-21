@@ -1,0 +1,18 @@
+<div class="erl">
+  <h5 class="erl__title">{{ title }}</h5>
+  <div class="erl__options" role="radiogroup" [attr.aria-label]="title">
+    <button
+      type="button"
+      class="erl__option"
+      *ngFor="let option of options"
+      [class.erl__option--active]="selected === option.value"
+      [attr.data-level]="option.value"
+      [attr.aria-checked]="selected === option.value"
+      role="radio"
+      (click)="select(option.value)"
+    >
+      <span class="erl__dot" aria-hidden="true"></span>
+      <span class="erl__label">{{ option.label }}</span>
+    </button>
+  </div>
+</div>

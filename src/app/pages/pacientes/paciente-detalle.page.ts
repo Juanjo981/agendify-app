@@ -22,6 +22,9 @@ import { getAvatarColor as avatarColorUtil } from '../../shared/utils/avatar.uti
 import { formatFecha as formatFechaUtil } from '../../shared/utils/date.utils';
 import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../shared/confirm-dialog/confirm-dialog.component';
 import { PacienteSubmenuComponent, SeccionPaciente } from './components/paciente-submenu/paciente-submenu.component';
+import { PrimeraSesionChecklistComponent } from './components/eval-checklist/primera-sesion-checklist.component';
+import { ActividadRecienteTimelineComponent } from './components/actividad-reciente/actividad-reciente-timeline.component';
+import { ActividadRecienteItem } from './components/actividad-reciente/actividad-reciente.models';
 import { mapApiError } from '../../shared/utils/api-error.mapper';
 import html2pdf from 'html2pdf.js';
 import { PacienteDetailRefreshService } from '../../shared/refresh/dashboard-module-refresh.services';
@@ -55,7 +58,16 @@ const PDF_COLORS = {
   templateUrl: './paciente-detalle.page.html',
   styleUrls: ['./paciente-detalle.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule, ConfirmDialogComponent, PacienteSubmenuComponent, AgfDatePickerComponent],
+  imports: [
+    IonicModule,
+    CommonModule,
+    FormsModule,
+    ConfirmDialogComponent,
+    PacienteSubmenuComponent,
+    AgfDatePickerComponent,
+    PrimeraSesionChecklistComponent,
+    ActividadRecienteTimelineComponent,
+  ],
 })
 export class PacienteDetallePage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -67,6 +79,118 @@ export class PacienteDetallePage implements OnInit {
   readonly notaTipoOptions = NOTA_CLINICA_TIPO_OPTIONS;
   readonly skeletonCards = [0, 1, 2, 3];
   readonly skeletonLines = [0, 1, 2];
+
+  /** Placeholder UI-only. Preparado para datos dinámicos del backend. */
+  readonly indiceClinicoUi = {
+    score: 72,
+    max: 100,
+    estado: 'Bueno',
+    estadoTone: 'ok' as 'ok' | 'warn' | 'risk',
+    leyenda: 'Basado en la actividad reciente del paciente',
+    factores: [
+      { nombre: 'Asistencia', valor: 'Excelente', tone: 'ok' as const },
+      { nombre: 'Cancelaciones', valor: 'Muy bajas', tone: 'ok' as const },
+      { nombre: 'Reprogramaciones', valor: 'Frecuentes', tone: 'warn' as const },
+      { nombre: 'Ausencias', valor: 'Ninguna', tone: 'ok' as const },
+      { nombre: 'Frecuencia', valor: 'Constante', tone: 'ok' as const },
+    ],
+  };
+
+  /** Placeholder UI-only. Listo para evaluaciones dinámicas. */
+  readonly evaluacionesUi = [
+    {
+      id: 'phq9',
+      nombre: 'PHQ-9',
+      fecha: '18 Julio',
+      resultado: 'Depresión Moderada',
+      estado: 'Completada',
+      estadoTone: 'done' as const,
+    },
+    {
+      id: 'gad7',
+      nombre: 'GAD-7',
+      fecha: '12 Julio',
+      resultado: 'Ansiedad Baja',
+      estado: 'Completada',
+      estadoTone: 'done' as const,
+    },
+    {
+      id: 'beck',
+      nombre: 'Inventario Beck',
+      fecha: '2 Julio',
+      resultado: 'Moderado',
+      estado: 'Completada',
+      estadoTone: 'done' as const,
+    },
+  ];
+
+  /** Placeholder UI-only. Listo para recetas dinámicas. */
+  readonly recetasUi = [
+    {
+      id: 'sertralina',
+      fecha: '20 Julio',
+      medicamento: 'Sertralina',
+      dosis: '50 mg',
+      estado: 'Activa',
+      estadoTone: 'active' as const,
+    },
+    {
+      id: 'clonazepam',
+      fecha: '10 Junio',
+      medicamento: 'Clonazepam',
+      dosis: '0.25 mg',
+      estado: 'Finalizada',
+      estadoTone: 'done' as const,
+    },
+  ];
+
+  /** Placeholder UI-only. Timeline de actividad reciente. */
+  readonly actividadRecienteUi: ActividadRecienteItem[] = [
+    {
+      id: 'sesion-hoy',
+      cuando: 'Hoy',
+      titulo: 'Sesión completada',
+      icono: 'checkmark-circle-outline',
+      tone: 'success',
+    },
+    {
+      id: 'receta-3d',
+      cuando: 'Hace 3 días',
+      titulo: 'Receta creada',
+      icono: 'medkit-outline',
+      tone: 'teal',
+    },
+    {
+      id: 'eval-phq9',
+      cuando: 'Hace 1 semana',
+      titulo: 'Evaluación PHQ-9',
+      icono: 'clipboard-outline',
+      tone: 'purple',
+    },
+    {
+      id: 'primera-consulta',
+      cuando: 'Hace 1 mes',
+      titulo: 'Primera consulta',
+      icono: 'calendar-outline',
+      tone: 'blue',
+    },
+  ];
+
+  /**
+   * Placeholder UI-only del Resumen clínico.
+   * Más adelante se puede reemplazar `paragraphs` / `generatedAt` con salida de IA.
+   */
+  readonly resumenClinicoUi = {
+    title: 'Resumen clínico',
+    badge: 'Próximamente IA',
+    paragraphs: [
+      'Paciente con buena adherencia.',
+      'Ha asistido regularmente durante los últimos meses.',
+      'No existen alertas críticas activas.',
+      'Presenta evolución positiva según las evaluaciones recientes.',
+    ],
+  };
+
   paciente: PacienteDto | null = null;
   resumen: ResumenPacienteDto | null = null;
 
@@ -243,6 +367,11 @@ export class PacienteDetallePage implements OnInit {
 
   formatFecha(iso: string): string {
     return formatFechaUtil(iso);
+  }
+
+  /** Solo presentación: etiqueta legible del tipo de alerta. */
+  labelAlertaTipo(tipo?: string | null): string {
+    return this.alertaTipoOptions.find(option => option.value === tipo)?.label ?? tipo ?? 'Alerta';
   }
 
   formatFileSize(bytes?: number | null): string {

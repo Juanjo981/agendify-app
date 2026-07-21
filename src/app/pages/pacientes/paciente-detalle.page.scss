@@ -1511,7 +1511,8 @@
   .det-loading-grid { grid-template-columns: 1fr; }
   .det-tabs { padding: 4px; }
   .det-tab { padding: 8px 12px; font-size: 13px; }
-  .det-alert-card__header { flex-direction: column; align-items: stretch; }
+  .det-alert-card__header,
+  .det-alertas-panel__header { flex-direction: column; align-items: stretch; }
   .det-alert-add-btn { width: 100%; justify-content: center; }
   .det-alert-entity { flex-direction: column; }
   .det-alert-entity__actions { width: 100%; justify-content: flex-end; }
@@ -1519,10 +1520,595 @@
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SECCIÓN INFORMACIÓN
+// SECCIÓN RESUMEN (antes Información)
 // ─────────────────────────────────────────────────────────────────────────────
 
-.det-informacion { display: flex; flex-direction: column; gap: 16px; animation: fadeIn 0.2s ease; }
+.det-informacion {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  animation: fadeIn 0.2s ease;
+}
+
+.det-resumen-block {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.det-resumen-block__header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 2px;
+}
+
+.det-resumen-block__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-strong);
+}
+
+.det-resumen-block__subtitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.det-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.det-indice-card {
+  display: grid;
+  grid-template-columns: minmax(0, 38%) minmax(0, 62%);
+  gap: 0;
+  padding: 22px 24px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.det-indice-card__main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-right: 24px;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+
+  @media (max-width: 900px) {
+    padding-right: 0;
+    padding-bottom: 18px;
+    border-right: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+}
+
+.det-indice-card__heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.det-indice-card__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-soft);
+  color: var(--primary-mid);
+  flex-shrink: 0;
+
+  ion-icon { font-size: 18px; }
+}
+
+.det-indice-card__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-strong);
+  letter-spacing: -0.01em;
+}
+
+.det-indice-card__hint {
+  margin: 3px 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.det-indice-card__score-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.det-indice-card__score {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.det-indice-card__value {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--text-strong);
+}
+
+.det-indice-card__max {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.det-indice-card__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--success-soft);
+  color: var(--success-dark, var(--success));
+
+  &[data-tone='warn'] {
+    background: var(--warning-soft);
+    color: var(--warning-dark, var(--warning));
+  }
+
+  &[data-tone='risk'] {
+    background: var(--danger-soft);
+    color: var(--danger-dark, var(--danger));
+  }
+}
+
+.det-indice-card__status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.det-indice-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--primary-soft) 70%, #f1f5f9);
+}
+
+.det-indice-bar__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary-mid);
+  transform-origin: left center;
+  animation: detIndiceBarIn 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes detIndiceBarIn {
+  from { transform: scaleX(0.15); opacity: 0.55; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+
+.det-indice-card__legend {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+}
+
+.det-indice-card__factors {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding-left: 24px;
+
+  @media (max-width: 900px) {
+    padding-left: 0;
+    padding-top: 18px;
+  }
+}
+
+.det-indice-card__factors-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.det-indice-factors {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.det-indice-factors__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 34px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-muted, #f8fafc) 72%, transparent);
+}
+
+.det-indice-factors__name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-strong);
+}
+
+.det-indice-factors__value {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+
+  .det-indice-factors__item[data-tone='ok'] & {
+    color: var(--success-dark, var(--success));
+  }
+
+  .det-indice-factors__item[data-tone='warn'] & {
+    color: var(--warning-dark, #b45309);
+  }
+
+  .det-indice-factors__item[data-tone='risk'] & {
+    color: var(--danger-dark, var(--danger));
+  }
+}
+
+.det-indice-factors__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 14%, transparent);
+}
+
+:host-context(html[data-theme='dark']) .det-indice-card {
+  background: var(--surface-panel-heavy);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+:host-context(html[data-theme='dark']) .det-indice-card__main {
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.det-kpi-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 132px;
+  padding: 16px 18px;
+  border-radius: var(--radius-lg, 16px);
+  background: var(--surface-panel-heavy, #fff);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 200ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  }
+}
+
+.det-kpi-card__top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.det-kpi-card__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  ion-icon { font-size: 17px; }
+
+  &--primary { background: var(--primary-soft); color: var(--primary-mid); }
+  &--success { background: var(--success-soft); color: var(--success); }
+  &--purple { background: color-mix(in srgb, var(--accent-purple) 12%, transparent); color: var(--accent-purple); }
+  &--blue { background: color-mix(in srgb, var(--accent-blue) 12%, transparent); color: var(--accent-blue); }
+}
+
+.det-kpi-card__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+}
+
+.det-kpi-card__value {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--text-strong);
+
+  &--sm {
+    font-size: 22px;
+  }
+}
+
+.det-kpi-card__suffix {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.det-kpi-card__meta {
+  margin-top: auto;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+
+  &--warn {
+    color: var(--warning-dark, var(--warning));
+    font-weight: 600;
+  }
+}
+
+// ─── Alertas clínicas premium ────────────────────────────────────────────────
+.det-alertas-panel {
+  --alerta-priority: #eab308;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 22px;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--warning-soft) 55%, var(--surface-panel-heavy)) 0%, var(--surface-panel-heavy) 42%),
+    var(--surface-panel-heavy, #fff);
+  border: 1px solid color-mix(in srgb, var(--warning) 18%, var(--border-subtle));
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+}
+
+.det-alertas-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.det-alertas-panel__title-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.det-alertas-panel__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+  color: var(--warning-dark, var(--warning));
+
+  ion-icon { font-size: 20px; }
+}
+
+.det-alertas-panel__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text-muted);
+    max-width: 520px;
+  }
+}
+
+.det-alertas-panel__eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--warning-dark, var(--warning));
+}
+
+.det-alertas-panel__title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-strong);
+  }
+}
+
+.det-alerta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.det-alerta-tile {
+  --alerta-priority: #eab308;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 168px;
+  padding: 16px 16px 14px 18px;
+  border-radius: 16px;
+  background: var(--surface-panel-heavy, #fff);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+  transition: box-shadow 200ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  &[data-priority='ALERGIA'],
+  &[data-priority='RESTRICCION'] {
+    --alerta-priority: #ef4444;
+  }
+
+  &[data-priority='ADEUDO'] {
+    --alerta-priority: #f97316;
+  }
+
+  &[data-priority='INDICACION'],
+  &[data-priority='OTRA'] {
+    --alerta-priority: #eab308;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  }
+
+  &--inactive {
+    opacity: 0.62;
+  }
+}
+
+.det-alerta-tile__priority {
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 4px;
+  border-radius: 999px;
+  background: var(--alerta-priority);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--alerta-priority) 14%, transparent);
+}
+
+.det-alerta-tile__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.det-alerta-tile__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.det-alerta-tile__tipo,
+.det-alerta-tile__status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.det-alerta-tile__tipo {
+  color: color-mix(in srgb, var(--alerta-priority) 82%, #111827);
+  background: color-mix(in srgb, var(--alerta-priority) 14%, transparent);
+}
+
+.det-alerta-tile__status {
+  color: var(--success-dark, var(--success));
+  background: var(--success-soft);
+
+  &--inactive {
+    color: var(--text-muted);
+    background: var(--surface-muted);
+  }
+}
+
+.det-alerta-tile__fecha {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.det-alerta-tile__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-strong);
+  line-height: 1.3;
+}
+
+.det-alerta-tile__desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+
+  &--empty {
+    font-style: italic;
+    opacity: 0.75;
+  }
+}
+
+.det-alerta-tile__actions {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-top: 4px;
+}
 
 .det-info-grid {
   display: grid;
@@ -1531,6 +2117,310 @@
 }
 
 .det-muted { color: var(--text-muted); }
+
+// Tarjetas de datos más limpias dentro del Resumen
+.det-informacion {
+  .det-info-grid {
+    gap: 16px;
+  }
+
+  .det-info-grid--emergency {
+    margin-top: 4px;
+  }
+
+  .det-data-card {
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px 22px;
+    border-radius: 18px;
+    background: var(--surface-panel-heavy, #fff);
+    backdrop-filter: none;
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+    transition:
+      transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      border-color 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+    &:hover {
+      transform: translateY(-2px);
+      border-color: color-mix(in srgb, var(--primary-mid) 18%, var(--border-subtle));
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+    }
+
+    &--emphasis {
+      border-color: color-mix(in srgb, var(--danger-bright) 16%, var(--border-subtle));
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--danger-soft) 45%, #fff) 0%, var(--surface-panel-heavy, #fff) 55%);
+    }
+  }
+
+  .det-data-card__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+
+    ion-icon { font-size: 21px; }
+  }
+
+  .det-data-card__body {
+    gap: 6px;
+    padding-top: 2px;
+  }
+
+  .det-data-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+  }
+
+  .det-data-value {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.35;
+    color: var(--text-strong);
+    word-break: break-word;
+  }
+
+  .det-link {
+    color: var(--primary-mid);
+    text-decoration: none;
+    transition: color 180ms ease;
+
+    &:hover {
+      color: var(--primary-hover, var(--primary));
+      text-decoration: none;
+    }
+  }
+}
+
+// Información general — tarjetas premium
+.det-info-general__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.det-general-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px 24px;
+  border-radius: 18px;
+  background: var(--surface-panel-heavy, #fff);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+  transition:
+    transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--primary-mid) 16%, var(--border-subtle));
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+  }
+}
+
+.det-general-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.det-general-card__heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.det-general-card__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--primary-soft);
+  color: var(--primary-mid);
+
+  ion-icon { font-size: 20px; }
+
+  &--soft {
+    background: var(--surface-muted);
+    color: var(--text-secondary);
+  }
+}
+
+.det-general-card__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-strong);
+}
+
+.det-general-card__hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.det-general-card__body {
+  margin: 0;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: var(--surface-muted, #f8fafc);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 70%, transparent);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.65;
+  color: var(--text-strong);
+  white-space: pre-wrap;
+
+  &--empty {
+    color: var(--text-muted);
+    font-style: italic;
+    font-weight: 500;
+  }
+}
+
+.det-info-general .det-info-actions {
+  padding-top: 0;
+  gap: 12px;
+}
+
+// Resumen clínico — tarjeta distintiva (UI-only / futura IA)
+.det-clinico-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 26px 28px;
+  border-radius: 22px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.98) 55%, rgba(241, 245, 249, 0.95) 100%);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 10px 30px rgba(15, 23, 42, 0.04);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--primary-mid), color-mix(in srgb, var(--accent-purple) 70%, var(--primary-mid)));
+    border-radius: 22px 0 0 22px;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: -48px;
+    right: -36px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    pointer-events: none;
+    background: radial-gradient(circle, color-mix(in srgb, var(--primary-mid) 10%, transparent) 0%, transparent 70%);
+  }
+}
+
+.det-clinico-card__header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.det-clinico-card__heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.det-clinico-card__mark {
+  width: 10px;
+  height: 10px;
+  margin-top: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--primary-mid);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-mid) 14%, transparent);
+}
+
+.det-clinico-card__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-strong);
+}
+
+.det-clinico-card__subtitle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.det-clinico-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--primary-strong, var(--primary));
+  background: color-mix(in srgb, var(--primary-soft) 80%, #fff);
+  border: 1px solid color-mix(in srgb, var(--primary-mid) 18%, transparent);
+
+  ion-icon {
+    font-size: 13px;
+    color: var(--primary-mid);
+  }
+}
+
+.det-clinico-card__body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 62ch;
+
+  p {
+    margin: 0;
+    font-size: 14.5px;
+    font-weight: 500;
+    line-height: 1.7;
+    letter-spacing: -0.01em;
+    color: color-mix(in srgb, var(--text-strong) 88%, var(--text-muted));
+  }
+}
+
+:host-context(html[data-theme='dark']) .det-clinico-card {
+  background:
+    linear-gradient(145deg, rgba(30, 41, 59, 0.96) 0%, rgba(15, 23, 42, 0.98) 100%);
+  border-color: rgba(148, 163, 184, 0.14);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 10px 30px rgba(0, 0, 0, 0.22);
+}
 
 // Alert card
 .det-alert-card {
@@ -1851,6 +2741,368 @@
   gap: 10px;
   flex-wrap: wrap;
   padding-top: 4px;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECCIÓN EVALUACIONES (UI-only)
+// ─────────────────────────────────────────────────────────────────────────────
+
+.det-evaluaciones {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+.det-evaluaciones-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.det-evaluaciones-topbar__info {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+
+  ion-icon {
+    font-size: 18px;
+    color: var(--primary-mid);
+  }
+}
+
+.det-eval-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.det-eval-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: var(--radius-lg, 16px);
+  background: var(--surface-panel-heavy, #fff);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 200ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  }
+}
+
+.det-eval-card__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--primary-soft);
+  color: var(--primary-mid);
+
+  ion-icon { font-size: 20px; }
+}
+
+.det-eval-card__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.det-eval-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.det-eval-card__nombre {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-strong);
+}
+
+.det-eval-card__estado {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--success-soft);
+  color: var(--success-dark, var(--success));
+
+  &[data-tone='pending'] {
+    background: var(--warning-soft);
+    color: var(--warning-dark, var(--warning));
+  }
+
+  &[data-tone='draft'] {
+    background: var(--surface-muted);
+    color: var(--text-muted);
+  }
+}
+
+.det-eval-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+}
+
+.det-eval-card__fecha {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+
+  ion-icon { font-size: 14px; }
+}
+
+.det-eval-card__resultado {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.det-eval-card__chevron {
+  flex-shrink: 0;
+  font-size: 16px;
+  color: var(--text-faint);
+}
+
+@media (max-width: 700px) {
+  .det-eval-card {
+    align-items: flex-start;
+  }
+
+  .det-eval-card__chevron {
+    display: none;
+  }
+
+  .det-eval-card__row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECCIÓN RECETAS (UI-only)
+// ─────────────────────────────────────────────────────────────────────────────
+
+.det-recetas {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+.det-recetas-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.det-recetas-topbar__info {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+
+  ion-icon {
+    font-size: 18px;
+    color: var(--primary-mid);
+  }
+}
+
+.det-receta-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.det-receta-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: var(--radius-lg, 16px);
+  background: var(--surface-panel-heavy, #fff);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 200ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  }
+}
+
+.det-receta-card__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--accent-teal) 12%, transparent);
+  color: var(--accent-teal-dark, var(--accent-teal));
+
+  ion-icon { font-size: 20px; }
+}
+
+.det-receta-card__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.det-receta-card__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.det-receta-card__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.det-receta-card__medicamento {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-strong);
+}
+
+.det-receta-card__dosis {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.det-receta-card__estado {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--success-soft);
+  color: var(--success-dark, var(--success));
+
+  &[data-tone='done'] {
+    background: var(--surface-muted);
+    color: var(--text-muted);
+  }
+
+  &[data-tone='pending'] {
+    background: var(--warning-soft);
+    color: var(--warning-dark, var(--warning));
+  }
+}
+
+.det-receta-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+}
+
+.det-receta-card__fecha {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+
+  ion-icon { font-size: 14px; }
+}
+
+.det-receta-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.det-receta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 110px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--primary-mid) 22%, var(--border-subtle));
+  background: var(--primary-soft);
+  color: var(--primary-mid);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease;
+
+  ion-icon { font-size: 15px; }
+
+  &:hover {
+    background: color-mix(in srgb, var(--primary-mid) 14%, transparent);
+    border-color: color-mix(in srgb, var(--primary-mid) 40%, var(--border-subtle));
+  }
+
+  &--secondary {
+    background: var(--surface-panel-heavy, #fff);
+    border-color: var(--border-subtle);
+    color: var(--text-secondary);
+
+    &:hover {
+      background: var(--surface-muted);
+      border-color: color-mix(in srgb, var(--text-muted) 30%, var(--border-subtle));
+    }
+  }
+}
+
+@media (max-width: 700px) {
+  .det-receta-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .det-receta-card__actions {
+    flex-direction: row;
+  }
+
+  .det-receta-btn {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2329,6 +3581,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 @media (max-width: 700px) {
   .det-info-grid { grid-template-columns: 1fr; }
+  .det-kpi-grid { grid-template-columns: 1fr 1fr; }
   .det-hist-summary-item { min-width: 60px; padding: 10px 10px; }
   .det-hist-summary-item strong { font-size: 18px; }
   .det-ses-stats { gap: 0; }
@@ -2340,6 +3593,7 @@
 }
 
 @media (max-width: 420px) {
+  .det-kpi-grid { grid-template-columns: 1fr; }
   .det-hist-summary { gap: 6px; }
   .det-hist-summary-item { padding: 8px 8px; strong { font-size: 16px; } }
   .det-hist-card { padding: 12px 14px; }

@@ -28,6 +28,8 @@ export interface UsuarioPerfilUpdateRequest {
 export interface ProfesionalPerfilDto {
   id_profesional?: number | null;
   especialidad?: string | null;
+  /** Cédula profesional (texto). Preparado para recetas/PDF. */
+  cedula_profesional?: string | null;
   nombre_consulta?: string | null;
   tipo_servicio?: string | null;
   descripcion?: string | null;
@@ -38,6 +40,8 @@ export interface ProfesionalPerfilDto {
 
 export interface ProfesionalPerfilUpdateRequest {
   especialidad: string;
+  /** Cédula profesional opcional; preparada para recetas/PDF. */
+  cedula_profesional?: string | null;
   nombre_consulta: string;
   tipo_servicio?: string | null;
   descripcion?: string | null;

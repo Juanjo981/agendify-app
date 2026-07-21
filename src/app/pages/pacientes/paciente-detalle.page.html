@@ -124,198 +124,360 @@
     <!-- âââ SECTION CONTENT ââââââââââââââââââââââââââââââââââââââââââââââââ -->
     <div class="det-tab-content" [attr.data-section-transition]="sectionTransitionKey">
 
-      <!-- ==== SECCIÓN: INFORMACIÓN ==== -->
+      <!-- ==== SECCIÓN: RESUMEN (key: informacion) ==== -->
       <div *ngIf="seccionActiva === 'informacion'" class="det-informacion det-section-panel">
 
-        <!-- Ficha de contacto -->
-        <div class="det-info-grid">
+        <!-- 1. Indicadores rápidos (tarjetas resumen) -->
+        <section class="det-resumen-block">
+          <header class="det-resumen-block__header">
+            <h3 class="det-resumen-block__title">Indicadores rápidos</h3>
+            <p class="det-resumen-block__subtitle">Vista preliminar · datos de ejemplo</p>
+          </header>
 
-          <div class="det-data-card" *ngIf="paciente.email">
-            <div class="det-data-card__icon det-data-card__icon--primary">
-              <ion-icon name="mail-outline"></ion-icon>
-            </div>
-            <div class="det-data-card__body">
-              <span class="det-data-label">Email</span>
-              <a class="det-data-value det-link" href="mailto:{{ paciente.email }}">{{ paciente.email }}</a>
-            </div>
-          </div>
-
-          <div class="det-data-card">
-            <div class="det-data-card__icon det-data-card__icon--success">
-              <ion-icon name="call-outline"></ion-icon>
-            </div>
-            <div class="det-data-card__body">
-              <span class="det-data-label">Teléfono</span>
-              <a class="det-data-value det-link" *ngIf="paciente.numero_telefono" href="tel:{{ paciente.numero_telefono }}">{{ paciente.numero_telefono }}</a>
-              <span class="det-data-value det-muted" *ngIf="!paciente.numero_telefono">—</span>
-            </div>
-          </div>
-
-          <div class="det-data-card" *ngIf="paciente.fecha_nacimiento">
-            <div class="det-data-card__icon det-data-card__icon--warning">
-              <ion-icon name="gift-outline"></ion-icon>
-            </div>
-            <div class="det-data-card__body">
-              <span class="det-data-label">Fecha de nacimiento</span>
-              <span class="det-data-value">{{ formatFecha(paciente.fecha_nacimiento) }}</span>
-            </div>
-          </div>
-
-          <div class="det-data-card" *ngIf="paciente.fecha_nacimiento">
-            <div class="det-data-card__icon det-data-card__icon--purple">
-              <ion-icon name="hourglass-outline"></ion-icon>
-            </div>
-            <div class="det-data-card__body">
-              <span class="det-data-label">Edad</span>
-              <span class="det-data-value">{{ calcularEdad(paciente.fecha_nacimiento) }} años</span>
-            </div>
-          </div>
-
-          <div class="det-data-card" *ngIf="paciente.direccion">
-            <div class="det-data-card__icon det-data-card__icon--blue">
-              <ion-icon name="location-outline"></ion-icon>
-            </div>
-            <div class="det-data-card__body">
-              <span class="det-data-label">Dirección</span>
-              <span class="det-data-value">{{ paciente.direccion }}</span>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Contacto de emergencia -->
-        <div class="det-info-grid" *ngIf="paciente.contacto_emergencia_nombre || paciente.contacto_emergencia_telefono">
-          <div class="det-data-card" *ngIf="paciente.contacto_emergencia_nombre">
-            <div class="det-data-card__icon det-data-card__icon--danger">
-              <ion-icon name="people-outline"></ion-icon>
-            </div>
-            <div class="det-data-card__body">
-              <span class="det-data-label">Contacto de emergencia</span>
-              <span class="det-data-value">{{ paciente.contacto_emergencia_nombre }}</span>
-            </div>
-          </div>
-          <div class="det-data-card" *ngIf="paciente.contacto_emergencia_telefono">
-            <div class="det-data-card__icon det-data-card__icon--danger">
-              <ion-icon name="call-outline"></ion-icon>
-            </div>
-            <div class="det-data-card__body">
-              <span class="det-data-label">Teléfono de emergencia</span>
-              <a class="det-data-value det-link" href="tel:{{ paciente.contacto_emergencia_telefono }}">{{ paciente.contacto_emergencia_telefono }}</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Sexo -->
-        <div class="det-info-grid" *ngIf="paciente.sexo">
-          <div class="det-data-card">
-            <div class="det-data-card__icon det-data-card__icon--primary">
-              <ion-icon name="person-outline"></ion-icon>
-            </div>
-            <div class="det-data-card__body">
-              <span class="det-data-label">Sexo</span>
-              <span class="det-data-value">{{ paciente.sexo }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Alertas clínicas -->
-        <section class="det-alert-card">
-          <div class="det-alert-card__header">
-            <div class="det-alert-card__title-wrap">
-              <div class="det-alert-card__icon">
-                <ion-icon name="shield-half-outline"></ion-icon>
-              </div>
-              <div class="det-alert-card__title-copy">
-                <div class="det-alert-card__eyebrow">Seguimiento clínico</div>
-                <div class="det-alert-card__title-row">
-                  <h3>Alertas clínicas</h3>
-                  <span class="det-alert-count" *ngIf="alertas.length > 0">{{ alertas.length }}</span>
+          <!-- Estado del tratamiento (UI-only, listo para datos dinámicos) -->
+          <article class="det-indice-card" aria-label="Estado del tratamiento">
+            <div class="det-indice-card__main">
+              <div class="det-indice-card__heading">
+                <div class="det-indice-card__icon">
+                  <ion-icon name="pulse-outline"></ion-icon>
                 </div>
-                <p>Recordatorios sensibles y banderas de seguridad visibles para el expediente.</p>
-              </div>
-            </div>
-            <button class="det-alert-add-btn" (click)="abrirAlertaForm()">
-              <ion-icon name="add-outline"></ion-icon>
-              <span>Nueva alerta</span>
-            </button>
-          </div>
-
-          <ion-spinner *ngIf="loadingAlertas" name="crescent" class="det-section-spinner"></ion-spinner>
-
-          <div *ngIf="!loadingAlertas && alertas.length === 0" class="det-alert-empty">
-            <div class="det-alert-empty__icon">
-              <ion-icon name="document-text-outline"></ion-icon>
-            </div>
-            <div class="det-alert-empty__copy">
-              <strong>Sin alertas registradas</strong>
-              <p>Agrega una alerta para destacar alergias, medicamentos o consideraciones importantes del paciente.</p>
-            </div>
-            <button class="det-btn-outline det-empty-action" (click)="abrirAlertaForm()">
-              <ion-icon name="add-outline"></ion-icon>
-              Crear primera alerta
-            </button>
-          </div>
-
-          <ul class="det-alert-list" *ngIf="!loadingAlertas && alertas.length > 0">
-            <li *ngFor="let alerta of alertas" class="det-alert-entity" [class.det-alert-entity--inactive]="!alerta.activa">
-              <div class="det-alert-entity__body">
-                <div class="det-alert-entity__marker">
-                  <ion-icon [name]="alerta.activa ? 'alert-circle-outline' : 'ellipse-outline'"></ion-icon>
+                <div>
+                  <h4 class="det-indice-card__title">Estado del tratamiento</h4>
+                  <p class="det-indice-card__hint">Adherencia y continuidad del paciente</p>
                 </div>
-                <div class="det-alert-entity__content">
-                  <div class="det-alert-entity__meta">
-                    <span *ngIf="alerta.tipo_alerta" class="det-alert-entity__tipo">{{ alerta.tipo_alerta }}</span>
-                    <span class="det-alert-entity__status" [class.det-alert-entity__status--inactive]="!alerta.activa">
+              </div>
+
+              <div class="det-indice-card__score-row">
+                <div class="det-indice-card__score">
+                  <span class="det-indice-card__value">{{ indiceClinicoUi.score }}</span>
+                  <span class="det-indice-card__max">/{{ indiceClinicoUi.max }}</span>
+                </div>
+                <div class="det-indice-card__status" [attr.data-tone]="indiceClinicoUi.estadoTone">
+                  <span class="det-indice-card__status-dot" aria-hidden="true"></span>
+                  <span>{{ indiceClinicoUi.estado }}</span>
+                </div>
+              </div>
+
+              <div
+                class="det-indice-bar"
+                role="progressbar"
+                [attr.aria-valuenow]="indiceClinicoUi.score"
+                [attr.aria-valuemin]="0"
+                [attr.aria-valuemax]="indiceClinicoUi.max"
+                [attr.aria-label]="'Estado del tratamiento: ' + indiceClinicoUi.score + ' de ' + indiceClinicoUi.max">
+                <span
+                  class="det-indice-bar__fill"
+                  [style.width.%]="indiceClinicoUi.score">
+                </span>
+              </div>
+
+              <p class="det-indice-card__legend">{{ indiceClinicoUi.leyenda }}</p>
+            </div>
+
+            <div class="det-indice-card__factors">
+              <h5 class="det-indice-card__factors-title">Desglose del seguimiento</h5>
+              <ul class="det-indice-factors">
+                <li
+                  *ngFor="let factor of indiceClinicoUi.factores"
+                  class="det-indice-factors__item"
+                  [attr.data-tone]="factor.tone">
+                  <span class="det-indice-factors__name">{{ factor.nombre }}</span>
+                  <span class="det-indice-factors__value">
+                    <span class="det-indice-factors__dot" aria-hidden="true"></span>
+                    {{ factor.valor }}
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </article>
+
+          <div class="det-kpi-grid" aria-hidden="true">
+            <article class="det-kpi-card">
+              <div class="det-kpi-card__top">
+                <div class="det-kpi-card__icon det-kpi-card__icon--success">
+                  <ion-icon name="checkmark-circle-outline"></ion-icon>
+                </div>
+                <span class="det-kpi-card__label">Asistencia</span>
+              </div>
+              <div class="det-kpi-card__value">93<span class="det-kpi-card__suffix">%</span></div>
+              <span class="det-kpi-card__meta">Placeholder</span>
+            </article>
+
+            <article class="det-kpi-card">
+              <div class="det-kpi-card__top">
+                <div class="det-kpi-card__icon det-kpi-card__icon--purple">
+                  <ion-icon name="layers-outline"></ion-icon>
+                </div>
+                <span class="det-kpi-card__label">Sesiones</span>
+              </div>
+              <div class="det-kpi-card__value">8</div>
+              <span class="det-kpi-card__meta">Placeholder</span>
+            </article>
+
+            <article class="det-kpi-card">
+              <div class="det-kpi-card__top">
+                <div class="det-kpi-card__icon det-kpi-card__icon--blue">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                </div>
+                <span class="det-kpi-card__label">Próxima cita</span>
+              </div>
+              <div class="det-kpi-card__value det-kpi-card__value--sm">24 Julio</div>
+              <span class="det-kpi-card__meta">6:00 PM</span>
+            </article>
+          </div>
+        </section>
+
+        <!-- Actividad reciente (timeline UI-only) -->
+        <section class="det-resumen-block">
+          <app-actividad-reciente-timeline [items]="actividadRecienteUi"></app-actividad-reciente-timeline>
+        </section>
+
+        <!-- 2. Alertas clínicas (inmediatamente debajo de tarjetas resumen) -->
+        <section class="det-resumen-block">
+          <div class="det-alertas-panel">
+            <header class="det-alertas-panel__header">
+              <div class="det-alertas-panel__title-wrap">
+                <div class="det-alertas-panel__icon">
+                  <ion-icon name="shield-half-outline"></ion-icon>
+                </div>
+                <div class="det-alertas-panel__copy">
+                  <span class="det-alertas-panel__eyebrow">Prioridad clínica</span>
+                  <div class="det-alertas-panel__title-row">
+                    <h3>Alertas clínicas</h3>
+                    <span class="det-alert-count" *ngIf="alertas.length > 0">{{ alertas.length }}</span>
+                  </div>
+                  <p>Señales importantes del expediente. Revisa tipo, estado y detalle antes de cada atención.</p>
+                </div>
+              </div>
+              <button class="det-alert-add-btn" (click)="abrirAlertaForm()">
+                <ion-icon name="add-outline"></ion-icon>
+                <span>Nueva alerta</span>
+              </button>
+            </header>
+
+            <ion-spinner *ngIf="loadingAlertas" name="crescent" class="det-section-spinner"></ion-spinner>
+
+            <div *ngIf="!loadingAlertas && alertas.length === 0" class="det-alert-empty">
+              <div class="det-alert-empty__icon">
+                <ion-icon name="document-text-outline"></ion-icon>
+              </div>
+              <div class="det-alert-empty__copy">
+                <strong>Sin alertas registradas</strong>
+                <p>Agrega una alerta para destacar alergias, medicamentos o consideraciones importantes del paciente.</p>
+              </div>
+              <button class="det-btn-outline det-empty-action" (click)="abrirAlertaForm()">
+                <ion-icon name="add-outline"></ion-icon>
+                Crear primera alerta
+              </button>
+            </div>
+
+            <div class="det-alerta-grid" *ngIf="!loadingAlertas && alertas.length > 0">
+              <article
+                *ngFor="let alerta of alertas"
+                class="det-alerta-tile"
+                [attr.data-priority]="alerta.tipo_alerta"
+                [class.det-alerta-tile--inactive]="!alerta.activa">
+                <span class="det-alerta-tile__priority" aria-hidden="true"></span>
+
+                <div class="det-alerta-tile__top">
+                  <div class="det-alerta-tile__chips">
+                    <span class="det-alerta-tile__tipo" *ngIf="alerta.tipo_alerta">{{ labelAlertaTipo(alerta.tipo_alerta) }}</span>
+                    <span class="det-alerta-tile__status" [class.det-alerta-tile__status--inactive]="!alerta.activa">
                       {{ alerta.activa ? 'Activa' : 'Archivada' }}
                     </span>
                   </div>
-                  <strong>{{ alerta.titulo }}</strong>
-                  <p *ngIf="alerta.descripcion" class="det-alert-entity__desc">{{ alerta.descripcion }}</p>
+                  <time class="det-alerta-tile__fecha" *ngIf="alerta.created_at">{{ formatFecha(alerta.created_at) }}</time>
                 </div>
-              </div>
-              <div class="det-alert-entity__actions">
-                <button class="det-nota-edit-btn" (click)="toggleAlerta(alerta)" [title]="alerta.activa ? 'Desactivar' : 'Activar'">
-                  <ion-icon [name]="alerta.activa ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
-                </button>
-                <button class="det-nota-edit-btn" (click)="abrirAlertaForm(alerta)" title="Editar">
-                  <ion-icon name="pencil-outline"></ion-icon>
-                </button>
-                <button class="det-nota-delete-btn" (click)="confirmarEliminarAlerta(alerta)" title="Eliminar">
-                  <ion-icon name="trash-outline"></ion-icon>
-                </button>
-              </div>
-            </li>
-          </ul>
+
+                <h4 class="det-alerta-tile__title">{{ alerta.titulo }}</h4>
+                <p class="det-alerta-tile__desc" *ngIf="alerta.descripcion">{{ alerta.descripcion }}</p>
+                <p class="det-alerta-tile__desc det-alerta-tile__desc--empty" *ngIf="!alerta.descripcion">Sin descripción</p>
+
+                <div class="det-alerta-tile__actions">
+                  <button class="det-nota-edit-btn" (click)="toggleAlerta(alerta)" [title]="alerta.activa ? 'Desactivar' : 'Activar'">
+                    <ion-icon [name]="alerta.activa ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+                  </button>
+                  <button class="det-nota-edit-btn" (click)="abrirAlertaForm(alerta)" title="Editar">
+                    <ion-icon name="pencil-outline"></ion-icon>
+                  </button>
+                  <button class="det-nota-delete-btn" (click)="confirmarEliminarAlerta(alerta)" title="Eliminar">
+                    <ion-icon name="trash-outline"></ion-icon>
+                  </button>
+                </div>
+              </article>
+            </div>
+          </div>
         </section>
 
-        <!-- Notas generales -->
-        <div class="det-notas-card">
-          <div class="det-notas-card__header">
-            <ion-icon name="clipboard-outline"></ion-icon>
-            <span>Notas generales</span>
-            <button class="det-nota-edit-btn" (click)="editNotasGenerales()" title="Editar notas generales" type="button">
-              <ion-icon name="pencil-outline"></ion-icon>
-            </button>
-          </div>
-          <p class="det-notas-card__body det-nota-item__text" *ngIf="hasNotasGenerales; else sinNotasResumen">
-            {{ notasGeneralesResumen }}
-          </p>
-          <ng-template #sinNotasResumen>
-            <p class="det-notas-card__body det-empty-text">Sin notas generales. Agrega un resumen del paciente.</p>
-          </ng-template>
-        </div>
+        <!-- 3. Información básica del paciente -->
+        <section class="det-resumen-block det-info-basica">
+          <header class="det-resumen-block__header">
+            <h3 class="det-resumen-block__title">Información básica</h3>
+            <p class="det-resumen-block__subtitle">Datos de contacto y perfil del paciente</p>
+          </header>
 
-        <!-- Actions -->
-        <div class="det-info-actions">
-          <button class="det-btn-outline" (click)="abrirEditarModal()">
-            <ion-icon name="pencil-outline"></ion-icon>
-            Editar información
-          </button>
-          <button class="det-btn-primary" (click)="irANuevaCita()">
-            <ion-icon name="calendar-outline"></ion-icon>
-            Nueva cita
-          </button>
-        </div>
+          <div class="det-info-grid">
+            <div class="det-data-card" *ngIf="paciente.email">
+              <div class="det-data-card__icon det-data-card__icon--primary">
+                <ion-icon name="mail-outline"></ion-icon>
+              </div>
+              <div class="det-data-card__body">
+                <span class="det-data-label">Email</span>
+                <a class="det-data-value det-link" href="mailto:{{ paciente.email }}">{{ paciente.email }}</a>
+              </div>
+            </div>
+
+            <div class="det-data-card">
+              <div class="det-data-card__icon det-data-card__icon--success">
+                <ion-icon name="call-outline"></ion-icon>
+              </div>
+              <div class="det-data-card__body">
+                <span class="det-data-label">Teléfono</span>
+                <a class="det-data-value det-link" *ngIf="paciente.numero_telefono" href="tel:{{ paciente.numero_telefono }}">{{ paciente.numero_telefono }}</a>
+                <span class="det-data-value det-muted" *ngIf="!paciente.numero_telefono">—</span>
+              </div>
+            </div>
+
+            <div class="det-data-card" *ngIf="paciente.fecha_nacimiento">
+              <div class="det-data-card__icon det-data-card__icon--warning">
+                <ion-icon name="gift-outline"></ion-icon>
+              </div>
+              <div class="det-data-card__body">
+                <span class="det-data-label">Fecha de nacimiento</span>
+                <span class="det-data-value">{{ formatFecha(paciente.fecha_nacimiento) }}</span>
+              </div>
+            </div>
+
+            <div class="det-data-card" *ngIf="paciente.fecha_nacimiento">
+              <div class="det-data-card__icon det-data-card__icon--purple">
+                <ion-icon name="hourglass-outline"></ion-icon>
+              </div>
+              <div class="det-data-card__body">
+                <span class="det-data-label">Edad</span>
+                <span class="det-data-value">{{ calcularEdad(paciente.fecha_nacimiento) }} años</span>
+              </div>
+            </div>
+
+            <div class="det-data-card" *ngIf="paciente.direccion">
+              <div class="det-data-card__icon det-data-card__icon--blue">
+                <ion-icon name="location-outline"></ion-icon>
+              </div>
+              <div class="det-data-card__body">
+                <span class="det-data-label">Dirección</span>
+                <span class="det-data-value">{{ paciente.direccion }}</span>
+              </div>
+            </div>
+
+            <div class="det-data-card" *ngIf="paciente.sexo">
+              <div class="det-data-card__icon det-data-card__icon--primary">
+                <ion-icon name="person-outline"></ion-icon>
+              </div>
+              <div class="det-data-card__body">
+                <span class="det-data-label">Sexo</span>
+                <span class="det-data-value">{{ paciente.sexo }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="det-info-grid det-info-grid--emergency" *ngIf="paciente.contacto_emergencia_nombre || paciente.contacto_emergencia_telefono">
+            <div class="det-data-card det-data-card--emphasis" *ngIf="paciente.contacto_emergencia_nombre">
+              <div class="det-data-card__icon det-data-card__icon--danger">
+                <ion-icon name="people-outline"></ion-icon>
+              </div>
+              <div class="det-data-card__body">
+                <span class="det-data-label">Contacto de emergencia</span>
+                <span class="det-data-value">{{ paciente.contacto_emergencia_nombre }}</span>
+              </div>
+            </div>
+            <div class="det-data-card det-data-card--emphasis" *ngIf="paciente.contacto_emergencia_telefono">
+              <div class="det-data-card__icon det-data-card__icon--danger">
+                <ion-icon name="call-outline"></ion-icon>
+              </div>
+              <div class="det-data-card__body">
+                <span class="det-data-label">Teléfono de emergencia</span>
+                <a class="det-data-value det-link" href="tel:{{ paciente.contacto_emergencia_telefono }}">{{ paciente.contacto_emergencia_telefono }}</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. Información general -->
+        <section class="det-resumen-block det-info-general">
+          <header class="det-resumen-block__header">
+            <h3 class="det-resumen-block__title">Información general</h3>
+            <p class="det-resumen-block__subtitle">Notas y acciones del expediente</p>
+          </header>
+
+          <div class="det-info-general__stack">
+            <article class="det-general-card det-general-card--notes">
+              <div class="det-general-card__header">
+                <div class="det-general-card__heading">
+                  <div class="det-general-card__icon">
+                    <ion-icon name="document-text-outline"></ion-icon>
+                  </div>
+                  <div>
+                    <h4 class="det-general-card__title">Notas generales</h4>
+                    <p class="det-general-card__hint">Resumen clínico visible en el expediente</p>
+                  </div>
+                </div>
+                <button class="det-nota-edit-btn" (click)="editNotasGenerales()" title="Editar notas generales" type="button">
+                  <ion-icon name="pencil-outline"></ion-icon>
+                </button>
+              </div>
+              <p class="det-general-card__body" *ngIf="hasNotasGenerales; else sinNotasResumen">
+                {{ notasGeneralesResumen }}
+              </p>
+              <ng-template #sinNotasResumen>
+                <p class="det-general-card__body det-general-card__body--empty">Sin notas generales. Agrega un resumen del paciente.</p>
+              </ng-template>
+            </article>
+
+            <article class="det-general-card det-general-card--actions">
+              <div class="det-general-card__heading">
+                <div class="det-general-card__icon det-general-card__icon--soft">
+                  <ion-icon name="options-outline"></ion-icon>
+                </div>
+                <div>
+                  <h4 class="det-general-card__title">Acciones rápidas</h4>
+                  <p class="det-general-card__hint">Gestiona el expediente o agenda una cita</p>
+                </div>
+              </div>
+              <div class="det-info-actions">
+                <button class="det-btn-outline" (click)="abrirEditarModal()">
+                  <ion-icon name="pencil-outline"></ion-icon>
+                  Editar información
+                </button>
+                <button class="det-btn-primary" (click)="irANuevaCita()">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  Nueva cita
+                </button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- 5. Resumen clínico (UI-only, preparado para IA) -->
+        <section class="det-resumen-block">
+          <article class="det-clinico-card" aria-label="Resumen clínico">
+            <header class="det-clinico-card__header">
+              <div class="det-clinico-card__heading">
+                <div class="det-clinico-card__mark" aria-hidden="true"></div>
+                <div>
+                  <h3 class="det-clinico-card__title">{{ resumenClinicoUi.title }}</h3>
+                  <p class="det-clinico-card__subtitle">Síntesis del expediente · vista previa</p>
+                </div>
+              </div>
+              <span class="det-clinico-card__badge">
+                <ion-icon name="sparkles-outline" aria-hidden="true"></ion-icon>
+                {{ resumenClinicoUi.badge }}
+              </span>
+            </header>
+
+            <div class="det-clinico-card__body">
+              <p *ngFor="let paragrafo of resumenClinicoUi.paragraphs">{{ paragrafo }}</p>
+            </div>
+          </article>
+        </section>
 
       </div>
 
@@ -460,6 +622,114 @@
           <span>Las sesiones clínicas registradas del paciente aparecerán aquí</span>
         </div>
 
+      </div>
+
+      <!-- ==== SECCIÓN: EVALUACIONES (UI-only) ==== -->
+      <div *ngIf="seccionActiva === 'evaluaciones'" class="det-evaluaciones det-section-panel">
+        <div class="det-evaluaciones-topbar">
+          <div class="det-evaluaciones-topbar__info">
+            <ion-icon name="clipboard-outline"></ion-icon>
+            <span>{{ evaluacionesUi.length }} evaluación{{ evaluacionesUi.length !== 1 ? 'es' : '' }}</span>
+          </div>
+          <button class="det-btn-primary" type="button" title="Próximamente">
+            <ion-icon name="add-outline"></ion-icon>
+            Nueva evaluación
+          </button>
+        </div>
+
+        <app-primera-sesion-checklist></app-primera-sesion-checklist>
+
+        <div class="det-eval-list" *ngIf="evaluacionesUi.length > 0; else sinEvaluacionesUi">
+          <article class="det-eval-card" *ngFor="let evaluacion of evaluacionesUi">
+            <div class="det-eval-card__icon">
+              <ion-icon name="document-text-outline"></ion-icon>
+            </div>
+            <div class="det-eval-card__body">
+              <div class="det-eval-card__row">
+                <h4 class="det-eval-card__nombre">{{ evaluacion.nombre }}</h4>
+                <span class="det-eval-card__estado" [attr.data-tone]="evaluacion.estadoTone">
+                  {{ evaluacion.estado }}
+                </span>
+              </div>
+              <div class="det-eval-card__meta">
+                <span class="det-eval-card__fecha">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  {{ evaluacion.fecha }}
+                </span>
+                <span class="det-eval-card__resultado">{{ evaluacion.resultado }}</span>
+              </div>
+            </div>
+            <ion-icon class="det-eval-card__chevron" name="chevron-forward-outline" aria-hidden="true"></ion-icon>
+          </article>
+        </div>
+
+        <ng-template #sinEvaluacionesUi>
+          <div class="det-empty">
+            <ion-icon name="clipboard-outline"></ion-icon>
+            <p>Sin evaluaciones registradas</p>
+            <span>Las evaluaciones clínicas del paciente aparecerán aquí</span>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- ==== SECCIÓN: RECETAS (UI-only) ==== -->
+      <div *ngIf="seccionActiva === 'recetas'" class="det-recetas det-section-panel">
+        <div class="det-recetas-topbar">
+          <div class="det-recetas-topbar__info">
+            <ion-icon name="medkit-outline"></ion-icon>
+            <span>{{ recetasUi.length }} receta{{ recetasUi.length !== 1 ? 's' : '' }}</span>
+          </div>
+          <button class="det-btn-primary" type="button" title="Próximamente">
+            <ion-icon name="add-outline"></ion-icon>
+            Nueva receta
+          </button>
+        </div>
+
+        <div class="det-receta-list" *ngIf="recetasUi.length > 0; else sinRecetasUi">
+          <article class="det-receta-card" *ngFor="let receta of recetasUi">
+            <div class="det-receta-card__icon">
+              <ion-icon name="medical-outline"></ion-icon>
+            </div>
+
+            <div class="det-receta-card__body">
+              <div class="det-receta-card__row">
+                <div class="det-receta-card__main">
+                  <h4 class="det-receta-card__medicamento">{{ receta.medicamento }}</h4>
+                  <span class="det-receta-card__dosis">{{ receta.dosis }}</span>
+                </div>
+                <span class="det-receta-card__estado" [attr.data-tone]="receta.estadoTone">
+                  {{ receta.estado }}
+                </span>
+              </div>
+
+              <div class="det-receta-card__meta">
+                <span class="det-receta-card__fecha">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  {{ receta.fecha }}
+                </span>
+              </div>
+            </div>
+
+            <div class="det-receta-card__actions">
+              <button class="det-receta-btn" type="button" title="Ver">
+                <ion-icon name="eye-outline"></ion-icon>
+                <span>Ver</span>
+              </button>
+              <button class="det-receta-btn det-receta-btn--secondary" type="button" title="Descargar">
+                <ion-icon name="download-outline"></ion-icon>
+                <span>Descargar</span>
+              </button>
+            </div>
+          </article>
+        </div>
+
+        <ng-template #sinRecetasUi>
+          <div class="det-empty">
+            <ion-icon name="medkit-outline"></ion-icon>
+            <p>Sin recetas registradas</p>
+            <span>Las recetas del paciente aparecerán aquí en orden cronológico</span>
+          </div>
+        </ng-template>
       </div>
 
       <!-- ==== SECCIÓN: HISTORIAL ==== -->

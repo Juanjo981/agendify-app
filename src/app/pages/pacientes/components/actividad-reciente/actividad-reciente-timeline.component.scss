@@ -1,0 +1,147 @@
+.art {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 22px;
+  border-radius: 18px;
+  background: var(--surface-panel-heavy, #fff);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.art__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.art__title-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.art__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--primary-soft);
+  color: var(--primary-mid);
+
+  ion-icon { font-size: 19px; }
+}
+
+.art__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-strong);
+}
+
+.art__subtitle {
+  margin: 3px 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.art__timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.art__item {
+  --art-tone: var(--primary-mid);
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 12px;
+  min-height: 64px;
+
+  &[data-tone='success'] { --art-tone: var(--success); }
+  &[data-tone='warning'] { --art-tone: var(--warning); }
+  &[data-tone='purple'] { --art-tone: var(--accent-purple); }
+  &[data-tone='blue'] { --art-tone: var(--accent-blue); }
+  &[data-tone='teal'] { --art-tone: var(--accent-teal); }
+  &[data-tone='primary'] { --art-tone: var(--primary-mid); }
+}
+
+.art__track {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.art__dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--art-tone) 14%, transparent);
+  color: var(--art-tone);
+  z-index: 1;
+
+  ion-icon { font-size: 16px; }
+}
+
+.art__line {
+  flex: 1;
+  width: 2px;
+  margin: 4px 0 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border-subtle) 80%, var(--art-tone));
+  min-height: 18px;
+}
+
+.art__content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0 18px;
+  min-width: 0;
+}
+
+.art__item--last .art__content {
+  padding-bottom: 2px;
+}
+
+.art__when {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.art__event {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-strong);
+  line-height: 1.35;
+}
+
+.art__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 12px;
+  color: var(--text-muted);
+
+  ion-icon { font-size: 28px; opacity: 0.7; }
+  p { margin: 0; font-size: 13px; font-weight: 500; }
+}

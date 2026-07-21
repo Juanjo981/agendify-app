@@ -105,6 +105,24 @@
           <ion-input *ngIf="editarPersonal" class="prf-field-input"
                      [(ngModel)]="perfil.especialidad" placeholder="Especialidad"></ion-input>
         </div>
+        <div class="prf-field prf-field--full">
+          <label class="prf-field-label" for="prf-cedula-profesional">Cédula profesional</label>
+          <span *ngIf="!editarPersonal" class="prf-field-value">{{ perfil.cedulaProfesional }}</span>
+          <ion-input
+            *ngIf="editarPersonal"
+            id="prf-cedula-profesional"
+            name="cedulaProfesional"
+            class="prf-field-input"
+            type="text"
+            inputmode="text"
+            autocomplete="off"
+            maxlength="20"
+            aria-label="Cédula profesional"
+            [(ngModel)]="perfil.cedulaProfesional"
+            placeholder="Ej. 12345678">
+          </ion-input>
+          <span class="prf-field-error" *ngIf="editarPersonal && errorCedulaProfesional">{{ errorCedulaProfesional }}</span>
+        </div>
       </div>
     </div>
 

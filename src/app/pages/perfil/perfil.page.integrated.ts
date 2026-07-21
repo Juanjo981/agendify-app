@@ -30,6 +30,7 @@ export class PerfilPage implements OnInit, OnDestroy {
     telefono: '',
     domicilio: '',
     especialidad: '',
+    cedulaProfesional: '',
     idioma: 'es',
     zonaHoraria: 'GMT-6',
     notificacionEmail: true,
@@ -73,6 +74,7 @@ export class PerfilPage implements OnInit, OnDestroy {
   editarNotificaciones = false;
   editarProfesional = false;
   editarHorarios = false;
+  errorCedulaProfesional = '';
 
   private sistemaId: number | null = null;
   private recordatoriosActuales: ConfiguracionRecordatorioDto[] = [];
@@ -114,10 +116,16 @@ export class PerfilPage implements OnInit, OnDestroy {
       return;
     }
 
+    if (!this.validarCedulaProfesional()) {
+      await this.presentToast(this.errorCedulaProfesional, 'danger');
+      return;
+    }
+
     try {
       this.guardando = true;
 
       const [nombre, apellido] = this.splitFullName(this.perfil.nombre);
+      const cedulaProfesional = this.perfil.cedulaProfesional.trim();
 
       if (this.perfilCambio()) {
         await this.perfilApi.updateUsuarioActual({
@@ -130,9 +138,10 @@ export class PerfilPage implements OnInit, OnDestroy {
         });
       }
 
-      if (this.perfilProfesionalCambio()) {
+      if (this.perfilProfesionalCambio() || this.datosProfesionalesEnPersonalCambio()) {
         await this.perfilApi.updateProfesionalActual({
           especialidad: this.perfil.especialidad.trim(),
+          cedula_profesional: cedulaProfesional || null,
           nombre_consulta: this.perfilProfesional.consultorio.trim(),
           descripcion: this.perfilProfesional.descripcion.trim() || null,
         });
@@ -215,7 +224,12 @@ export class PerfilPage implements OnInit, OnDestroy {
 
   toggleEditar(seccion: string): void {
     switch (seccion) {
-      case 'personal': this.editarPersonal = !this.editarPersonal; break;
+      case 'personal':
+        this.editarPersonal = !this.editarPersonal;
+        if (!this.editarPersonal) {
+          this.errorCedulaProfesional = '';
+        }
+        break;
       case 'preferencias': this.editarPreferencias = !this.editarPreferencias; break;
       case 'seguridad': this.editarSeguridad = !this.editarSeguridad; break;
       case 'notificaciones': this.editarNotificaciones = !this.editarNotificaciones; break;
@@ -256,6 +270,7 @@ export class PerfilPage implements OnInit, OnDestroy {
       telefono: usuario.numero_telefono ?? '',
       domicilio: usuario.domicilio ?? '',
       especialidad: profesional?.especialidad ?? '',
+      cedulaProfesional: profesional?.cedula_profesional ?? '',
       idioma: sistema?.idioma ?? 'es',
       zonaHoraria: this.toUiTimeZone(sistema?.zona_horaria) ?? 'GMT-6',
       notificacionEmail: this.hasActiveChannel(recordatorios, 'EMAIL'),
@@ -288,6 +303,39 @@ export class PerfilPage implements OnInit, OnDestroy {
 
   private perfilProfesionalCambio(): boolean {
     return JSON.stringify(this.perfilProfesional) !== this.originalPerfilProfesional;
+  }
+
+  /** Especialidad/cédula viven en la UI personal pero se persisten en profesional. */
+  private datosProfesionalesEnPersonalCambio(): boolean {
+    try {
+      const original = JSON.parse(this.originalPerfil) as {
+        especialidad?: string;
+        cedulaProfesional?: string;
+      };
+      return (
+        (this.perfil.especialidad ?? '') !== (original.especialidad ?? '') ||
+        (this.perfil.cedulaProfesional ?? '') !== (original.cedulaProfesional ?? '')
+      );
+    } catch {
+      return true;
+    }
+  }
+
+  /** Validación flexible; vacío permitido. */
+  private validarCedulaProfesional(): boolean {
+    const value = this.perfil.cedulaProfesional.trim();
+    this.errorCedulaProfesional = '';
+
+    if (!value) {
+      return true;
+    }
+
+    if (value.length > 20 || !/^[A-Za-zÀ-ÿ0-9][A-Za-zÀ-ÿ0-9\s./-]*$/.test(value)) {
+      this.errorCedulaProfesional = 'Ingresa una cédula profesional válida.';
+      return false;
+    }
+
+    return true;
   }
 
   private horariosCambio(): boolean {
@@ -353,6 +401,7 @@ export class PerfilPage implements OnInit, OnDestroy {
     this.editarNotificaciones = false;
     this.editarProfesional = false;
     this.editarHorarios = false;
+    this.errorCedulaProfesional = '';
   }
 
   private toUiTimeZone(value?: string | null): string | null {

@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 
-export type SeccionPaciente = 'informacion' | 'notas' | 'sesiones' | 'historial';
+export type SeccionPaciente = 'informacion' | 'notas' | 'sesiones' | 'evaluaciones' | 'recetas' | 'historial';
 
 interface SubmenuItem {
   key: SeccionPaciente;
@@ -22,10 +22,12 @@ export class PacienteSubmenuComponent {
   @Output() seccionCambiada = new EventEmitter<SeccionPaciente>();
 
   items: SubmenuItem[] = [
-    { key: 'informacion', label: 'Información', icon: 'person-outline' },
-    { key: 'notas',       label: 'Notas',       icon: 'document-text-outline' },
-    { key: 'sesiones',    label: 'Sesiones',    icon: 'pulse-outline' },
-    { key: 'historial',   label: 'Historial',   icon: 'time-outline' },
+    { key: 'informacion',  label: 'Resumen',      icon: 'grid-outline' },
+    { key: 'notas',        label: 'Notas',        icon: 'document-text-outline' },
+    { key: 'sesiones',     label: 'Sesiones',     icon: 'pulse-outline' },
+    { key: 'evaluaciones', label: 'Evaluaciones', icon: 'clipboard-outline' },
+    { key: 'recetas',      label: 'Recetas',      icon: 'medkit-outline' },
+    { key: 'historial',    label: 'Historial',    icon: 'time-outline' },
   ];
 
   seleccionar(key: SeccionPaciente): void {

@@ -323,6 +323,13 @@
   }
 }
 
+.prf-field-error {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--danger, #dc2626);
+}
+
 .prf-field-input {
   --background: rgba(255, 255, 255, 0.82);
   --padding-start: 12px;
