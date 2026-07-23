@@ -208,7 +208,7 @@ export function mapApiError(err: unknown): MappedApiError {
     case API_ERROR_CODES.INVALID_ARGUMENT:
     case API_ERROR_CODES.BAD_REQUEST:
       return {
-        userMessage: 'La solicitud no pudo procesarse. Revisa los datos ingresados.',
+        userMessage: message ?? 'No fue posible guardar los cambios. Inténtalo nuevamente.',
         code, status: err.status, raw: body as ApiErrorResponse,
       };
 

@@ -40,6 +40,11 @@ const routes: Routes = [
         loadComponent: () => import('./pages/perfil/perfil.page.integrated').then(m => m.PerfilPage)
       },
       {
+        path: 'plantilla-recetas',
+        loadComponent: () =>
+          import('./pages/plantilla-recetas/plantilla-recetas.page').then(m => m.PlantillaRecetasPage)
+      },
+      {
         path: 'pacientes',
         canActivate: [permisosGuard],
         loadComponent: () => import('./pages/pacientes/pacientes.page').then(m => m.PacientesPage)

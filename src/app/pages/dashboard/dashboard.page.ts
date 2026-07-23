@@ -223,6 +223,11 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.navCtrl.navigateForward('/dashboard/perfil');
   }
 
+  irAPlantillaRecetas() {
+    this.menuAbierto = false;
+    this.navCtrl.navigateForward('/dashboard/plantilla-recetas');
+  }
+
   irAConfiguracion() {
     this.menuAbierto = false;
     this.navCtrl.navigateForward('dashboard/configuracion');

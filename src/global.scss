@@ -46,7 +46,7 @@ ion-content {
 }
 
 // ── Hide bottom nav while a large modal is open ───────────────────────────
-// Applied by adding class 'modal-open' to <body> from Agenda / Citas page TS.
+// Applied by adding class 'modal-open' to <body> from Agenda / Citas (no Nueva receta).
 body.modal-open .bottom-menu {
   transform: translateY(100%) !important;
   pointer-events: none;

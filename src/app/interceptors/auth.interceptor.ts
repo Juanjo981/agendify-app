@@ -48,6 +48,8 @@ const PUBLIC_URLS: ReadonlyArray<string> = [
   '/public/citas/gestion/',
   'storage.googleapis.com',
   'storage.cloud.google.com',
+  'r2.cloudflarestorage.com',
+  'cloudflarestorage.com',
 ];
 
 function isPublicUrl(url: string): boolean {

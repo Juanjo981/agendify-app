@@ -48,6 +48,12 @@
             <ion-icon name="chevron-forward-outline" class="section-item__chevron"></ion-icon>
           </div>
 
+          <div class="section-item" (click)="irAPlantillaRecetas()">
+            <ion-icon name="document-text-outline"></ion-icon>
+            <span>Plantilla de recetas</span>
+            <ion-icon name="chevron-forward-outline" class="section-item__chevron"></ion-icon>
+          </div>
+
           <div *appHasPermission="'configuracion'" class="section-item" (click)="irAConfiguracion()">
             <ion-icon name="settings-outline"></ion-icon>
             <span>Configuración</span>

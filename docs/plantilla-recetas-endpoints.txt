@@ -1,0 +1,309 @@
+================================================================================
+AGENDIFY — Plantilla de recetas (API contract for backend)
+Fecha: 2026-07-20
+Auth: Bearer JWT del profesional autenticado (mismo interceptor /auth)
+Base: {API_BASE}/api   ejemplo: http://localhost:8080/api
+================================================================================
+
+OBJETIVO
+--------
+Cada profesional autenticado tiene UNA plantilla de recetas persistida.
+No modificar perfil clínico de pacientes.
+No almacenar la plantilla ni blobs de imagen en localStorage del frontend.
+Las imágenes (logo/firma/sello) se suben a R2 con URL prefirmada:
+  upload-url → PUT binario a R2 → register metadata.
+No Base64 en BD. No carpeta de paciente. El backend decide object_key.
+
+
+--------------------------------------------------------------------------------
+1) GET /profesionales/me/plantilla-recetas
+--------------------------------------------------------------------------------
+Descripción:
+  Devuelve la plantilla del profesional autenticado.
+  Si aún no existe, responder 404 (el frontend aplicará plantilla predeterminada).
+
+Auth: PROFESIONAL (y roles que el backend considere equivalentes)
+
+Headers:
+  Authorization: Bearer <token>
+
+Response 200:
+{
+  "id_plantilla_receta": 12,
+  "id_profesional": 5,
+  "es_predeterminada": false,
+  "configuracion": { ...PlantillaRecetasConfigDto... },
+  "created_at": "2026-07-20T18:00:00Z",
+  "updated_at": "2026-07-20T18:30:00Z"
+}
+
+Response 404:
+{
+  "code": "RESOURCE_NOT_FOUND",
+  "message": "El profesional no tiene plantilla de recetas configurada."
+}
+
+
+--------------------------------------------------------------------------------
+2) PUT /profesionales/me/plantilla-recetas
+--------------------------------------------------------------------------------
+Descripción:
+  Upsert de la plantilla del profesional autenticado.
+  Si no existe, crear; si existe, actualizar.
+  Asociar siempre a id_profesional del token (ignorar id_profesional del body).
+
+Auth: PROFESIONAL
+
+Request body:
+{
+  "configuracion": { ...PlantillaRecetasConfigDto... }
+}
+
+Reglas de validación sugeridas:
+  - configuracion.version >= 1
+  - color_id en: azul | indigo | violeta | petroleo | grafito
+  - encabezado en: minimalista | franja | dividido
+  - tipografia en: moderna | clasica | compacta
+  - separador en: ninguno | sutil | color
+  - formato en: carta | media-carta
+  - layout en: clasica | moderna | compacta
+  - espaciado en: compacto | normal | amplio
+  - tamano_texto en: pequeno | mediano | grande
+  - secciones.medicamentos = true (forzar)
+  - secciones.indicaciones = true (forzar)
+  - etiquetas.* max 40 chars, sin HTML
+  - pie.texto_pie max 180 chars, sin HTML
+  - logo_url / firma_url / sello_url: null o URL http(s) (rechazar blob:)
+
+Response 200:
+  Mismo shape que GET, con es_predeterminada = false.
+
+Errores:
+  400 VALIDATION_ERROR
+  401/403 según auth
+  500 INTERNAL_ERROR
+
+
+--------------------------------------------------------------------------------
+3) DELETE /profesionales/me/plantilla-recetas
+--------------------------------------------------------------------------------
+Descripción:
+  Elimina la plantilla personalizada del profesional.
+  Tras borrar, el frontend vuelve a la predeterminada.
+
+Auth: PROFESIONAL
+
+Response 200 (recomendado: devolver plantilla default):
+{
+  "id_plantilla_receta": null,
+  "id_profesional": 5,
+  "es_predeterminada": true,
+  "configuracion": { ...default config... },
+  "created_at": null,
+  "updated_at": null
+}
+
+Response 204: también aceptable (frontend aplicará default).
+Response 404: aceptable si no había plantilla.
+
+
+--------------------------------------------------------------------------------
+4) Assets R2 (logo | sello | firma) — URLs prefirmadas
+--------------------------------------------------------------------------------
+Base de assets:
+  /profesionales/me/plantilla-recetas/{plantillaId}/assets/{tipo}
+
+tipo ∈ logo | sello | firma
+
+REGLAS DE SEGURIDAD
+  - No credenciales R2 en frontend.
+  - No Base64 en BD.
+  - No blobs en localStorage.
+  - No carpeta de paciente.
+  - No construir object_key en frontend (solo eco de upload-url).
+  - No enviar idProfesional (sale del JWT).
+  - PUT a R2 SIN Authorization.
+  - Llamadas al backend CON Authorization.
+
+MIME permitidos: image/png | image/jpeg | image/webp
+Tamaños máximos: logo 3 MB · sello 2 MB · firma 2 MB
+
+
+4.1) POST .../{plantillaId}/assets/{tipo}/upload-url
+Request:
+{
+  "nombre_original": "logo.png",
+  "mime_type": "image/png",
+  "tamano_bytes": 24560
+}
+
+Response 200:
+{
+  "upload_url": "https://....r2.cloudflarestorage.com/....",
+  "object_key": "plantillas/{idProfesional}/logo-uuid.png",
+  "bucket_name": "agendify-assets",
+  "nombre_storage": "logo-uuid.png",
+  "expiration": "2026-07-21T19:00:00Z"
+}
+
+
+4.2) PUT {upload_url}  (directo a R2, sin Bearer)
+Headers: Content-Type = mime_type exacto del archivo
+Body: binario
+Esperado: 200 o 204
+
+
+4.3) POST .../{plantillaId}/assets/{tipo}/register
+Request (eco de upload-url + metadata del archivo):
+{
+  "nombre_original": "logo.png",
+  "mime_type": "image/png",
+  "tamano_bytes": 24560,
+  "object_key": "plantillas/{idProfesional}/logo-uuid.png",
+  "nombre_storage": "logo-uuid.png",
+  "bucket_name": "agendify-assets"
+}
+
+Efecto:
+  - Registra metadata del archivo.
+  - Asocia el asset a la plantilla del profesional.
+  - Desactiva el asset anterior del mismo tipo (reemplazo).
+  - Actualiza la referencia en configuracion (logo_url / firma_url / sello_url)
+    con un valor persistible (NO la URL firmada temporal).
+
+Response 200:
+{
+  "archivo_id": 88,
+  "nombre_original": "logo.png",
+  "mime_type": "image/png",
+  "download_url": "https://....firmada...",
+  "expiration": "2026-07-21T19:15:00Z"
+}
+
+Nota: si el PUT a R2 tuvo éxito y register falla, puede quedar un objeto
+huérfano para limpieza posterior. El frontend permite reintentar el register.
+
+
+4.4) GET .../{plantillaId}/assets/{tipo}/download-url
+Response 200: mismo shape que register (download_url temporal).
+404 si no hay asset activo.
+
+
+4.5) DELETE .../{plantillaId}/assets/{tipo}
+Desactiva/elimina el asset en backend (no llamar a R2 desde frontend).
+Limpia la referencia en configuracion.
+
+
+FLUJO FRONTEND
+  1) Seleccionar archivo → validar → preview local (blob) → “Pendiente de subir”
+  2) Subir imagen → upload-url → PUT R2 → register → preview con download_url
+  3) revokeObjectURL del blob local
+  4) Switch “Mostrar” solo controla visibilidad (no borra archivo)
+  5) Al recargar: GET plantilla + download-url por cada asset existente
+
+
+--------------------------------------------------------------------------------
+5) (legado) POST /profesionales/me/plantilla-recetas/assets/upload-url
+--------------------------------------------------------------------------------
+Reemplazado por 4.1–4.5. Conservar solo si hay clientes antiguos.
+
+
+================================================================================
+PlantillaRecetasConfigDto (JSON)
+================================================================================
+
+{
+  "version": 1,
+
+  "visibilidad": {
+    "nombre": true,
+    "especialidad": true,
+    "cedula_profesional": true,
+    "telefono_profesional": true,
+    "email": false,
+    "nombre_consultorio": true,
+    "telefono_consultorio": true,
+    "direccion_consultorio": true
+  },
+
+  "datos_visualizacion": {
+    "nombre": "Juan José Álvarez",
+    "especialidad": "Psicología clínica",
+    "cedula_profesional": "12345678",
+    "telefono_profesional": "55 1234 5678",
+    "email": "correo@ejemplo.com",
+    "nombre_consultorio": "Consultorio Centro",
+    "telefono_consultorio": "55 9876 5432",
+    "direccion_consultorio": "Calle 1 #23"
+  },
+
+  "identidad": {
+    "mostrar_logo": true,
+    "logo_url": "https://cdn.agendify.com/plantillas/5/logo.png",
+    "color_id": "indigo",
+    "encabezado": "minimalista",
+    "tipografia": "moderna",
+    "separador": "sutil"
+  },
+
+  "distribucion": {
+    "formato": "carta",
+    "layout": "clasica",
+    "secciones": {
+      "fecha_emision": true,
+      "datos_paciente": true,
+      "edad_paciente": true,
+      "diagnostico": false,
+      "medicamentos": true,
+      "indicaciones": true,
+      "proxima_cita": false,
+      "firma": true,
+      "sello": false,
+      "aviso_legal": true
+    },
+    "etiquetas": {
+      "paciente": "Paciente",
+      "diagnostico": "Diagnóstico",
+      "medicamentos": "Medicamentos",
+      "indicaciones": "Indicaciones",
+      "proxima_cita": "Próxima cita",
+      "firma": "Firma del profesional",
+      "aviso_legal": "Aviso legal"
+    },
+    "espaciado": "normal",
+    "tamano_texto": "mediano"
+  },
+
+  "pie": {
+    "firma_url": "https://cdn.agendify.com/plantillas/5/firma.png",
+    "sello_url": null,
+    "mostrar_nombre_bajo_firma": true,
+    "mostrar_especialidad_bajo_firma": true,
+    "mostrar_cedula_bajo_firma": true,
+    "texto_pie": "Esta receta es personal y no debe compartirse.",
+    "mostrar_telefono": true,
+    "mostrar_correo": false,
+    "mostrar_direccion": true,
+    "mostrar_numero_pagina": false,
+    "mostrar_fecha_generacion": true
+  }
+}
+
+NOTAS
+-----
+- datos_visualizacion son overrides de visualización de la plantilla.
+  NO deben escribirse sobre usuarios/profesionales (perfil).
+- firma_url es solo representación visual; no implica firma electrónica
+  certificada ni validez legal automática.
+- Respuestas de error deben seguir el formato ApiError existente del proyecto
+  (code, message, details).
+
+
+FRONTEND CONSUMIDOR
+-------------------
+Servicio: src/app/services/plantilla-recetas-api.service.ts
+Modelos:  src/app/shared/models/plantilla-recetas.models.ts
+Página:   src/app/pages/plantilla-recetas/plantilla-recetas.page.ts
+
+SQL:      docs/plantilla-recetas-schema.sql
+================================================================================

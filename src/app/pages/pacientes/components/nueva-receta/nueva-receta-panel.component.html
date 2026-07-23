@@ -1,0 +1,174 @@
+<div
+  class="nrp-backdrop"
+  *ngIf="abierto"
+  (click)="cerrar()"
+  aria-hidden="true">
+</div>
+
+<aside
+  class="nrp-panel"
+  *ngIf="abierto"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="nrp-title"
+  (click)="$event.stopPropagation()">
+  <header class="nrp-header">
+    <div class="nrp-header__text">
+      <h2 id="nrp-title">Nueva receta</h2>
+      <p>La apariencia se toma de tu plantilla. Los datos clínicos se capturan aquí.</p>
+    </div>
+    <button type="button" class="nrp-close" (click)="cerrar()" aria-label="Cerrar">
+      <ion-icon name="close-outline" aria-hidden="true"></ion-icon>
+    </button>
+  </header>
+
+  <div class="nrp-tabs" role="tablist" aria-label="Secciones de la receta">
+    <button
+      type="button"
+      role="tab"
+      class="nrp-tabs__btn"
+      [class.nrp-tabs__btn--active]="vistaMovil === 'datos'"
+      [attr.aria-selected]="vistaMovil === 'datos'"
+      (click)="setVistaMovil('datos')">
+      Datos
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="nrp-tabs__btn"
+      [class.nrp-tabs__btn--active]="vistaMovil === 'preview'"
+      [attr.aria-selected]="vistaMovil === 'preview'"
+      (click)="setVistaMovil('preview')">
+      Vista previa
+    </button>
+  </div>
+
+  <main class="nrp-content">
+    <div
+      class="nrp-form-col"
+      role="tabpanel"
+      [class.nrp-pane--active]="vistaMovil === 'datos'">
+      <div class="nrp-scroll">
+        <div class="nrp-banner" *ngIf="esPredeterminada && !cargandoPlantilla">
+          <span>Usando la plantilla predeterminada de Agendify.</span>
+          <button type="button" class="nrp-link" (click)="irAPlantilla()">Personalizar plantilla</button>
+        </div>
+
+        <div class="nrp-banner nrp-banner--error" *ngIf="errorPlantilla">
+          <span>{{ errorPlantilla }}</span>
+          <button type="button" class="nrp-link" (click)="irAPlantilla()">Personalizar plantilla</button>
+        </div>
+
+        <div class="nrp-loading" *ngIf="cargandoPlantilla">
+          <ion-spinner name="crescent"></ion-spinner>
+          <span>Cargando plantilla del profesional…</span>
+        </div>
+
+        <section class="nrp-section">
+          <h3 class="nrp-section__title">Datos de la receta</h3>
+          <div class="nrp-fields nrp-fields--datos">
+            <label class="nrp-field">
+              <span class="nrp-field__label">Paciente</span>
+              <ion-input class="nrp-input" [(ngModel)]="contenido.pacienteNombre" placeholder="Nombre del paciente"></ion-input>
+            </label>
+            <label class="nrp-field">
+              <span class="nrp-field__label">Fecha de emisión</span>
+              <ion-input class="nrp-input" [(ngModel)]="contenido.fechaEmision" placeholder="Fecha"></ion-input>
+            </label>
+            <label class="nrp-field nrp-field--age" *ngIf="config.distribucion.secciones.edad_paciente">
+              <span class="nrp-field__label">Edad</span>
+              <ion-input class="nrp-input" [(ngModel)]="contenido.edad" placeholder="Ej. 32 años"></ion-input>
+            </label>
+            <label class="nrp-field nrp-field--full" *ngIf="config.distribucion.secciones.diagnostico">
+              <span class="nrp-field__label">Diagnóstico</span>
+              <ion-input class="nrp-input" [(ngModel)]="contenido.diagnostico" placeholder="Diagnóstico"></ion-input>
+            </label>
+          </div>
+        </section>
+
+        <section class="nrp-section">
+          <div class="nrp-section-head">
+            <h3 class="nrp-section__title">Medicamentos</h3>
+            <button type="button" class="nrp-add-btn" (click)="agregarMedicamento()">+ Agregar</button>
+          </div>
+
+          <div class="nrp-med" *ngFor="let med of contenido.medicamentos; let i = index; trackBy: trackMed">
+            <div class="nrp-med__header">
+              <strong class="nrp-med__title">Medicamento {{ i + 1 }}</strong>
+              <button
+                type="button"
+                class="nrp-med__delete"
+                (click)="quitarMedicamento(i)"
+                aria-label="Eliminar medicamento">
+                <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
+              </button>
+            </div>
+            <div class="nrp-fields nrp-fields--med">
+              <label class="nrp-field nrp-field--full">
+                <span class="nrp-field__label">Nombre</span>
+                <ion-input class="nrp-input" [(ngModel)]="med.nombre" placeholder="Nombre del medicamento"></ion-input>
+              </label>
+              <label class="nrp-field">
+                <span class="nrp-field__label">Dosis</span>
+                <ion-input class="nrp-input" [(ngModel)]="med.dosis" placeholder="Ej. 50 mg"></ion-input>
+              </label>
+              <label class="nrp-field">
+                <span class="nrp-field__label">Frecuencia</span>
+                <ion-input class="nrp-input" [(ngModel)]="med.frecuencia" placeholder="Ej. cada 24 h"></ion-input>
+              </label>
+              <label class="nrp-field nrp-field--full">
+                <span class="nrp-field__label">Duración</span>
+                <ion-input class="nrp-input" [(ngModel)]="med.duracion" placeholder="Ej. 30 días"></ion-input>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="nrp-section">
+          <h3 class="nrp-section__title">Indicaciones</h3>
+          <ion-textarea
+            class="nrp-textarea"
+            rows="3"
+            autoGrow="true"
+            [(ngModel)]="contenido.indicaciones"
+            placeholder="Indicaciones generales">
+          </ion-textarea>
+        </section>
+
+        <section class="nrp-section" *ngIf="config.distribucion.secciones.proxima_cita">
+          <h3 class="nrp-section__title">Próxima cita</h3>
+          <div class="nrp-fields">
+            <label class="nrp-field">
+              <span class="nrp-field__label">Fecha</span>
+              <ion-input class="nrp-input" [(ngModel)]="contenido.proximaCitaFecha" placeholder="Fecha"></ion-input>
+            </label>
+            <label class="nrp-field">
+              <span class="nrp-field__label">Hora</span>
+              <ion-input class="nrp-input" [(ngModel)]="contenido.proximaCitaHora" placeholder="Hora"></ion-input>
+            </label>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div
+      class="nrp-preview-col"
+      role="tabpanel"
+      [class.nrp-pane--active]="vistaMovil === 'preview'">
+      <div class="nrp-preview-head">
+        <h3>Vista previa</h3>
+        <p>Según tu plantilla guardada</p>
+      </div>
+      <div class="nrp-preview-scroll">
+        <app-receta-sheet-preview [config]="config" [contenido]="contenido"></app-receta-sheet-preview>
+      </div>
+    </div>
+  </main>
+
+  <footer class="nrp-footer">
+    <div class="nrp-footer-actions">
+      <button type="button" class="nrp-btn nrp-btn--ghost" (click)="cerrar()">Cerrar</button>
+      <button type="button" class="nrp-btn nrp-btn--primary" (click)="cerrar()">Guardar receta</button>
+    </div>
+  </footer>
+</aside>

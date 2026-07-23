@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AuthMeResponse, ProfesionalInfo } from '../shared/models/auth.models';
+import { MiPerfilResponse } from '../shared/models/perfil.models';
 import { RolUsuario } from '../shared/models/rol.model';
 import { PermisosRecepcionista } from '../shared/models/permisos.model';
 import { Permiso } from '../auth/permission.types';
@@ -102,6 +103,34 @@ export class SessionService {
     return this._user?.profesional ?? null;
   }
 
+  /**
+   * Actualiza en memoria nombre/email/especialidad tras PUT /usuarios/me,
+   * sin esperar a un GET /auth/me (evita menú desincronizado).
+   */
+  patchFromMiPerfil(perfil: MiPerfilResponse): void {
+    if (!this._user) return;
+
+    const [nombre, apellido] = this.splitFullName(perfil.nombreCompleto ?? '');
+    const profesional = this._user.profesional
+      ? {
+          ...this._user.profesional,
+          especialidad: perfil.especialidad || this._user.profesional.especialidad,
+          nombre_consulta: perfil.nombreConsultorio || this._user.profesional.nombre_consulta,
+        }
+      : this._user.profesional;
+
+    this._user = {
+      ...this._user,
+      nombre: nombre || this._user.nombre,
+      apellido: apellido || this._user.apellido,
+      email: perfil.correoElectronico || this._user.email,
+      username: perfil.usuario || this._user.username,
+      domicilio: perfil.domicilio ?? this._user.domicilio,
+      numero_telefono: perfil.telefono ?? this._user.numero_telefono,
+      profesional,
+    };
+  }
+
   // ─── Permission queries ──────────────────────────────────────────────────────
 
   /**
@@ -123,6 +152,14 @@ export class SessionService {
   }
 
   // ─── Private helpers ─────────────────────────────────────────────────────────
+
+  private splitFullName(fullName: string): [string, string] {
+    const normalized = fullName.trim().replace(/\s+/g, ' ');
+    if (!normalized) return ['', ''];
+    const parts = normalized.split(' ');
+    const nombre = parts.shift() ?? '';
+    return [nombre, parts.join(' ')];
+  }
 
   /**
    * Maps backend permission keys to the PermisosRecepcionista interface.

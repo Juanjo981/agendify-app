@@ -24,6 +24,7 @@ import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../shared/confir
 import { PacienteSubmenuComponent, SeccionPaciente } from './components/paciente-submenu/paciente-submenu.component';
 import { PrimeraSesionChecklistComponent } from './components/eval-checklist/primera-sesion-checklist.component';
 import { ActividadRecienteTimelineComponent } from './components/actividad-reciente/actividad-reciente-timeline.component';
+import { NuevaRecetaPanelComponent } from './components/nueva-receta/nueva-receta-panel.component';
 import { ActividadRecienteItem } from './components/actividad-reciente/actividad-reciente.models';
 import { mapApiError } from '../../shared/utils/api-error.mapper';
 import html2pdf from 'html2pdf.js';
@@ -67,6 +68,7 @@ const PDF_COLORS = {
     AgfDatePickerComponent,
     PrimeraSesionChecklistComponent,
     ActividadRecienteTimelineComponent,
+    NuevaRecetaPanelComponent,
   ],
 })
 export class PacienteDetallePage implements OnInit {
@@ -143,6 +145,8 @@ export class PacienteDetallePage implements OnInit {
       estadoTone: 'done' as const,
     },
   ];
+
+  nuevaRecetaAbierta = false;
 
   /** Placeholder UI-only. Timeline de actividad reciente. */
   readonly actividadRecienteUi: ActividadRecienteItem[] = [
@@ -326,6 +330,14 @@ export class PacienteDetallePage implements OnInit {
 
   volver() {
     this.router.navigate(['/dashboard/pacientes']);
+  }
+
+  abrirNuevaReceta(): void {
+    this.nuevaRecetaAbierta = true;
+  }
+
+  cerrarNuevaReceta(): void {
+    this.nuevaRecetaAbierta = false;
   }
 
   // ─── Helpers ───────────────────────────────────────────────────────────────

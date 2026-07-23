@@ -18,6 +18,29 @@
   padding: 28px 20px 100px;
 }
 
+.prf-loading,
+.prf-load-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 220px;
+  color: var(--text-muted, #64748b);
+  text-align: center;
+}
+
+.prf-loading ion-spinner {
+  width: 36px;
+  height: 36px;
+  --color: var(--primary, #3b3f92);
+}
+
+.prf-load-error p {
+  margin: 0;
+  font-size: 15px;
+}
+
 // ─── Animations ──────────────────────────────────────────────────────────────
 @keyframes prfFadeUp {
   from { opacity: 0; transform: translateY(18px); }
@@ -275,6 +298,12 @@
     border-color: var(--primary-mid, #6366f1);
   }
 
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
   &.prf-edit-btn--cancel {
     border-color: rgba(239, 68, 68, 0.3);
     color: #ef4444;
@@ -328,6 +357,15 @@
   font-size: 12px;
   font-weight: 500;
   color: var(--danger, #dc2626);
+}
+
+.prf-char-count {
+  display: block;
+  margin-top: 6px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted, #64748b);
 }
 
 .prf-field-input {
@@ -548,12 +586,25 @@
 
   ion-icon { font-size: 19px; }
 
-  &:hover {
+  ion-spinner.prf-save-spinner {
+    width: 19px;
+    height: 19px;
+    --color: #fff;
+  }
+
+  &:disabled {
+    opacity: 0.72;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.28);
+  }
+
+  &:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 10px 32px rgba(99, 102, 241, 0.50);
   }
 
-  &:active { transform: translateY(0); }
+  &:active:not(:disabled) { transform: translateY(0); }
 }
 
 // ─── Responsive ──────────────────────────────────────────────────────────────

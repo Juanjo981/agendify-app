@@ -1,0 +1,167 @@
+================================================================================
+AGENDIFY — Recetas médicas (API contract for backend)
+Fecha: 2026-07-22
+Auth: Bearer JWT del profesional autenticado
+Base: {API_BASE}/api
+
+SEPARACIÓN DE CONCEPTOS
+-----------------------
+plantilla_receta  → apariencia (logo, layout, switches). 1:1 con profesional.
+receta_medica     → documento clínico emitido a un paciente. N por profesional.
+
+El frontend de “Nueva receta” debe PERSISTIR en receta_medica + receta_medicamento.
+No guardar recetas dentro de plantilla_receta.configuracion.
+No usar localStorage ni Base64.
+
+
+--------------------------------------------------------------------------------
+1) POST /profesionales/me/pacientes/{idPaciente}/recetas
+--------------------------------------------------------------------------------
+Descripción:
+  Crea una receta (borrador o emitida) para el paciente.
+  El backend toma id_profesional del JWT (no enviar id_profesional).
+  Si se emite, guardar plantilla_snapshot con la plantilla actual del profesional.
+
+Auth: PROFESIONAL
+
+Request:
+{
+  "fechaEmision": "2026-07-22",
+  "pacienteNombre": "Ana López",
+  "edadTexto": "32 años",
+  "diagnostico": "HTA",
+  "indicaciones": "Tomar con alimentos",
+  "proximaCitaFecha": "2026-08-22",
+  "proximaCitaHora": "10:30",
+  "estado": "emitida",
+  "medicamentos": [
+    {
+      "orden": 1,
+      "nombre": "Losartán",
+      "dosis": "50 mg",
+      "frecuencia": "cada 24 h",
+      "duracion": "30 días"
+    }
+  ]
+}
+
+Reglas:
+  - medicamentos: mínimo 1 ítem con nombre no vacío si estado = emitida.
+  - estado por defecto: "borrador" si se omite.
+  - Al emitir: set emitida_at = NOW() y plantilla_snapshot = config actual.
+
+Response 201:
+{
+  "idRecetaMedica": 42,
+  "idPaciente": 101,
+  "fechaEmision": "2026-07-22",
+  "pacienteNombre": "Ana López",
+  "edadTexto": "32 años",
+  "diagnostico": "HTA",
+  "indicaciones": "Tomar con alimentos",
+  "proximaCitaFecha": "2026-08-22",
+  "proximaCitaHora": "10:30",
+  "estado": "emitida",
+  "medicamentos": [ ... ],
+  "createdAt": "2026-07-22T19:00:00Z",
+  "updatedAt": "2026-07-22T19:00:00Z",
+  "emitidaAt": "2026-07-22T19:00:00Z"
+}
+
+
+--------------------------------------------------------------------------------
+2) GET /profesionales/me/pacientes/{idPaciente}/recetas
+--------------------------------------------------------------------------------
+Descripción:
+  Lista recetas del paciente (del profesional autenticado).
+  Paginación opcional: ?page=0&size=20&estado=emitida
+
+Response 200:
+{
+  "content": [
+    {
+      "idRecetaMedica": 42,
+      "fechaEmision": "2026-07-22",
+      "pacienteNombre": "Ana López",
+      "diagnostico": "HTA",
+      "estado": "emitida",
+      "medicamentosCount": 2,
+      "createdAt": "..."
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 1,
+  "totalPages": 1
+}
+
+
+--------------------------------------------------------------------------------
+3) GET /profesionales/me/recetas/{idRecetaMedica}
+--------------------------------------------------------------------------------
+Descripción:
+  Detalle completo (cabecera + medicamentos + plantilla_snapshot si existe).
+  Solo si pertenece al profesional autenticado.
+
+Response 200: mismo shape que POST 201 + "plantillaSnapshot": { ... } | null
+
+
+--------------------------------------------------------------------------------
+4) PUT /profesionales/me/recetas/{idRecetaMedica}
+--------------------------------------------------------------------------------
+Descripción:
+  Actualiza una receta en estado "borrador".
+  Si estado = emitida o anulada → 409 / 422.
+
+Request: mismo shape parcial que POST (sin idPaciente).
+
+Response 200: detalle actualizado.
+
+
+--------------------------------------------------------------------------------
+5) POST /profesionales/me/recetas/{idRecetaMedica}/emitir
+--------------------------------------------------------------------------------
+Descripción:
+  Pasa borrador → emitida.
+  Fija emitida_at y plantilla_snapshot si aún no existe.
+
+Response 200: detalle.
+
+
+--------------------------------------------------------------------------------
+6) POST /profesionales/me/recetas/{idRecetaMedica}/anular
+--------------------------------------------------------------------------------
+Descripción:
+  Pasa emitida → anulada. No borra el registro.
+  Fija anulada_at.
+
+Response 200: detalle.
+
+
+--------------------------------------------------------------------------------
+7) DELETE /profesionales/me/recetas/{idRecetaMedica}
+--------------------------------------------------------------------------------
+Descripción:
+  Solo permite borrar si estado = borrador.
+  Emitida/anulada → 409.
+
+Response 204.
+
+
+--------------------------------------------------------------------------------
+ERRORES COMUNES
+--------------------------------------------------------------------------------
+401  No autenticado
+403  Paciente/receta de otro profesional
+404  Paciente o receta no encontrada
+409  Operación inválida para el estado actual
+422  Validación (sin medicamentos, campos requeridos)
+
+
+--------------------------------------------------------------------------------
+NOTAS DE IMPLEMENTACIÓN FRONTEND
+--------------------------------------------------------------------------------
+- “Guardar receta” en NuevaRecetaPanel debe llamar POST (o PUT si hay id).
+- La plantilla (GET plantilla-recetas) solo alimenta la vista previa visual.
+- Al listar en ficha del paciente, usar GET .../pacientes/{id}/recetas.
+- No mezclar endpoints de plantilla_receta con persistencia clínica.

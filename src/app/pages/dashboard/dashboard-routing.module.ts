@@ -22,6 +22,11 @@ const routes: Routes = [
     loadComponent: () => import('../perfil/perfil.page.integrated').then(m => m.PerfilPage)
   },
   {
+    path: 'plantilla-recetas',
+    loadComponent: () =>
+      import('../plantilla-recetas/plantilla-recetas.page').then(m => m.PlantillaRecetasPage)
+  },
+  {
     path: 'configuracion',
     loadComponent: () => import('../configuracion/configuracion.page.integrated').then(m => m.ConfiguracionPage)
   },

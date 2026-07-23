@@ -99,6 +99,11 @@
   --overlay-modal:        rgba(15, 23, 42, 0.45);
   --overlay-modal-strong: rgba(15, 23, 42, 0.62);
 
+  // ── App chrome (dashboard header + mobile bottom nav handle) ────────────────
+  --app-header-height: 64px;
+  --mobile-bottom-nav-height: 45px; /* .bottom-menu collapsed handle */
+  --recipe-footer-height: 64px;
+
   // ── Data visualisation ─────────────────────────────────────────────────────
   --chart-primary: #6366f1;
   --chart-success: #10b981;

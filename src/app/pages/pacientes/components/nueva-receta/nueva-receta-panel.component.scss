@@ -1,0 +1,826 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Nueva receta panel
+// Prefijo: nrp-
+//
+// Móvil / tablet (<1280):
+//   El panel NO usa 100dvh. Vive entre el header global (64px) y el menú
+//   inferior (.bottom-menu handle 45px), con footer del modal siempre visible.
+//
+// Causa footer invisible:
+//   height:100dvh + body.modal-open ocultaban el menú y empujaban/tapaban acciones.
+// Causa menú oculto:
+//   body.modal-open + backdrop/panel a inset:0 / z-index sobre el menú.
+// Barra residual con flecha:
+//   Es el handle de .bottom-menu del dashboard (no de este panel). Ahora se
+//   conserva visible y usable; el modal termina encima.
+// ─────────────────────────────────────────────────────────────────────────────
+
+:host {
+  display: contents;
+}
+
+// Backdrop: solo sobre el área útil (no tapa header ni menú inferior)
+.nrp-backdrop {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--app-header-height, 64px);
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.35);
+  z-index: 9000;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// BASE (< 1280px): panel entre header y borde inferior (o menú móvil)
+// ═════════════════════════════════════════════════════════════════════════════
+
+.nrp-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--app-header-height, 64px);
+  bottom: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: auto;
+  max-height: none;
+  box-sizing: border-box;
+  background: #f4f6fb;
+  z-index: 9001;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 0;
+  box-shadow: none;
+  overscroll-behavior: none;
+  container-type: inline-size;
+  container-name: nrp-panel;
+}
+
+// Donde existe .bottom-menu (≤1024px): reservar su asa y dejarlo interactivo
+@media (max-width: 1024px) {
+  .nrp-backdrop,
+  .nrp-panel {
+    bottom: calc(
+      var(--mobile-bottom-nav-height, 45px) + env(safe-area-inset-bottom, 0px)
+    );
+  }
+}
+
+// ── Header del modal ─────────────────────────────────────────────────────────
+.nrp-header {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(91, 103, 145, 0.1);
+  background: #fff;
+  z-index: 2;
+
+  &__text {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    padding-right: 8px;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #1d2940;
+    line-height: 1.2;
+    overflow-wrap: break-word;
+  }
+
+  p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #64708a;
+    line-height: 1.4;
+    overflow-wrap: break-word;
+  }
+}
+
+.nrp-close {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: #f1f3f8;
+  color: #5b6787;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  transition: background 140ms ease, color 140ms ease;
+
+  &:hover {
+    background: #e8ebf3;
+    color: #1d2940;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #3b3f92;
+    outline-offset: 2px;
+  }
+}
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+.nrp-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  gap: 4px;
+  margin: 10px 16px 0;
+  padding: 4px;
+  border-radius: 11px;
+  background: #f3f5fb;
+
+  &__btn {
+    min-width: 0;
+    min-height: 36px;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #64708a;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 140ms ease, color 140ms ease, box-shadow 140ms ease;
+
+    &:focus-visible {
+      outline: 2px solid #3b3f92;
+      outline-offset: 2px;
+    }
+
+    &--active {
+      background: #ffffff;
+      color: #3b3f92;
+      box-shadow: 0 1px 3px rgba(30, 40, 80, 0.08);
+    }
+  }
+}
+
+// ── Content (única zona flexible) ────────────────────────────────────────────
+.nrp-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 12px 16px 0;
+}
+
+.nrp-form-col,
+.nrp-preview-col {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.nrp-form-col:not(.nrp-pane--active),
+.nrp-preview-col:not(.nrp-pane--active) {
+  display: none;
+}
+
+.nrp-form-col.nrp-pane--active,
+.nrp-preview-col.nrp-pane--active {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.nrp-scroll {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 4px 20px 0;
+  scrollbar-gutter: stable;
+  container-type: inline-size;
+  container-name: nrp-form;
+}
+
+.nrp-preview-col.nrp-pane--active {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0 0 8px;
+}
+
+.nrp-preview-head {
+  flex: 0 0 auto;
+  margin-bottom: 10px;
+  min-width: 0;
+
+  h3 {
+    margin: 0 0 2px;
+    font-size: 14px;
+    font-weight: 650;
+    color: #1d2940;
+  }
+
+  p {
+    margin: 0;
+    font-size: 12px;
+    color: #64708a;
+  }
+}
+
+.nrp-preview-scroll {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  padding: 0 4px 12px 0;
+  scrollbar-gutter: stable;
+
+  app-receta-sheet-preview {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+}
+
+// ── Banner / loading ─────────────────────────────────────────────────────────
+.nrp-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(91, 103, 145, 0.1);
+  background: #f8faff;
+  font-size: 12.5px;
+  color: #64708a;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  &--error {
+    border-color: rgba(220, 38, 38, 0.2);
+    background: #fef2f2;
+    color: #b91c1c;
+  }
+}
+
+.nrp-link {
+  border: 0;
+  background: transparent;
+  color: #3b3f92;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #3b3f92;
+    outline-offset: 2px;
+  }
+}
+
+.nrp-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 12.5px;
+  color: #64708a;
+
+  ion-spinner {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+// ── Cards ────────────────────────────────────────────────────────────────────
+.nrp-section {
+  background: #ffffff;
+  border: 1px solid rgba(91, 103, 145, 0.12);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  box-shadow: 0 1px 2px rgba(25, 35, 70, 0.03);
+
+  &:last-child {
+    margin-bottom: 4px;
+  }
+}
+
+.nrp-section__title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 650;
+  color: #1d2940;
+  line-height: 1.3;
+}
+
+.nrp-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  min-width: 0;
+
+  .nrp-section__title {
+    margin: 0;
+    min-width: 0;
+  }
+}
+
+.nrp-add-btn {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #3b3f92;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease;
+
+  &:hover {
+    background: rgba(59, 63, 146, 0.08);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #3b3f92;
+    outline-offset: 2px;
+  }
+}
+
+.nrp-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+@container nrp-form (min-width: 560px) {
+  .nrp-fields,
+  .nrp-fields--datos,
+  .nrp-fields--med {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+  }
+}
+
+@supports not (container-type: inline-size) {
+  @media (min-width: 560px) {
+    .nrp-fields,
+    .nrp-fields--datos,
+    .nrp-fields--med {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px 16px;
+    }
+  }
+}
+
+.nrp-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+
+  &--age {
+    max-width: 220px;
+  }
+}
+
+.nrp-field__label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: 0.035em;
+  color: #697793;
+  text-transform: uppercase;
+}
+
+.nrp-input,
+.nrp-textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  --background: #fbfcff;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+  --color: #1d2940;
+  --placeholder-color: #94a3b8;
+  --highlight-color-focused: transparent;
+  border: 1px solid rgba(91, 103, 145, 0.14);
+  border-radius: 9px;
+  font-size: 13.5px;
+  min-height: 42px;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+
+  &.ion-focused,
+  &:focus-within {
+    --background: #ffffff;
+    background: #ffffff;
+    border-color: rgba(79, 70, 229, 0.45);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+  }
+}
+
+.nrp-textarea {
+  min-height: 110px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+}
+
+.nrp-med {
+  padding: 14px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(91, 103, 145, 0.1);
+  border-radius: 12px;
+  background: #fbfcff;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    min-width: 0;
+  }
+
+  &__title {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+  }
+
+  &__delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 17px;
+    transition: background 140ms ease, color 140ms ease;
+
+    &:hover {
+      background: rgba(220, 38, 38, 0.08);
+      color: #dc2626;
+    }
+
+    &:focus-visible {
+      outline: 2px solid #3b3f92;
+      outline-offset: 2px;
+    }
+  }
+}
+
+// ── Footer del modal (siempre visible; encima del menú global) ───────────────
+.nrp-footer {
+  position: relative;
+  flex: 0 0 auto;
+  z-index: 30;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: var(--recipe-footer-height, 64px);
+  box-sizing: border-box;
+  background: #ffffff;
+  border-top: 1px solid rgba(91, 103, 145, 0.12);
+  box-shadow: 0 -4px 14px rgba(25, 35, 70, 0.05);
+  padding: 10px 14px;
+  // Safe-area lo maneja el menú global; aquí padding normal
+}
+
+.nrp-footer-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.nrp-btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 13.5px;
+  font-weight: 650;
+  line-height: 1.15;
+  text-align: center;
+  white-space: normal;
+  cursor: pointer;
+  box-sizing: border-box;
+  margin: 0;
+
+  &:focus-visible {
+    outline: 2px solid #3b3f92;
+    outline-offset: 2px;
+  }
+
+  &--ghost {
+    background: #fff;
+    border-color: rgba(91, 103, 145, 0.16);
+    color: #1d2940;
+  }
+
+  &--primary {
+    background: #3b3f92;
+    color: #fff;
+  }
+}
+
+@media (max-width: 330px) {
+  .nrp-footer-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .nrp-header {
+    padding: 12px 14px;
+
+    h2 {
+      font-size: 18px;
+    }
+
+    p {
+      font-size: 12px;
+    }
+  }
+
+  .nrp-tabs {
+    margin: 8px 12px 0;
+  }
+
+  .nrp-content {
+    padding: 10px 12px 0;
+  }
+
+  .nrp-fields,
+  .nrp-fields--datos,
+  .nrp-fields--med {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .nrp-field--age {
+    max-width: none;
+  }
+
+  .nrp-field--full {
+    grid-column: auto;
+  }
+}
+
+// Tablet sin bottom-menu (1025–1279): footer a la derecha como desktop reducido
+@media (min-width: 1025px) and (max-width: 1279px) {
+  .nrp-footer-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .nrp-btn {
+    width: auto;
+    min-width: 120px;
+    padding: 0 18px;
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// DESKTOP AMPLIO (≥ 1280px): modal centrado; sin reserva de menú móvil
+// ═════════════════════════════════════════════════════════════════════════════
+@media (min-width: 1280px) {
+  .nrp-backdrop {
+    inset: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 10050;
+  }
+
+  .nrp-panel {
+    top: 20px;
+    right: 0;
+    bottom: 20px;
+    left: 0;
+    margin-inline: auto;
+    width: min(1320px, calc(100vw - 64px));
+    max-width: calc(100vw - 64px);
+    min-width: 0;
+    height: auto;
+    max-height: calc(100dvh - 40px);
+    border-radius: 16px;
+    box-shadow:
+      0 24px 64px rgba(15, 23, 42, 0.16),
+      0 0 0 1px rgba(15, 23, 42, 0.04);
+    z-index: 10051;
+  }
+
+  .nrp-header {
+    padding: 20px 28px;
+
+    h2 {
+      font-size: 22px;
+    }
+
+    p {
+      max-width: 52ch;
+    }
+  }
+
+  .nrp-tabs {
+    display: none;
+  }
+
+  .nrp-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 20px;
+    padding: 20px 28px;
+    overflow: hidden;
+  }
+
+  .nrp-form-col,
+  .nrp-form-col:not(.nrp-pane--active),
+  .nrp-form-col.nrp-pane--active {
+    display: flex;
+    flex-direction: column;
+    flex: unset;
+    min-width: 0;
+    min-height: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .nrp-scroll {
+    padding: 0 8px 20px 0;
+  }
+
+  .nrp-preview-col,
+  .nrp-preview-col:not(.nrp-pane--active),
+  .nrp-preview-col.nrp-pane--active {
+    display: flex;
+    flex-direction: column;
+    flex: unset;
+    min-width: 0;
+    min-height: 0;
+    max-width: 100%;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid rgba(91, 103, 145, 0.12);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 1px 2px rgba(25, 35, 70, 0.03);
+  }
+
+  .nrp-fields,
+  .nrp-fields--datos,
+  .nrp-fields--med {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+  }
+
+  .nrp-footer {
+    padding: 14px 28px;
+  }
+
+  .nrp-footer-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
+  .nrp-btn {
+    width: auto;
+    min-width: 120px;
+    padding: 0 18px;
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 1440px) {
+  .nrp-panel {
+    width: min(1400px, calc(100vw - 96px));
+    max-width: calc(100vw - 96px);
+  }
+
+  .nrp-header {
+    padding: 22px 36px;
+  }
+
+  .nrp-content {
+    gap: 24px;
+    padding: 24px 36px;
+  }
+
+  .nrp-footer {
+    padding-left: 36px;
+    padding-right: 36px;
+  }
+}
+
+@container nrp-form (max-width: 559px) {
+  .nrp-fields,
+  .nrp-fields--datos,
+  .nrp-fields--med {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .nrp-field--age {
+    max-width: none;
+  }
+
+  .nrp-field--full {
+    grid-column: auto;
+  }
+}

@@ -1,0 +1,825 @@
+<ion-content class="ptr-content">
+  <div class="ptr-page">
+
+    <!-- Encabezado -->
+    <header class="ptr-header">
+      <div class="ptr-header-top">
+        <button type="button" class="ptr-back" (click)="volverAMiCuenta()">
+          <ion-icon name="chevron-back-outline" aria-hidden="true"></ion-icon>
+          <span>Mi cuenta</span>
+        </button>
+
+        <span class="ptr-badge" *ngIf="!esPlantillaPredeterminada">Configuración personal</span>
+        <span class="ptr-badge ptr-badge--muted" *ngIf="esPlantillaPredeterminada">Plantilla predeterminada</span>
+      </div>
+
+      <div class="ptr-header-main">
+        <h1 class="ptr-title">Plantilla de recetas</h1>
+        <p class="ptr-subtitle">
+          Define qué datos de tu perfil se muestran y personaliza la apariencia de tus recetas.
+        </p>
+      </div>
+
+      <p class="ptr-note">
+        <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
+        Esta plantilla se aplicará automáticamente al crear nuevas recetas.
+      </p>
+    </header>
+
+    <!-- Layout principal -->
+    <div class="ptr-layout">
+
+      <!-- Columna izquierda: configuración -->
+      <section class="ptr-panel ptr-panel--config" aria-label="Panel de configuración">
+        <div class="ptr-card">
+          <div class="ptr-card-head">
+            <h2 class="ptr-card-title">Configuración</h2>
+            <p class="ptr-card-desc">Ajusta el contenido y la apariencia de tu plantilla.</p>
+          </div>
+
+          <nav class="ptr-tabs" role="tablist" aria-label="Secciones de la plantilla">
+            <button
+              *ngFor="let tab of tabs"
+              type="button"
+              class="ptr-tab"
+              role="tab"
+              [class.ptr-tab--active]="activeTab === tab.id"
+              [attr.aria-selected]="activeTab === tab.id"
+              (click)="setTab(tab.id)">
+              <ion-icon [name]="tab.icon" aria-hidden="true"></ion-icon>
+              <span>{{ tab.label }}</span>
+            </button>
+          </nav>
+
+          <div class="ptr-tab-panel" role="tabpanel">
+
+            <!-- Datos profesionales (solo lectura desde Mi perfil) -->
+            <div *ngIf="activeTab === 'datos'" class="ptr-datos">
+              <div class="ptr-datos-intro">
+                <h3>Datos profesionales</h3>
+                <p>Estos datos se obtienen automáticamente de tu perfil.</p>
+                <p class="ptr-sync-note">
+                  Los datos profesionales se sincronizan automáticamente desde Mi perfil.
+                </p>
+                <p class="ptr-sync-note">
+                  Para modificar un dato, actualízalo desde Mi perfil.
+                </p>
+                <button type="button" class="ptr-link-hint" (click)="irAMiPerfil()">
+                  Ir a Mi perfil
+                </button>
+              </div>
+
+              <div class="ptr-missing" *ngIf="!cargandoDatos && tieneDatosFaltantes">
+                <p class="ptr-missing-title">Faltan datos profesionales para completar la receta.</p>
+                <ul>
+                  <li *ngFor="let item of datosFaltantes">{{ item }}</li>
+                </ul>
+                <button type="button" class="ptr-link-hint" (click)="irAMiPerfil()">
+                  Completar perfil
+                </button>
+              </div>
+
+              <div *ngIf="cargandoDatos" class="ptr-datos-loading">
+                <ion-spinner name="crescent"></ion-spinner>
+                <span>Cargando datos del perfil…</span>
+              </div>
+
+              <div class="ptr-field-list" [class.ptr-field-list--disabled]="cargandoDatos">
+                <div class="ptr-field ptr-field--readonly" *ngFor="let campo of camposProfesionales">
+                  <div class="ptr-field-top">
+                    <label class="ptr-field-label">{{ campo.label }}</label>
+                    <label class="ptr-show">
+                      <ion-toggle
+                        [(ngModel)]="mostrar[campo.showKey]"
+                        [attr.aria-label]="campo.showLabel"
+                        [disabled]="cargandoDatos || accionesBloqueadas">
+                      </ion-toggle>
+                      <span>{{ campo.showLabel }}</span>
+                    </label>
+                  </div>
+                  <p
+                    class="ptr-readonly-value"
+                    [class.ptr-readonly-value--empty]="!hasValue(datos[campo.key])">
+                    {{ displayValue(datos[campo.key]) }}
+                  </p>
+                  <button
+                    *ngIf="!hasValue(datos[campo.key])"
+                    type="button"
+                    class="ptr-link-hint ptr-link-hint--inline"
+                    (click)="irAMiPerfil()">
+                    Completar en Mi perfil
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Identidad visual -->
+            <div *ngIf="activeTab === 'identidad'" class="ptr-identidad">
+              <div class="ptr-datos-intro">
+                <h3>Identidad visual</h3>
+                <p>Personaliza logo, color y estilo con opciones controladas y legibles.</p>
+              </div>
+
+              <!-- Logotipo -->
+              <section class="ptr-id-block" aria-labelledby="ptr-logo-title">
+                <div class="ptr-field-top">
+                  <h4 id="ptr-logo-title" class="ptr-id-title">Logotipo</h4>
+                  <label class="ptr-show">
+                    <ion-toggle
+                      [(ngModel)]="identidad.mostrarLogo"
+                      aria-label="Mostrar logotipo">
+                    </ion-toggle>
+                    <span>Mostrar logotipo</span>
+                  </label>
+                </div>
+
+                <div class="ptr-logo-box" [class.ptr-logo-box--disabled]="!identidad.mostrarLogo">
+                  <div class="ptr-logo-preview" aria-hidden="true">
+                    <img
+                      *ngIf="identidad.mostrarLogo && logoPreviewSrc"
+                      [src]="logoPreviewSrc"
+                      alt="Logotipo profesional"
+                      (error)="onLogoImageError()" />
+                    <ion-icon *ngIf="!(identidad.mostrarLogo && logoPreviewSrc)" name="image-outline"></ion-icon>
+                  </div>
+
+                  <div class="ptr-logo-meta">
+                    <p class="ptr-logo-hint">Usa una imagen cuadrada o horizontal con fondo transparente.</p>
+                    <p class="ptr-logo-formats">PNG, JPG o WEBP · máx. 3 MB</p>
+                    <p class="ptr-asset-status" *ngIf="tieneCambioAssetPendiente('logo')" [class.ptr-asset-status--error]="logoState.state === 'error'" [class.ptr-asset-status--pending]="tieneCambioAssetPendiente('logo')">
+                      {{ assetStatusLabel('logo') || 'Cambio pendiente' }}
+                    </p>
+                    <p class="ptr-logo-note" *ngIf="tieneCambioAssetPendiente('logo') && logoState.state !== 'error'">
+                      Se guardará al presionar «Guardar plantilla».
+                    </p>
+                    <div class="ptr-logo-actions">
+                      <button
+                        type="button"
+                        class="ptr-btn-mini ptr-btn-mini--primary"
+                        (click)="triggerLogoPicker()"
+                        [disabled]="logoState.busy || accionesBloqueadas">
+                        {{ primaryAssetActionLabel('logo') }}
+                      </button>
+                      <button
+                        type="button"
+                        class="ptr-btn-mini"
+                        (click)="eliminarLogo()"
+                        [disabled]="(!logoPreviewSrc && !logoState.pendingFile && !logoState.removeRequested && !logoState.current) || logoState.busy || accionesBloqueadas">
+                        Eliminar
+                      </button>
+                    </div>
+                    <p class="ptr-logo-note">La imagen se sube con URL firmada al guardar la plantilla.</p>
+                  </div>
+                </div>
+
+                <input
+                  #logoInput
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  class="ptr-file-input"
+                  (change)="onLogoSelected($event)" />
+              </section>
+
+              <!-- Color principal -->
+              <section class="ptr-id-block" aria-labelledby="ptr-color-title">
+                <h4 id="ptr-color-title" class="ptr-id-title">Color principal</h4>
+                <p class="ptr-id-help">Paleta profesional de alto contraste. Selección actual: {{ colorPrincipalLabel }}.</p>
+                <div class="ptr-color-grid" role="radiogroup" aria-label="Color principal de la plantilla">
+                  <button
+                    *ngFor="let color of colores"
+                    type="button"
+                    class="ptr-color-option"
+                    role="radio"
+                    [attr.aria-checked]="identidad.colorId === color.id"
+                    [class.ptr-color-option--active]="identidad.colorId === color.id"
+                    (click)="seleccionarColor(color.id)">
+                    <span class="ptr-color-swatch" [style.background]="color.hex" aria-hidden="true"></span>
+                    <span class="ptr-color-label">{{ color.label }}</span>
+                  </button>
+                </div>
+              </section>
+
+              <!-- Estilo del encabezado -->
+              <section class="ptr-id-block" aria-labelledby="ptr-header-title">
+                <h4 id="ptr-header-title" class="ptr-id-title">Estilo del encabezado</h4>
+                <div class="ptr-choice-grid" role="radiogroup" aria-label="Estilo del encabezado">
+                  <button
+                    *ngFor="let opcion of encabezados"
+                    type="button"
+                    class="ptr-choice-card"
+                    role="radio"
+                    [attr.aria-checked]="identidad.encabezado === opcion.id"
+                    [class.ptr-choice-card--active]="identidad.encabezado === opcion.id"
+                    (click)="seleccionarEncabezado(opcion.id)">
+                    <span
+                      class="ptr-mini"
+                      [class.ptr-mini--minimal]="opcion.id === 'minimalista'"
+                      [class.ptr-mini--franja]="opcion.id === 'franja'"
+                      [class.ptr-mini--dividido]="opcion.id === 'dividido'"
+                      [style.--ptr-accent]="colorPrincipal"
+                      aria-hidden="true">
+                    </span>
+                    <span class="ptr-choice-text">
+                      <strong>{{ opcion.label }}</strong>
+                      <small>{{ opcion.description }}</small>
+                    </span>
+                  </button>
+                </div>
+              </section>
+
+              <!-- Tipografía -->
+              <section class="ptr-id-block" aria-labelledby="ptr-font-title">
+                <h4 id="ptr-font-title" class="ptr-id-title">Tipografía</h4>
+                <div class="ptr-choice-grid ptr-choice-grid--compact" role="radiogroup" aria-label="Tipografía de la plantilla">
+                  <button
+                    *ngFor="let opcion of tipografias"
+                    type="button"
+                    class="ptr-choice-card"
+                    role="radio"
+                    [attr.aria-checked]="identidad.tipografia === opcion.id"
+                    [class.ptr-choice-card--active]="identidad.tipografia === opcion.id"
+                    (click)="seleccionarTipografia(opcion.id)">
+                    <span
+                      class="ptr-font-sample"
+                      [class.ptr-font-sample--moderna]="opcion.id === 'moderna'"
+                      [class.ptr-font-sample--clasica]="opcion.id === 'clasica'"
+                      [class.ptr-font-sample--compacta]="opcion.id === 'compacta'"
+                      aria-hidden="true">
+                      Aa
+                    </span>
+                    <span class="ptr-choice-text">
+                      <strong>{{ opcion.label }}</strong>
+                      <small>{{ opcion.description }}</small>
+                    </span>
+                  </button>
+                </div>
+              </section>
+
+              <!-- Separadores -->
+              <section class="ptr-id-block" aria-labelledby="ptr-sep-title">
+                <h4 id="ptr-sep-title" class="ptr-id-title">Separadores</h4>
+                <div class="ptr-choice-grid ptr-choice-grid--compact" role="radiogroup" aria-label="Separadores de la plantilla">
+                  <button
+                    *ngFor="let opcion of separadores"
+                    type="button"
+                    class="ptr-choice-card"
+                    role="radio"
+                    [attr.aria-checked]="identidad.separador === opcion.id"
+                    [class.ptr-choice-card--active]="identidad.separador === opcion.id"
+                    (click)="seleccionarSeparador(opcion.id)">
+                    <span
+                      class="ptr-sep-sample"
+                      [class.ptr-sep-sample--ninguno]="opcion.id === 'ninguno'"
+                      [class.ptr-sep-sample--sutil]="opcion.id === 'sutil'"
+                      [class.ptr-sep-sample--color]="opcion.id === 'color'"
+                      [style.--ptr-accent]="colorPrincipal"
+                      aria-hidden="true">
+                    </span>
+                    <span class="ptr-choice-text">
+                      <strong>{{ opcion.label }}</strong>
+                      <small>{{ opcion.description }}</small>
+                    </span>
+                  </button>
+                </div>
+              </section>
+            </div>
+
+            <!-- Distribución -->
+            <div *ngIf="activeTab === 'distribucion'" class="ptr-distribucion">
+              <div class="ptr-datos-intro">
+                <h3>Distribución</h3>
+                <p>Elige formato, estructura y densidad sin diseñar la hoja a mano.</p>
+              </div>
+
+              <section class="ptr-id-block" aria-labelledby="ptr-formato-title">
+                <h4 id="ptr-formato-title" class="ptr-id-title">Formato de receta</h4>
+                <div class="ptr-choice-grid ptr-choice-grid--compact" role="radiogroup" aria-label="Formato de receta">
+                  <button
+                    *ngFor="let opcion of formatos"
+                    type="button"
+                    class="ptr-choice-card"
+                    role="radio"
+                    [attr.aria-checked]="distribucion.formato === opcion.id"
+                    [class.ptr-choice-card--active]="distribucion.formato === opcion.id"
+                    (click)="seleccionarFormato(opcion.id)">
+                    <span
+                      class="ptr-format-sample"
+                      [class.ptr-format-sample--carta]="opcion.id === 'carta'"
+                      [class.ptr-format-sample--media]="opcion.id === 'media-carta'"
+                      aria-hidden="true">
+                    </span>
+                    <span class="ptr-choice-text">
+                      <strong>{{ opcion.label }}</strong>
+                      <small>{{ opcion.description }}</small>
+                    </span>
+                  </button>
+                </div>
+              </section>
+
+              <section class="ptr-id-block" aria-labelledby="ptr-layout-title">
+                <h4 id="ptr-layout-title" class="ptr-id-title">Distribución</h4>
+                <div class="ptr-choice-grid" role="radiogroup" aria-label="Plantilla de distribución">
+                  <button
+                    *ngFor="let opcion of layouts"
+                    type="button"
+                    class="ptr-choice-card"
+                    role="radio"
+                    [attr.aria-checked]="distribucion.layout === opcion.id"
+                    [class.ptr-choice-card--active]="distribucion.layout === opcion.id"
+                    (click)="seleccionarLayout(opcion.id)">
+                    <span
+                      class="ptr-layout-mini"
+                      [class.ptr-layout-mini--clasica]="opcion.id === 'clasica'"
+                      [class.ptr-layout-mini--moderna]="opcion.id === 'moderna'"
+                      [class.ptr-layout-mini--compacta]="opcion.id === 'compacta'"
+                      [style.--ptr-accent]="colorPrincipal"
+                      aria-hidden="true">
+                    </span>
+                    <span class="ptr-choice-text">
+                      <strong>{{ opcion.label }}</strong>
+                      <small>{{ opcion.description }}</small>
+                    </span>
+                  </button>
+                </div>
+              </section>
+
+              <section class="ptr-id-block" aria-labelledby="ptr-secciones-title">
+                <h4 id="ptr-secciones-title" class="ptr-id-title">Estructura de contenido</h4>
+                <p class="ptr-id-help">Medicamentos e indicaciones son esenciales y permanecen activos.</p>
+                <div class="ptr-section-toggles">
+                  <label
+                    *ngFor="let seccion of seccionesContenido"
+                    class="ptr-section-toggle"
+                    [class.ptr-section-toggle--locked]="seccion.essential">
+                    <span>
+                      {{ seccion.label }}
+                      <small *ngIf="seccion.essential">Esencial</small>
+                    </span>
+                    <ion-toggle
+                      [(ngModel)]="distribucion.secciones[seccion.key]"
+                      [disabled]="!!seccion.essential"
+                      [attr.aria-label]="'Mostrar ' + seccion.label">
+                    </ion-toggle>
+                  </label>
+                </div>
+              </section>
+
+              <section class="ptr-id-block" aria-labelledby="ptr-etiquetas-title">
+                <h4 id="ptr-etiquetas-title" class="ptr-id-title">Etiquetas personalizables</h4>
+                <p class="ptr-id-help">Máximo {{ maxEtiquetaLength }} caracteres. Sin HTML.</p>
+                <div class="ptr-field-list">
+                  <div class="ptr-field" *ngFor="let item of etiquetasEditables">
+                    <label class="ptr-field-label" [attr.for]="'ptr-etiqueta-' + item.key">{{ item.label }}</label>
+                    <ion-input
+                      class="ptr-input"
+                      type="text"
+                      [id]="'ptr-etiqueta-' + item.key"
+                      [attr.maxlength]="maxEtiquetaLength"
+                      [placeholder]="item.placeholder"
+                      [ngModel]="distribucion.etiquetas[item.key]"
+                      (ngModelChange)="onEtiquetaChange(item.key, $event)"
+                      [attr.aria-label]="item.label">
+                    </ion-input>
+                  </div>
+                </div>
+              </section>
+
+              <section class="ptr-id-block" aria-labelledby="ptr-espaciado-title">
+                <h4 id="ptr-espaciado-title" class="ptr-id-title">Espaciado</h4>
+                <div class="ptr-chip-row" role="radiogroup" aria-label="Espaciado de la plantilla">
+                  <button
+                    *ngFor="let opcion of espaciados"
+                    type="button"
+                    class="ptr-chip"
+                    role="radio"
+                    [attr.aria-checked]="distribucion.espaciado === opcion.id"
+                    [class.ptr-chip--active]="distribucion.espaciado === opcion.id"
+                    (click)="seleccionarEspaciado(opcion.id)">
+                    {{ opcion.label }}
+                  </button>
+                </div>
+              </section>
+
+              <section class="ptr-id-block" aria-labelledby="ptr-texto-title">
+                <h4 id="ptr-texto-title" class="ptr-id-title">Tamaño de texto</h4>
+                <div class="ptr-chip-row" role="radiogroup" aria-label="Tamaño de texto">
+                  <button
+                    *ngFor="let opcion of tamanosTexto"
+                    type="button"
+                    class="ptr-chip"
+                    role="radio"
+                    [attr.aria-checked]="distribucion.tamanoTexto === opcion.id"
+                    [class.ptr-chip--active]="distribucion.tamanoTexto === opcion.id"
+                    (click)="seleccionarTamanoTexto(opcion.id)">
+                    {{ opcion.label }}
+                  </button>
+                </div>
+              </section>
+            </div>
+
+            <!-- Firma y pie de página -->
+            <div *ngIf="activeTab === 'pie'" class="ptr-pie">
+              <div class="ptr-datos-intro">
+                <h3>Firma y pie de página</h3>
+                <p>Define la representación visual de tu firma, sello y datos al pie.</p>
+              </div>
+
+              <p class="ptr-legal-note">
+                El contenido y los requisitos de la receta son responsabilidad del profesional que la emite.
+              </p>
+
+              <!-- Firma -->
+              <section class="ptr-id-block" aria-labelledby="ptr-firma-title">
+                <div class="ptr-field-top">
+                  <h4 id="ptr-firma-title" class="ptr-id-title">Firma</h4>
+                  <label class="ptr-show">
+                    <ion-toggle
+                      [(ngModel)]="distribucion.secciones.firma"
+                      aria-label="Mostrar firma">
+                    </ion-toggle>
+                    <span>Mostrar firma</span>
+                  </label>
+                </div>
+
+                <div class="ptr-logo-box" [class.ptr-logo-box--disabled]="!distribucion.secciones.firma">
+                  <div class="ptr-logo-preview ptr-logo-preview--signature" aria-hidden="true">
+                    <img
+                      *ngIf="distribucion.secciones.firma && firmaPreviewSrc"
+                      [src]="firmaPreviewSrc"
+                      alt="Representación visual de firma"
+                      (error)="onAssetPreviewError('firma')" />
+                    <ion-icon *ngIf="!(distribucion.secciones.firma && firmaPreviewSrc)" name="create-outline"></ion-icon>
+                  </div>
+                  <div class="ptr-logo-meta">
+                    <p class="ptr-logo-hint">Esta imagen se mostrará como representación visual de tu firma.</p>
+                    <p class="ptr-logo-formats">PNG, JPG o WEBP · fondo transparente recomendado · máx. 2 MB</p>
+                    <p class="ptr-asset-status" *ngIf="tieneCambioAssetPendiente('firma')" [class.ptr-asset-status--error]="firmaState.state === 'error'" [class.ptr-asset-status--pending]="tieneCambioAssetPendiente('firma')">
+                      {{ assetStatusLabel('firma') || 'Cambio pendiente' }}
+                    </p>
+                    <p class="ptr-logo-note" *ngIf="tieneCambioAssetPendiente('firma') && firmaState.state !== 'error'">
+                      Se guardará al presionar «Guardar plantilla».
+                    </p>
+                    <div class="ptr-logo-actions">
+                      <button
+                        type="button"
+                        class="ptr-btn-mini ptr-btn-mini--primary"
+                        (click)="triggerFirmaPicker()"
+                        [disabled]="firmaState.busy || accionesBloqueadas">
+                        {{ primaryAssetActionLabel('firma') }}
+                      </button>
+                      <button
+                        type="button"
+                        class="ptr-btn-mini"
+                        (click)="eliminarFirma()"
+                        [disabled]="(!firmaPreviewSrc && !firmaState.pendingFile && !firmaState.removeRequested && !firmaState.current) || firmaState.busy || accionesBloqueadas">
+                        Eliminar
+                      </button>
+                    </div>
+                    <p class="ptr-logo-note">No constituye una firma electrónica certificada ni validez legal automática.</p>
+                  </div>
+                </div>
+                <input
+                  #firmaInput
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  class="ptr-file-input"
+                  (change)="onFirmaSelected($event)" />
+              </section>
+
+              <!-- Nombre bajo la firma -->
+              <section class="ptr-id-block" aria-labelledby="ptr-bajo-firma-title">
+                <h4 id="ptr-bajo-firma-title" class="ptr-id-title">Nombre bajo la firma</h4>
+                <p class="ptr-id-help">Se toman de los datos profesionales de la plantilla.</p>
+                <div class="ptr-section-toggles">
+                  <label class="ptr-section-toggle">
+                    <span>Nombre completo</span>
+                    <ion-toggle [(ngModel)]="pie.mostrarNombreBajoFirma" aria-label="Mostrar nombre completo bajo la firma"></ion-toggle>
+                  </label>
+                  <label class="ptr-section-toggle">
+                    <span>Especialidad</span>
+                    <ion-toggle [(ngModel)]="pie.mostrarEspecialidadBajoFirma" aria-label="Mostrar especialidad bajo la firma"></ion-toggle>
+                  </label>
+                  <label class="ptr-section-toggle">
+                    <span>Cédula profesional</span>
+                    <ion-toggle [(ngModel)]="pie.mostrarCedulaBajoFirma" aria-label="Mostrar cédula profesional bajo la firma"></ion-toggle>
+                  </label>
+                </div>
+              </section>
+
+              <!-- Sello -->
+              <section class="ptr-id-block" aria-labelledby="ptr-sello-title">
+                <div class="ptr-field-top">
+                  <h4 id="ptr-sello-title" class="ptr-id-title">Sello</h4>
+                  <label class="ptr-show">
+                    <ion-toggle
+                      [(ngModel)]="distribucion.secciones.sello"
+                      aria-label="Mostrar sello">
+                    </ion-toggle>
+                    <span>Mostrar sello</span>
+                  </label>
+                </div>
+
+                <div class="ptr-logo-box" [class.ptr-logo-box--disabled]="!distribucion.secciones.sello">
+                  <div class="ptr-logo-preview ptr-logo-preview--seal" aria-hidden="true">
+                    <img
+                      *ngIf="distribucion.secciones.sello && selloPreviewSrc"
+                      [src]="selloPreviewSrc"
+                      alt="Sello profesional"
+                      (error)="onAssetPreviewError('sello')" />
+                    <ion-icon *ngIf="!(distribucion.secciones.sello && selloPreviewSrc)" name="ellipse-outline"></ion-icon>
+                  </div>
+                  <div class="ptr-logo-meta">
+                    <p class="ptr-logo-hint">Imagen independiente del sello profesional. No se usa como firma.</p>
+                    <p class="ptr-logo-formats">PNG, JPG o WEBP · máx. 2 MB</p>
+                    <p class="ptr-asset-status" *ngIf="tieneCambioAssetPendiente('sello')" [class.ptr-asset-status--error]="selloState.state === 'error'" [class.ptr-asset-status--pending]="tieneCambioAssetPendiente('sello')">
+                      {{ assetStatusLabel('sello') || 'Cambio pendiente' }}
+                    </p>
+                    <p class="ptr-logo-note" *ngIf="tieneCambioAssetPendiente('sello') && selloState.state !== 'error'">
+                      Se guardará al presionar «Guardar plantilla».
+                    </p>
+                    <div class="ptr-logo-actions">
+                      <button
+                        type="button"
+                        class="ptr-btn-mini ptr-btn-mini--primary"
+                        (click)="triggerSelloPicker()"
+                        [disabled]="selloState.busy || accionesBloqueadas">
+                        {{ primaryAssetActionLabel('sello') }}
+                      </button>
+                      <button
+                        type="button"
+                        class="ptr-btn-mini"
+                        (click)="eliminarSello()"
+                        [disabled]="(!selloPreviewSrc && !selloState.pendingFile && !selloState.removeRequested && !selloState.current) || selloState.busy || accionesBloqueadas">
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <input
+                  #selloInput
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  class="ptr-file-input"
+                  (change)="onSelloSelected($event)" />
+              </section>
+
+              <!-- Pie de página -->
+              <section class="ptr-id-block" aria-labelledby="ptr-footer-title">
+                <div class="ptr-field-top">
+                  <h4 id="ptr-footer-title" class="ptr-id-title">Pie de página</h4>
+                  <label class="ptr-show">
+                    <ion-toggle
+                      [(ngModel)]="distribucion.secciones.avisoLegal"
+                      aria-label="Mostrar texto del pie de página">
+                    </ion-toggle>
+                    <span>Mostrar texto</span>
+                  </label>
+                </div>
+
+                <div class="ptr-field">
+                  <label class="ptr-field-label" for="ptr-texto-pie">Texto del pie de página</label>
+                  <ion-textarea
+                    id="ptr-texto-pie"
+                    class="ptr-textarea"
+                    [attr.maxlength]="maxTextoPieLength"
+                    rows="3"
+                    autoGrow="true"
+                    placeholder="Esta receta es personal y no debe compartirse."
+                    [ngModel]="pie.textoPie"
+                    (ngModelChange)="onTextoPieChange($event)"
+                    [disabled]="!distribucion.secciones.avisoLegal">
+                  </ion-textarea>
+                  <p class="ptr-id-help">Máximo {{ maxTextoPieLength }} caracteres.</p>
+                </div>
+
+                <div class="ptr-section-toggles">
+                  <label class="ptr-section-toggle">
+                    <span>Teléfono</span>
+                    <ion-toggle [(ngModel)]="pie.mostrarTelefono" aria-label="Mostrar teléfono en el pie"></ion-toggle>
+                  </label>
+                  <label class="ptr-section-toggle">
+                    <span>Correo</span>
+                    <ion-toggle [(ngModel)]="pie.mostrarCorreo" aria-label="Mostrar correo en el pie"></ion-toggle>
+                  </label>
+                  <label class="ptr-section-toggle">
+                    <span>Dirección del consultorio</span>
+                    <ion-toggle [(ngModel)]="pie.mostrarDireccion" aria-label="Mostrar dirección en el pie"></ion-toggle>
+                  </label>
+                  <label class="ptr-section-toggle">
+                    <span>Número de página</span>
+                    <ion-toggle [(ngModel)]="pie.mostrarNumeroPagina" aria-label="Mostrar número de página"></ion-toggle>
+                  </label>
+                  <label class="ptr-section-toggle">
+                    <span>Fecha de generación</span>
+                    <ion-toggle [(ngModel)]="pie.mostrarFechaGeneracion" aria-label="Mostrar fecha de generación"></ion-toggle>
+                  </label>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Columna derecha: vista previa -->
+      <section class="ptr-panel ptr-panel--preview" aria-label="Vista previa de la receta">
+        <div class="ptr-card ptr-card--preview">
+          <div class="ptr-card-head">
+            <h2 class="ptr-card-title">Vista previa</h2>
+            <p class="ptr-card-desc">Así se verá aproximadamente la receta impresa.</p>
+          </div>
+
+          <div class="ptr-preview-stage">
+            <article
+              class="ptr-sheet"
+              aria-label="Simulación de receta"
+              [style.--ptr-accent]="colorPrincipal"
+              [class.ptr-sheet--font-moderna]="identidad.tipografia === 'moderna'"
+              [class.ptr-sheet--font-clasica]="identidad.tipografia === 'clasica'"
+              [class.ptr-sheet--font-compacta]="identidad.tipografia === 'compacta'"
+              [class.ptr-sheet--header-minimal]="identidad.encabezado === 'minimalista'"
+              [class.ptr-sheet--header-franja]="identidad.encabezado === 'franja'"
+              [class.ptr-sheet--header-dividido]="identidad.encabezado === 'dividido'"
+              [class.ptr-sheet--formato-carta]="distribucion.formato === 'carta'"
+              [class.ptr-sheet--formato-media]="distribucion.formato === 'media-carta'"
+              [class.ptr-sheet--layout-clasica]="distribucion.layout === 'clasica'"
+              [class.ptr-sheet--layout-moderna]="distribucion.layout === 'moderna'"
+              [class.ptr-sheet--layout-compacta]="distribucion.layout === 'compacta'"
+              [class.ptr-sheet--space-compacto]="distribucion.espaciado === 'compacto'"
+              [class.ptr-sheet--space-normal]="distribucion.espaciado === 'normal'"
+              [class.ptr-sheet--space-amplio]="distribucion.espaciado === 'amplio'"
+              [class.ptr-sheet--text-pequeno]="distribucion.tamanoTexto === 'pequeno'"
+              [class.ptr-sheet--text-mediano]="distribucion.tamanoTexto === 'mediano'"
+              [class.ptr-sheet--text-grande]="distribucion.tamanoTexto === 'grande'">
+
+              <div class="ptr-sheet-franja" *ngIf="identidad.encabezado === 'franja'" aria-hidden="true"></div>
+
+              <header
+                class="ptr-sheet-header"
+                [class.ptr-sheet-header--single]="tieneDatosIzquierda !== tieneDatosDerecha"
+                [class.ptr-sheet-header--dividido]="identidad.encabezado === 'dividido'">
+                <div class="ptr-sheet-brand" *ngIf="tieneDatosIzquierda">
+                  <div
+                    class="ptr-sheet-logo"
+                    *ngIf="identidad.mostrarLogo"
+                    [class.ptr-sheet-logo--image]="!!logoPreviewSrc"
+                    [style.color]="colorPrincipal">
+                    <img *ngIf="logoPreviewSrc" [src]="logoPreviewSrc" alt="Logotipo profesional" (error)="onLogoImageError()" />
+                    <ion-icon *ngIf="!logoPreviewSrc" name="medical-outline" aria-hidden="true"></ion-icon>
+                  </div>
+                  <div class="ptr-sheet-brand-text">
+                    <p class="ptr-sheet-name" *ngIf="previewNombre">{{ previewNombre }}</p>
+                    <p class="ptr-sheet-meta" *ngIf="previewEspecialidad">{{ previewEspecialidad }}</p>
+                    <p class="ptr-sheet-meta" *ngIf="previewCedula">{{ previewCedula }}</p>
+                    <p class="ptr-sheet-meta" *ngIf="previewTelefonoProfesional">{{ previewTelefonoProfesional }}</p>
+                    <p class="ptr-sheet-meta" *ngIf="previewEmail">{{ previewEmail }}</p>
+                  </div>
+                </div>
+
+                <div class="ptr-sheet-clinic" *ngIf="tieneDatosDerecha">
+                  <p *ngIf="previewConsultorio">{{ previewConsultorio }}</p>
+                  <p *ngIf="previewDireccionConsultorio">{{ previewDireccionConsultorio }}</p>
+                  <p *ngIf="previewTelefonoConsultorio">{{ previewTelefonoConsultorio }}</p>
+                </div>
+              </header>
+
+              <div
+                class="ptr-sheet-divider"
+                *ngIf="mostrarSeparadorEncabezado"
+                [class.ptr-sheet-divider--accent]="identidad.separador === 'color'"
+                [class.ptr-sheet-divider--subtle]="identidad.separador === 'sutil'">
+              </div>
+
+              <div class="ptr-sheet-body">
+                <section
+                  class="ptr-sheet-block"
+                  *ngIf="distribucion.secciones.datosPaciente || distribucion.secciones.fechaEmision || distribucion.secciones.edadPaciente">
+                  <h4 *ngIf="distribucion.secciones.datosPaciente">{{ etiquetaPaciente }}</h4>
+                  <div class="ptr-sheet-grid">
+                    <span class="ptr-sheet-line" *ngIf="distribucion.secciones.datosPaciente">Nombre del paciente</span>
+                    <span class="ptr-sheet-line" *ngIf="distribucion.secciones.fechaEmision">Fecha de emisión</span>
+                    <span
+                      class="ptr-sheet-line"
+                      [class.ptr-sheet-line--wide]="!distribucion.secciones.fechaEmision || !distribucion.secciones.datosPaciente"
+                      *ngIf="distribucion.secciones.edadPaciente">
+                      Edad del paciente
+                    </span>
+                  </div>
+                </section>
+
+                <section class="ptr-sheet-block" *ngIf="distribucion.secciones.diagnostico">
+                  <h4>{{ etiquetaDiagnostico }}</h4>
+                  <div class="ptr-sheet-notes">
+                    <span class="ptr-sheet-line ptr-sheet-line--wide"></span>
+                  </div>
+                </section>
+
+                <section class="ptr-sheet-block" *ngIf="distribucion.secciones.medicamentos">
+                  <h4>{{ etiquetaMedicamentos }}</h4>
+                  <div class="ptr-sheet-meds">
+                    <div class="ptr-sheet-med">
+                      <span class="ptr-sheet-med-index">1</span>
+                      <div>
+                        <p class="ptr-sheet-line">Nombre del medicamento</p>
+                        <p class="ptr-sheet-line ptr-sheet-line--soft">Dosis · Frecuencia · Duración</p>
+                      </div>
+                    </div>
+                    <div class="ptr-sheet-med">
+                      <span class="ptr-sheet-med-index">2</span>
+                      <div>
+                        <p class="ptr-sheet-line">Nombre del medicamento</p>
+                        <p class="ptr-sheet-line ptr-sheet-line--soft">Dosis · Frecuencia · Duración</p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="ptr-sheet-block" *ngIf="distribucion.secciones.indicaciones">
+                  <h4>{{ etiquetaIndicaciones }}</h4>
+                  <div class="ptr-sheet-notes">
+                    <span class="ptr-sheet-line ptr-sheet-line--wide"></span>
+                    <span class="ptr-sheet-line ptr-sheet-line--wide"></span>
+                    <span class="ptr-sheet-line" *ngIf="distribucion.formato === 'carta'"></span>
+                  </div>
+                </section>
+
+                <section class="ptr-sheet-block" *ngIf="distribucion.secciones.proximaCita">
+                  <h4>{{ etiquetaProximaCita }}</h4>
+                  <div class="ptr-sheet-grid">
+                    <span class="ptr-sheet-line">Fecha</span>
+                    <span class="ptr-sheet-line">Hora</span>
+                  </div>
+                </section>
+              </div>
+
+              <footer class="ptr-sheet-footer" *ngIf="tieneBloqueFirmaPie">
+                <div class="ptr-sheet-sign-row" *ngIf="distribucion.secciones.firma || distribucion.secciones.sello">
+                  <div class="ptr-sheet-sign" *ngIf="distribucion.secciones.firma">
+                    <div class="ptr-sheet-sign-media">
+                      <img *ngIf="firmaPreviewSrc" [src]="firmaPreviewSrc" alt="Representación visual de firma" (error)="onAssetPreviewError('firma')" />
+                      <div *ngIf="!firmaPreviewSrc" class="ptr-sheet-sign-line"></div>
+                    </div>
+                    <div class="ptr-sheet-sign-meta" *ngIf="tieneDatosBajoFirma">
+                      <p class="ptr-sheet-sign-name" *ngIf="previewFirmaNombre">{{ previewFirmaNombre }}</p>
+                      <p *ngIf="previewFirmaEspecialidad">{{ previewFirmaEspecialidad }}</p>
+                      <p *ngIf="previewFirmaCedula">{{ previewFirmaCedula }}</p>
+                    </div>
+                    <p *ngIf="!tieneDatosBajoFirma && !firmaPreviewSrc">{{ etiquetaFirma }}</p>
+                  </div>
+
+                  <div class="ptr-sheet-seal" *ngIf="distribucion.secciones.sello">
+                    <img *ngIf="selloPreviewSrc" [src]="selloPreviewSrc" alt="Sello profesional" (error)="onAssetPreviewError('sello')" />
+                    <span *ngIf="!selloPreviewSrc">Sello</span>
+                  </div>
+                </div>
+
+                <p
+                  class="ptr-sheet-foot"
+                  *ngIf="distribucion.secciones.avisoLegal && previewTextoPie">
+                  {{ previewTextoPie }}
+                </p>
+
+                <div class="ptr-sheet-contact" *ngIf="tieneContactoPie">
+                  <span *ngIf="previewPieTelefono">{{ previewPieTelefono }}</span>
+                  <span *ngIf="previewPieCorreo">{{ previewPieCorreo }}</span>
+                  <span *ngIf="previewPieDireccion">{{ previewPieDireccion }}</span>
+                </div>
+
+                <div class="ptr-sheet-meta-row" *ngIf="tieneMetaPie">
+                  <span *ngIf="pie.mostrarNumeroPagina">Pág. 1 / 1</span>
+                  <span *ngIf="previewFechaGeneracion">{{ previewFechaGeneracion }}</span>
+                </div>
+              </footer>
+            </article>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Acciones -->
+    <footer class="ptr-actions">
+      <button
+        type="button"
+        class="ptr-btn ptr-btn--secondary"
+        (click)="restablecer()"
+        [disabled]="accionesBloqueadas">
+        <ion-spinner *ngIf="restableciendo" name="crescent"></ion-spinner>
+        <span>{{ restableciendo ? 'Restableciendo…' : 'Restablecer' }}</span>
+      </button>
+      <button
+        type="button"
+        class="ptr-btn ptr-btn--primary"
+        (click)="guardarPlantilla()"
+        [disabled]="accionesBloqueadas">
+        <ion-spinner *ngIf="guardando" name="crescent"></ion-spinner>
+        <span>{{ guardando ? 'Guardando…' : 'Guardar plantilla' }}</span>
+      </button>
+    </footer>
+  </div>
+
+  <app-confirm-dialog
+    *ngIf="confirmConfig"
+    [config]="confirmConfig"
+    (confirmed)="onConfirmConfirmed()"
+    (cancelled)="onConfirmCancelled()">
+  </app-confirm-dialog>
+</ion-content>

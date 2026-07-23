@@ -679,7 +679,7 @@
             <ion-icon name="medkit-outline"></ion-icon>
             <span>{{ recetasUi.length }} receta{{ recetasUi.length !== 1 ? 's' : '' }}</span>
           </div>
-          <button class="det-btn-primary" type="button" title="Próximamente">
+          <button class="det-btn-primary" type="button" (click)="abrirNuevaReceta()" title="Nueva receta">
             <ion-icon name="add-outline"></ion-icon>
             Nueva receta
           </button>
@@ -1156,6 +1156,13 @@
   </app-confirm-dialog>
 
 </ion-content>
+
+<!-- Fuera de ion-content: evita que el footer quede tapado por el scroll/bottom-menu -->
+<app-nueva-receta-panel
+  [abierto]="nuevaRecetaAbierta"
+  [paciente]="paciente"
+  (cerrado)="cerrarNuevaReceta()">
+</app-nueva-receta-panel>
 
 
 
