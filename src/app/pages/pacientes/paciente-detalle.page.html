@@ -672,12 +672,15 @@
         </ng-template>
       </div>
 
-      <!-- ==== SECCIÓN: RECETAS (UI-only) ==== -->
-      <div *ngIf="seccionActiva === 'recetas'" class="det-recetas det-section-panel">
+      <!-- ==== SECCIÓN: RECETAS ==== -->
+      <div
+        *ngIf="seccionActiva === 'recetas'"
+        class="det-recetas det-section-panel"
+        [class.det-section-panel--refreshing]="loadingRecetas && recetasLoaded">
         <div class="det-recetas-topbar">
           <div class="det-recetas-topbar__info">
             <ion-icon name="medkit-outline"></ion-icon>
-            <span>{{ recetasUi.length }} receta{{ recetasUi.length !== 1 ? 's' : '' }}</span>
+            <span>{{ totalRecetas }} receta{{ totalRecetas !== 1 ? 's' : '' }}</span>
           </div>
           <button class="det-btn-primary" type="button" (click)="abrirNuevaReceta()" title="Nueva receta">
             <ion-icon name="add-outline"></ion-icon>
@@ -685,8 +688,35 @@
           </button>
         </div>
 
-        <div class="det-receta-list" *ngIf="recetasUi.length > 0; else sinRecetasUi">
-          <article class="det-receta-card" *ngFor="let receta of recetasUi">
+        <div *ngIf="loadingRecetas && !recetasLoaded" class="det-section-skeleton">
+          <div class="det-section-skeleton__card" *ngFor="let line of skeletonLines">
+            <ion-skeleton-text animated style="width: 140px; height: 14px; border-radius: 999px;"></ion-skeleton-text>
+            <ion-skeleton-text animated style="width: 100%; height: 16px; border-radius: 999px;"></ion-skeleton-text>
+            <ion-skeleton-text animated style="width: 78%; height: 16px; border-radius: 999px;"></ion-skeleton-text>
+          </div>
+        </div>
+
+        <div *ngIf="recetasError && !loadingRecetas" class="det-empty">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          <p>No se pudieron cargar las recetas</p>
+          <span>{{ recetasError }}</span>
+          <button class="det-btn-outline det-empty-action" type="button" (click)="reintentarCargarRecetas()">
+            Reintentar
+          </button>
+        </div>
+
+        <div *ngIf="!loadingRecetas && recetasLoaded && !recetasError && recetas.length === 0" class="det-empty">
+          <ion-icon name="medkit-outline"></ion-icon>
+          <p>Este paciente todavía no tiene recetas.</p>
+          <span>Crea la primera receta del expediente clínico</span>
+          <button class="det-btn-primary det-empty-action" type="button" (click)="abrirNuevaReceta()">
+            <ion-icon name="add-outline"></ion-icon>
+            Nueva receta
+          </button>
+        </div>
+
+        <div class="det-receta-list" *ngIf="recetas.length > 0">
+          <article class="det-receta-card" *ngFor="let receta of recetas">
             <div class="det-receta-card__icon">
               <ion-icon name="medical-outline"></ion-icon>
             </div>
@@ -694,42 +724,80 @@
             <div class="det-receta-card__body">
               <div class="det-receta-card__row">
                 <div class="det-receta-card__main">
-                  <h4 class="det-receta-card__medicamento">{{ receta.medicamento }}</h4>
-                  <span class="det-receta-card__dosis">{{ receta.dosis }}</span>
+                  <h4 class="det-receta-card__medicamento">{{ receta.nombre }}</h4>
+                  <span class="det-receta-card__dosis" *ngIf="diagnosticoResumen(receta.diagnostico) as dx">
+                    {{ dx }}
+                  </span>
                 </div>
-                <span class="det-receta-card__estado" [attr.data-tone]="receta.estadoTone">
-                  {{ receta.estado }}
+                <span class="det-receta-card__estado" [attr.data-tone]="toneEstadoReceta(receta.estado)">
+                  {{ etiquetaEstadoReceta(receta.estado) }}
                 </span>
               </div>
 
               <div class="det-receta-card__meta">
                 <span class="det-receta-card__fecha">
                   <ion-icon name="calendar-outline"></ion-icon>
-                  {{ receta.fecha }}
+                  {{ formatFecha(receta.fecha_emision) }}
+                </span>
+                <span class="det-receta-card__fecha">
+                  v{{ receta.version_actual }}
+                </span>
+                <span class="det-receta-card__fecha">
+                  {{ receta.cantidad_medicamentos }} med.
+                </span>
+                <span class="det-receta-card__pdf" *ngIf="receta.tiene_pdf" title="PDF disponible">
+                  <ion-icon name="document-attach-outline"></ion-icon>
+                  PDF
+                </span>
+                <span class="det-receta-card__fecha" *ngIf="receta.updated_at">
+                  Act. {{ formatFecha(receta.updated_at) }}
                 </span>
               </div>
             </div>
 
             <div class="det-receta-card__actions">
-              <button class="det-receta-btn" type="button" title="Ver">
+              <button class="det-receta-btn" type="button" title="Ver" (click)="verReceta(receta)">
                 <ion-icon name="eye-outline"></ion-icon>
                 <span>Ver</span>
               </button>
-              <button class="det-receta-btn det-receta-btn--secondary" type="button" title="Descargar">
-                <ion-icon name="download-outline"></ion-icon>
-                <span>Descargar</span>
+              <button
+                class="det-receta-btn det-receta-btn--secondary"
+                type="button"
+                title="Abrir PDF"
+                aria-label="Abrir PDF en una nueva pestaña"
+                *ngIf="puedeAbrirPdfReceta(receta)"
+                [disabled]="abriendoPdfRecetaId != null"
+                [attr.aria-busy]="abriendoPdfRecetaId === receta.id_receta"
+                (click)="abrirPdfReceta(receta)">
+                <ion-icon name="document-outline" aria-hidden="true"></ion-icon>
+                <span>PDF</span>
+              </button>
+              <button
+                class="det-receta-btn det-receta-btn--secondary"
+                type="button"
+                title="Editar"
+                *ngIf="receta.estado === 'BORRADOR' || receta.estado === 'EMITIDA'"
+                (click)="editarReceta(receta)">
+                <ion-icon name="create-outline"></ion-icon>
+                <span>Editar</span>
+              </button>
+              <button
+                class="det-receta-btn det-receta-btn--secondary"
+                type="button"
+                title="Más opciones"
+                (click)="abrirMasOpcionesReceta(receta)">
+                <ion-icon name="ellipsis-horizontal-outline"></ion-icon>
+                <span>Más</span>
               </button>
             </div>
           </article>
-        </div>
 
-        <ng-template #sinRecetasUi>
-          <div class="det-empty">
-            <ion-icon name="medkit-outline"></ion-icon>
-            <p>Sin recetas registradas</p>
-            <span>Las recetas del paciente aparecerán aquí en orden cronológico</span>
+          <div *ngIf="!recetasIsLastPage" class="det-load-more">
+            <button class="det-btn-outline" type="button" (click)="cargarMasRecetas()" [disabled]="loadingRecetas">
+              {{ loadingRecetas ? 'Cargando…' : 'Cargar más' }}
+            </button>
           </div>
-        </ng-template>
+        </div>
       </div>
 
       <!-- ==== SECCIÓN: HISTORIAL ==== -->
@@ -1161,7 +1229,11 @@
 <app-nueva-receta-panel
   [abierto]="nuevaRecetaAbierta"
   [paciente]="paciente"
-  (cerrado)="cerrarNuevaReceta()">
+  [modo]="recetaPanelModo"
+  [idReceta]="recetaPanelId"
+  [accionInicial]="recetaPanelAccion"
+  (cerrado)="cerrarNuevaReceta()"
+  (cambiosGuardados)="onRecetaCambiosGuardados($event)">
 </app-nueva-receta-panel>
 
 

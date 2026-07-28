@@ -2,11 +2,12 @@ import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { IonicModule, ToastController } from '@ionic/angular';
+import { ActionSheetController, IonicModule, ToastController } from '@ionic/angular';
 import { AgfDatePickerComponent } from '../../shared/components/agf-date-picker/agf-date-picker.component';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PacientesApiService } from './pacientes-api.service';
 import { AdjuntosServiceApi } from 'src/app/services/adjuntos.service.api';
+import { RecetasApiService } from 'src/app/services/recetas-api.service';
 import {
   PacienteDto, PacienteRequest, ResumenPacienteDto,
   ALERTA_TIPO_OPTIONS, AlertaPacienteDto, AlertaPacienteRequest,
@@ -24,9 +25,22 @@ import { ConfirmDialogComponent, ConfirmDialogConfig } from '../../shared/confir
 import { PacienteSubmenuComponent, SeccionPaciente } from './components/paciente-submenu/paciente-submenu.component';
 import { PrimeraSesionChecklistComponent } from './components/eval-checklist/primera-sesion-checklist.component';
 import { ActividadRecienteTimelineComponent } from './components/actividad-reciente/actividad-reciente-timeline.component';
-import { NuevaRecetaPanelComponent } from './components/nueva-receta/nueva-receta-panel.component';
+import {
+  NuevaRecetaPanelComponent,
+  RecetaPanelCambioEvent,
+} from './components/nueva-receta/nueva-receta-panel.component';
 import { ActividadRecienteItem } from './components/actividad-reciente/actividad-reciente.models';
-import { mapApiError } from '../../shared/utils/api-error.mapper';
+import { mapApiError, mapRecetaApiError } from '../../shared/utils/api-error.mapper';
+import {
+  RECETA_PDF_MESSAGES,
+  openSignedPdfInNewTab,
+} from '../../shared/utils/receta-pdf-access.utils';
+import {
+  RecetaEstado,
+  RecetaModalModo,
+  RecetaResumen,
+  modoDesdeEstado,
+} from '../../shared/models/recetas.models';
 import html2pdf from 'html2pdf.js';
 import { PacienteDetailRefreshService } from '../../shared/refresh/dashboard-module-refresh.services';
 
@@ -126,27 +140,20 @@ export class PacienteDetallePage implements OnInit {
     },
   ];
 
-  /** Placeholder UI-only. Listo para recetas dinámicas. */
-  readonly recetasUi = [
-    {
-      id: 'sertralina',
-      fecha: '20 Julio',
-      medicamento: 'Sertralina',
-      dosis: '50 mg',
-      estado: 'Activa',
-      estadoTone: 'active' as const,
-    },
-    {
-      id: 'clonazepam',
-      fecha: '10 Junio',
-      medicamento: 'Clonazepam',
-      dosis: '0.25 mg',
-      estado: 'Finalizada',
-      estadoTone: 'done' as const,
-    },
-  ];
+  // ─── Recetas ───────────────────────────────────────────────────────────────
+  recetas: RecetaResumen[] = [];
+  loadingRecetas = false;
+  recetasLoaded = false;
+  recetasError = '';
+  recetasPage = 0;
+  recetasIsLastPage = true;
+  totalRecetas = 0;
+  abriendoPdfRecetaId: number | null = null;
 
   nuevaRecetaAbierta = false;
+  recetaPanelModo: RecetaModalModo = 'CREAR';
+  recetaPanelId: number | null = null;
+  recetaPanelAccion: 'ninguna' | 'copiar' = 'ninguna';
 
   /** Placeholder UI-only. Timeline de actividad reciente. */
   readonly actividadRecienteUi: ActividadRecienteItem[] = [
@@ -268,8 +275,10 @@ export class PacienteDetallePage implements OnInit {
     private router: Router,
     private svc: PacientesApiService,
     private adjuntosApi: AdjuntosServiceApi,
+    private recetasApi: RecetasApiService,
     private refresh: PacienteDetailRefreshService,
     private toastCtrl: ToastController,
+    private actionSheetCtrl: ActionSheetController,
   ) {
     this.destroyRef.onDestroy(() => this.clearInitialLoaderTimer());
   }
@@ -287,6 +296,9 @@ export class PacienteDetallePage implements OnInit {
         this.sesionesLoaded = false;
         this.historialLoaded = false;
         this.alertasLoaded = false;
+        this.recetasLoaded = false;
+        this.recetas = [];
+        this.recetasError = '';
         await this.cargarInformacionPaciente();
         if (this.seccionActiva !== 'informacion') {
           this.refresh.enterSection(this.seccionActiva);
@@ -333,11 +345,203 @@ export class PacienteDetallePage implements OnInit {
   }
 
   abrirNuevaReceta(): void {
+    this.recetaPanelModo = 'CREAR';
+    this.recetaPanelId = null;
+    this.recetaPanelAccion = 'ninguna';
     this.nuevaRecetaAbierta = true;
   }
 
   cerrarNuevaReceta(): void {
     this.nuevaRecetaAbierta = false;
+    this.recetaPanelId = null;
+    this.recetaPanelModo = 'CREAR';
+    this.recetaPanelAccion = 'ninguna';
+  }
+
+  abrirCopiaReceta(receta: RecetaResumen): void {
+    this.recetaPanelId = receta.id_receta;
+    this.recetaPanelModo = modoDesdeEstado(receta.estado, false);
+    this.recetaPanelAccion = 'copiar';
+    this.nuevaRecetaAbierta = true;
+  }
+
+  onRecetaCambiosGuardados(event: RecetaPanelCambioEvent): void {
+    this.recetaPanelId = event.detalle.id_receta;
+    if (event.accion === 'emitida' || event.accion === 'versionada') {
+      this.recetaPanelModo = 'VER_EMITIDA';
+    } else if (event.accion === 'copiada' || event.detalle.estado === 'BORRADOR') {
+      this.recetaPanelModo = 'EDITAR_BORRADOR';
+    } else {
+      this.recetaPanelModo = modoDesdeEstado(event.detalle.estado);
+    }
+    this.refresh.requestRefresh('recetas');
+  }
+
+  verReceta(receta: RecetaResumen): void {
+    this.abrirRecetaPanel(receta, false);
+  }
+
+  editarReceta(receta: RecetaResumen): void {
+    this.abrirRecetaPanel(receta, true);
+  }
+
+  private abrirRecetaPanel(receta: RecetaResumen, preferEdit: boolean): void {
+    this.recetaPanelId = receta.id_receta;
+    this.recetaPanelModo = modoDesdeEstado(receta.estado, preferEdit);
+    this.recetaPanelAccion = 'ninguna';
+    this.nuevaRecetaAbierta = true;
+  }
+
+  puedeAbrirPdfReceta(receta: RecetaResumen): boolean {
+    return !!receta.tiene_pdf && (receta.version_actual ?? 0) >= 1;
+  }
+
+  async abrirPdfReceta(receta: RecetaResumen, disposition: 'inline' | 'attachment' = 'inline'): Promise<void> {
+    if (!this.puedeAbrirPdfReceta(receta)) {
+      await this.presentToast(RECETA_PDF_MESSAGES.noPdf);
+      return;
+    }
+    if (this.abriendoPdfRecetaId != null) return;
+
+    this.abriendoPdfRecetaId = receta.id_receta;
+    try {
+      const result = await openSignedPdfInNewTab(async () => {
+        const res = await this.recetasApi.obtenerPdfUrl(receta.id_receta, disposition);
+        return res?.url;
+      });
+      if (!result.ok) {
+        await this.presentToast(result.userMessage);
+      }
+    } catch (err) {
+      await this.presentToast(
+        mapRecetaApiError(err).userMessage || RECETA_PDF_MESSAGES.generic,
+      );
+    } finally {
+      this.abriendoPdfRecetaId = null;
+    }
+  }
+
+  imprimirPdfReceta(receta: RecetaResumen): void {
+    void this.abrirPdfReceta(receta, 'inline');
+  }
+
+  descargarPdfReceta(receta: RecetaResumen): void {
+    void this.abrirPdfReceta(receta, 'attachment');
+  }
+
+  async abrirMasOpcionesReceta(receta: RecetaResumen): Promise<void> {
+    const buttons: { text: string; icon?: string; handler?: () => void; role?: string }[] = [
+      {
+        text: 'Ver',
+        icon: 'eye-outline',
+        handler: () => this.verReceta(receta),
+      },
+    ];
+
+    if (receta.estado === 'BORRADOR' || receta.estado === 'EMITIDA') {
+      buttons.push({
+        text: 'Editar',
+        icon: 'create-outline',
+        handler: () => this.editarReceta(receta),
+      });
+    }
+
+    if (this.puedeAbrirPdfReceta(receta)) {
+      buttons.push({
+        text: 'Abrir PDF',
+        icon: 'document-outline',
+        handler: () => { void this.abrirPdfReceta(receta, 'inline'); },
+      });
+      buttons.push({
+        text: 'Imprimir',
+        icon: 'print-outline',
+        handler: () => this.imprimirPdfReceta(receta),
+      });
+      buttons.push({
+        text: 'Descargar PDF',
+        icon: 'download-outline',
+        handler: () => this.descargarPdfReceta(receta),
+      });
+    }
+
+    if (receta.estado === 'EMITIDA' || receta.estado === 'ANULADA') {
+      buttons.push({
+        text: 'Guardar como copia',
+        icon: 'copy-outline',
+        handler: () => this.abrirCopiaReceta(receta),
+      });
+    }
+
+    buttons.push({ text: 'Cancelar', role: 'cancel' });
+
+    const sheet = await this.actionSheetCtrl.create({
+      header: receta.nombre,
+      buttons,
+    });
+    await sheet.present();
+  }
+
+  etiquetaEstadoReceta(estado: RecetaEstado): string {
+    switch (estado) {
+      case 'BORRADOR': return 'Borrador';
+      case 'EMITIDA': return 'Emitida';
+      case 'ANULADA': return 'Anulada';
+      default: return estado;
+    }
+  }
+
+  toneEstadoReceta(estado: RecetaEstado): 'draft' | 'active' | 'done' {
+    if (estado === 'BORRADOR') return 'draft';
+    if (estado === 'EMITIDA') return 'active';
+    return 'done';
+  }
+
+  diagnosticoResumen(texto: string | null | undefined): string {
+    const t = (texto || '').trim();
+    if (!t) return '';
+    return t.length > 80 ? `${t.slice(0, 77)}…` : t;
+  }
+
+  async cargarRecetas(reset = true): Promise<void> {
+    if (!this.paciente) return;
+    if (reset) {
+      this.recetasPage = 0;
+      this.loadingRecetas = true;
+      this.recetasError = '';
+    }
+    try {
+      const page = await this.recetasApi.listarRecetasPaciente(this.paciente.id_paciente, {
+        page: this.recetasPage,
+        size: 20,
+      });
+      const content = page.content ?? [];
+      if (reset) {
+        this.recetas = content;
+      } else {
+        this.recetas = [...this.recetas, ...content];
+      }
+      this.totalRecetas = page.total_elements ?? content.length;
+      this.recetasIsLastPage = page.last ?? true;
+      this.recetasLoaded = true;
+      this.recetasError = '';
+    } catch (err) {
+      this.recetasError = mapRecetaApiError(err).userMessage || 'No se pudieron cargar las recetas.';
+      if (reset && !this.recetasLoaded) {
+        this.recetas = [];
+      }
+    } finally {
+      this.loadingRecetas = false;
+    }
+  }
+
+  cargarMasRecetas(): void {
+    if (this.recetasIsLastPage || this.loadingRecetas) return;
+    this.recetasPage++;
+    void this.cargarRecetas(false);
+  }
+
+  reintentarCargarRecetas(): void {
+    void this.cargarRecetas(true);
   }
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -378,7 +582,9 @@ export class PacienteDetallePage implements OnInit {
   }
 
   formatFecha(iso: string): string {
-    return formatFechaUtil(iso);
+    if (!iso) return '—';
+    const datePart = iso.includes('T') ? iso.slice(0, 10) : iso;
+    return formatFechaUtil(datePart);
   }
 
   /** Solo presentación: etiqueta legible del tipo de alerta. */
@@ -1381,6 +1587,14 @@ export class PacienteDetallePage implements OnInit {
       .subscribe(event => {
         if (event.reason === 'request' || !this.historialLoaded) {
           void this.cargarHistorial();
+        }
+      });
+
+    this.refresh.watchSection('recetas')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(event => {
+        if (event.reason === 'request' || !this.recetasLoaded) {
+          void this.cargarRecetas();
         }
       });
   }

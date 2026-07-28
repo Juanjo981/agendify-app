@@ -3018,15 +3018,32 @@
   background: var(--success-soft);
   color: var(--success-dark, var(--success));
 
+  &[data-tone='active'] {
+    background: var(--success-soft);
+    color: var(--success-dark, var(--success));
+  }
+
   &[data-tone='done'] {
     background: var(--surface-muted);
     color: var(--text-muted);
   }
 
+  &[data-tone='draft'],
   &[data-tone='pending'] {
     background: var(--warning-soft);
     color: var(--warning-dark, var(--warning));
   }
+}
+
+.det-receta-card__pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary-mid);
+
+  ion-icon { font-size: 14px; }
 }
 
 .det-receta-card__meta {

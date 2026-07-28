@@ -14,10 +14,24 @@
   (click)="$event.stopPropagation()">
   <header class="nrp-header">
     <div class="nrp-header__text">
-      <h2 id="nrp-title">Nueva receta</h2>
+      <div class="nrp-header__title-row">
+        <h2 id="nrp-title">{{ tituloPanel }}</h2>
+        <span
+          class="nrp-estado"
+          *ngIf="estadoActual"
+          [attr.data-estado]="estadoActual">
+          {{ estadoActual }}
+          <ng-container *ngIf="versionActual > 0"> · v{{ versionActual }}</ng-container>
+        </span>
+      </div>
       <p>La apariencia se toma de tu plantilla. Los datos clínicos se capturan aquí.</p>
     </div>
-    <button type="button" class="nrp-close" (click)="cerrar()" aria-label="Cerrar">
+    <button
+      type="button"
+      class="nrp-close"
+      (click)="cerrar()"
+      [disabled]="operacionEnCurso"
+      aria-label="Cerrar">
       <ion-icon name="close-outline" aria-hidden="true"></ion-icon>
     </button>
   </header>
@@ -49,7 +63,7 @@
       role="tabpanel"
       [class.nrp-pane--active]="vistaMovil === 'datos'">
       <div class="nrp-scroll">
-        <div class="nrp-banner" *ngIf="esPredeterminada && !cargandoPlantilla">
+        <div class="nrp-banner" *ngIf="esPredeterminada && !cargandoPlantilla && !cargandoDetalle">
           <span>Usando la plantilla predeterminada de Agendify.</span>
           <button type="button" class="nrp-link" (click)="irAPlantilla()">Personalizar plantilla</button>
         </div>
@@ -59,37 +73,104 @@
           <button type="button" class="nrp-link" (click)="irAPlantilla()">Personalizar plantilla</button>
         </div>
 
-        <div class="nrp-loading" *ngIf="cargandoPlantilla">
-          <ion-spinner name="crescent"></ion-spinner>
-          <span>Cargando plantilla del profesional…</span>
+        <div class="nrp-banner nrp-banner--error" *ngIf="errorForm">
+          <span>{{ errorForm }}</span>
         </div>
 
-        <section class="nrp-section">
+        <div class="nrp-banner nrp-banner--warn" *ngIf="modo === 'EDITAR_EMITIDA' && !cargandoDetalle">
+          <span>
+            Esta receta ya fue emitida. Al guardar sobre la misma receta se generará una nueva versión
+            y la versión anterior se conservará.
+          </span>
+        </div>
+
+        <div class="nrp-banner nrp-banner--muted" *ngIf="modo === 'VER_ANULADA' && !cargandoDetalle">
+          <span>Receta anulada. Solo lectura; puedes abrir PDFs históricos o guardar como copia.</span>
+        </div>
+
+        <div class="nrp-loading" *ngIf="cargandoPlantilla || cargandoDetalle || ui.creandoVersion">
+          <ion-spinner name="crescent"></ion-spinner>
+          <span>
+            {{
+              ui.creandoVersion
+                ? 'Generando nueva versión…'
+                : cargandoDetalle
+                  ? 'Cargando receta…'
+                  : 'Cargando plantilla del profesional…'
+            }}
+          </span>
+        </div>
+
+        <section class="nrp-section" *ngIf="!cargandoDetalle">
           <h3 class="nrp-section__title">Datos de la receta</h3>
           <div class="nrp-fields nrp-fields--datos">
-            <label class="nrp-field">
-              <span class="nrp-field__label">Paciente</span>
-              <ion-input class="nrp-input" [(ngModel)]="contenido.pacienteNombre" placeholder="Nombre del paciente"></ion-input>
+            <label class="nrp-field nrp-field--full" [class.nrp-field--invalid]="fieldErrors['nombre']">
+              <span class="nrp-field__label">Nombre de la receta</span>
+              <ion-input
+                class="nrp-input"
+                [(ngModel)]="nombreReceta"
+                (ngModelChange)="marcarDirty()"
+                [readonly]="!camposEditables"
+                placeholder="Ej. Receta de control">
+              </ion-input>
             </label>
             <label class="nrp-field">
+              <span class="nrp-field__label">Paciente</span>
+              <ion-input
+                class="nrp-input"
+                [(ngModel)]="contenido.pacienteNombre"
+                (ngModelChange)="marcarDirty()"
+                [readonly]="!camposEditables"
+                placeholder="Nombre del paciente">
+              </ion-input>
+            </label>
+            <label class="nrp-field" [class.nrp-field--invalid]="fieldErrors['fechaEmision']">
               <span class="nrp-field__label">Fecha de emisión</span>
-              <ion-input class="nrp-input" [(ngModel)]="contenido.fechaEmision" placeholder="Fecha"></ion-input>
+              <ion-input
+                class="nrp-input"
+                type="date"
+                [(ngModel)]="contenido.fechaEmision"
+                (ngModelChange)="marcarDirty()"
+                [readonly]="!camposEditables"
+                placeholder="YYYY-MM-DD">
+              </ion-input>
             </label>
             <label class="nrp-field nrp-field--age" *ngIf="config.distribucion.secciones.edad_paciente">
               <span class="nrp-field__label">Edad</span>
-              <ion-input class="nrp-input" [(ngModel)]="contenido.edad" placeholder="Ej. 32 años"></ion-input>
+              <ion-input
+                class="nrp-input"
+                [(ngModel)]="contenido.edad"
+                (ngModelChange)="marcarDirty()"
+                [readonly]="!camposEditables"
+                placeholder="Ej. 32 años">
+              </ion-input>
             </label>
-            <label class="nrp-field nrp-field--full" *ngIf="config.distribucion.secciones.diagnostico">
+            <label
+              class="nrp-field nrp-field--full"
+              *ngIf="config.distribucion.secciones.diagnostico"
+              [class.nrp-field--invalid]="fieldErrors['contenido']">
               <span class="nrp-field__label">Diagnóstico</span>
-              <ion-input class="nrp-input" [(ngModel)]="contenido.diagnostico" placeholder="Diagnóstico"></ion-input>
+              <ion-input
+                class="nrp-input"
+                [(ngModel)]="contenido.diagnostico"
+                (ngModelChange)="marcarDirty()"
+                [readonly]="!camposEditables"
+                placeholder="Diagnóstico">
+              </ion-input>
             </label>
           </div>
         </section>
 
-        <section class="nrp-section">
+        <section class="nrp-section" *ngIf="!cargandoDetalle">
           <div class="nrp-section-head">
             <h3 class="nrp-section__title">Medicamentos</h3>
-            <button type="button" class="nrp-add-btn" (click)="agregarMedicamento()">+ Agregar</button>
+            <button
+              type="button"
+              class="nrp-add-btn"
+              *ngIf="camposEditables"
+              (click)="agregarMedicamento()">
+              + Agregar
+            </button>
           </div>
 
           <div class="nrp-med" *ngFor="let med of contenido.medicamentos; let i = index; trackBy: trackMed">
@@ -98,54 +179,162 @@
               <button
                 type="button"
                 class="nrp-med__delete"
+                *ngIf="camposEditables"
                 (click)="quitarMedicamento(i)"
                 aria-label="Eliminar medicamento">
                 <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
               </button>
             </div>
             <div class="nrp-fields nrp-fields--med">
-              <label class="nrp-field nrp-field--full">
+              <label class="nrp-field nrp-field--full" [class.nrp-field--invalid]="fieldErrors['contenido']">
                 <span class="nrp-field__label">Nombre</span>
-                <ion-input class="nrp-input" [(ngModel)]="med.nombre" placeholder="Nombre del medicamento"></ion-input>
+                <ion-input
+                  class="nrp-input"
+                  [(ngModel)]="med.nombre"
+                  (ngModelChange)="marcarDirty()"
+                  [readonly]="!camposEditables"
+                  placeholder="Nombre del medicamento">
+                </ion-input>
               </label>
               <label class="nrp-field">
                 <span class="nrp-field__label">Dosis</span>
-                <ion-input class="nrp-input" [(ngModel)]="med.dosis" placeholder="Ej. 50 mg"></ion-input>
+                <ion-input
+                  class="nrp-input"
+                  [(ngModel)]="med.dosis"
+                  (ngModelChange)="marcarDirty()"
+                  [readonly]="!camposEditables"
+                  placeholder="Ej. 50 mg">
+                </ion-input>
               </label>
               <label class="nrp-field">
                 <span class="nrp-field__label">Frecuencia</span>
-                <ion-input class="nrp-input" [(ngModel)]="med.frecuencia" placeholder="Ej. cada 24 h"></ion-input>
+                <ion-input
+                  class="nrp-input"
+                  [(ngModel)]="med.frecuencia"
+                  (ngModelChange)="marcarDirty()"
+                  [readonly]="!camposEditables"
+                  placeholder="Ej. cada 24 h">
+                </ion-input>
               </label>
               <label class="nrp-field nrp-field--full">
                 <span class="nrp-field__label">Duración</span>
-                <ion-input class="nrp-input" [(ngModel)]="med.duracion" placeholder="Ej. 30 días"></ion-input>
+                <ion-input
+                  class="nrp-input"
+                  [(ngModel)]="med.duracion"
+                  (ngModelChange)="marcarDirty()"
+                  [readonly]="!camposEditables"
+                  placeholder="Ej. 30 días">
+                </ion-input>
               </label>
             </div>
           </div>
         </section>
 
-        <section class="nrp-section">
+        <section class="nrp-section" *ngIf="!cargandoDetalle">
           <h3 class="nrp-section__title">Indicaciones</h3>
           <ion-textarea
             class="nrp-textarea"
             rows="3"
             autoGrow="true"
             [(ngModel)]="contenido.indicaciones"
+            (ngModelChange)="marcarDirty()"
+            [readonly]="!camposEditables"
             placeholder="Indicaciones generales">
           </ion-textarea>
         </section>
 
-        <section class="nrp-section" *ngIf="config.distribucion.secciones.proxima_cita">
+        <section class="nrp-section" *ngIf="!cargandoDetalle && config.distribucion.secciones.proxima_cita">
           <h3 class="nrp-section__title">Próxima cita</h3>
           <div class="nrp-fields">
             <label class="nrp-field">
               <span class="nrp-field__label">Fecha</span>
-              <ion-input class="nrp-input" [(ngModel)]="contenido.proximaCitaFecha" placeholder="Fecha"></ion-input>
+              <ion-input
+                class="nrp-input"
+                type="date"
+                [(ngModel)]="contenido.proximaCitaFecha"
+                (ngModelChange)="marcarDirty()"
+                [readonly]="!camposEditables"
+                placeholder="Fecha">
+              </ion-input>
             </label>
             <label class="nrp-field">
               <span class="nrp-field__label">Hora</span>
-              <ion-input class="nrp-input" [(ngModel)]="contenido.proximaCitaHora" placeholder="Hora"></ion-input>
+              <ion-input
+                class="nrp-input"
+                type="time"
+                [(ngModel)]="contenido.proximaCitaHora"
+                (ngModelChange)="marcarDirty()"
+                [readonly]="!camposEditables"
+                placeholder="Hora">
+              </ion-input>
             </label>
+          </div>
+        </section>
+
+        <section class="nrp-section nrp-historial" *ngIf="!cargandoDetalle && puedeVerHistorial">
+          <button
+            type="button"
+            class="nrp-historial__toggle"
+            (click)="toggleHistorial()"
+            [attr.aria-expanded]="historialExpandido"
+            aria-controls="nrp-historial-panel">
+            <span>Historial de versiones</span>
+            <ion-icon
+              [name]="historialExpandido ? 'chevron-up-outline' : 'chevron-down-outline'"
+              aria-hidden="true">
+            </ion-icon>
+          </button>
+
+          <div
+            id="nrp-historial-panel"
+            class="nrp-historial__panel"
+            *ngIf="historialExpandido"
+            role="region"
+            aria-label="Historial de versiones de la receta">
+            <p class="nrp-historial__hint">
+              Se abrirá el PDF en una nueva pestaña. Cada acceso solicita una URL nueva.
+            </p>
+            <ul class="nrp-historial__list">
+              <li
+                class="nrp-historial__item"
+                *ngFor="let version of historialVersiones"
+                [class.nrp-historial__item--actual]="version.es_actual">
+                <div class="nrp-historial__meta">
+                  <strong>Versión {{ version.numero_version }}</strong>
+                  <span class="nrp-historial__badge" *ngIf="version.es_actual">Versión actual</span>
+                  <span class="nrp-historial__tipo">{{ etiquetaTipoVersion(version.tipo_guardado) }}</span>
+                  <span class="nrp-historial__file" *ngIf="version.nombre_archivo">{{ version.nombre_archivo }}</span>
+                </div>
+                <div class="nrp-historial__actions">
+                  <button
+                    type="button"
+                    class="nrp-historial__btn"
+                    (click)="abrirPdfVersion(version)"
+                    [disabled]="pdfBusy"
+                    [attr.aria-label]="'Abrir PDF versión ' + version.numero_version"
+                    [attr.aria-busy]="pdfActionLoading === ('version-' + version.numero_version + '-abrir')">
+                    <ion-spinner
+                      *ngIf="pdfActionLoading === ('version-' + version.numero_version + '-abrir')"
+                      name="crescent">
+                    </ion-spinner>
+                    <span *ngIf="pdfActionLoading !== ('version-' + version.numero_version + '-abrir')">Abrir</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="nrp-historial__btn"
+                    (click)="descargarPdfVersion(version)"
+                    [disabled]="pdfBusy"
+                    [attr.aria-label]="'Descargar PDF versión ' + version.numero_version"
+                    [attr.aria-busy]="pdfActionLoading === ('version-' + version.numero_version + '-descargar')">
+                    <ion-spinner
+                      *ngIf="pdfActionLoading === ('version-' + version.numero_version + '-descargar')"
+                      name="crescent">
+                    </ion-spinner>
+                    <span *ngIf="pdfActionLoading !== ('version-' + version.numero_version + '-descargar')">Descargar</span>
+                  </button>
+                </div>
+              </li>
+            </ul>
           </div>
         </section>
       </div>
@@ -167,8 +356,226 @@
 
   <footer class="nrp-footer">
     <div class="nrp-footer-actions">
-      <button type="button" class="nrp-btn nrp-btn--ghost" (click)="cerrar()">Cerrar</button>
-      <button type="button" class="nrp-btn nrp-btn--primary" (click)="cerrar()">Guardar receta</button>
+      <button
+        type="button"
+        class="nrp-btn nrp-btn--ghost"
+        (click)="cerrar()"
+        [disabled]="operacionEnCurso">
+        Cerrar
+      </button>
+
+      <button
+        type="button"
+        class="nrp-btn nrp-btn--ghost"
+        *ngIf="puedeAbrirPdf"
+        (click)="abrirPdfActual()"
+        [disabled]="operacionEnCurso || pdfBusy"
+        aria-label="Abrir PDF en una nueva pestaña"
+        [attr.aria-busy]="pdfActionLoading === 'abrir'">
+        <ion-spinner *ngIf="pdfActionLoading === 'abrir'" name="crescent"></ion-spinner>
+        <span *ngIf="pdfActionLoading !== 'abrir'">Abrir PDF</span>
+      </button>
+
+      <button
+        type="button"
+        class="nrp-btn nrp-btn--ghost"
+        *ngIf="puedeAbrirPdf"
+        (click)="imprimirPdfActual()"
+        [disabled]="operacionEnCurso || pdfBusy"
+        title="Se abrirá el PDF en una nueva pestaña para imprimirlo."
+        aria-label="Abrir PDF para imprimir"
+        [attr.aria-busy]="pdfActionLoading === 'imprimir'">
+        <ion-spinner *ngIf="pdfActionLoading === 'imprimir'" name="crescent"></ion-spinner>
+        <span *ngIf="pdfActionLoading !== 'imprimir'">Imprimir</span>
+      </button>
+
+      <button
+        type="button"
+        class="nrp-btn nrp-btn--ghost"
+        *ngIf="puedeAbrirPdf"
+        (click)="descargarPdfActual()"
+        [disabled]="operacionEnCurso || pdfBusy"
+        aria-label="Descargar PDF"
+        [attr.aria-busy]="pdfActionLoading === 'descargar'">
+        <ion-spinner *ngIf="pdfActionLoading === 'descargar'" name="crescent"></ion-spinner>
+        <span *ngIf="pdfActionLoading !== 'descargar'">Descargar</span>
+      </button>
+
+      <button
+        type="button"
+        class="nrp-btn nrp-btn--ghost"
+        *ngIf="modo === 'VER_EMITIDA'"
+        (click)="pasarAEditarEmitida()"
+        [disabled]="operacionEnCurso || pdfBusy">
+        Editar
+      </button>
+
+      <button
+        type="button"
+        class="nrp-btn nrp-btn--ghost"
+        *ngIf="puedeIniciarCopia && modo !== 'EDITAR_EMITIDA'"
+        (click)="abrirDialogoCopia()"
+        [disabled]="operacionEnCurso || pdfBusy"
+        aria-label="Guardar como copia">
+        Guardar como copia
+      </button>
+
+      <button
+        type="button"
+        class="nrp-btn nrp-btn--ghost"
+        *ngIf="puedeEmitir"
+        (click)="solicitarEmitir()"
+        [disabled]="operacionEnCurso">
+        <ion-spinner *ngIf="ui.emitiendo" name="crescent"></ion-spinner>
+        <span *ngIf="!ui.emitiendo">Emitir receta</span>
+      </button>
+
+      <button
+        type="button"
+        class="nrp-btn nrp-btn--primary"
+        *ngIf="puedeGuardarBorrador"
+        (click)="guardarBorrador()"
+        [disabled]="operacionEnCurso">
+        <ion-spinner *ngIf="ui.guardando" name="crescent"></ion-spinner>
+        <span *ngIf="!ui.guardando">{{ etiquetaGuardarBorrador }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="nrp-btn nrp-btn--primary"
+        *ngIf="puedeGuardarEmitida"
+        (click)="solicitarGuardarEmitida()"
+        [disabled]="operacionEnCurso">
+        <ion-spinner *ngIf="ui.creandoVersion" name="crescent"></ion-spinner>
+        <span *ngIf="!ui.creandoVersion">Guardar cambios</span>
+      </button>
     </div>
   </footer>
 </aside>
+
+<!-- Diálogo: ¿Cómo quieres guardar los cambios? -->
+<div class="nrp-overlay" *ngIf="dialogoActivo === 'decision_guardar'" role="presentation">
+  <div class="nrp-overlay__backdrop" (click)="cancelarDialogo()"></div>
+  <div
+    class="nrp-sheet"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nrp-decision-title"
+    (click)="$event.stopPropagation()">
+    <h3 id="nrp-decision-title">¿Cómo quieres guardar los cambios?</h3>
+    <button type="button" class="nrp-sheet__option" (click)="elegirGuardarNuevaVersion()">
+      <strong>Guardar como nueva versión</strong>
+      <span>Conserva la misma receta, genera un nuevo PDF e incrementa la versión. Las anteriores se conservan.</span>
+    </button>
+    <button type="button" class="nrp-sheet__option" (click)="elegirGuardarComoCopia()">
+      <strong>Guardar como copia</strong>
+      <span>La original queda intacta. Se crea una receta nueva en borrador con el nombre que indiques.</span>
+    </button>
+    <button type="button" class="nrp-sheet__cancel" (click)="cancelarDialogo()">Cancelar</button>
+  </div>
+</div>
+
+<!-- Diálogo: renombrar copia -->
+<div class="nrp-overlay" *ngIf="dialogoActivo === 'copiar'" role="presentation">
+  <div class="nrp-overlay__backdrop" (click)="cancelarDialogo()"></div>
+  <div
+    class="nrp-sheet nrp-sheet--form"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nrp-copia-title"
+    (click)="$event.stopPropagation()">
+    <h3 id="nrp-copia-title">Guardar como copia</h3>
+    <p class="nrp-sheet__lead">La receta original no se modifica. La copia inicia como borrador sin PDF.</p>
+
+    <label class="nrp-field" [class.nrp-field--invalid]="!!copiaNombreError">
+      <span class="nrp-field__label">Nombre de la nueva receta</span>
+      <ion-input
+        class="nrp-input"
+        [(ngModel)]="copiaNombre"
+        [maxlength]="255"
+        placeholder="Nombre de la copia">
+      </ion-input>
+      <span class="nrp-field__error" *ngIf="copiaNombreError">{{ copiaNombreError }}</span>
+    </label>
+
+    <label class="nrp-field">
+      <span class="nrp-field__label">Fecha de emisión</span>
+      <ion-input class="nrp-input" type="date" [(ngModel)]="copiaFechaEmision"></ion-input>
+    </label>
+
+    <label class="nrp-check">
+      <input type="checkbox" [(ngModel)]="copiaNotasInternas" />
+      <span>Copiar notas internas</span>
+    </label>
+
+    <div class="nrp-sheet__actions">
+      <button type="button" class="nrp-btn nrp-btn--ghost" (click)="cancelarDialogo()" [disabled]="ui.creandoCopia">
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="nrp-btn nrp-btn--primary"
+        (click)="confirmarCrearCopia()"
+        [disabled]="ui.creandoCopia"
+        [attr.aria-busy]="ui.creandoCopia">
+        <ion-spinner *ngIf="ui.creandoCopia" name="crescent"></ion-spinner>
+        <span *ngIf="!ui.creandoCopia">Crear copia</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Diálogo: conflicto 409 -->
+<div class="nrp-overlay" *ngIf="dialogoActivo === 'conflicto_version'" role="presentation">
+  <div class="nrp-overlay__backdrop" (click)="conservarEdicionTrasConflicto()"></div>
+  <div
+    class="nrp-sheet nrp-sheet--form"
+    role="alertdialog"
+    aria-modal="true"
+    aria-labelledby="nrp-conflicto-title"
+    (click)="$event.stopPropagation()">
+    <h3 id="nrp-conflicto-title">Conflicto de versión</h3>
+    <p class="nrp-sheet__lead">
+      Esta receta fue modificada desde otra sesión. Recarga la versión más reciente antes de volver a guardar.
+    </p>
+    <p class="nrp-sheet__lead" *ngIf="formularioLocalBackup">
+      Tus cambios locales se conservan en memoria hasta que decidas recargar o seguir editando.
+    </p>
+    <div class="nrp-sheet__actions">
+      <button type="button" class="nrp-btn nrp-btn--ghost" (click)="conservarEdicionTrasConflicto()">
+        Cancelar
+      </button>
+      <button type="button" class="nrp-btn nrp-btn--primary" (click)="recargarTrasConflicto()">
+        Recargar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Diálogo: descartar cambios -->
+<div class="nrp-overlay" *ngIf="dialogoActivo === 'descartar_cambios'" role="presentation">
+  <div class="nrp-overlay__backdrop" (click)="cancelarDialogo()"></div>
+  <div
+    class="nrp-sheet nrp-sheet--form"
+    role="alertdialog"
+    aria-modal="true"
+    aria-labelledby="nrp-dirty-title"
+    (click)="$event.stopPropagation()">
+    <h3 id="nrp-dirty-title">Hay cambios sin guardar</h3>
+    <p class="nrp-sheet__lead">Si sales ahora, se perderán los cambios locales.</p>
+    <div class="nrp-sheet__actions">
+      <button type="button" class="nrp-btn nrp-btn--ghost" (click)="cancelarDialogo()">
+        Seguir editando
+      </button>
+      <button type="button" class="nrp-btn nrp-btn--primary" (click)="confirmarDescartarCambios()">
+        Descartar cambios
+      </button>
+    </div>
+  </div>
+</div>
+
+<app-confirm-dialog
+  [config]="confirmConfig"
+  (confirmed)="onConfirmDialogConfirmed()"
+  (cancelled)="onConfirmDialogCancelled()">
+</app-confirm-dialog>

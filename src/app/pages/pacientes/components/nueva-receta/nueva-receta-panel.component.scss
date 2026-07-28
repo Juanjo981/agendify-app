@@ -110,6 +110,40 @@
     line-height: 1.4;
     overflow-wrap: break-word;
   }
+
+  &__title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+  }
+}
+
+.nrp-estado {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: #fef3c7;
+  color: #92400e;
+
+  &[data-estado='EMITIDA'] {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  &[data-estado='ANULADA'] {
+    background: #f1f5f9;
+    color: #64748b;
+  }
+
+  &[data-estado='BORRADOR'] {
+    background: #fef3c7;
+    color: #92400e;
+  }
 }
 
 .nrp-close {
@@ -307,6 +341,18 @@
     background: #fef2f2;
     color: #b91c1c;
   }
+
+  &--warn {
+    border-color: rgba(217, 119, 6, 0.28);
+    background: #fffbeb;
+    color: #92400e;
+  }
+
+  &--muted {
+    border-color: rgba(100, 116, 139, 0.22);
+    background: #f8fafc;
+    color: #475569;
+  }
 }
 
 .nrp-link {
@@ -460,6 +506,18 @@
   text-transform: uppercase;
 }
 
+.nrp-field--invalid {
+  .nrp-field__label {
+    color: #b91c1c;
+  }
+
+  .nrp-input,
+  ion-input.nrp-input {
+    --border-color: #fca5a5;
+    box-shadow: 0 0 0 1px rgba(185, 28, 28, 0.2);
+  }
+}
+
 .nrp-input,
 .nrp-textarea {
   width: 100%;
@@ -558,6 +616,320 @@
   }
 }
 
+// ── Overlays / sheets (decisión, copia, conflicto, dirty) ───────────────────
+.nrp-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10080;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.nrp-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.nrp-sheet {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 520px;
+  max-height: min(85dvh, 640px);
+  overflow: auto;
+  margin: 0;
+  padding: 18px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  border-radius: 18px 18px 0 0;
+  background: #fff;
+  box-shadow: 0 -8px 28px rgba(15, 23, 42, 0.18);
+  box-sizing: border-box;
+
+  h3 {
+    margin: 0 0 12px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1d2940;
+  }
+}
+
+.nrp-sheet__lead {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #64708a;
+}
+
+.nrp-sheet__option {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 0 0 10px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(91, 103, 145, 0.16);
+  background: #fbfcff;
+  text-align: left;
+  cursor: pointer;
+
+  strong {
+    font-size: 14px;
+    color: #1d2940;
+  }
+
+  span {
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: #64708a;
+  }
+
+  &:hover {
+    border-color: color-mix(in srgb, #3b3f92 35%, rgba(91, 103, 145, 0.16));
+    background: color-mix(in srgb, #3b3f92 5%, #fff);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #3b3f92;
+    outline-offset: 2px;
+  }
+}
+
+.nrp-sheet__cancel {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 10px;
+  background: #f1f3f8;
+  color: #1d2940;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.nrp-sheet__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+
+  .nrp-btn {
+    width: 100%;
+  }
+}
+
+.nrp-sheet--form {
+  .nrp-field {
+    margin-bottom: 12px;
+  }
+}
+
+.nrp-field__error {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+.nrp-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d2940;
+  cursor: pointer;
+
+  input {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media (min-width: 768px) {
+  .nrp-overlay {
+    align-items: center;
+    padding: 24px;
+  }
+
+  .nrp-sheet {
+    border-radius: 16px;
+    padding: 22px 22px 18px;
+    max-height: min(80vh, 560px);
+  }
+
+  .nrp-sheet__actions {
+    flex-direction: row;
+    justify-content: flex-end;
+
+    .nrp-btn {
+      width: auto;
+      min-width: 132px;
+    }
+  }
+}
+
+// ── Historial de versiones (carga diferida al expandir) ─────────────────────
+.nrp-historial {
+  margin-top: 4px;
+}
+
+.nrp-historial__toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(91, 103, 145, 0.14);
+  border-radius: 12px;
+  background: #fff;
+  color: #1d2940;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  text-align: left;
+
+  ion-icon {
+    font-size: 18px;
+    color: #697793;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #3b3f92;
+    outline-offset: 2px;
+  }
+}
+
+.nrp-historial__panel {
+  margin-top: 10px;
+}
+
+.nrp-historial__hint {
+  margin: 0 0 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #697793;
+}
+
+.nrp-historial__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nrp-historial__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(91, 103, 145, 0.12);
+  background: #fbfcff;
+
+  &--actual {
+    border-color: color-mix(in srgb, #3b3f92 35%, rgba(91, 103, 145, 0.12));
+    background: color-mix(in srgb, #3b3f92 6%, #fff);
+  }
+}
+
+.nrp-historial__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  min-width: 0;
+  flex: 1 1 180px;
+
+  strong {
+    font-size: 13px;
+    color: #1d2940;
+  }
+}
+
+.nrp-historial__badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.nrp-historial__tipo,
+.nrp-historial__file {
+  font-size: 12px;
+  font-weight: 600;
+  color: #697793;
+}
+
+.nrp-historial__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.nrp-historial__btn {
+  min-height: 36px;
+  min-width: 84px;
+  padding: 6px 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(91, 103, 145, 0.16);
+  background: #fff;
+  color: #1d2940;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  ion-spinner {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #3b3f92;
+    outline-offset: 2px;
+  }
+}
+
+@media (max-width: 700px) {
+  .nrp-historial__item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .nrp-historial__actions {
+    width: 100%;
+  }
+
+  .nrp-historial__btn {
+    flex: 1 1 0;
+  }
+}
+
 // ── Footer del modal (siempre visible; encima del menú global) ───────────────
 .nrp-footer {
   position: relative;
@@ -601,6 +973,20 @@
   cursor: pointer;
   box-sizing: border-box;
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  ion-spinner {
+    width: 18px;
+    height: 18px;
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
 
   &:focus-visible {
     outline: 2px solid #3b3f92;

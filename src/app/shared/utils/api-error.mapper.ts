@@ -24,6 +24,17 @@ export const API_ERROR_CODES = {
   ILLEGAL_STATE:               'ILLEGAL_STATE',
   BUSINESS_ERROR:              'BUSINESS_ERROR',
   INTERNAL_ERROR:              'INTERNAL_ERROR',
+  CONFLICT:                    'CONFLICT',
+  // Recetas médicas
+  RECETA_NOT_FOUND:            'RECETA_NOT_FOUND',
+  RECETA_PDF_UNAVAILABLE:      'RECETA_PDF_UNAVAILABLE',
+  PDF_GENERATION_ERROR:        'PDF_GENERATION_ERROR',
+  PRESIGNED_URL_ERROR:         'PRESIGNED_URL_ERROR',
+  STORAGE_OBJECT_NOT_FOUND:    'STORAGE_OBJECT_NOT_FOUND',
+  OBJECT_STORAGE_READ_ERROR:   'OBJECT_STORAGE_READ_ERROR',
+  OBJECT_STORAGE_UPLOAD_ERROR: 'OBJECT_STORAGE_UPLOAD_ERROR',
+  INVALID_PDF_OBJECT:          'INVALID_PDF_OBJECT',
+  PROFESSIONAL_NOT_FOUND:      'PROFESSIONAL_NOT_FOUND',
 } as const;
 
 export type ApiErrorCode = typeof API_ERROR_CODES[keyof typeof API_ERROR_CODES];
@@ -102,6 +113,80 @@ function statusFallback(status: number): string {
     case 500: return 'Ocurrió un error en el servidor. Por favor intenta de nuevo más tarde.';
     default:  return 'Ocurrió un error inesperado. Por favor intenta de nuevo.';
   }
+}
+
+function mapRecetaConflictMessage(message: string | undefined, status: number): string {
+  const lower = (message ?? '').toLowerCase();
+  if (lower.includes('emitida')) {
+    return message ?? 'La receta ya fue emitida y no admite esta operación.';
+  }
+  if (lower.includes('anulad')) {
+    return message ?? 'La receta está anulada y no admite esta operación.';
+  }
+  if (lower.includes('borrador')) {
+    return message ?? 'La operación solo aplica a recetas en borrador.';
+  }
+  if (lower.includes('versión') || lower.includes('version')) {
+    return message ?? 'Hay un conflicto de versión. Recarga la receta e inténtalo de nuevo.';
+  }
+  if (lower.includes('plantilla')) {
+    return message ?? 'La plantilla de receta no es válida.';
+  }
+  if (lower.includes('paciente')) {
+    return message ?? 'El paciente indicado no es válido.';
+  }
+  return message ?? statusFallback(status);
+}
+
+/**
+ * Atajo orientado a pantallas de recetas: conserva mapApiError y
+ * mejora mensajes 404/409/422 frecuentes del módulo.
+ */
+export function mapRecetaApiError(err: unknown): MappedApiError {
+  const mapped = mapApiError(err);
+  const lower = (mapped.userMessage || mapped.raw?.message || '').toLowerCase();
+
+  if (mapped.status === 404 && !mapped.code) {
+    return { ...mapped, userMessage: 'La receta o el paciente no fueron encontrados.' };
+  }
+  if (mapped.status === 409) {
+    const conflictLower = (mapped.userMessage || '').toLowerCase();
+    if (
+      conflictLower.includes('versión') ||
+      conflictLower.includes('version') ||
+      conflictLower.includes('concurrente') ||
+      conflictLower.includes('mientras')
+    ) {
+      return {
+        ...mapped,
+        userMessage:
+          'Esta receta fue modificada desde otra sesión. Recarga la versión más reciente antes de volver a guardar.',
+      };
+    }
+    return {
+      ...mapped,
+      userMessage: mapRecetaConflictMessage(mapped.userMessage, 409),
+    };
+  }
+  if (mapped.status === 422) {
+    if (lower.includes('no tiene un pdf') || lower.includes('sin pdf')) {
+      return { ...mapped, userMessage: 'La receta todavía no tiene un PDF.' };
+    }
+    return {
+      ...mapped,
+      userMessage:
+        mapped.userMessage === statusFallback(422)
+          ? 'No se pudo completar la operación sobre la receta. Revisa el contenido clínico.'
+          : mapped.userMessage,
+    };
+  }
+  if (mapped.code === API_ERROR_CODES.PRESIGNED_URL_ERROR) {
+    return {
+      ...mapped,
+      userMessage: 'La sesión de acceso al archivo expiró. Inténtalo nuevamente.',
+    };
+  }
+  return mapped;
 }
 
 // ── Main mapper ───────────────────────────────────────────────────────────────
@@ -219,12 +304,63 @@ export function mapApiError(err: unknown): MappedApiError {
         code, status: err.status, raw: body as ApiErrorResponse,
       };
 
+    case API_ERROR_CODES.RECETA_NOT_FOUND:
+      return {
+        userMessage: message ?? 'La receta no fue encontrada o no tienes acceso.',
+        code, status: err.status, raw: body as ApiErrorResponse,
+      };
+
+    case API_ERROR_CODES.PROFESSIONAL_NOT_FOUND:
+      return {
+        userMessage: message ?? 'No se encontró el perfil profesional asociado.',
+        code, status: err.status, raw: body as ApiErrorResponse,
+      };
+
+    case API_ERROR_CODES.STORAGE_OBJECT_NOT_FOUND:
+      return {
+        userMessage: message ?? 'El archivo no está disponible.',
+        code, status: err.status, raw: body as ApiErrorResponse,
+      };
+
     // ── Conflict / integrity ────────────────────────────────────────────────
     case API_ERROR_CODES.DATA_INTEGRITY:
     case API_ERROR_CODES.DATA_INTEGRITY_ERROR:
     case API_ERROR_CODES.ILLEGAL_STATE:
+    case API_ERROR_CODES.CONFLICT:
       return {
-        userMessage: message ?? 'Conflicto de datos. Intenta de nuevo.',
+        userMessage: message ?? mapRecetaConflictMessage(message, err.status),
+        code, status: err.status, raw: body as ApiErrorResponse,
+      };
+
+    case API_ERROR_CODES.RECETA_PDF_UNAVAILABLE:
+      return {
+        userMessage: message ?? 'El archivo no está disponible.',
+        code, status: err.status, raw: body as ApiErrorResponse,
+      };
+
+    case API_ERROR_CODES.PDF_GENERATION_ERROR:
+      return {
+        userMessage: message ?? 'No se pudo generar el PDF de la receta. Inténtalo de nuevo.',
+        code, status: err.status, raw: body as ApiErrorResponse,
+      };
+
+    case API_ERROR_CODES.PRESIGNED_URL_ERROR:
+      return {
+        userMessage:
+          message ?? 'La sesión de acceso al archivo expiró. Inténtalo nuevamente.',
+        code, status: err.status, raw: body as ApiErrorResponse,
+      };
+
+    case API_ERROR_CODES.OBJECT_STORAGE_READ_ERROR:
+    case API_ERROR_CODES.OBJECT_STORAGE_UPLOAD_ERROR:
+      return {
+        userMessage: message ?? 'El archivo no está disponible.',
+        code, status: err.status, raw: body as ApiErrorResponse,
+      };
+
+    case API_ERROR_CODES.INVALID_PDF_OBJECT:
+      return {
+        userMessage: message ?? 'El archivo PDF de la receta no es válido.',
         code, status: err.status, raw: body as ApiErrorResponse,
       };
 
