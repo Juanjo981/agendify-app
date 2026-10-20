@@ -36,6 +36,8 @@ export interface PermisosRecepcionistaDto {
   citas?: boolean | null;
   pacientes?: boolean | null;
   notas_clinicas?: boolean | null;
+  sesiones?: boolean | null;
+  estadisticas?: boolean | null;
   configuracion?: boolean | null;
   puede_crear_citas?: boolean | null;
   puede_ver_citas?: boolean | null;

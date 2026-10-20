@@ -25,6 +25,17 @@ export class ConfiguracionApiService {
     return firstValueFrom(this.http.get<unknown>(this.agendaUrl)).then(raw => this.normalizeAgenda(raw));
   }
 
+  getAgendaConCostoPredeterminado(): Promise<ConfiguracionAgendaDto> {
+    return Promise.all([
+      this.getAgenda(),
+      this.getSistema().catch(() => null),
+    ]).then(([agenda, sistema]) => ({
+      ...agenda,
+      costo_cita_predeterminado:
+        agenda.costo_cita_predeterminado ?? sistema?.costo_cita_predeterminado ?? null,
+    }));
+  }
+
   saveAgenda(body: ConfiguracionAgendaRequest): Promise<ConfiguracionAgendaDto> {
     return firstValueFrom(
       this.http.put<unknown>(this.agendaUrl, body, { observe: 'response' }),

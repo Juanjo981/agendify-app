@@ -17,7 +17,8 @@ export enum Permiso {
   AGENDA         = 'agenda',
   CITAS          = 'citas',
   PACIENTES      = 'pacientes',
-  NOTAS_CLINICAS = 'notasClinicas',
+  SESIONES       = 'sesiones',
+  ESTADISTICAS   = 'estadisticas',
   CONFIGURACION  = 'configuracion',
 }
 

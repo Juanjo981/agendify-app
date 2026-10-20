@@ -159,15 +159,23 @@
     </div>
 
     <div class="cfm-field cfm-field--half">
-      <label class="cfm-label">Monto</label>
+      <label class="cfm-label" for="cfm-monto">Monto ({{ currencyPreference.currencyCode() }})</label>
       <input
+        id="cfm-monto"
         class="cfm-input"
         type="number"
         min="0"
         step="0.01"
         [(ngModel)]="form.monto"
+        (ngModelChange)="onMontoChange($event)"
+        [disabled]="configuracionLoading || saving"
         [class.cfm-input--error]="errores['monto']"
       />
+      <span *ngIf="configuracionLoading" class="cfm-pay-type-hint">
+        <ion-spinner name="crescent"></ion-spinner>
+        Cargando costo predeterminado...
+      </span>
+      <span *ngIf="configuracionError" class="cfm-error">{{ configuracionError }}</span>
       <span *ngIf="errores['monto']" class="cfm-error">{{ errores['monto'] }}</span>
     </div>
 

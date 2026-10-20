@@ -20,10 +20,16 @@ export const PERMISOS_DETALLES: PermisoDetalle[] = [
     icono: 'people-outline',
   },
   {
-    key: 'notasClinicas',
-    label: 'Notas clinicas',
-    descripcion: 'Puede ver y gestionar las notas de sesion',
+    key: 'sesiones',
+    label: 'Sesiones',
+    descripcion: 'Puede ver y gestionar las sesiones y sus notas',
     icono: 'document-text-outline',
+  },
+  {
+    key: 'estadisticas',
+    label: 'Estadisticas',
+    descripcion: 'Puede consultar las estadisticas del consultorio',
+    icono: 'stats-chart-outline',
   },
   {
     key: 'configuracion',

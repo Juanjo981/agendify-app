@@ -28,7 +28,8 @@ const BACKEND_KEY_TO_PERMISO: Record<string, Permiso> = {
   agenda:         Permiso.AGENDA,
   citas:          Permiso.CITAS,
   pacientes:      Permiso.PACIENTES,
-  notas_clinicas: Permiso.NOTAS_CLINICAS,
+  sesiones:       Permiso.SESIONES,
+  estadisticas:   Permiso.ESTADISTICAS,
   configuracion:  Permiso.CONFIGURACION,
 };
 
@@ -178,7 +179,8 @@ export class SessionService {
       agenda:        permisos['agenda'] ?? false,
       citas:         permisos['citas'] ?? false,
       pacientes:     permisos['pacientes'] ?? false,
-      notasClinicas: permisos['notas_clinicas'] ?? false,
+      sesiones:      permisos['sesiones'] ?? permisos['notas_clinicas'] ?? false,
+      estadisticas:  permisos['estadisticas'] ?? permisos['notas_clinicas'] ?? false,
       configuracion: permisos['configuracion'] ?? false,
     };
   }

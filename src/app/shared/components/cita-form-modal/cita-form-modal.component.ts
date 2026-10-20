@@ -30,6 +30,7 @@ import { CitasApiService } from '../../../pages/citas/citas-api.service';
 import { mapApiError } from '../../utils/api-error.mapper';
 import { ConfiguracionApiService } from '../../../services/configuracion-api.service';
 import { ConfiguracionAgendaDto } from '../../models/configuracion.models';
+import { CurrencyPreferenceService } from '../../../services/currency-preference.service';
 
 export interface CitaFormData {
   id_paciente: number;
@@ -87,6 +88,7 @@ interface TipoPagoOption {
 })
 export class CitaFormModalComponent implements OnInit, OnChanges {
   @Input() context: 'citas' | 'agenda' = 'citas';
+  @Input() open = true;
   @Input() cita: CitaDto | null = null;
   @Input() prefill: CitaFormContext = {};
   @Input() showContextBanner = false;
@@ -103,11 +105,15 @@ export class CitaFormModalComponent implements OnInit, OnChanges {
   mostrarBuscador = false;
 
   configuracionAgenda: ConfiguracionAgendaDto | null = null;
+  configuracionLoading = false;
+  configuracionError = '';
   citasDelDia: CitaDto[] = [];
   loadingSlots = false;
   slotsError = '';
   hayConflicto = false;
   motivosFrecuentes: string[] = [];
+  private configuracionPromise: Promise<ConfiguracionAgendaDto> | null = null;
+  private montoModificado = false;
 
   readonly tipoPagoOptions: TipoPagoOption[] = [
     { value: 'EFECTIVO', label: 'Efectivo', icon: 'cash-outline' },
@@ -138,14 +144,23 @@ export class CitaFormModalComponent implements OnInit, OnChanges {
   constructor(
     private citasService: CitasApiService,
     private configuracionService: ConfiguracionApiService,
+    readonly currencyPreference: CurrencyPreferenceService,
   ) {}
 
   ngOnInit() {
-    this.bootstrapForm();
-    void this.cargarMotivosFrecuentes();
+    if (this.open) {
+      this.bootstrapForm();
+      void this.cargarMotivosFrecuentes();
+    }
   }
 
   ngOnChanges(changes: SimpleChanges) {
+    if (changes['open'] && !changes['open'].firstChange && this.open) {
+      this.bootstrapForm();
+      void this.cargarMotivosFrecuentes();
+      return;
+    }
+
     if (changes['cita'] && !changes['cita'].firstChange) {
       this.bootstrapForm();
       return;
@@ -205,6 +220,12 @@ export class CitaFormModalComponent implements OnInit, OnChanges {
     delete this.errores['tipoPago'];
   }
 
+  onMontoChange(monto: number | null) {
+    this.form.monto = monto ?? 0;
+    this.montoModificado = true;
+    delete this.errores['monto'];
+  }
+
   guardar() {
     if (!this.validar()) return;
 
@@ -228,7 +249,9 @@ export class CitaFormModalComponent implements OnInit, OnChanges {
   }
 
   private bootstrapForm() {
+    this.configuracionError = '';
     if (this.cita) {
+      this.montoModificado = false;
       this.form = {
         id_paciente: this.cita.id_paciente,
         nombre_paciente: this.cita.nombre_paciente,
@@ -243,8 +266,10 @@ export class CitaFormModalComponent implements OnInit, OnChanges {
         tipoPago: normalizeTipoPagoValue(this.cita.tipoPago ?? this.cita.tipo_pago ?? this.cita.metodo_pago) ?? '',
       };
     } else {
+      this.montoModificado = false;
       this.form = this.emptyForm();
       this.applyPrefill();
+      void this.cargarConfiguracionAgenda().catch(() => undefined);
     }
 
     this.errores = {};
@@ -289,7 +314,9 @@ export class CitaFormModalComponent implements OnInit, OnChanges {
     if (!this.form.hora_inicio) this.errores['hora_inicio'] = 'Hora inicio requerida';
     if (!this.form.hora_fin) this.errores['hora_fin'] = 'Hora fin requerida';
     if (!this.form.motivo.trim()) this.errores['motivo'] = 'Motivo requerido';
-    if (this.form.monto < 0) this.errores['monto'] = 'El monto no puede ser negativo';
+    if (!Number.isFinite(Number(this.form.monto)) || Number(this.form.monto) < 0) {
+      this.errores['monto'] = 'El monto debe ser un número igual o mayor a cero';
+    }
     if (this.form.tipoPago && !isTipoPago(this.form.tipoPago)) {
       this.errores['tipoPago'] = 'Tipo de pago no valido';
     }
@@ -310,9 +337,7 @@ export class CitaFormModalComponent implements OnInit, OnChanges {
 
     try {
       const [configuracion, citasPage] = await Promise.all([
-        this.configuracionAgenda
-          ? Promise.resolve(this.configuracionAgenda)
-          : this.configuracionService.getAgenda(),
+        this.cargarConfiguracionAgenda(),
         this.citasService.getAll({
           fechaDesde: `${this.form.fecha}T00:00:00`,
           fechaHasta: `${this.form.fecha}T23:59:59`,
@@ -330,6 +355,45 @@ export class CitaFormModalComponent implements OnInit, OnChanges {
       this.hayConflicto = false;
     } finally {
       this.loadingSlots = false;
+    }
+  }
+
+  private cargarConfiguracionAgenda(): Promise<ConfiguracionAgendaDto> {
+    if (this.configuracionAgenda) {
+      this.aplicarCostoPredeterminado(this.configuracionAgenda);
+      return Promise.resolve(this.configuracionAgenda);
+    }
+    if (this.configuracionPromise) return this.configuracionPromise;
+
+    this.configuracionLoading = this.modo === 'crear';
+    this.configuracionError = '';
+    this.configuracionPromise = this.configuracionService.getAgendaConCostoPredeterminado()
+      .then(configuracion => {
+        this.configuracionAgenda = configuracion;
+        this.aplicarCostoPredeterminado(configuracion);
+        return configuracion;
+      })
+      .catch(error => {
+        this.configuracionError = mapApiError(error).userMessage;
+        throw error;
+      })
+      .finally(() => {
+        this.configuracionLoading = false;
+        this.configuracionPromise = null;
+      });
+    return this.configuracionPromise;
+  }
+
+  private aplicarCostoPredeterminado(configuracion: ConfiguracionAgendaDto): void {
+    if (this.modo !== 'crear' || this.montoModificado) return;
+    const costo = configuracion.costo_cita_predeterminado;
+    if (costo == null) return;
+    if (!Number.isFinite(costo)) {
+      this.configuracionError = 'El costo predeterminado configurado no es válido.';
+    } else if (costo < 0) {
+      this.configuracionError = 'El costo predeterminado configurado no puede ser negativo.';
+    } else {
+      this.form.monto = costo;
     }
   }
 

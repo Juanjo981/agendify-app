@@ -840,7 +840,7 @@
       <!-- Footer -->
       <div class="eq-modal-footer">
         <button class="eq-modal-btn eq-modal-btn--cancel" (click)="cerrarModalPermisos()">Cancelar</button>
-        <button class="eq-modal-btn eq-modal-btn--save" (click)="guardarPermisos()">
+        <button class="eq-modal-btn eq-modal-btn--save" [disabled]="!puedeGuardarPermisos" (click)="guardarPermisos()">
           <ion-icon name="checkmark-outline"></ion-icon>
           Guardar cambios
         </button>

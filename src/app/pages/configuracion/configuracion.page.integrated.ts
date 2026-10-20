@@ -6,7 +6,8 @@ import { ActivatedRoute, NavigationStart, Router } from '@angular/router';
 import { IonicModule, ToastController } from '@ionic/angular';
 import { ConfiguracionApiService } from 'src/app/services/configuracion-api.service';
 import { CurrencyPreferenceService } from 'src/app/services/currency-preference.service';
-import { EquipoApiService } from 'src/app/services/equipo-api.service';
+import { EquipoApiService, isValidRecepcionistaId } from 'src/app/services/equipo-api.service';
+import { environment } from 'src/environments/environment';
 import { PERMISOS_DETALLES } from 'src/app/shared/constants/permisos-detalles';
 import { PerfilApiService } from 'src/app/services/perfil-api.service';
 import { SessionService } from 'src/app/services/session.service';
@@ -319,8 +320,24 @@ export class ConfiguracionPage implements OnInit {
     this.permisosEditando[key] = (event as CustomEvent<{ checked: boolean }>).detail.checked;
   }
 
+  get puedeGuardarPermisos(): boolean {
+    return !!this.modalPermisos && !!this.permisosEditando
+      && isValidRecepcionistaId(this.modalPermisos.id) && !this.guardandoEquipo;
+  }
+
   async guardarPermisos(): Promise<void> {
     if (!this.modalPermisos || !this.permisosEditando) return;
+
+    if (!isValidRecepcionistaId(this.modalPermisos.id)) {
+      if (!environment.production) {
+        console.warn('[Configuracion] guardarPermisos bloqueado, ID inválido:', this.modalPermisos.id);
+      }
+      await this.presentToast(
+        'No se pudo identificar al recepcionista. Recarga la lista e inténtalo de nuevo.',
+        'danger',
+      );
+      return;
+    }
 
     try {
       this.guardandoEquipo = true;

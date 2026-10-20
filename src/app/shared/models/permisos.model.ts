@@ -6,7 +6,8 @@ export interface PermisosRecepcionista {
   agenda:        boolean;
   citas:         boolean;
   pacientes:     boolean;
-  notasClinicas: boolean;
+  sesiones:      boolean;
+  estadisticas:  boolean;
   configuracion: boolean;
 }
 
@@ -15,7 +16,8 @@ export const PERMISOS_DEFAULT_RECEPCIONISTA: PermisosRecepcionista = {
   agenda:        true,
   citas:         true,
   pacientes:     true,
-  notasClinicas: false,
+  sesiones:      false,
+  estadisticas:  false,
   configuracion: false,
 };
 
@@ -24,6 +26,7 @@ export const PERMISO_LABEL: Record<keyof PermisosRecepcionista, string> = {
   agenda:        'Agenda',
   citas:         'Citas',
   pacientes:     'Pacientes',
-  notasClinicas: 'Notas clínicas',
+  sesiones:      'Sesiones',
+  estadisticas:  'Estadísticas',
   configuracion: 'Configuración',
 };

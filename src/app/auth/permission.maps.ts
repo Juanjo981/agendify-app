@@ -27,8 +27,8 @@ export const MODULO_PERMISO: Readonly<Partial<Record<Modulo, Permiso>>> = {
   [Modulo.AGENDA]:        Permiso.AGENDA,
   [Modulo.CITAS]:         Permiso.CITAS,
   [Modulo.PACIENTES]:     Permiso.PACIENTES,
-  [Modulo.SESIONES]:      Permiso.NOTAS_CLINICAS,
-  [Modulo.ESTADISTICAS]:  Permiso.NOTAS_CLINICAS,
+  [Modulo.SESIONES]:      Permiso.SESIONES,
+  [Modulo.ESTADISTICAS]:  Permiso.ESTADISTICAS,
   [Modulo.CONFIGURACION]: Permiso.CONFIGURACION,
   // PERFIL and ACCESO_RESTRINGIDO intentionally omitted → public
 };
