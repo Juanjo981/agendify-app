@@ -9,6 +9,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:contracts": "node --test scripts/contract-flujos-criticos.test.mjs",
     "lint": "ng lint",
     "normalize:utf8": "node scripts/ensure-utf8-sources.mjs"
   },

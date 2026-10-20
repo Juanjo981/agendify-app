@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EvalRiskLevel, EvalRiskOption } from './eval-checklist.models';
+import { NIVELES_INICIALES } from '../../models/primera-sesion.models';
 
 @Component({
   selector: 'app-eval-risk-level',
@@ -11,15 +12,16 @@ import { EvalRiskLevel, EvalRiskOption } from './eval-checklist.models';
 })
 export class EvalRiskLevelComponent {
   @Input() title = 'Nivel inicial';
-  @Input() selected: EvalRiskLevel | null = 'bajo';
-  @Input() options: EvalRiskOption[] = [
-    { value: 'bajo', label: 'Bajo' },
-    { value: 'medio', label: 'Medio' },
-    { value: 'alto', label: 'Alto' },
-  ];
+  @Input() selected: EvalRiskLevel | null = null;
+  @Input() disabled = false;
+  @Input() options: EvalRiskOption[] = NIVELES_INICIALES.map(n => ({
+    value: n.value,
+    label: n.label,
+  }));
   @Output() selectedChange = new EventEmitter<EvalRiskLevel>();
 
   select(level: EvalRiskLevel): void {
+    if (this.disabled) return;
     this.selectedChange.emit(level);
   }
 }

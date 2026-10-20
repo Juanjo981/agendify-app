@@ -117,12 +117,6 @@ const routes: Routes = [
     loadComponent: () =>
       import('./pages/confirmar-cita/confirmar-cita.page').then(m => m.ConfirmarCitaPage)
   },
-  {
-    // Development/Testing route - loads with mock token
-    path: 'confirmar-cita',
-    loadComponent: () =>
-      import('./pages/confirmar-cita/confirmar-cita.page').then(m => m.ConfirmarCitaPage)
-  },
 ];
 
 @NgModule({

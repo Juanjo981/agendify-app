@@ -98,6 +98,54 @@
   ion-icon { font-size: 15px; }
 }
 
+.dse-hero__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dse-btn-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  ion-icon { font-size: 15px; }
+}
+
+.dse-btn-status--close {
+  background: var(--success-soft);
+  color: var(--success-strong);
+  border-color: color-mix(in srgb, var(--success) 20%, transparent);
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--success) 14%, transparent);
+  }
+}
+
+.dse-btn-status--cancel {
+  background: var(--danger-soft);
+  color: var(--danger-bright);
+  border-color: color-mix(in srgb, var(--danger) 22%, transparent);
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--danger) 14%, transparent);
+  }
+}
+
 // ─── Card ─────────────────────────────────────────────────────────────────────
 .dse-card {
   background: var(--glass-bg);
@@ -211,5 +259,6 @@
   .dse-wrapper { padding: 20px 12px 80px; }
   .dse-hero { flex-direction: column; }
   .dse-hero__left { flex-direction: column; }
+  .dse-hero__actions { justify-content: flex-start; }
   .dse-hero__name { font-size: 18px; }
 }

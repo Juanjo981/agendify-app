@@ -9,6 +9,7 @@ import {
   SesionCreateRequest,
   SesionDto,
   SesionListParams,
+  SesionStatusUpdateRequest,
   SesionUpdateRequest,
 } from './models/sesion.model';
 
@@ -48,6 +49,10 @@ export class SesionesApiService {
 
   update(id: number, body: SesionUpdateRequest): Promise<SesionDto> {
     return firstValueFrom(this.http.put<SesionDto>(`${this.base}/${id}`, body));
+  }
+
+  updateStatus(id: number, body: SesionStatusUpdateRequest): Promise<SesionDto> {
+    return firstValueFrom(this.http.patch<SesionDto>(`${this.base}/${id}/estatus`, body));
   }
 
   getByCitaId(citaId: number): Promise<SesionDto> {

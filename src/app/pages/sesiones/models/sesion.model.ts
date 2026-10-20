@@ -32,6 +32,10 @@ export interface SesionUpdateRequest {
   resumen?: string | null;
 }
 
+export interface SesionStatusUpdateRequest {
+  estatus: 'CERRADA' | 'CANCELADA';
+}
+
 export interface SesionListParams {
   pacienteId?: number;
   citaId?: number;

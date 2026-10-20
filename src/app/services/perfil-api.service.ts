@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, firstValueFrom, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
+import { normalizeApiBaseUrl } from 'src/environments/api-url';
 import {
   ActualizarMiPerfilRequest,
   ChangePasswordRequest,
@@ -14,7 +15,7 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class PerfilApiService {
-  private readonly baseUrl = environment.apiUrl;
+  private readonly baseUrl = normalizeApiBaseUrl(environment.apiUrl);
   /** URL final: `{apiUrl}/usuarios/me` → p.ej. http://localhost:8080/api/usuarios/me */
   private readonly usuarioMeUrl = `${this.baseUrl}/usuarios/me`;
   private readonly passwordUrl = `${this.usuarioMeUrl}/password`;

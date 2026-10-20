@@ -1,8 +1,18 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import {
+  ApplicationRef,
+  Component,
+  ComponentRef,
+  DestroyRef,
+  EnvironmentInjector,
+  OnInit,
+  ViewChild,
+  createComponent,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActionSheetController, IonicModule, ToastController } from '@ionic/angular';
+import { IonicModule, ModalController, ToastController } from '@ionic/angular';
 import { AgfDatePickerComponent } from '../../shared/components/agf-date-picker/agf-date-picker.component';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PacientesApiService } from './pacientes-api.service';
@@ -29,7 +39,31 @@ import {
   NuevaRecetaPanelComponent,
   RecetaPanelCambioEvent,
 } from './components/nueva-receta/nueva-receta-panel.component';
+import {
+  RecetaActionsMenuComponent,
+  RecetaMenuAction,
+} from './components/receta-actions-menu/receta-actions-menu.component';
+import {
+  RECETA_MENU_VIEWPORT_MARGIN_PX,
+  computeFixedMenuPlacement,
+  getVisibleViewportSize,
+  isMenuClippedVertically,
+} from './components/receta-actions-menu/receta-menu-position';
 import { ActividadRecienteItem } from './components/actividad-reciente/actividad-reciente.models';
+import { PacienteResumenService } from 'src/app/services/paciente-resumen.service';
+import {
+  IndiceTratamientoView,
+  KpiAsistenciaView,
+  KpiProximaCitaView,
+  KpiSesionesView,
+} from './models/paciente-resumen.models';
+import {
+  mapActividadEventoToItem,
+  mapIndicadoresToIndiceView,
+  mapKpiAsistencia,
+  mapKpiProximaCita,
+  mapKpiSesiones,
+} from './paciente-resumen.mappers';
 import { mapApiError, mapRecetaApiError } from '../../shared/utils/api-error.mapper';
 import {
   RECETA_PDF_MESSAGES,
@@ -89,6 +123,7 @@ export class PacienteDetallePage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private static readonly MAX_NOTA_ADJUNTO_BYTES = 2 * 1024 * 1024;
   private static readonly LOADING_VISUAL_DELAY_MS = 180;
+  private static readonly RECETA_MENU_MOBILE_MQ = '(max-width: 768px)';
   private initialLoaderTimer?: ReturnType<typeof setTimeout>;
   readonly sexoOptions = PACIENTE_SEXO_OPTIONS;
   readonly alertaTipoOptions = ALERTA_TIPO_OPTIONS;
@@ -96,23 +131,7 @@ export class PacienteDetallePage implements OnInit {
   readonly skeletonCards = [0, 1, 2, 3];
   readonly skeletonLines = [0, 1, 2];
 
-  /** Placeholder UI-only. Preparado para datos dinámicos del backend. */
-  readonly indiceClinicoUi = {
-    score: 72,
-    max: 100,
-    estado: 'Bueno',
-    estadoTone: 'ok' as 'ok' | 'warn' | 'risk',
-    leyenda: 'Basado en la actividad reciente del paciente',
-    factores: [
-      { nombre: 'Asistencia', valor: 'Excelente', tone: 'ok' as const },
-      { nombre: 'Cancelaciones', valor: 'Muy bajas', tone: 'ok' as const },
-      { nombre: 'Reprogramaciones', valor: 'Frecuentes', tone: 'warn' as const },
-      { nombre: 'Ausencias', valor: 'Ninguna', tone: 'ok' as const },
-      { nombre: 'Frecuencia', valor: 'Constante', tone: 'ok' as const },
-    ],
-  };
-
-  /** Placeholder UI-only. Listo para evaluaciones dinámicas. */
+  /** Placeholder UI-only de la pestaña Evaluaciones (instrumentos clínicos). No incluye checklist. */
   readonly evaluacionesUi = [
     {
       id: 'phq9',
@@ -155,51 +174,33 @@ export class PacienteDetallePage implements OnInit {
   recetaPanelId: number | null = null;
   recetaPanelAccion: 'ninguna' | 'copiar' = 'ninguna';
 
-  /** Placeholder UI-only. Timeline de actividad reciente. */
-  readonly actividadRecienteUi: ActividadRecienteItem[] = [
-    {
-      id: 'sesion-hoy',
-      cuando: 'Hoy',
-      titulo: 'Sesión completada',
-      icono: 'checkmark-circle-outline',
-      tone: 'success',
-    },
-    {
-      id: 'receta-3d',
-      cuando: 'Hace 3 días',
-      titulo: 'Receta creada',
-      icono: 'medkit-outline',
-      tone: 'teal',
-    },
-    {
-      id: 'eval-phq9',
-      cuando: 'Hace 1 semana',
-      titulo: 'Evaluación PHQ-9',
-      icono: 'clipboard-outline',
-      tone: 'purple',
-    },
-    {
-      id: 'primera-consulta',
-      cuando: 'Hace 1 mes',
-      titulo: 'Primera consulta',
-      icono: 'calendar-outline',
-      tone: 'blue',
-    },
-  ];
+  // ─── Resumen: indicadores + actividad (API real) ───────────────────────────
+  loadingIndicadores = false;
+  indicadoresLoaded = false;
+  indicadoresError = '';
+  indiceTratamiento: IndiceTratamientoView | null = null;
+  kpiAsistencia: KpiAsistenciaView | null = null;
+  kpiSesiones: KpiSesionesView | null = null;
+  kpiProximaCita: KpiProximaCitaView | null = null;
+  private indicadoresRequestSeq = 0;
+
+  loadingActividad = false;
+  loadingActividadMore = false;
+  actividadLoaded = false;
+  actividadError = '';
+  actividadReciente: ActividadRecienteItem[] = [];
+  actividadPage = 0;
+  actividadIsLastPage = true;
+  private actividadRequestSeq = 0;
 
   /**
-   * Placeholder UI-only del Resumen clínico.
-   * Más adelante se puede reemplazar `paragraphs` / `generatedAt` con salida de IA.
+   * Bloque de Resumen clínico (IA) — aún sin endpoint.
+   * Sin párrafos clínicos inventados.
    */
   readonly resumenClinicoUi = {
     title: 'Resumen clínico',
     badge: 'Próximamente IA',
-    paragraphs: [
-      'Paciente con buena adherencia.',
-      'Ha asistido regularmente durante los últimos meses.',
-      'No existen alertas críticas activas.',
-      'Presenta evolución positiva según las evaluaciones recientes.',
-    ],
+    paragraphs: [] as string[],
   };
 
   paciente: PacienteDto | null = null;
@@ -215,6 +216,12 @@ export class PacienteDetallePage implements OnInit {
 
   // ─── Secciones ─────────────────────────────────────────────────────────────
   seccionActiva: SeccionPaciente = 'informacion';
+
+  /** Checklist primera sesión: dirty + refresh al entrar a Evaluaciones. */
+  @ViewChild(PrimeraSesionChecklistComponent)
+  primeraSesionChecklist?: PrimeraSesionChecklistComponent;
+  primeraSesionDirty = false;
+  primeraSesionRefreshKey = 0;
 
   // ─── Alertas ───────────────────────────────────────────────────────────────
   alertas: AlertaPacienteDto[] = [];
@@ -268,19 +275,36 @@ export class PacienteDetallePage implements OnInit {
   // ─── Confirm dialog ────────────────────────────────────────────────────────
   confirmConfig: ConfirmDialogConfig | null = null;
   private confirmCallback: (() => void) | null = null;
-  private pacienteId = 0;
+  /** Id del paciente de la ruta (usado también por checklist de primera sesión). */
+  pacienteId = 0;
+
+  /** Id de la receta cuyo menú “Más” está abierto (un solo overlay a la vez). */
+  recetaMenuActivaId: number | null = null;
+  private recetaMenuIonOverlay: HTMLIonModalElement | null = null;
+  private recetaMenuFixedRef: ComponentRef<RecetaActionsMenuComponent> | null = null;
+  private recetaMenuFixedHost: HTMLElement | null = null;
+  private recetaMenuBackdrop: HTMLElement | null = null;
+  private recetaMenuTrigger: HTMLElement | null = null;
+  private recetaMenuViewportCleanup: (() => void) | null = null;
+  private recetaMenuActionResolver: ((action: RecetaMenuAction | null) => void) | null = null;
+  private readonly appRef = inject(ApplicationRef);
+  private readonly envInjector = inject(EnvironmentInjector);
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private svc: PacientesApiService,
+    private resumenSvc: PacienteResumenService,
     private adjuntosApi: AdjuntosServiceApi,
     private recetasApi: RecetasApiService,
     private refresh: PacienteDetailRefreshService,
     private toastCtrl: ToastController,
-    private actionSheetCtrl: ActionSheetController,
+    private modalCtrl: ModalController,
   ) {
-    this.destroyRef.onDestroy(() => this.clearInitialLoaderTimer());
+    this.destroyRef.onDestroy(() => {
+      this.clearInitialLoaderTimer();
+      void this.cerrarMenuReceta();
+    });
   }
 
   async ngOnInit() {
@@ -299,6 +323,9 @@ export class PacienteDetallePage implements OnInit {
         this.recetasLoaded = false;
         this.recetas = [];
         this.recetasError = '';
+        this.resetResumenIndicadoresState();
+        this.primeraSesionDirty = false;
+        this.primeraSesionRefreshKey = 0;
         await this.cargarInformacionPaciente();
         if (this.seccionActiva !== 'informacion') {
           this.refresh.enterSection(this.seccionActiva);
@@ -325,7 +352,11 @@ export class PacienteDetallePage implements OnInit {
       ]);
       this.paciente = paciente;
       this.resumen = resumen;
-      await this.cargarAlertas();
+      await Promise.all([
+        this.cargarAlertas(),
+        this.cargarResumenIndicadores(),
+        this.cargarActividadReciente(true),
+      ]);
     } catch (err) {
       const mapped = mapApiError(err);
       this.errorMessage = mapped.userMessage;
@@ -341,6 +372,23 @@ export class PacienteDetallePage implements OnInit {
   }
 
   volver() {
+    if (this.seccionActiva === 'evaluaciones' && this.primeraSesionDirty) {
+      this.openConfirm(
+        {
+          title: 'Descartar cambios',
+          message: 'Tienes cambios sin guardar en el checklist de primera sesión. ¿Deseas salir sin guardar?',
+          confirmLabel: 'Salir sin guardar',
+          cancelLabel: 'Seguir editando',
+          variant: 'danger',
+          icon: 'alert-circle-outline',
+        },
+        () => {
+          this.primeraSesionDirty = false;
+          this.router.navigate(['/dashboard/pacientes']);
+        },
+      );
+      return;
+    }
     this.router.navigate(['/dashboard/pacientes']);
   }
 
@@ -429,56 +477,313 @@ export class PacienteDetallePage implements OnInit {
     void this.abrirPdfReceta(receta, 'attachment');
   }
 
-  async abrirMasOpcionesReceta(receta: RecetaResumen): Promise<void> {
-    const buttons: { text: string; icon?: string; handler?: () => void; role?: string }[] = [
-      {
-        text: 'Ver',
-        icon: 'eye-outline',
-        handler: () => this.verReceta(receta),
-      },
-    ];
+  async abrirMasOpcionesReceta(receta: RecetaResumen, event: Event): Promise<void> {
+    event.stopPropagation();
+    event.preventDefault();
 
-    if (receta.estado === 'BORRADOR' || receta.estado === 'EMITIDA') {
-      buttons.push({
-        text: 'Editar',
-        icon: 'create-outline',
-        handler: () => this.editarReceta(receta),
-      });
+    // Toggle: mismo botón cierra el menú abierto.
+    if (this.recetaMenuActivaId === receta.id_receta) {
+      await this.cerrarMenuReceta();
+      return;
     }
 
-    if (this.puedeAbrirPdfReceta(receta)) {
-      buttons.push({
-        text: 'Abrir PDF',
-        icon: 'document-outline',
-        handler: () => { void this.abrirPdfReceta(receta, 'inline'); },
+    await this.cerrarMenuReceta();
+    this.recetaMenuActivaId = receta.id_receta;
+
+    const isMobile = window.matchMedia(PacienteDetallePage.RECETA_MENU_MOBILE_MQ).matches;
+    let action: RecetaMenuAction | null = null;
+
+    if (isMobile) {
+      const sheet = await this.modalCtrl.create({
+        component: RecetaActionsMenuComponent,
+        componentProps: {
+          receta,
+          puedeAbrirPdf: this.puedeAbrirPdfReceta(receta),
+          variant: 'sheet',
+        },
+        cssClass: 'receta-actions-sheet',
+        backdropDismiss: true,
+        showBackdrop: true,
       });
-      buttons.push({
-        text: 'Imprimir',
-        icon: 'print-outline',
-        handler: () => this.imprimirPdfReceta(receta),
-      });
-      buttons.push({
-        text: 'Descargar PDF',
-        icon: 'download-outline',
-        handler: () => this.descargarPdfReceta(receta),
-      });
+      this.recetaMenuIonOverlay = sheet;
+      this.attachRecetaMenuViewportGuards(sheet);
+      await sheet.present();
+      const result = await sheet.onWillDismiss<{ action?: RecetaMenuAction }>();
+      action = result.data?.action ?? null;
+    } else {
+      const trigger =
+        (event.currentTarget as HTMLElement | null) ??
+        (event.target as HTMLElement | null);
+      if (!trigger) {
+        this.recetaMenuActivaId = null;
+        return;
+      }
+      action = await this.abrirMenuRecetaFixed(receta, trigger);
     }
 
-    if (receta.estado === 'EMITIDA' || receta.estado === 'ANULADA') {
-      buttons.push({
-        text: 'Guardar como copia',
-        icon: 'copy-outline',
-        handler: () => this.abrirCopiaReceta(receta),
+    this.detachRecetaMenuViewportGuards();
+    this.recetaMenuIonOverlay = null;
+    this.recetaMenuActivaId = null;
+
+    if (!action) return;
+    this.ejecutarAccionMenuReceta(receta, action);
+  }
+
+  /**
+   * Menú escritorio: portal bajo body con position:fixed.
+   * Ionic Popover no se usa (sus estilos inline anulaban el fallback hacia arriba).
+   */
+  private abrirMenuRecetaFixed(
+    receta: RecetaResumen,
+    trigger: HTMLElement,
+  ): Promise<RecetaMenuAction | null> {
+    return new Promise(resolve => {
+      this.recetaMenuActionResolver = resolve;
+      this.recetaMenuTrigger = trigger;
+
+      const backdrop = document.createElement('div');
+      backdrop.className = 'receta-actions-fixed-backdrop';
+      backdrop.addEventListener('click', () => {
+        void this.cerrarMenuReceta();
       });
-    }
 
-    buttons.push({ text: 'Cancelar', role: 'cancel' });
+      const host = document.createElement('div');
+      host.className = 'receta-actions-fixed-host';
+      host.setAttribute('role', 'presentation');
+      host.id = 'receta-actions-menu';
 
-    const sheet = await this.actionSheetCtrl.create({
-      header: receta.nombre,
-      buttons,
+      document.body.appendChild(backdrop);
+      document.body.appendChild(host);
+      this.recetaMenuBackdrop = backdrop;
+      this.recetaMenuFixedHost = host;
+
+      const ref = createComponent(RecetaActionsMenuComponent, {
+        hostElement: host,
+        environmentInjector: this.envInjector,
+      });
+      ref.setInput('receta', receta);
+      ref.setInput('puedeAbrirPdf', this.puedeAbrirPdfReceta(receta));
+      ref.setInput('variant', 'fixed');
+      this.appRef.attachView(ref.hostView);
+      ref.changeDetectorRef.detectChanges();
+      this.recetaMenuFixedRef = ref;
+
+      const sub = ref.instance.closed.subscribe((selected: RecetaMenuAction | null) => {
+        sub.unsubscribe();
+        this.finishFixedRecetaMenu(selected);
+      });
+
+      // Invisible → medir → posicionar → visible.
+      host.style.visibility = 'hidden';
+      host.style.position = 'fixed';
+      host.style.setProperty('z-index', 'var(--z-overlay-dropdown)');
+      host.style.width = '240px';
+      host.style.maxWidth = 'min(280px, calc(100vw - 24px))';
+
+      requestAnimationFrame(() => {
+        this.posicionarMenuRecetaFixed(host, trigger);
+        host.style.visibility = 'visible';
+        this.attachRecetaMenuViewportGuards(host, trigger, () => {
+          this.posicionarMenuRecetaFixed(host, trigger);
+        });
+      });
     });
-    await sheet.present();
+  }
+
+  /** Resuelve la Promise del menú fixed y limpia DOM/listeners. */
+  private finishFixedRecetaMenu(action: RecetaMenuAction | null): void {
+    const resolver = this.recetaMenuActionResolver;
+    this.recetaMenuActionResolver = null;
+    const trigger = this.recetaMenuTrigger;
+    this.destroyFixedRecetaMenuDom();
+    this.detachRecetaMenuViewportGuards();
+    this.recetaMenuActivaId = null;
+    this.recetaMenuTrigger = null;
+    resolver?.(action);
+    // Restaurar foco al botón “Más” tras cerrar.
+    queueMicrotask(() => {
+      trigger?.focus({ preventScroll: true });
+    });
+  }
+
+  /** Aplica top/left/maxHeight al host fixed midiendo el panel real. */
+  private posicionarMenuRecetaFixed(host: HTMLElement, trigger: HTMLElement): void {
+    const panel = (host.querySelector('.ram') as HTMLElement | null) ?? host;
+    const triggerRect = trigger.getBoundingClientRect();
+    const vp = getVisibleViewportSize();
+
+    // Medir altura natural sin max-height previo.
+    panel.style.maxHeight = 'none';
+    host.style.top = '0px';
+    host.style.left = '0px';
+    const natural = panel.getBoundingClientRect();
+
+    const placement = computeFixedMenuPlacement({
+      triggerRect,
+      menuWidth: Math.max(natural.width, 200),
+      menuHeight: Math.max(natural.height, 120),
+      viewportWidth: vp.width,
+      viewportHeight: vp.height,
+      margin: RECETA_MENU_VIEWPORT_MARGIN_PX,
+    });
+
+    host.style.top = `${placement.top}px`;
+    host.style.left = `${placement.left}px`;
+    host.style.maxHeight = `${placement.maxHeight}px`;
+    panel.style.maxHeight = `${placement.maxHeight}px`;
+    host.dataset['menuSide'] = placement.side;
+
+    // Validación final sobre el panel real.
+    requestAnimationFrame(() => {
+      const finalRect = host.getBoundingClientRect();
+      const clipped = isMenuClippedVertically(finalRect, vp.height, RECETA_MENU_VIEWPORT_MARGIN_PX);
+      if (clipped.clippedBottom) {
+        const exceso = finalRect.bottom - (vp.height - RECETA_MENU_VIEWPORT_MARGIN_PX);
+        const nextTop = Math.max(
+          RECETA_MENU_VIEWPORT_MARGIN_PX,
+          placement.top - exceso,
+        );
+        host.style.top = `${nextTop}px`;
+        const still = host.getBoundingClientRect();
+        if (still.bottom > vp.height - RECETA_MENU_VIEWPORT_MARGIN_PX) {
+          const available = Math.max(
+            160,
+            vp.height - RECETA_MENU_VIEWPORT_MARGIN_PX - nextTop,
+          );
+          host.style.maxHeight = `${available}px`;
+          panel.style.maxHeight = `${available}px`;
+        }
+      }
+      if (clipped.clippedTop) {
+        host.style.top = `${RECETA_MENU_VIEWPORT_MARGIN_PX}px`;
+      }
+    });
+  }
+
+  private destroyFixedRecetaMenuDom(): void {
+    if (this.recetaMenuFixedRef) {
+      this.appRef.detachView(this.recetaMenuFixedRef.hostView);
+      this.recetaMenuFixedRef.destroy();
+      this.recetaMenuFixedRef = null;
+    }
+    this.recetaMenuFixedHost?.remove();
+    this.recetaMenuFixedHost = null;
+    this.recetaMenuBackdrop?.remove();
+    this.recetaMenuBackdrop = null;
+  }
+
+  /**
+   * Cierra el menú ante scroll de lista / cambio de viewport.
+   * `onReposition` opcional: reposiciona el fixed en vez de cerrar en resize.
+   */
+  private attachRecetaMenuViewportGuards(
+    overlay: HTMLElement | HTMLIonModalElement,
+    trigger?: HTMLElement | null,
+    onReposition?: () => void,
+  ): void {
+    this.detachRecetaMenuViewportGuards();
+
+    const onScroll = (ev: Event) => {
+      const path = typeof ev.composedPath === 'function' ? ev.composedPath() : [];
+      if (path.includes(overlay)) return;
+      void this.cerrarMenuReceta();
+    };
+
+    const onViewportChange = () => {
+      if (onReposition && this.recetaMenuFixedHost && trigger) {
+        onReposition();
+        return;
+      }
+      void this.cerrarMenuReceta();
+    };
+
+    const onVisibility = () => {
+      if (!trigger) return;
+      const vp = getVisibleViewportSize();
+      const rect = trigger.getBoundingClientRect();
+      const visible =
+        rect.bottom > 0 &&
+        rect.top < vp.height &&
+        rect.right > 0 &&
+        rect.left < vp.width;
+      if (!visible) {
+        void this.cerrarMenuReceta();
+      }
+    };
+
+    const onKeydown = (ev: KeyboardEvent) => {
+      if (ev.key === 'Escape') {
+        ev.preventDefault();
+        void this.cerrarMenuReceta();
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onViewportChange);
+    document.addEventListener('scroll', onScroll, true);
+    document.addEventListener('keydown', onKeydown);
+    window.visualViewport?.addEventListener('resize', onViewportChange);
+    window.visualViewport?.addEventListener('scroll', onViewportChange);
+    if (trigger) {
+      window.addEventListener('scroll', onVisibility, true);
+    }
+
+    this.recetaMenuViewportCleanup = () => {
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onViewportChange);
+      document.removeEventListener('scroll', onScroll, true);
+      document.removeEventListener('keydown', onKeydown);
+      window.visualViewport?.removeEventListener('resize', onViewportChange);
+      window.visualViewport?.removeEventListener('scroll', onViewportChange);
+      if (trigger) {
+        window.removeEventListener('scroll', onVisibility, true);
+      }
+    };
+  }
+
+  private detachRecetaMenuViewportGuards(): void {
+    this.recetaMenuViewportCleanup?.();
+    this.recetaMenuViewportCleanup = null;
+  }
+
+  private ejecutarAccionMenuReceta(receta: RecetaResumen, action: RecetaMenuAction): void {
+    switch (action) {
+      case 'ver':
+        this.verReceta(receta);
+        break;
+      case 'editar':
+        this.editarReceta(receta);
+        break;
+      case 'abrirPdf':
+        void this.abrirPdfReceta(receta, 'inline');
+        break;
+      case 'imprimir':
+        this.imprimirPdfReceta(receta);
+        break;
+      case 'descargarPdf':
+        this.descargarPdfReceta(receta);
+        break;
+      case 'copiar':
+        this.abrirCopiaReceta(receta);
+        break;
+    }
+  }
+
+  private async cerrarMenuReceta(): Promise<void> {
+    if (this.recetaMenuFixedRef || this.recetaMenuActionResolver) {
+      this.finishFixedRecetaMenu(null);
+    }
+
+    const overlay = this.recetaMenuIonOverlay;
+    this.recetaMenuIonOverlay = null;
+    this.recetaMenuActivaId = null;
+    this.detachRecetaMenuViewportGuards();
+    if (!overlay) return;
+    try {
+      await overlay.dismiss();
+    } catch {
+      /* ya cerrado */
+    }
   }
 
   etiquetaEstadoReceta(estado: RecetaEstado): string {
@@ -712,6 +1017,30 @@ export class PacienteDetallePage implements OnInit {
   // ─── Section switching with lazy load ──────────────────────────────────────
   setSeccion(sec: SeccionPaciente) {
     if (this.seccionActiva === sec) return;
+
+    if (this.seccionActiva === 'evaluaciones' && this.primeraSesionDirty && sec !== 'evaluaciones') {
+      this.openConfirm(
+        {
+          title: 'Descartar cambios',
+          message: 'Tienes cambios sin guardar en el checklist de primera sesión. ¿Deseas salir sin guardar?',
+          confirmLabel: 'Salir sin guardar',
+          cancelLabel: 'Seguir editando',
+          variant: 'danger',
+          icon: 'alert-circle-outline',
+        },
+        () => {
+          this.primeraSesionChecklist?.descartarCambios();
+          this.primeraSesionDirty = false;
+          this.applySeccion(sec);
+        },
+      );
+      return;
+    }
+
+    this.applySeccion(sec);
+  }
+
+  private applySeccion(sec: SeccionPaciente): void {
     this.seccionActiva = sec;
     this.sectionTransitionKey++;
     this.refresh.enterSection(sec);
@@ -1563,6 +1892,11 @@ export class PacienteDetallePage implements OnInit {
       .subscribe(event => {
         if (event.reason === 'request') {
           void this.cargarInformacionPaciente();
+          return;
+        }
+        if (event.reason === 'enter' && this.pacienteId) {
+          void this.cargarResumenIndicadores();
+          void this.cargarActividadReciente(true);
         }
       });
 
@@ -1597,11 +1931,129 @@ export class PacienteDetallePage implements OnInit {
           void this.cargarRecetas();
         }
       });
+
+    this.refresh.watchSection('evaluaciones')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(event => {
+        if (event.reason === 'enter' || event.reason === 'request') {
+          // Evitar recarga si hay cambios locales sin guardar.
+          if (this.primeraSesionDirty) return;
+          this.primeraSesionRefreshKey += 1;
+        }
+      });
   }
 
   private async cargarInformacionPaciente() {
     if (!this.pacienteId) return;
     await this.cargarPaciente(this.pacienteId);
+  }
+
+  private resetResumenIndicadoresState(): void {
+    this.indicadoresRequestSeq += 1;
+    this.actividadRequestSeq += 1;
+    this.loadingIndicadores = false;
+    this.indicadoresLoaded = false;
+    this.indicadoresError = '';
+    this.indiceTratamiento = null;
+    this.kpiAsistencia = null;
+    this.kpiSesiones = null;
+    this.kpiProximaCita = null;
+    this.loadingActividad = false;
+    this.loadingActividadMore = false;
+    this.actividadLoaded = false;
+    this.actividadError = '';
+    this.actividadReciente = [];
+    this.actividadPage = 0;
+    this.actividadIsLastPage = true;
+  }
+
+  async cargarResumenIndicadores(): Promise<void> {
+    if (!this.pacienteId) return;
+    const seq = ++this.indicadoresRequestSeq;
+    this.loadingIndicadores = true;
+    this.indicadoresError = '';
+    // No mostrar valores 0/mock mientras carga.
+    if (!this.indicadoresLoaded) {
+      this.indiceTratamiento = null;
+      this.kpiAsistencia = null;
+      this.kpiSesiones = null;
+      this.kpiProximaCita = null;
+    }
+    try {
+      const dto = await this.resumenSvc.obtenerIndicadores(this.pacienteId);
+      if (seq !== this.indicadoresRequestSeq) return;
+      this.indiceTratamiento = mapIndicadoresToIndiceView(dto);
+      this.kpiAsistencia = mapKpiAsistencia(dto);
+      this.kpiSesiones = mapKpiSesiones(dto);
+      this.kpiProximaCita = mapKpiProximaCita(dto);
+      this.indicadoresLoaded = true;
+    } catch (err) {
+      if (seq !== this.indicadoresRequestSeq) return;
+      const mapped = mapApiError(err);
+      this.indicadoresError = mapped.userMessage;
+      this.indicadoresLoaded = false;
+      this.indiceTratamiento = null;
+      this.kpiAsistencia = null;
+      this.kpiSesiones = null;
+      this.kpiProximaCita = null;
+    } finally {
+      if (seq === this.indicadoresRequestSeq) {
+        this.loadingIndicadores = false;
+      }
+    }
+  }
+
+  reintentarIndicadores(): void {
+    void this.cargarResumenIndicadores();
+  }
+
+  async cargarActividadReciente(reset = true): Promise<void> {
+    if (!this.pacienteId) return;
+    const seq = reset ? ++this.actividadRequestSeq : this.actividadRequestSeq;
+    if (reset) {
+      this.actividadPage = 0;
+      this.loadingActividad = true;
+      this.actividadError = '';
+      if (!this.actividadLoaded) {
+        this.actividadReciente = [];
+      }
+    } else {
+      if (this.loadingActividadMore || this.actividadIsLastPage) return;
+      this.loadingActividadMore = true;
+    }
+
+    try {
+      const page = reset ? 0 : this.actividadPage + 1;
+      const result = await this.resumenSvc.obtenerActividad(this.pacienteId, page, 20);
+      if (seq !== this.actividadRequestSeq) return;
+      const mapped = (result.content ?? []).map(ev => mapActividadEventoToItem(ev));
+      this.actividadReciente = reset ? mapped : [...this.actividadReciente, ...mapped];
+      this.actividadPage = result.number ?? page;
+      this.actividadIsLastPage = result.last ?? mapped.length === 0;
+      this.actividadLoaded = true;
+      this.actividadError = '';
+    } catch (err) {
+      if (seq !== this.actividadRequestSeq) return;
+      const mapped = mapApiError(err);
+      if (reset) {
+        this.actividadError = mapped.userMessage;
+        this.actividadLoaded = false;
+        this.actividadReciente = [];
+      }
+    } finally {
+      if (seq === this.actividadRequestSeq) {
+        this.loadingActividad = false;
+        this.loadingActividadMore = false;
+      }
+    }
+  }
+
+  reintentarActividad(): void {
+    void this.cargarActividadReciente(true);
+  }
+
+  cargarMasActividad(): void {
+    void this.cargarActividadReciente(false);
   }
 
   private startInitialLoaderDelay() {

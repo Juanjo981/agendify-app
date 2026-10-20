@@ -19,6 +19,44 @@
   display: contents;
 }
 
+// Tras teleport a body (≤480px): el host deja de ser “contents” y ocupa el
+// viewport útil, por encima del layout de Pacientes (cabecera, scroll, cards).
+:host.receta-medica-mobile-overlay {
+  display: block;
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--app-header-height, 64px);
+  bottom: calc(
+    var(--mobile-bottom-nav-height, 45px) + env(safe-area-inset-bottom, 0px)
+  );
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  z-index: var(--z-overlay-receta-mobile-host);
+  overflow: hidden;
+  background: #ffffff;
+}
+
+:host.receta-medica-mobile-overlay .nrp-backdrop,
+:host.receta-medica-mobile-overlay .nrp-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: auto;
+  max-height: none;
+  z-index: 1;
+}
+
+:host.receta-medica-mobile-overlay .nrp-panel {
+  z-index: 2;
+  background: #ffffff;
+}
+
 // Backdrop: solo sobre el área útil (no tapa header ni menú inferior)
 .nrp-backdrop {
   position: fixed;
@@ -27,7 +65,7 @@
   top: var(--app-header-height, 64px);
   bottom: 0;
   background: rgba(15, 23, 42, 0.35);
-  z-index: 9000;
+  z-index: var(--z-overlay-receta-backdrop);
   overflow: hidden;
   overscroll-behavior: none;
 }
@@ -49,7 +87,7 @@
   max-height: none;
   box-sizing: border-box;
   background: #f4f6fb;
-  z-index: 9001;
+  z-index: var(--z-overlay-receta-panel);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -620,7 +658,7 @@
 .nrp-overlay {
   position: fixed;
   inset: 0;
-  z-index: 10080;
+  z-index: var(--z-overlay-receta-nested);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -944,7 +982,6 @@
   border-top: 1px solid rgba(91, 103, 145, 0.12);
   box-shadow: 0 -4px 14px rgba(25, 35, 70, 0.05);
   padding: 10px 14px;
-  // Safe-area lo maneja el menú global; aquí padding normal
 }
 
 .nrp-footer-actions {
@@ -1005,9 +1042,86 @@
   }
 }
 
-@media (max-width: 330px) {
+// Móvil: footer compacto y jerárquico (sin cambiar escritorio ≥768)
+@media (max-width: 767.98px) {
+  .nrp-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 40;
+    min-height: 0;
+    // El panel ya reserva menú + safe-area; padding interno reducido.
+    padding: 8px 12px 10px;
+    background: #ffffff;
+    border-top: 1px solid rgba(91, 103, 145, 0.12);
+    box-shadow: 0 -4px 12px rgba(25, 35, 70, 0.06);
+  }
+
   .nrp-footer-actions {
-    grid-template-columns: 1fr;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    align-items: stretch;
+  }
+
+  .nrp-btn {
+    min-height: 40px;
+    height: auto;
+    max-height: none;
+    padding: 7px 8px;
+    font-size: 12.5px;
+    line-height: 1.15;
+    border-radius: 9px;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+
+  // 1) Acción principal a ancho completo
+  .nrp-act--pdf,
+  .nrp-act--primary {
+    grid-column: 1 / -1;
+    order: 1;
+  }
+
+  .nrp-act--pdf {
+    background: #3b3f92;
+    border-color: transparent;
+    color: #fff;
+    min-height: 42px;
+    font-weight: 700;
+  }
+
+  // 2–3) Secundarias en rejilla de 2 columnas
+  .nrp-act--sec {
+    order: 2;
+    min-height: 40px;
+  }
+
+  // 4) Cerrar: menor jerarquía, al final
+  .nrp-act--cerrar {
+    grid-column: 1 / -1;
+    order: 3;
+    min-height: 34px;
+    padding: 4px 8px;
+    background: transparent;
+    border-color: transparent;
+    color: #64708a;
+    font-weight: 600;
+    font-size: 13px;
+    box-shadow: none;
+  }
+}
+
+// Pantallas muy estrechas: una sola columna en acciones secundarias
+@media (max-width: 379.98px) {
+  .nrp-footer-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .nrp-act--pdf,
+  .nrp-act--primary,
+  .nrp-act--cerrar,
+  .nrp-act--sec {
+    grid-column: 1 / -1;
   }
 }
 
@@ -1025,7 +1139,9 @@
   }
 
   .nrp-tabs {
-    margin: 8px 12px 0;
+    margin-top: 8px;
+    margin-inline: 0;
+    padding-inline: 10px;
   }
 
   .nrp-content {
@@ -1070,7 +1186,7 @@
     inset: 0;
     top: 0;
     bottom: 0;
-    z-index: 10050;
+    z-index: var(--z-overlay-receta-backdrop-desktop);
   }
 
   .nrp-panel {
@@ -1088,7 +1204,7 @@
     box-shadow:
       0 24px 64px rgba(15, 23, 42, 0.16),
       0 0 0 1px rgba(15, 23, 42, 0.04);
-    z-index: 10051;
+    z-index: var(--z-overlay-receta-panel-desktop);
   }
 
   .nrp-header {
@@ -1208,5 +1324,117 @@
 
   .nrp-field--full {
     grid-column: auto;
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Teléfono estrecho (≤480px): hoja full-bleed, sin “card” de escritorio
+// No afecta tablet (481–1279) ni escritorio (≥1280).
+// ═════════════════════════════════════════════════════════════════════════════
+@media (max-width: 480px) {
+  .nrp-backdrop {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .nrp-panel {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    // Mismo fondo que el contenido: elimina franjas grises laterales entre cards
+    background: #ffffff !important;
+    overflow: hidden;
+  }
+
+  .nrp-header {
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    margin: 0;
+    padding: 12px 14px;
+  }
+
+  .nrp-tabs {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 6px 10px;
+    border-radius: 0 !important;
+    background: #f3f5fb;
+  }
+
+  .nrp-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .nrp-scroll {
+    padding: 0 0 16px !important;
+    scrollbar-gutter: auto !important;
+  }
+
+  .nrp-preview-col.nrp-pane--active {
+    border-radius: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .nrp-preview-head {
+    padding: 10px 14px 0;
+    margin-bottom: 8px;
+  }
+
+  .nrp-preview-scroll {
+    padding: 0 !important;
+  }
+
+  .nrp-footer {
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  // Cards internas → bloques de hoja (sin marco lateral ni radio “desktop”)
+  .nrp-section {
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-bottom: 1px solid rgba(91, 103, 145, 0.12);
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 14px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .nrp-banner,
+  .nrp-med {
+    border-radius: 8px;
+    margin-left: 0;
+    margin-right: 0;
   }
 }

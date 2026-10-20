@@ -1,167 +1,86 @@
 ================================================================================
-AGENDIFY — Recetas médicas (API contract for backend)
-Fecha: 2026-07-22
-Auth: Bearer JWT del profesional autenticado
+AGENDIFY - Recetas medicas (CONTRATO VIGENTE)
+Fecha: 2026-10-19
+Auth: Bearer JWT (PROFESIONAL, RECEPCIONISTA segun permisos)
 Base: {API_BASE}/api
+Fuente canonica FE: src/app/services/recetas-api.service.ts
+================================================================================
 
-SEPARACIÓN DE CONCEPTOS
------------------------
-plantilla_receta  → apariencia (logo, layout, switches). 1:1 con profesional.
-receta_medica     → documento clínico emitido a un paciente. N por profesional.
+OBJETIVO
+--------
+Este documento reemplaza el contrato previo basado en rutas
+/profesionales/me/... y consolida un unico contrato vigente alineado al
+frontend actual.
 
-El frontend de “Nueva receta” debe PERSISTIR en receta_medica + receta_medicamento.
-No guardar recetas dentro de plantilla_receta.configuracion.
-No usar localStorage ni Base64.
+RUTAS CANONICAS VIGENTES
+------------------------
 
+1) POST /recetas
+   Crea receta en estado BORRADOR.
 
---------------------------------------------------------------------------------
-1) POST /profesionales/me/pacientes/{idPaciente}/recetas
---------------------------------------------------------------------------------
-Descripción:
-  Crea una receta (borrador o emitida) para el paciente.
-  El backend toma id_profesional del JWT (no enviar id_profesional).
-  Si se emite, guardar plantilla_snapshot con la plantilla actual del profesional.
+2) GET /recetas/{idReceta}
+   Obtiene detalle de receta.
 
-Auth: PROFESIONAL
+3) GET /pacientes/{idPaciente}/recetas
+   Lista recetas del paciente (paginado).
+   Query: page, size, sort, estado.
 
-Request:
-{
-  "fechaEmision": "2026-07-22",
-  "pacienteNombre": "Ana López",
-  "edadTexto": "32 años",
-  "diagnostico": "HTA",
-  "indicaciones": "Tomar con alimentos",
-  "proximaCitaFecha": "2026-08-22",
-  "proximaCitaHora": "10:30",
-  "estado": "emitida",
-  "medicamentos": [
-    {
-      "orden": 1,
-      "nombre": "Losartán",
-      "dosis": "50 mg",
-      "frecuencia": "cada 24 h",
-      "duracion": "30 días"
-    }
-  ]
-}
+4) PUT /recetas/{idReceta}
+   Actualiza receta (solo BORRADOR).
 
-Reglas:
-  - medicamentos: mínimo 1 ítem con nombre no vacío si estado = emitida.
-  - estado por defecto: "borrador" si se omite.
-  - Al emitir: set emitida_at = NOW() y plantilla_snapshot = config actual.
+5) POST /recetas/{idReceta}/emitir
+   Emite receta.
 
-Response 201:
-{
-  "idRecetaMedica": 42,
-  "idPaciente": 101,
-  "fechaEmision": "2026-07-22",
-  "pacienteNombre": "Ana López",
-  "edadTexto": "32 años",
-  "diagnostico": "HTA",
-  "indicaciones": "Tomar con alimentos",
-  "proximaCitaFecha": "2026-08-22",
-  "proximaCitaHora": "10:30",
-  "estado": "emitida",
-  "medicamentos": [ ... ],
-  "createdAt": "2026-07-22T19:00:00Z",
-  "updatedAt": "2026-07-22T19:00:00Z",
-  "emitidaAt": "2026-07-22T19:00:00Z"
-}
+6) POST /recetas/{idReceta}/versiones
+   Crea nueva version PDF desde receta emitida.
 
+7) POST /recetas/{idReceta}/copias
+   Crea nueva receta BORRADOR como copia.
 
---------------------------------------------------------------------------------
-2) GET /profesionales/me/pacientes/{idPaciente}/recetas
---------------------------------------------------------------------------------
-Descripción:
-  Lista recetas del paciente (del profesional autenticado).
-  Paginación opcional: ?page=0&size=20&estado=emitida
+8) POST /recetas/{idReceta}/anular
+   Anula receta.
 
-Response 200:
-{
-  "content": [
-    {
-      "idRecetaMedica": 42,
-      "fechaEmision": "2026-07-22",
-      "pacienteNombre": "Ana López",
-      "diagnostico": "HTA",
-      "estado": "emitida",
-      "medicamentosCount": 2,
-      "createdAt": "..."
-    }
-  ],
-  "page": 0,
-  "size": 20,
-  "totalElements": 1,
-  "totalPages": 1
-}
+9) DELETE /recetas/{idReceta}
+   Soft delete (estado ELIMINADA).
 
+10) GET /recetas/{idReceta}/pdf-url
+    Devuelve URL firmada temporal del PDF actual.
 
---------------------------------------------------------------------------------
-3) GET /profesionales/me/recetas/{idRecetaMedica}
---------------------------------------------------------------------------------
-Descripción:
-  Detalle completo (cabecera + medicamentos + plantilla_snapshot si existe).
-  Solo si pertenece al profesional autenticado.
+11) GET /recetas/{idReceta}/versiones/{numeroVersion}/pdf-url
+    Devuelve URL firmada temporal del PDF de una version especifica.
 
-Response 200: mismo shape que POST 201 + "plantillaSnapshot": { ... } | null
+NOTAS DE CONTRATO
+-----------------
+- El frontend NO persiste URLs firmadas de PDF.
+- Para listado de versiones no existe endpoint dedicado en backend actual;
+  la UI deriva historial desde version_actual y consume pdf-url por version.
+- Payloads y responses usan snake_case segun modelos FE en
+  src/app/shared/models/recetas.models.ts.
 
+DEPRECACION DE CONTRATO ANTERIOR
+--------------------------------
+Queda deprecado para frontend el contrato documentado como:
+- POST /profesionales/me/pacientes/{idPaciente}/recetas
+- GET /profesionales/me/pacientes/{idPaciente}/recetas
+- GET/PUT/POST/DELETE /profesionales/me/recetas/{idRecetaMedica}...
 
---------------------------------------------------------------------------------
-4) PUT /profesionales/me/recetas/{idRecetaMedica}
---------------------------------------------------------------------------------
-Descripción:
-  Actualiza una receta en estado "borrador".
-  Si estado = emitida o anulada → 409 / 422.
+Si backend mantiene esas rutas por compatibilidad, deben considerarse alias
+legacy y no fuente principal para nuevas integraciones frontend.
 
-Request: mismo shape parcial que POST (sin idPaciente).
+VALIDACION FUNCIONAL MINIMA ESPERADA
+------------------------------------
+- Crear borrador
+- Listar recetas por paciente
+- Ver detalle
+- Emitir
+- Crear copia
+- Anular
+- Obtener PDF actual y por version
 
-Response 200: detalle actualizado.
-
-
---------------------------------------------------------------------------------
-5) POST /profesionales/me/recetas/{idRecetaMedica}/emitir
---------------------------------------------------------------------------------
-Descripción:
-  Pasa borrador → emitida.
-  Fija emitida_at y plantilla_snapshot si aún no existe.
-
-Response 200: detalle.
-
-
---------------------------------------------------------------------------------
-6) POST /profesionales/me/recetas/{idRecetaMedica}/anular
---------------------------------------------------------------------------------
-Descripción:
-  Pasa emitida → anulada. No borra el registro.
-  Fija anulada_at.
-
-Response 200: detalle.
-
-
---------------------------------------------------------------------------------
-7) DELETE /profesionales/me/recetas/{idRecetaMedica}
---------------------------------------------------------------------------------
-Descripción:
-  Solo permite borrar si estado = borrador.
-  Emitida/anulada → 409.
-
-Response 204.
-
-
---------------------------------------------------------------------------------
 ERRORES COMUNES
---------------------------------------------------------------------------------
-401  No autenticado
-403  Paciente/receta de otro profesional
-404  Paciente o receta no encontrada
-409  Operación inválida para el estado actual
-422  Validación (sin medicamentos, campos requeridos)
-
-
---------------------------------------------------------------------------------
-NOTAS DE IMPLEMENTACIÓN FRONTEND
---------------------------------------------------------------------------------
-- “Guardar receta” en NuevaRecetaPanel debe llamar POST (o PUT si hay id).
-- La plantilla (GET plantilla-recetas) solo alimenta la vista previa visual.
-- Al listar en ficha del paciente, usar GET .../pacientes/{id}/recetas.
-- No mezclar endpoints de plantilla_receta con persistencia clínica.
+---------------
+401 no autenticado
+403 sin permisos
+404 recurso no encontrado
+409 conflicto de estado/transicion
+422 validacion de negocio

@@ -157,7 +157,7 @@ export class CitasApiService {
     });
 
     return firstValueFrom(
-      this.http.get<any>(`${this.base}/disponibilidad`, { params: query })
+      this.http.get<unknown>(`${this.base}/disponibilidad`, { params: query })
     ).then(raw => this.normalizeDisponibilidad(raw));
   }
 

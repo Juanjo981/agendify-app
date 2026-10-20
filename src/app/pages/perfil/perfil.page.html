@@ -64,6 +64,9 @@
         <span class="prf-stat-label">Citas hoy</span>
       </div>
     </div>
+    <p class="prf-info-note" *ngIf="statsInformativas">
+      Datos informativos no dinamicos en esta version.
+    </p>
 
     <!-- ═══════════════════════════════════════════════════════
          INFORMACIÓN PERSONAL
@@ -441,6 +444,9 @@
           <h3>Integraciones</h3>
         </div>
       </div>
+      <p class="prf-info-note" *ngIf="integracionesInformativas">
+        Catalogo informativo. No refleja integraciones activas del consultorio.
+      </p>
 
       <div class="prf-integrations">
         <div class="prf-integration-item" *ngFor="let int of integraciones">

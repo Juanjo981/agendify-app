@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { normalizeApiBaseUrl } from 'src/environments/api-url';
 import { PageResponse } from 'src/app/shared/models/page.model';
 import { buildQueryParams } from 'src/app/shared/utils/query-params.utils';
 import { tiempoRelativo } from 'src/app/shared/utils/date.utils';
@@ -38,7 +39,8 @@ export interface ActividadFeedItem {
 
 @Injectable({ providedIn: 'root' })
 export class ActividadApiService {
-  private readonly base = `${environment.apiUrl}/historial-eventos`;
+  private readonly apiRoot = normalizeApiBaseUrl(environment.apiUrl);
+  private readonly base = `${this.apiRoot}/historial-eventos`;
 
   constructor(private http: HttpClient) {}
 

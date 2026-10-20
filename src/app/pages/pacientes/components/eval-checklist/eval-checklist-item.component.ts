@@ -13,9 +13,11 @@ export class EvalChecklistItemComponent {
   @Input() id = '';
   @Input() label = '';
   @Input() checked = false;
+  @Input() disabled = false;
   @Output() checkedChange = new EventEmitter<boolean>();
 
   toggle(): void {
+    if (this.disabled) return;
     this.checkedChange.emit(!this.checked);
   }
 }

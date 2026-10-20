@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { normalizeApiBaseUrl } from 'src/environments/api-url';
 import { buildQueryParams } from 'src/app/shared/utils/query-params.utils';
 import { PageResponse } from 'src/app/shared/models/page.model';
 import {
@@ -19,8 +20,9 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class PacientesApiService {
-  private readonly base = `${environment.apiUrl}/pacientes`;
-  private readonly notasBase = `${environment.apiUrl}/notas-clinicas`;
+  private readonly apiRoot = normalizeApiBaseUrl(environment.apiUrl);
+  private readonly base = `${this.apiRoot}/pacientes`;
+  private readonly notasBase = `${this.apiRoot}/notas-clinicas`;
 
   constructor(private http: HttpClient) {}
 

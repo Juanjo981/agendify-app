@@ -348,6 +348,194 @@ export interface PlantillaAssetUploadUrlResponse {
 
 export const PLANTILLA_RECETAS_CONFIG_VERSION = 1;
 
+function asOneOf<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+  return typeof value === 'string' && (allowed as readonly string[]).includes(value)
+    ? (value as T)
+    : fallback;
+}
+
+function cleanConfigText(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  const text = String(value).replace(/<[^>]*>/g, '').trim();
+  if (!text || text === 'null' || text === 'undefined') return '';
+  return text;
+}
+
+function cleanConfigUrl(value: unknown): string | null {
+  const text = cleanConfigText(value);
+  if (!text) return null;
+  if (text.startsWith('blob:')) return null;
+  return text;
+}
+
+function configNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function configBoolean(value: unknown): boolean | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'boolean') return value;
+  if (value === 1 || value === '1' || value === 'true') return true;
+  if (value === 0 || value === '0' || value === 'false') return false;
+  return Boolean(value);
+}
+
+/**
+ * Normaliza una configuración cruda de plantilla (respuesta del backend o
+ * snapshot guardado dentro de una receta) rellenando con la configuración por
+ * defecto toda clave ausente o inválida. Acepta objetos parciales, claves en
+ * camelCase y tipos incorrectos: SIEMPRE devuelve la estructura completa, para
+ * que ningún render (hoja de vista previa incluida) truene con `undefined`.
+ */
+export function normalizePlantillaConfig(raw: unknown): PlantillaRecetasConfigDto {
+  const base = createDefaultPlantillaConfig();
+  if (!raw || typeof raw !== 'object') return base;
+
+  const data = raw as Record<string, unknown>;
+  const vis = (data['visibilidad'] ?? {}) as Record<string, unknown>;
+  const identidad = (data['identidad'] ?? {}) as Record<string, unknown>;
+  const distribucion = (data['distribucion'] ?? {}) as Record<string, unknown>;
+  const secciones = (distribucion['secciones'] ?? {}) as Record<string, unknown>;
+  const etiquetas = (distribucion['etiquetas'] ?? {}) as Record<string, unknown>;
+  const pie = (data['pie'] ?? {}) as Record<string, unknown>;
+
+  return {
+    version: configNumber(data['version']) ?? base.version,
+    visibilidad: {
+      nombre: configBoolean(vis['nombre']) ?? base.visibilidad.nombre,
+      especialidad: configBoolean(vis['especialidad']) ?? base.visibilidad.especialidad,
+      cedula_profesional:
+        configBoolean(vis['cedula_profesional'] ?? vis['cedulaProfesional']) ??
+        base.visibilidad.cedula_profesional,
+      telefono_profesional:
+        configBoolean(vis['telefono_profesional'] ?? vis['telefonoProfesional']) ??
+        base.visibilidad.telefono_profesional,
+      email: configBoolean(vis['email']) ?? base.visibilidad.email,
+      nombre_consultorio:
+        configBoolean(vis['nombre_consultorio'] ?? vis['nombreConsultorio']) ??
+        base.visibilidad.nombre_consultorio,
+      telefono_consultorio:
+        configBoolean(vis['telefono_consultorio'] ?? vis['telefonoConsultorio']) ??
+        base.visibilidad.telefono_consultorio,
+      direccion_consultorio:
+        configBoolean(vis['direccion_consultorio'] ?? vis['direccionConsultorio']) ??
+        base.visibilidad.direccion_consultorio,
+    },
+    datos_visualizacion: createEmptyDatosVisualizacion(),
+    identidad: {
+      mostrar_logo:
+        configBoolean(identidad['mostrar_logo'] ?? identidad['mostrarLogo']) ??
+        base.identidad.mostrar_logo,
+      logo_url: cleanConfigUrl(identidad['logo_url'] ?? identidad['logoUrl']),
+      color_id: cleanConfigText(identidad['color_id'] ?? identidad['colorId']) || base.identidad.color_id,
+      encabezado: asOneOf(
+        identidad['encabezado'],
+        ['minimalista', 'franja', 'dividido'] as const,
+        base.identidad.encabezado,
+      ),
+      tipografia: asOneOf(
+        identidad['tipografia'],
+        ['moderna', 'clasica', 'compacta'] as const,
+        base.identidad.tipografia,
+      ),
+      separador: asOneOf(
+        identidad['separador'],
+        ['ninguno', 'sutil', 'color'] as const,
+        base.identidad.separador,
+      ),
+    },
+    distribucion: {
+      formato: asOneOf(
+        distribucion['formato'],
+        ['carta', 'media-carta'] as const,
+        base.distribucion.formato,
+      ),
+      layout: asOneOf(
+        distribucion['layout'],
+        ['clasica', 'moderna', 'compacta'] as const,
+        base.distribucion.layout,
+      ),
+      secciones: {
+        fecha_emision:
+          configBoolean(secciones['fecha_emision'] ?? secciones['fechaEmision']) ??
+          base.distribucion.secciones.fecha_emision,
+        datos_paciente:
+          configBoolean(secciones['datos_paciente'] ?? secciones['datosPaciente']) ??
+          base.distribucion.secciones.datos_paciente,
+        edad_paciente:
+          configBoolean(secciones['edad_paciente'] ?? secciones['edadPaciente']) ??
+          base.distribucion.secciones.edad_paciente,
+        diagnostico:
+          configBoolean(secciones['diagnostico']) ?? base.distribucion.secciones.diagnostico,
+        medicamentos: true,
+        indicaciones: true,
+        proxima_cita:
+          configBoolean(secciones['proxima_cita'] ?? secciones['proximaCita']) ??
+          base.distribucion.secciones.proxima_cita,
+        firma: configBoolean(secciones['firma']) ?? base.distribucion.secciones.firma,
+        sello: configBoolean(secciones['sello']) ?? base.distribucion.secciones.sello,
+        aviso_legal:
+          configBoolean(secciones['aviso_legal'] ?? secciones['avisoLegal']) ??
+          base.distribucion.secciones.aviso_legal,
+      },
+      etiquetas: {
+        paciente: cleanConfigText(etiquetas['paciente']).slice(0, 40) || base.distribucion.etiquetas.paciente,
+        diagnostico:
+          cleanConfigText(etiquetas['diagnostico']).slice(0, 40) || base.distribucion.etiquetas.diagnostico,
+        medicamentos:
+          cleanConfigText(etiquetas['medicamentos']).slice(0, 40) || base.distribucion.etiquetas.medicamentos,
+        indicaciones:
+          cleanConfigText(etiquetas['indicaciones']).slice(0, 40) || base.distribucion.etiquetas.indicaciones,
+        proxima_cita:
+          cleanConfigText(etiquetas['proxima_cita'] ?? etiquetas['proximaCita']).slice(0, 40) ||
+          base.distribucion.etiquetas.proxima_cita,
+        firma: cleanConfigText(etiquetas['firma']).slice(0, 40) || base.distribucion.etiquetas.firma,
+        aviso_legal:
+          cleanConfigText(etiquetas['aviso_legal'] ?? etiquetas['avisoLegal']).slice(0, 40) ||
+          base.distribucion.etiquetas.aviso_legal,
+      },
+      espaciado: asOneOf(
+        distribucion['espaciado'],
+        ['compacto', 'normal', 'amplio'] as const,
+        base.distribucion.espaciado,
+      ),
+      tamano_texto: asOneOf(
+        distribucion['tamano_texto'] ?? distribucion['tamanoTexto'],
+        ['pequeno', 'mediano', 'grande'] as const,
+        base.distribucion.tamano_texto,
+      ),
+    },
+    pie: {
+      firma_url: cleanConfigUrl(pie['firma_url'] ?? pie['firmaUrl']),
+      sello_url: cleanConfigUrl(pie['sello_url'] ?? pie['selloUrl']),
+      mostrar_nombre_bajo_firma:
+        configBoolean(pie['mostrar_nombre_bajo_firma'] ?? pie['mostrarNombreBajoFirma']) ??
+        base.pie.mostrar_nombre_bajo_firma,
+      mostrar_especialidad_bajo_firma:
+        configBoolean(pie['mostrar_especialidad_bajo_firma'] ?? pie['mostrarEspecialidadBajoFirma']) ??
+        base.pie.mostrar_especialidad_bajo_firma,
+      mostrar_cedula_bajo_firma:
+        configBoolean(pie['mostrar_cedula_bajo_firma'] ?? pie['mostrarCedulaBajoFirma']) ??
+        base.pie.mostrar_cedula_bajo_firma,
+      texto_pie: cleanConfigText(pie['texto_pie'] ?? pie['textoPie']).slice(0, 180) || base.pie.texto_pie,
+      mostrar_telefono:
+        configBoolean(pie['mostrar_telefono'] ?? pie['mostrarTelefono']) ?? base.pie.mostrar_telefono,
+      mostrar_correo:
+        configBoolean(pie['mostrar_correo'] ?? pie['mostrarCorreo']) ?? base.pie.mostrar_correo,
+      mostrar_direccion:
+        configBoolean(pie['mostrar_direccion'] ?? pie['mostrarDireccion']) ?? base.pie.mostrar_direccion,
+      mostrar_numero_pagina:
+        configBoolean(pie['mostrar_numero_pagina'] ?? pie['mostrarNumeroPagina']) ??
+        base.pie.mostrar_numero_pagina,
+      mostrar_fecha_generacion:
+        configBoolean(pie['mostrar_fecha_generacion'] ?? pie['mostrarFechaGeneracion']) ??
+        base.pie.mostrar_fecha_generacion,
+    },
+  };
+}
+
 export function createDefaultPlantillaConfig(): PlantillaRecetasConfigDto {
   return {
     version: PLANTILLA_RECETAS_CONFIG_VERSION,

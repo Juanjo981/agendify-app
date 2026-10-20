@@ -11,30 +11,59 @@
     </div>
   </header>
 
-  <ol class="art__timeline" *ngIf="items.length > 0; else emptyTimeline">
-    <li
-      class="art__item"
-      *ngFor="let item of items; let last = last"
-      [class.art__item--last]="last"
-      [attr.data-tone]="item.tone || 'primary'">
-      <div class="art__track" aria-hidden="true">
-        <span class="art__dot">
-          <ion-icon [name]="item.icono || 'ellipse-outline'"></ion-icon>
-        </span>
-        <span class="art__line" *ngIf="!last"></span>
+  <div class="art__skeleton" *ngIf="loading && items.length === 0" aria-busy="true">
+    <div class="art__skeleton-row" *ngFor="let _ of [0, 1, 2]">
+      <ion-skeleton-text animated style="width: 28px; height: 28px; border-radius: 999px;"></ion-skeleton-text>
+      <div class="art__skeleton-copy">
+        <ion-skeleton-text animated style="width: 72px; height: 12px; border-radius: 999px;"></ion-skeleton-text>
+        <ion-skeleton-text animated style="width: 180px; height: 14px; border-radius: 999px;"></ion-skeleton-text>
       </div>
+    </div>
+  </div>
 
-      <div class="art__content">
-        <span class="art__when">{{ item.cuando }}</span>
-        <strong class="art__event">{{ item.titulo }}</strong>
-      </div>
-    </li>
-  </ol>
+  <div class="art__error" *ngIf="!loading && error">
+    <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
+    <p>{{ error }}</p>
+    <button type="button" class="art__retry" (click)="retry.emit()">Reintentar</button>
+  </div>
+
+  <ng-container *ngIf="!loading && !error">
+    <ol class="art__timeline" *ngIf="items.length > 0; else emptyTimeline">
+      <li
+        class="art__item"
+        *ngFor="let item of items; let last = last"
+        [class.art__item--last]="last && !hasMore"
+        [attr.data-tone]="item.tone || 'primary'">
+        <div class="art__track" aria-hidden="true">
+          <span class="art__dot">
+            <ion-icon [name]="item.icono || 'ellipse-outline'"></ion-icon>
+          </span>
+          <span class="art__line" *ngIf="!last || hasMore"></span>
+        </div>
+
+        <div class="art__content">
+          <span class="art__when">{{ item.cuando }}</span>
+          <strong class="art__event">{{ item.titulo }}</strong>
+        </div>
+      </li>
+    </ol>
+
+    <div class="art__more" *ngIf="items.length > 0 && hasMore">
+      <button
+        type="button"
+        class="art__more-btn"
+        [disabled]="loadingMore"
+        (click)="loadMore.emit()">
+        <ion-spinner *ngIf="loadingMore" name="crescent"></ion-spinner>
+        <span>{{ loadingMore ? 'Cargando…' : 'Ver más' }}</span>
+      </button>
+    </div>
+  </ng-container>
 
   <ng-template #emptyTimeline>
     <div class="art__empty">
       <ion-icon name="time-outline"></ion-icon>
-      <p>Sin actividad reciente</p>
+      <p>Aún no hay actividad reciente</p>
     </div>
   </ng-template>
 </section>

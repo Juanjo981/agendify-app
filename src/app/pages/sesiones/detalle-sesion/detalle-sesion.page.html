@@ -43,10 +43,20 @@
             </div>
           </div>
         </div>
-        <button class="dse-btn-edit" (click)="showEditarModal = true" [disabled]="!puedeEditar || saving">
-          <ion-icon name="pencil-outline"></ion-icon>
-          <span>Editar</span>
-        </button>
+        <div class="dse-hero__actions">
+          <button class="dse-btn-status dse-btn-status--close" (click)="cerrarSesion()" [disabled]="!puedeCambiarEstatus">
+            <ion-icon name="checkmark-done-outline"></ion-icon>
+            <span>Cerrar</span>
+          </button>
+          <button class="dse-btn-status dse-btn-status--cancel" (click)="cancelarSesion()" [disabled]="!puedeCambiarEstatus">
+            <ion-icon name="close-circle-outline"></ion-icon>
+            <span>Cancelar</span>
+          </button>
+          <button class="dse-btn-edit" (click)="showEditarModal = true" [disabled]="!puedeEditar || saving">
+            <ion-icon name="pencil-outline"></ion-icon>
+            <span>Editar</span>
+          </button>
+        </div>
       </div>
 
       <div class="dse-card">

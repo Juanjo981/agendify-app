@@ -7,3 +7,11 @@
 export function normalizeApiBaseUrl(url: string): string {
   return String(url || '').replace(/\/+$/, '');
 }
+
+/**
+ * Deriva la base pública de la app (sin sufijo /api), usada por endpoints
+ * públicos que no cuelgan del namespace autenticado.
+ */
+export function publicAppBaseUrl(apiUrl: string): string {
+  return normalizeApiBaseUrl(apiUrl).replace(/\/api$/, '');
+}

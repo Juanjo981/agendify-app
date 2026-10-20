@@ -211,6 +211,12 @@
   text-align: center;
 }
 
+.prf-info-note {
+  margin: -4px 4px 18px;
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+}
+
 // ─── Card shell ──────────────────────────────────────────────────────────────
 .prf-card {
   background: var(--glass-bg, rgba(247, 249, 252, 0.82));

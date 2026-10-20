@@ -34,3 +34,63 @@ export function tiempoRelativo(isoDate: string): string {
   const days  = Math.floor(hours / 24);
   return `Hace ${days} día${days > 1 ? 's' : ''}`;
 }
+
+/**
+ * Parsea LocalDateTime del backend (`2026-07-25T18:00:00`) como fecha local
+ * para evitar desfases por zona horaria.
+ */
+export function parseLocalDateTime(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const m = value.trim().match(
+    /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?/,
+  );
+  if (!m) return null;
+  const date = new Date(
+    Number(m[1]),
+    Number(m[2]) - 1,
+    Number(m[3]),
+    Number(m[4] ?? 0),
+    Number(m[5] ?? 0),
+    Number(m[6] ?? 0),
+    0,
+  );
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/**
+ * Fecha relativa por calendario local (es-MX):
+ * Hoy · Ayer · Hace 3 días · Hace 1 semana
+ */
+export function tiempoRelativoCalendario(
+  isoDate: string,
+  now: Date = new Date(),
+): string {
+  const date = parseLocalDateTime(isoDate);
+  if (!date) return '—';
+
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfEvent = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dayDiff = Math.round(
+    (startOfToday.getTime() - startOfEvent.getTime()) / 86_400_000,
+  );
+
+  if (dayDiff === 0) return 'Hoy';
+  if (dayDiff === 1) return 'Ayer';
+  if (dayDiff > 1 && dayDiff < 7) return `Hace ${dayDiff} días`;
+  if (dayDiff >= 7 && dayDiff < 14) return 'Hace 1 semana';
+  if (dayDiff >= 14 && dayDiff < 30) {
+    const weeks = Math.floor(dayDiff / 7);
+    return `Hace ${weeks} semanas`;
+  }
+  if (dayDiff >= 30 && dayDiff < 365) {
+    const months = Math.floor(dayDiff / 30);
+    return months <= 1 ? 'Hace 1 mes' : `Hace ${months} meses`;
+  }
+  if (dayDiff >= 365) {
+    const years = Math.floor(dayDiff / 365);
+    return years <= 1 ? 'Hace 1 año' : `Hace ${years} años`;
+  }
+  // Futuro cercano
+  if (dayDiff === -1) return 'Mañana';
+  return formatFecha(isoDate.slice(0, 10));
+}

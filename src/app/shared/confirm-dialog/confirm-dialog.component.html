@@ -1,10 +1,14 @@
 <ng-container *ngIf="config">
 
   <!-- Backdrop -->
-  <div class="cfd-backdrop" (click)="cancelled.emit()"></div>
+  <div class="cfd-backdrop" (click)="onCancel()"></div>
 
   <!-- Dialog card -->
-  <div class="cfd-dialog" role="alertdialog" aria-modal="true" [attr.aria-label]="config.title">
+  <div
+    class="cfd-dialog"
+    role="alertdialog"
+    aria-modal="true"
+    [attr.aria-label]="config.title">
 
     <!-- Icon -->
     <div class="cfd-icon-wrap"
@@ -24,13 +28,16 @@
 
     <!-- Actions -->
     <div class="cfd-actions">
-      <button class="cfd-btn cfd-btn--cancel" (click)="cancelled.emit()">
+      <button type="button" class="cfd-btn cfd-btn--cancel" (click)="onCancel()">
         {{ config.cancelLabel || 'Cancelar' }}
       </button>
-      <button class="cfd-btn"
-              [class.cfd-btn--primary]="config.variant !== 'danger'"
-              [class.cfd-btn--danger]="config.variant === 'danger'"
-              (click)="confirmed.emit()">
+      <button
+        #confirmBtn
+        type="button"
+        class="cfd-btn"
+        [class.cfd-btn--primary]="config.variant !== 'danger'"
+        [class.cfd-btn--danger]="config.variant === 'danger'"
+        (click)="onConfirm()">
         {{ config.confirmLabel }}
       </button>
     </div>

@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { normalizeApiBaseUrl } from 'src/environments/api-url';
 import { SolicitudReprogramacion } from 'src/app/shared/models/solicitud-reprogramacion.model';
 import { buildQueryParams } from 'src/app/shared/utils/query-params.utils';
 import { PageResponse } from 'src/app/shared/models/page.model';
@@ -33,7 +34,9 @@ type SolicitudListResponse = SolicitudReprogramacionDto[] | PageResponse<Solicit
 
 @Injectable({ providedIn: 'root' })
 export class SolicitudReprogramacionApiService {
-  private readonly base = `${environment.apiUrl}/solicitudes-reprogramacion`;
+  private readonly apiRoot = normalizeApiBaseUrl(environment.apiUrl);
+  private readonly base = `${this.apiRoot}/solicitudes-reprogramacion`;
+  private readonly citasBase = `${this.apiRoot}/citas`;
   private readonly cacheByCita = new Map<number, SolicitudReprogramacion>();
   private readonly cacheBySolicitud = new Map<number, SolicitudReprogramacion>();
 
@@ -86,10 +89,10 @@ export class SolicitudReprogramacionApiService {
     return found;
   }
 
-  async aprobar(idSolicitud: number): Promise<SolicitudReprogramacion | null> {
+  async aprobar(idCita: number, idSolicitud: number): Promise<SolicitudReprogramacion | null> {
     const response = await firstValueFrom(
       this.http.patch<AprobarSolicitudResponse>(
-        `${this.base}/${idSolicitud}/aceptar`,
+        `${this.citasBase}/${idCita}/solicitudes-reprogramacion/${idSolicitud}/aprobar`,
         {},
       )
     );
@@ -103,10 +106,10 @@ export class SolicitudReprogramacionApiService {
     return mapped;
   }
 
-  async rechazar(idSolicitud: number, motivo?: string): Promise<SolicitudReprogramacion> {
+  async rechazar(idCita: number, idSolicitud: number, motivo?: string): Promise<SolicitudReprogramacion> {
     const response = await firstValueFrom(
       this.http.patch<SolicitudReprogramacionDto>(
-        `${this.base}/${idSolicitud}/rechazar`,
+        `${this.citasBase}/${idCita}/solicitudes-reprogramacion/${idSolicitud}/rechazar`,
         motivo?.trim() ? { motivoRechazo: motivo.trim() } : {},
       )
     );

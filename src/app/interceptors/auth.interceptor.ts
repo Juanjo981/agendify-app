@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { HttpInterceptorFn, HttpRequest, HttpHandlerFn } from '@angular/common/http';
+import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpEvent } from '@angular/common/http';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { catchError, filter, switchMap, take } from 'rxjs/operators';
 import { Router } from '@angular/router';
@@ -74,7 +74,7 @@ function withBearerToken<T>(req: HttpRequest<T>, token: string): HttpRequest<T> 
 
 // ── Interceptor ───────────────────────────────────────────────────────────────
 
-export const authInterceptor: HttpInterceptorFn = (req, next) => {
+export const authInterceptor = ((req, next) => {
   // inject() solo válido al nivel superior de la función
   const authService = inject(AuthService);
   const router      = inject(Router);
@@ -92,14 +92,23 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authReq = withBearerToken(req, token);
 
   return next(authReq).pipe(
-    catchError(error => {
+    catchError((error): Observable<HttpEvent<unknown>> => {
       if (error.status === 401) {
+        // POST /versiones no es idempotente: no reenviar automáticamente tras refresh.
+        if (isNonIdempotentRecetaVersionPost(req)) {
+          return rethrowHttpError(error);
+        }
         return handle401(req, next, authService, router, toastCtrl);
       }
-      return throwError(() => error);
+      return rethrowHttpError(error);
     }),
   );
-};
+}) as HttpInterceptorFn;
+
+/** POST /api/recetas/{id}/versiones — no retry automático (ni 401 replay). */
+function isNonIdempotentRecetaVersionPost(req: HttpRequest<unknown>): boolean {
+  return req.method === 'POST' && /\/recetas\/[^/?]+\/versiones(?:\?|$)/.test(req.url);
+}
 
 // ── 401 handler ───────────────────────────────────────────────────────────────
 
@@ -109,7 +118,7 @@ function handle401(
   authService: AuthService,
   router:      Router,
   toastCtrl:   ToastController,
-): Observable<any> {
+): Observable<HttpEvent<unknown>> {
   return recoverAuthenticatedRequest(originalReq, next, authService, router, toastCtrl);
 }
 
@@ -119,13 +128,13 @@ function recoverAuthenticatedRequest(
   authService: AuthService,
   router:      Router,
   toastCtrl:   ToastController,
-): Observable<any> {
+): Observable<HttpEvent<unknown>> {
   // Sin refresh_token en storage → no hay nada que intentar
   if (!authService.getRefreshToken()) {
     authService.forceLogout();
     router.navigateByUrl('/login');
     showSessionToast(toastCtrl, 'Tu sesión finalizó. Inicia sesión nuevamente.');
-    return throwError(() => new Error('No refresh token available'));
+    return rethrowHttpError(new Error('No refresh token available'));
   }
 
   // ── Si NO hay un refresh en curso, iniciamos uno ──────────────────────────
@@ -140,7 +149,7 @@ function recoverAuthenticatedRequest(
         refreshSubject.next(tokens.access_token); // desbloquea los en espera
         return next(withBearerToken(originalReq, tokens.access_token));
       }),
-      catchError(err => {
+      catchError((err): Observable<HttpEvent<unknown>> => {
         isRefreshing = false;
         refreshSubject.next(null);
         authService.forceLogout();
@@ -164,7 +173,7 @@ function recoverAuthenticatedRequest(
         }
 
         router.navigateByUrl('/login');
-        return throwError(() => err);
+        return rethrowHttpError(err);
       }),
     );
   }
@@ -183,5 +192,9 @@ function showSessionToast(toastCtrl: ToastController, message: string): void {
     .create({ message, duration: 3500, position: 'top', color: 'warning', icon: 'time-outline' })
     .then(toast => toast.present())
     .catch(() => {});
+}
+
+function rethrowHttpError(error: unknown): Observable<HttpEvent<unknown>> {
+  return throwError(() => error) as Observable<HttpEvent<unknown>>;
 }
 

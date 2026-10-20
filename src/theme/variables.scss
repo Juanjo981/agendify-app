@@ -99,6 +99,20 @@
   --overlay-modal:        rgba(15, 23, 42, 0.45);
   --overlay-modal-strong: rgba(15, 23, 42, 0.62);
 
+  // ── Overlay stacking (escala coherente; no usar 999999) ─────────────────────
+  // página < backdrop receta < panel receta < sheets internos < host móvil
+  //   < backdrop confirm < diálogo confirm < toasts Ionic (~20000+ en práctica
+  //   elevamos confirm por encima del host móvil de receta).
+  --z-overlay-dropdown: 8000;
+  --z-overlay-receta-backdrop: 9000;
+  --z-overlay-receta-panel: 9001;
+  --z-overlay-receta-backdrop-desktop: 10050;
+  --z-overlay-receta-panel-desktop: 10051;
+  --z-overlay-receta-nested: 10080;
+  --z-overlay-receta-mobile-host: 20050;
+  --z-overlay-confirm-backdrop: 20100;
+  --z-overlay-confirm-dialog: 20110;
+
   // ── App chrome (dashboard header + mobile bottom nav handle) ────────────────
   --app-header-height: 64px;
   --mobile-bottom-nav-height: 45px; /* .bottom-menu collapsed handle */

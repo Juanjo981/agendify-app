@@ -253,10 +253,9 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.logoutConfirmAbierto = true;
   }
 
-  cerrarSesion() {
+  async cerrarSesion(): Promise<void> {
     this.logoutConfirmAbierto = false;
-    this.authService.forceLogout();
-    this.navCtrl.navigateRoot('/login');
+    await this.authService.logout();
   }
 
   cancelarLogout() {

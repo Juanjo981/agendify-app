@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { normalizeApiBaseUrl } from 'src/environments/api-url';
 import {
   ConfiguracionAgendaDto,
   ConfiguracionAgendaRequest,
@@ -13,7 +14,7 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class ConfiguracionApiService {
-  private readonly baseUrl = environment.apiUrl;
+  private readonly baseUrl = normalizeApiBaseUrl(environment.apiUrl);
   private readonly agendaUrl = `${this.baseUrl}/configuracion/agenda`;
   private readonly sistemaCollectionUrl = `${this.baseUrl}/configuracion-sistema`;
   private readonly recordatoriosUrl = `${this.baseUrl}/configuracion-recordatorios`;
@@ -21,12 +22,12 @@ export class ConfiguracionApiService {
   constructor(private http: HttpClient) {}
 
   getAgenda(): Promise<ConfiguracionAgendaDto> {
-    return firstValueFrom(this.http.get<any>(this.agendaUrl)).then(raw => this.normalizeAgenda(raw));
+    return firstValueFrom(this.http.get<unknown>(this.agendaUrl)).then(raw => this.normalizeAgenda(raw));
   }
 
   saveAgenda(body: ConfiguracionAgendaRequest): Promise<ConfiguracionAgendaDto> {
     return firstValueFrom(
-      this.http.put<any>(this.agendaUrl, body, { observe: 'response' }),
+      this.http.put<unknown>(this.agendaUrl, body, { observe: 'response' }),
     ).then(res => {
       if (res.status !== 200) {
         throw new Error(`configuracion/agenda: respuesta ${res.status}, se esperaba 200`);
@@ -36,13 +37,13 @@ export class ConfiguracionApiService {
   }
 
   getSistema(): Promise<ConfiguracionSistemaDto> {
-    return firstValueFrom(this.http.get<any>(this.sistemaCollectionUrl)).then(raw => this.normalizeSistema(raw));
+    return firstValueFrom(this.http.get<unknown>(this.sistemaCollectionUrl)).then(raw => this.normalizeSistema(raw));
   }
 
   saveSistema(body: ConfiguracionSistemaRequest, currentId?: number | null): Promise<ConfiguracionSistemaDto> {
     if (currentId != null && currentId > 0) {
       return firstValueFrom(
-        this.http.put<any>(`${this.sistemaCollectionUrl}/${currentId}`, body, { observe: 'response' }),
+        this.http.put<unknown>(`${this.sistemaCollectionUrl}/${currentId}`, body, { observe: 'response' }),
       ).then(res => {
         if (res.status !== 200) {
           throw new Error(`configuracion-sistema PUT: respuesta ${res.status}, se esperaba 200`);
@@ -52,7 +53,7 @@ export class ConfiguracionApiService {
     }
 
     return firstValueFrom(
-      this.http.post<any>(this.sistemaCollectionUrl, body, { observe: 'response' }),
+      this.http.post<unknown>(this.sistemaCollectionUrl, body, { observe: 'response' }),
     ).then(res => {
       if (res.status !== 200 && res.status !== 201) {
         throw new Error(`configuracion-sistema POST: respuesta ${res.status}, se esperaba 200 o 201`);
@@ -62,24 +63,24 @@ export class ConfiguracionApiService {
   }
 
   getRecordatorios(): Promise<ConfiguracionRecordatorioDto[]> {
-    return firstValueFrom(this.http.get<any>(this.recordatoriosUrl)).then(raw => this.normalizeRecordatorios(raw));
+    return firstValueFrom(this.http.get<unknown>(this.recordatoriosUrl)).then(raw => this.normalizeRecordatorios(raw));
   }
 
   createRecordatorio(body: ConfiguracionRecordatorioRequest): Promise<ConfiguracionRecordatorioDto> {
     return firstValueFrom(
-      this.http.post<any>(this.recordatoriosUrl, body),
+      this.http.post<unknown>(this.recordatoriosUrl, body),
     ).then(raw => this.normalizeRecordatorio(raw));
   }
 
   updateRecordatorio(id: number, body: ConfiguracionRecordatorioRequest): Promise<ConfiguracionRecordatorioDto> {
     return firstValueFrom(
-      this.http.put<any>(`${this.recordatoriosUrl}/${id}`, body),
+      this.http.put<unknown>(`${this.recordatoriosUrl}/${id}`, body),
     ).then(raw => this.normalizeRecordatorio(raw));
   }
 
   setActivoRecordatorio(id: number, activo: boolean): Promise<ConfiguracionRecordatorioDto> {
     return firstValueFrom(
-      this.http.patch<any>(`${this.recordatoriosUrl}/${id}/activo`, { activo }),
+      this.http.patch<unknown>(`${this.recordatoriosUrl}/${id}/activo`, { activo }),
     ).then(raw => this.normalizeRecordatorio(raw));
   }
 

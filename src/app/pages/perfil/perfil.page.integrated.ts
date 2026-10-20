@@ -76,12 +76,16 @@ export class PerfilPage implements OnInit, OnDestroy {
     citasHoy: 4,
   };
 
+  readonly statsInformativas = true;
+
   readonly integraciones = [
     { nombre: 'Google Calendar', desc: 'Sincroniza tus citas automáticamente', icon: 'calendar-outline', color: 'linear-gradient(135deg, #4285F4, #34A853)' },
     { nombre: 'WhatsApp Business', desc: 'Envía recordatorios a tus pacientes', icon: 'logo-whatsapp', color: 'linear-gradient(135deg, #25D366, #128C7E)' },
     { nombre: 'Pagos en línea', desc: 'Cobra consultas con tarjeta o transferencia', icon: 'card-outline', color: 'linear-gradient(135deg, #6366f1, #3b3f92)' },
     { nombre: 'Videollamadas', desc: 'Consultas en línea con tus pacientes', icon: 'videocam-outline', color: 'linear-gradient(135deg, #14b8a6, #0d9488)' },
   ];
+
+  readonly integracionesInformativas = true;
 
   passwordActual = '';
   nuevaPassword = '';

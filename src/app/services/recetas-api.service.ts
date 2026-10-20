@@ -2,11 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { normalizeApiBaseUrl } from 'src/environments/api-url';
 import { PageResponse } from '../shared/models/page.model';
 import {
   ActualizarRecetaRequest,
   CopiarRecetaRequest,
   CrearRecetaRequest,
+  CrearVersionRecetaRequest,
   ListarRecetasPacienteParams,
   RecetaDetalle,
   RecetaPdfDisposition,
@@ -23,8 +25,9 @@ import { stripForbiddenRecetaPayloadFields } from '../shared/utils/receta-form.a
 @Injectable({ providedIn: 'root' })
 export class RecetasApiService {
   private readonly http = inject(HttpClient);
-  private readonly recetasBase = `${environment.apiUrl}/recetas`;
-  private readonly pacientesBase = `${environment.apiUrl}/pacientes`;
+  private readonly apiRoot = normalizeApiBaseUrl(environment.apiUrl);
+  private readonly recetasBase = `${this.apiRoot}/recetas`;
+  private readonly pacientesBase = `${this.apiRoot}/pacientes`;
 
   /** POST /api/recetas → 201 BORRADOR */
   crearReceta(request: CrearRecetaRequest): Promise<RecetaDetalle> {
@@ -86,8 +89,9 @@ export class RecetasApiService {
   /** POST /api/recetas/{idReceta}/versiones — EMITIDA → nueva versión PDF */
   crearNuevaVersion(
     idReceta: number,
-    request: ActualizarRecetaRequest,
+    request: CrearVersionRecetaRequest,
   ): Promise<RecetaDetalle> {
+    // Conserva lock_version: 0 y numero_version_base; stripForbidden no los elimina.
     const body = stripForbiddenRecetaPayloadFields({ ...request } as Record<string, unknown>);
     return firstValueFrom(
       this.http.post<RecetaDetalle>(`${this.recetasBase}/${idReceta}/versiones`, body),

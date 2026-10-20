@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { normalizeApiBaseUrl } from 'src/environments/api-url';
 import { PermisosRecepcionista, PERMISO_LABEL } from '../shared/models/permisos.model';
 import {
   PermisosRecepcionistaDto,
@@ -19,7 +20,8 @@ const PERMISOS_VACIOS: PermisosRecepcionista = {
 
 @Injectable({ providedIn: 'root' })
 export class EquipoApiService {
-  private readonly baseUrl = `${environment.apiUrl}/recepcionistas`;
+  private readonly apiRoot = normalizeApiBaseUrl(environment.apiUrl);
+  private readonly baseUrl = `${this.apiRoot}/recepcionistas`;
 
   constructor(private http: HttpClient) {}
 

@@ -20,18 +20,6 @@
       </p>
     </div>
 
-    <!-- Estado: reprogramar -->
-    <div class="cc-hero" *ngIf="vista === 'reprogramar'">
-      <p class="cc-hero__eyebrow cc-hero__eyebrow--blue">
-        <ion-icon name="calendar-outline"></ion-icon>
-        Cambio de horario
-      </p>
-      <h1 class="cc-hero__title cc-hero__title--sm">Solicitar<br>reprogramaciÃ³n</h1>
-      <p class="cc-hero__sub">
-        Dinos cuÃ¡ndo podrÃ­as asistir y se lo comunicaremos a tu profesional.
-      </p>
-    </div>
-
     <!-- Estado: cancelar (confirmacion previa) -->
     <div class="cc-hero" *ngIf="vista === 'cancelar'">
       <p class="cc-hero__eyebrow cc-hero__eyebrow--red">
@@ -59,7 +47,7 @@
         </div>
         <!-- Badge de estado - color cambia con cada transicion -->
         <div class="cc-status"
-             [class.cc-status--pending]="vista === 'pendiente' || vista === 'reprogramar' || vista === 'cancelar'"
+             [class.cc-status--pending]="vista === 'pendiente' || vista === 'cancelar'"
              [class.cc-status--confirmed]="vista === 'confirmada'"
              [class.cc-status--cancelled]="vista === 'cancelada'"
              [class.cc-status--rescheduled]="vista === 'reprogramada'">
@@ -146,10 +134,10 @@
     </div>
 
     <!-- ACCIONES PRINCIPALES (estado pendiente) -->
-    <div class="cc-actions" *ngIf="vista === 'pendiente' && (puedeConfirmar || puedeSolicitarReprogramacion || puedeCancelar)">
+    <div class="cc-actions" *ngIf="vista === 'pendiente' && (puedeConfirmar || puedeCancelar)">
       <p class="cc-actions__hint">
         <ion-icon name="information-circle-outline"></ion-icon>
-        Si no puedes asistir, puedes solicitar un cambio o cancelar directamente.
+        Si no puedes asistir, puedes cancelar directamente.
       </p>
 
       <!-- CTA principal -->
@@ -158,64 +146,10 @@
         Confirmar mi asistencia
       </button>
 
-      <!-- CTA secundario: reprogramar -->
-      <button class="cc-btn-reschedule" *ngIf="puedeSolicitarReprogramacion" [disabled]="accionLoading" (click)="irAReprogramar()">
-        <ion-icon name="calendar-outline"></ion-icon>
-        Solicitar reprogramaciÃ³n
-      </button>
-
       <!-- CTA terciario: cancelar - minimo peso visual -->
       <button class="cc-btn-cancel-link" *ngIf="puedeCancelar" [disabled]="accionLoading" (click)="irACancelar()">
         No podrÃ© asistir â€” cancelar cita
       </button>
-    </div>
-
-    <!-- SECCION REPROGRAMAR -->
-    <div class="cc-section cc-repro" *ngIf="vista === 'reprogramar'">
-
-      <p class="cc-section__subtitle">Horarios disponibles sugeridos</p>
-
-      <!-- Slots de horario sugeridos -->
-      <div class="cc-slots" *ngIf="slotsSugeridos.length > 0">
-        <button
-          *ngFor="let slot of slotsSugeridos; let i = index"
-          class="cc-slot"
-          [class.cc-slot--selected]="slotSeleccionado === i"
-          (click)="slotSeleccionado = i">
-          <span class="cc-slot__day">{{ slot.fechaLabel }}</span>
-          <span class="cc-slot__time">{{ slot.horaLabel }}</span>
-        </button>
-      </div>
-
-      <p class="cc-section__or" *ngIf="loadingSlots">Consultando disponibilidad...</p>
-      <p class="cc-section__or" *ngIf="!loadingSlots && slotsError">{{ slotsError }}</p>
-      <p class="cc-section__or" *ngIf="!loadingSlots && !slotsError && slotsSugeridos.length === 0">
-        No encontramos horarios disponibles por ahora. Puedes dejar tu preferencia abajo.
-      </p>
-
-      <p class="cc-section__or">o describe tu preferencia</p>
-
-      <div class="cc-textarea-wrap">
-        <label class="cc-textarea-label">Motivo o sugerencia de horario</label>
-        <textarea
-          class="cc-textarea"
-          rows="3"
-          placeholder="Ej: Prefiero en la tarde a partir de las 15:00 h..."
-          [(ngModel)]="motivoReprogramacion"
-        ></textarea>
-      </div>
-
-      <div class="cc-section__actions">
-        <button class="cc-btn-confirm" [disabled]="accionLoading || slotSeleccionado === null" (click)="enviarReprogramacion()">
-          <ion-icon name="send-outline"></ion-icon>
-          Enviar solicitud
-        </button>
-        <button class="cc-btn-back" (click)="volver()">
-          <ion-icon name="arrow-back-outline"></ion-icon>
-          Volver
-        </button>
-      </div>
-
     </div>
 
     <!-- SECCION CANCELAR (confirmacion previa) -->

@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse, HttpHeaders, HttpResponse } from '@angul
 import { Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { normalizeApiBaseUrl } from 'src/environments/api-url';
 import {
   AssetRegisterRequest,
   AssetUploadUrlRequest,
@@ -17,13 +18,15 @@ import {
   createDefaultPlantillaConfig,
   createEmptyDatosVisualizacion,
   mergeProfesionalIntoConfig,
+  normalizePlantillaConfig,
 } from '../shared/models/plantilla-recetas.models';
 import { PerfilApiService } from './perfil-api.service';
 import { MiPerfilResponse } from '../shared/models/perfil.models';
 
 @Injectable({ providedIn: 'root' })
 export class PlantillaRecetasApiService {
-  private readonly baseUrl = `${environment.apiUrl}/profesionales/me/plantilla-recetas`;
+  private readonly apiRoot = normalizeApiBaseUrl(environment.apiUrl);
+  private readonly baseUrl = `${this.apiRoot}/profesionales/me/plantilla-recetas`;
 
   constructor(
     private http: HttpClient,
@@ -369,150 +372,7 @@ export class PlantillaRecetasApiService {
   }
 
   private normalizeConfig(raw: unknown): PlantillaRecetasConfigDto {
-    const base = createDefaultPlantillaConfig();
-    if (!raw || typeof raw !== 'object') return base;
-
-    const data = raw as Record<string, unknown>;
-    const vis = (data['visibilidad'] ?? {}) as Record<string, unknown>;
-    const identidad = (data['identidad'] ?? {}) as Record<string, unknown>;
-    const distribucion = (data['distribucion'] ?? {}) as Record<string, unknown>;
-    const secciones = (distribucion['secciones'] ?? {}) as Record<string, unknown>;
-    const etiquetas = (distribucion['etiquetas'] ?? {}) as Record<string, unknown>;
-    const pie = (data['pie'] ?? {}) as Record<string, unknown>;
-
-    return {
-      version: this.normalizeNumber(data['version']) ?? base.version,
-      visibilidad: {
-        nombre: this.normalizeBoolean(vis['nombre']) ?? base.visibilidad.nombre,
-        especialidad: this.normalizeBoolean(vis['especialidad']) ?? base.visibilidad.especialidad,
-        cedula_profesional:
-          this.normalizeBoolean(vis['cedula_profesional'] ?? vis['cedulaProfesional']) ??
-          base.visibilidad.cedula_profesional,
-        telefono_profesional:
-          this.normalizeBoolean(vis['telefono_profesional'] ?? vis['telefonoProfesional']) ??
-          base.visibilidad.telefono_profesional,
-        email: this.normalizeBoolean(vis['email']) ?? base.visibilidad.email,
-        nombre_consultorio:
-          this.normalizeBoolean(vis['nombre_consultorio'] ?? vis['nombreConsultorio']) ??
-          base.visibilidad.nombre_consultorio,
-        telefono_consultorio:
-          this.normalizeBoolean(vis['telefono_consultorio'] ?? vis['telefonoConsultorio']) ??
-          base.visibilidad.telefono_consultorio,
-        direccion_consultorio:
-          this.normalizeBoolean(vis['direccion_consultorio'] ?? vis['direccionConsultorio']) ??
-          base.visibilidad.direccion_consultorio,
-      },
-      datos_visualizacion: createEmptyDatosVisualizacion(),
-      identidad: {
-        mostrar_logo:
-          this.normalizeBoolean(identidad['mostrar_logo'] ?? identidad['mostrarLogo']) ??
-          base.identidad.mostrar_logo,
-        logo_url: this.cleanUrl(identidad['logo_url'] ?? identidad['logoUrl']),
-        color_id: this.cleanText(identidad['color_id'] ?? identidad['colorId']) || base.identidad.color_id,
-        encabezado: this.asOneOf(
-          identidad['encabezado'],
-          ['minimalista', 'franja', 'dividido'] as const,
-          base.identidad.encabezado
-        ),
-        tipografia: this.asOneOf(
-          identidad['tipografia'],
-          ['moderna', 'clasica', 'compacta'] as const,
-          base.identidad.tipografia
-        ),
-        separador: this.asOneOf(
-          identidad['separador'],
-          ['ninguno', 'sutil', 'color'] as const,
-          base.identidad.separador
-        ),
-      },
-      distribucion: {
-        formato: this.asOneOf(
-          distribucion['formato'],
-          ['carta', 'media-carta'] as const,
-          base.distribucion.formato
-        ),
-        layout: this.asOneOf(
-          distribucion['layout'],
-          ['clasica', 'moderna', 'compacta'] as const,
-          base.distribucion.layout
-        ),
-        secciones: {
-          fecha_emision:
-            this.normalizeBoolean(secciones['fecha_emision'] ?? secciones['fechaEmision']) ??
-            base.distribucion.secciones.fecha_emision,
-          datos_paciente:
-            this.normalizeBoolean(secciones['datos_paciente'] ?? secciones['datosPaciente']) ??
-            base.distribucion.secciones.datos_paciente,
-          edad_paciente:
-            this.normalizeBoolean(secciones['edad_paciente'] ?? secciones['edadPaciente']) ??
-            base.distribucion.secciones.edad_paciente,
-          diagnostico:
-            this.normalizeBoolean(secciones['diagnostico']) ?? base.distribucion.secciones.diagnostico,
-          medicamentos: true,
-          indicaciones: true,
-          proxima_cita:
-            this.normalizeBoolean(secciones['proxima_cita'] ?? secciones['proximaCita']) ??
-            base.distribucion.secciones.proxima_cita,
-          firma: this.normalizeBoolean(secciones['firma']) ?? base.distribucion.secciones.firma,
-          sello: this.normalizeBoolean(secciones['sello']) ?? base.distribucion.secciones.sello,
-          aviso_legal:
-            this.normalizeBoolean(secciones['aviso_legal'] ?? secciones['avisoLegal']) ??
-            base.distribucion.secciones.aviso_legal,
-        },
-        etiquetas: {
-          paciente: this.cleanText(etiquetas['paciente']).slice(0, 40) || base.distribucion.etiquetas.paciente,
-          diagnostico:
-            this.cleanText(etiquetas['diagnostico']).slice(0, 40) || base.distribucion.etiquetas.diagnostico,
-          medicamentos:
-            this.cleanText(etiquetas['medicamentos']).slice(0, 40) || base.distribucion.etiquetas.medicamentos,
-          indicaciones:
-            this.cleanText(etiquetas['indicaciones']).slice(0, 40) || base.distribucion.etiquetas.indicaciones,
-          proxima_cita:
-            this.cleanText(etiquetas['proxima_cita'] ?? etiquetas['proximaCita']).slice(0, 40) ||
-            base.distribucion.etiquetas.proxima_cita,
-          firma: this.cleanText(etiquetas['firma']).slice(0, 40) || base.distribucion.etiquetas.firma,
-          aviso_legal:
-            this.cleanText(etiquetas['aviso_legal'] ?? etiquetas['avisoLegal']).slice(0, 40) ||
-            base.distribucion.etiquetas.aviso_legal,
-        },
-        espaciado: this.asOneOf(
-          distribucion['espaciado'],
-          ['compacto', 'normal', 'amplio'] as const,
-          base.distribucion.espaciado
-        ),
-        tamano_texto: this.asOneOf(
-          distribucion['tamano_texto'] ?? distribucion['tamanoTexto'],
-          ['pequeno', 'mediano', 'grande'] as const,
-          base.distribucion.tamano_texto
-        ),
-      },
-      pie: {
-        firma_url: this.cleanUrl(pie['firma_url'] ?? pie['firmaUrl']),
-        sello_url: this.cleanUrl(pie['sello_url'] ?? pie['selloUrl']),
-        mostrar_nombre_bajo_firma:
-          this.normalizeBoolean(pie['mostrar_nombre_bajo_firma'] ?? pie['mostrarNombreBajoFirma']) ??
-          base.pie.mostrar_nombre_bajo_firma,
-        mostrar_especialidad_bajo_firma:
-          this.normalizeBoolean(pie['mostrar_especialidad_bajo_firma'] ?? pie['mostrarEspecialidadBajoFirma']) ??
-          base.pie.mostrar_especialidad_bajo_firma,
-        mostrar_cedula_bajo_firma:
-          this.normalizeBoolean(pie['mostrar_cedula_bajo_firma'] ?? pie['mostrarCedulaBajoFirma']) ??
-          base.pie.mostrar_cedula_bajo_firma,
-        texto_pie: this.cleanText(pie['texto_pie'] ?? pie['textoPie']).slice(0, 180) || base.pie.texto_pie,
-        mostrar_telefono:
-          this.normalizeBoolean(pie['mostrar_telefono'] ?? pie['mostrarTelefono']) ?? base.pie.mostrar_telefono,
-        mostrar_correo:
-          this.normalizeBoolean(pie['mostrar_correo'] ?? pie['mostrarCorreo']) ?? base.pie.mostrar_correo,
-        mostrar_direccion:
-          this.normalizeBoolean(pie['mostrar_direccion'] ?? pie['mostrarDireccion']) ?? base.pie.mostrar_direccion,
-        mostrar_numero_pagina:
-          this.normalizeBoolean(pie['mostrar_numero_pagina'] ?? pie['mostrarNumeroPagina']) ??
-          base.pie.mostrar_numero_pagina,
-        mostrar_fecha_generacion:
-          this.normalizeBoolean(pie['mostrar_fecha_generacion'] ?? pie['mostrarFechaGeneracion']) ??
-          base.pie.mostrar_fecha_generacion,
-      },
-    };
+    return normalizePlantillaConfig(raw);
   }
 
   private sanitizeConfig(config: PlantillaRecetasConfigDto): PlantillaRecetasConfigDto {

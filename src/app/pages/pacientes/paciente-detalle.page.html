@@ -127,109 +127,156 @@
       <!-- ==== SECCIÓN: RESUMEN (key: informacion) ==== -->
       <div *ngIf="seccionActiva === 'informacion'" class="det-informacion det-section-panel">
 
-        <!-- 1. Indicadores rápidos (tarjetas resumen) -->
+        <!-- 1. Indicadores rápidos (API real) -->
         <section class="det-resumen-block">
           <header class="det-resumen-block__header">
             <h3 class="det-resumen-block__title">Indicadores rápidos</h3>
-            <p class="det-resumen-block__subtitle">Vista preliminar · datos de ejemplo</p>
+            <p class="det-resumen-block__subtitle">Adherencia y continuidad · últimos 90 días</p>
           </header>
 
-          <!-- Estado del tratamiento (UI-only, listo para datos dinámicos) -->
-          <article class="det-indice-card" aria-label="Estado del tratamiento">
-            <div class="det-indice-card__main">
-              <div class="det-indice-card__heading">
-                <div class="det-indice-card__icon">
-                  <ion-icon name="pulse-outline"></ion-icon>
-                </div>
-                <div>
-                  <h4 class="det-indice-card__title">Estado del tratamiento</h4>
-                  <p class="det-indice-card__hint">Adherencia y continuidad del paciente</p>
-                </div>
-              </div>
-
-              <div class="det-indice-card__score-row">
-                <div class="det-indice-card__score">
-                  <span class="det-indice-card__value">{{ indiceClinicoUi.score }}</span>
-                  <span class="det-indice-card__max">/{{ indiceClinicoUi.max }}</span>
-                </div>
-                <div class="det-indice-card__status" [attr.data-tone]="indiceClinicoUi.estadoTone">
-                  <span class="det-indice-card__status-dot" aria-hidden="true"></span>
-                  <span>{{ indiceClinicoUi.estado }}</span>
-                </div>
-              </div>
-
-              <div
-                class="det-indice-bar"
-                role="progressbar"
-                [attr.aria-valuenow]="indiceClinicoUi.score"
-                [attr.aria-valuemin]="0"
-                [attr.aria-valuemax]="indiceClinicoUi.max"
-                [attr.aria-label]="'Estado del tratamiento: ' + indiceClinicoUi.score + ' de ' + indiceClinicoUi.max">
-                <span
-                  class="det-indice-bar__fill"
-                  [style.width.%]="indiceClinicoUi.score">
-                </span>
-              </div>
-
-              <p class="det-indice-card__legend">{{ indiceClinicoUi.leyenda }}</p>
+          <div
+            *ngIf="loadingIndicadores && !indicadoresLoaded"
+            class="det-section-skeleton"
+            aria-busy="true">
+            <div class="det-section-skeleton__card" *ngFor="let line of skeletonLines">
+              <ion-skeleton-text animated style="width: 160px; height: 14px; border-radius: 999px;"></ion-skeleton-text>
+              <ion-skeleton-text animated style="width: 100%; height: 16px; border-radius: 999px;"></ion-skeleton-text>
+              <ion-skeleton-text animated style="width: 72%; height: 16px; border-radius: 999px;"></ion-skeleton-text>
             </div>
-
-            <div class="det-indice-card__factors">
-              <h5 class="det-indice-card__factors-title">Desglose del seguimiento</h5>
-              <ul class="det-indice-factors">
-                <li
-                  *ngFor="let factor of indiceClinicoUi.factores"
-                  class="det-indice-factors__item"
-                  [attr.data-tone]="factor.tone">
-                  <span class="det-indice-factors__name">{{ factor.nombre }}</span>
-                  <span class="det-indice-factors__value">
-                    <span class="det-indice-factors__dot" aria-hidden="true"></span>
-                    {{ factor.valor }}
-                  </span>
-                </li>
-              </ul>
-            </div>
-          </article>
-
-          <div class="det-kpi-grid" aria-hidden="true">
-            <article class="det-kpi-card">
-              <div class="det-kpi-card__top">
-                <div class="det-kpi-card__icon det-kpi-card__icon--success">
-                  <ion-icon name="checkmark-circle-outline"></ion-icon>
-                </div>
-                <span class="det-kpi-card__label">Asistencia</span>
-              </div>
-              <div class="det-kpi-card__value">93<span class="det-kpi-card__suffix">%</span></div>
-              <span class="det-kpi-card__meta">Placeholder</span>
-            </article>
-
-            <article class="det-kpi-card">
-              <div class="det-kpi-card__top">
-                <div class="det-kpi-card__icon det-kpi-card__icon--purple">
-                  <ion-icon name="layers-outline"></ion-icon>
-                </div>
-                <span class="det-kpi-card__label">Sesiones</span>
-              </div>
-              <div class="det-kpi-card__value">8</div>
-              <span class="det-kpi-card__meta">Placeholder</span>
-            </article>
-
-            <article class="det-kpi-card">
-              <div class="det-kpi-card__top">
-                <div class="det-kpi-card__icon det-kpi-card__icon--blue">
-                  <ion-icon name="calendar-outline"></ion-icon>
-                </div>
-                <span class="det-kpi-card__label">Próxima cita</span>
-              </div>
-              <div class="det-kpi-card__value det-kpi-card__value--sm">24 Julio</div>
-              <span class="det-kpi-card__meta">6:00 PM</span>
-            </article>
           </div>
+
+          <div *ngIf="indicadoresError && !loadingIndicadores" class="det-empty">
+            <ion-icon name="alert-circle-outline"></ion-icon>
+            <p>No se pudieron cargar los indicadores</p>
+            <span>{{ indicadoresError }}</span>
+            <button class="det-btn-outline det-empty-action" type="button" (click)="reintentarIndicadores()">
+              Reintentar
+            </button>
+          </div>
+
+          <ng-container *ngIf="indicadoresLoaded && !indicadoresError && indiceTratamiento as indice">
+            <article class="det-indice-card" aria-label="Estado del tratamiento">
+              <div class="det-indice-card__main">
+                <div class="det-indice-card__heading">
+                  <div class="det-indice-card__icon">
+                    <ion-icon name="pulse-outline"></ion-icon>
+                  </div>
+                  <div>
+                    <h4 class="det-indice-card__title">Estado del tratamiento</h4>
+                    <p class="det-indice-card__hint">Adherencia y continuidad del paciente</p>
+                  </div>
+                </div>
+
+                <div class="det-indice-card__score-row">
+                  <div class="det-indice-card__score" *ngIf="!indice.sinDatos; else sinPuntaje">
+                    <span class="det-indice-card__value">{{ indice.score }}</span>
+                    <span class="det-indice-card__max">/{{ indice.max }}</span>
+                  </div>
+                  <ng-template #sinPuntaje>
+                    <div class="det-indice-card__score">
+                      <span class="det-indice-card__value det-indice-card__value--muted">—</span>
+                    </div>
+                  </ng-template>
+                  <div class="det-indice-card__status" [attr.data-tone]="indice.estadoTone">
+                    <span class="det-indice-card__status-dot" aria-hidden="true"></span>
+                    <span>{{ indice.estado }}</span>
+                  </div>
+                </div>
+
+                <div
+                  class="det-indice-bar"
+                  [class.det-indice-bar--empty]="indice.sinDatos"
+                  role="progressbar"
+                  [attr.aria-valuenow]="indice.sinDatos ? 0 : indice.score"
+                  [attr.aria-valuemin]="0"
+                  [attr.aria-valuemax]="indice.max"
+                  [attr.aria-label]="indice.sinDatos
+                    ? 'Estado del tratamiento: sin datos suficientes'
+                    : ('Estado del tratamiento: ' + indice.score + ' de ' + indice.max)">
+                  <span
+                    class="det-indice-bar__fill"
+                    [style.width.%]="indice.barWidthPct">
+                  </span>
+                </div>
+
+                <p class="det-indice-card__legend">{{ indice.leyenda }}</p>
+              </div>
+
+              <div class="det-indice-card__factors">
+                <h5 class="det-indice-card__factors-title">Desglose del seguimiento</h5>
+                <ul class="det-indice-factors">
+                  <li
+                    *ngFor="let factor of indice.factores"
+                    class="det-indice-factors__item"
+                    [attr.data-tone]="factor.tone">
+                    <span class="det-indice-factors__name">{{ factor.nombre }}</span>
+                    <span class="det-indice-factors__value">
+                      <span class="det-indice-factors__dot" aria-hidden="true"></span>
+                      {{ factor.valor }}
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </article>
+
+            <div class="det-kpi-grid" *ngIf="kpiAsistencia && kpiSesiones && kpiProximaCita">
+              <article class="det-kpi-card">
+                <div class="det-kpi-card__top">
+                  <div class="det-kpi-card__icon det-kpi-card__icon--success">
+                    <ion-icon name="checkmark-circle-outline"></ion-icon>
+                  </div>
+                  <span class="det-kpi-card__label">Asistencia</span>
+                </div>
+                <div class="det-kpi-card__value" *ngIf="!kpiAsistencia.sinDatos; else asisVacia">
+                  {{ kpiAsistencia.valor }}<span class="det-kpi-card__suffix">%</span>
+                </div>
+                <ng-template #asisVacia>
+                  <div class="det-kpi-card__value">{{ kpiAsistencia.valor }}</div>
+                </ng-template>
+                <span class="det-kpi-card__meta">{{ kpiAsistencia.meta }}</span>
+              </article>
+
+              <article class="det-kpi-card">
+                <div class="det-kpi-card__top">
+                  <div class="det-kpi-card__icon det-kpi-card__icon--purple">
+                    <ion-icon name="layers-outline"></ion-icon>
+                  </div>
+                  <span class="det-kpi-card__label">Sesiones</span>
+                </div>
+                <div class="det-kpi-card__value">{{ kpiSesiones.valor }}</div>
+                <span class="det-kpi-card__meta">{{ kpiSesiones.meta }}</span>
+              </article>
+
+              <article class="det-kpi-card">
+                <div class="det-kpi-card__top">
+                  <div class="det-kpi-card__icon det-kpi-card__icon--blue">
+                    <ion-icon name="calendar-outline"></ion-icon>
+                  </div>
+                  <span class="det-kpi-card__label">Próxima cita</span>
+                </div>
+                <div
+                  class="det-kpi-card__value"
+                  [class.det-kpi-card__value--sm]="!kpiProximaCita.sinCita">
+                  {{ kpiProximaCita.valor }}
+                </div>
+                <span class="det-kpi-card__meta" *ngIf="!kpiProximaCita.sinCita">{{ kpiProximaCita.meta }}</span>
+                <span class="det-kpi-card__meta" *ngIf="kpiProximaCita.sinCita">Sin agenda futura</span>
+              </article>
+            </div>
+          </ng-container>
         </section>
 
-        <!-- Actividad reciente (timeline UI-only) -->
+        <!-- Actividad reciente (API real) -->
         <section class="det-resumen-block">
-          <app-actividad-reciente-timeline [items]="actividadRecienteUi"></app-actividad-reciente-timeline>
+          <app-actividad-reciente-timeline
+            [items]="actividadReciente"
+            [loading]="loadingActividad && !actividadLoaded"
+            [loadingMore]="loadingActividadMore"
+            [error]="actividadError || null"
+            [hasMore]="actividadLoaded && !actividadIsLastPage"
+            (retry)="reintentarActividad()"
+            (loadMore)="cargarMasActividad()">
+          </app-actividad-reciente-timeline>
         </section>
 
         <!-- 2. Alertas clínicas (inmediatamente debajo de tarjetas resumen) -->
@@ -456,7 +503,7 @@
           </div>
         </section>
 
-        <!-- 5. Resumen clínico (UI-only, preparado para IA) -->
+        <!-- 5. Resumen clínico (IA — sin endpoint aún) -->
         <section class="det-resumen-block">
           <article class="det-clinico-card" aria-label="Resumen clínico">
             <header class="det-clinico-card__header">
@@ -464,7 +511,7 @@
                 <div class="det-clinico-card__mark" aria-hidden="true"></div>
                 <div>
                   <h3 class="det-clinico-card__title">{{ resumenClinicoUi.title }}</h3>
-                  <p class="det-clinico-card__subtitle">Síntesis del expediente · vista previa</p>
+                  <p class="det-clinico-card__subtitle">Síntesis automática del expediente</p>
                 </div>
               </div>
               <span class="det-clinico-card__badge">
@@ -474,6 +521,9 @@
             </header>
 
             <div class="det-clinico-card__body">
+              <p *ngIf="resumenClinicoUi.paragraphs.length === 0" class="det-clinico-card__coming-soon">
+                Esta síntesis estará disponible cuando se active el asistente clínico.
+              </p>
               <p *ngFor="let paragrafo of resumenClinicoUi.paragraphs">{{ paragrafo }}</p>
             </div>
           </article>
@@ -637,7 +687,12 @@
           </button>
         </div>
 
-        <app-primera-sesion-checklist></app-primera-sesion-checklist>
+        <app-primera-sesion-checklist
+          *ngIf="pacienteId"
+          [idPaciente]="pacienteId"
+          [refreshKey]="primeraSesionRefreshKey"
+          (dirtyChange)="primeraSesionDirty = $event">
+        </app-primera-sesion-checklist>
 
         <div class="det-eval-list" *ngIf="evaluacionesUi.length > 0; else sinEvaluacionesUi">
           <article class="det-eval-card" *ngFor="let evaluacion of evaluacionesUi">
@@ -785,8 +840,11 @@
                 class="det-receta-btn det-receta-btn--secondary"
                 type="button"
                 title="Más opciones"
-                (click)="abrirMasOpcionesReceta(receta)">
-                <ion-icon name="ellipsis-horizontal-outline"></ion-icon>
+                aria-haspopup="menu"
+                [attr.aria-expanded]="recetaMenuActivaId === receta.id_receta"
+                [attr.aria-controls]="recetaMenuActivaId === receta.id_receta ? 'receta-actions-menu' : null"
+                (click)="abrirMasOpcionesReceta(receta, $event)">
+                <ion-icon name="ellipsis-horizontal-outline" aria-hidden="true"></ion-icon>
                 <span>Más</span>
               </button>
             </div>

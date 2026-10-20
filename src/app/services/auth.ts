@@ -5,6 +5,7 @@ import { tap, catchError } from 'rxjs/operators';
 import { firstValueFrom, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from 'src/environments/environment';
+import { normalizeApiBaseUrl } from 'src/environments/api-url';
 import {
   LoginRequest, LoginResponse, RefreshTokenResponse,
   RegisterRequest, RegisterResponse, AuthMeResponse,
@@ -31,18 +32,25 @@ import { CurrencyPreferenceService } from './currency-preference.service';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
-  private readonly baseUrl = environment.apiUrl;
+  private readonly baseUrl = normalizeApiBaseUrl(environment.apiUrl);
 
   private static readonly ACCESS_TOKEN_KEY  = 'access_token';
   private static readonly REFRESH_TOKEN_KEY = 'refresh_token';
   private static readonly USER_KEY          = 'usuario';
+
+  private accessTokenCache: string | null = null;
+  private refreshTokenCache: string | null = null;
+  private hydrated = false;
+  private hydrationPromise: Promise<void> | null = null;
 
   constructor(
     private http:    HttpClient,
     private router:  Router,
     private session: SessionService,
     private currencyPreference: CurrencyPreferenceService,
-  ) {}
+  ) {
+    void this.ensureStorageHydrated();
+  }
 
   // ── Core auth ──────────────────────────────────────────────────────────────
 
@@ -129,16 +137,35 @@ export class AuthService {
   // ── Token management ──────────────────────────────────────────────────────
 
   saveTokens(access_token: string, refresh_token: string): void {
+    this.accessTokenCache = access_token;
+    this.refreshTokenCache = refresh_token;
+
+    if (this.shouldUseSecureStorage()) {
+      void this.secureSet(AuthService.ACCESS_TOKEN_KEY, access_token);
+      void this.secureSet(AuthService.REFRESH_TOKEN_KEY, refresh_token);
+      return;
+    }
+
     localStorage.setItem(AuthService.ACCESS_TOKEN_KEY, access_token);
     localStorage.setItem(AuthService.REFRESH_TOKEN_KEY, refresh_token);
   }
 
   getAccessToken(): string | null {
-    return localStorage.getItem(AuthService.ACCESS_TOKEN_KEY);
+    if (this.accessTokenCache) {
+      return this.accessTokenCache;
+    }
+    return this.shouldUseSecureStorage()
+      ? null
+      : localStorage.getItem(AuthService.ACCESS_TOKEN_KEY);
   }
 
   getRefreshToken(): string | null {
-    return localStorage.getItem(AuthService.REFRESH_TOKEN_KEY);
+    if (this.refreshTokenCache) {
+      return this.refreshTokenCache;
+    }
+    return this.shouldUseSecureStorage()
+      ? null
+      : localStorage.getItem(AuthService.REFRESH_TOKEN_KEY);
   }
 
   // ── User storage ──────────────────────────────────────────────────────────
@@ -153,8 +180,17 @@ export class AuthService {
   }
 
   clearSession(): void {
-    localStorage.removeItem(AuthService.ACCESS_TOKEN_KEY);
-    localStorage.removeItem(AuthService.REFRESH_TOKEN_KEY);
+    this.accessTokenCache = null;
+    this.refreshTokenCache = null;
+
+    if (this.shouldUseSecureStorage()) {
+      void this.secureRemove(AuthService.ACCESS_TOKEN_KEY);
+      void this.secureRemove(AuthService.REFRESH_TOKEN_KEY);
+    } else {
+      localStorage.removeItem(AuthService.ACCESS_TOKEN_KEY);
+      localStorage.removeItem(AuthService.REFRESH_TOKEN_KEY);
+    }
+
     localStorage.removeItem(AuthService.USER_KEY);
     this.currencyPreference.resetSessionCurrency();
   }
@@ -176,6 +212,8 @@ export class AuthService {
    *    transparentemente. Si todo falla, la sesión se limpia.
    */
   async restoreSession(): Promise<boolean> {
+    await this.ensureStorageHydrated();
+
     if (!this.isAuthenticated()) return false;
 
     // Carga inmediata desde localStorage para evitar flash
@@ -207,9 +245,9 @@ export class AuthService {
     return this.session.getNombre();
   }
 
-  forgotPassword(email: string): Promise<any> {
+  forgotPassword(email: string): Promise<void> {
     return firstValueFrom(
-      this.http.post(`${this.baseUrl}/auth/forgot-password`, { email })
+      this.http.post<void>(`${this.baseUrl}/auth/forgot-password`, { email })
     );
   }
 
@@ -219,5 +257,71 @@ export class AuthService {
     return firstValueFrom(
       this.http.post<RegisterResponse>(`${this.baseUrl}/usuarios/registro`, payload)
     );
+  }
+
+  async ensureStorageHydrated(): Promise<void> {
+    if (this.hydrated) return;
+
+    if (!this.hydrationPromise) {
+      this.hydrationPromise = this.hydrateStorage();
+    }
+
+    await this.hydrationPromise;
+  }
+
+  private async hydrateStorage(): Promise<void> {
+    try {
+      if (this.shouldUseSecureStorage()) {
+        const [accessToken, refreshToken] = await Promise.all([
+          this.secureGet(AuthService.ACCESS_TOKEN_KEY),
+          this.secureGet(AuthService.REFRESH_TOKEN_KEY),
+        ]);
+        this.accessTokenCache = accessToken;
+        this.refreshTokenCache = refreshToken;
+      } else {
+        this.accessTokenCache = localStorage.getItem(AuthService.ACCESS_TOKEN_KEY);
+        this.refreshTokenCache = localStorage.getItem(AuthService.REFRESH_TOKEN_KEY);
+      }
+    } finally {
+      this.hydrated = true;
+    }
+  }
+
+  private shouldUseSecureStorage(): boolean {
+    if (typeof window === 'undefined') return false;
+    const capacitor = (window as any)?.Capacitor;
+    const isNative = capacitor?.isNativePlatform?.() === true;
+    const securePlugin = capacitor?.Plugins?.SecureStoragePlugin;
+    return isNative && !!securePlugin;
+  }
+
+  private async secureSet(key: string, value: string): Promise<void> {
+    const securePlugin = (window as any)?.Capacitor?.Plugins?.SecureStoragePlugin;
+    if (!securePlugin?.set) return;
+    await securePlugin.set({ key, value });
+  }
+
+  private async secureGet(key: string): Promise<string | null> {
+    const securePlugin = (window as any)?.Capacitor?.Plugins?.SecureStoragePlugin;
+    if (!securePlugin?.get) return null;
+
+    try {
+      const result = await securePlugin.get({ key });
+      const value = result?.value;
+      return typeof value === 'string' && value.length > 0 ? value : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private async secureRemove(key: string): Promise<void> {
+    const securePlugin = (window as any)?.Capacitor?.Plugins?.SecureStoragePlugin;
+    if (!securePlugin?.remove) return;
+
+    try {
+      await securePlugin.remove({ key });
+    } catch {
+      // noop
+    }
   }
 }

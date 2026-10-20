@@ -15,6 +15,7 @@ import {
   stripForbiddenRecetaPayloadFields,
   toCrearRecetaRequest,
   toActualizarRecetaRequest,
+  toCrearVersionRecetaRequest,
 } from '../shared/utils/receta-form.adapters';
 import { formatLocalDate, formatLocalTime, todayLocalDate } from '../shared/utils/local-date.utils';
 import { mapRecetaApiError } from '../shared/utils/api-error.mapper';
@@ -114,6 +115,47 @@ describe('receta-form.adapters', () => {
     expect(cleaned.version_actual).toBeUndefined();
     expect(cleaned.url).toBeUndefined();
     expect(cleaned.r2_object_key).toBeUndefined();
+  });
+
+  it('stripForbidden conserva lock_version: 0 y numero_version_base', () => {
+    const cleaned = stripForbiddenRecetaPayloadFields({
+      nombre: 'X',
+      lock_version: 0,
+      numero_version_base: 1,
+      operation_id: 'op-1',
+      version_actual: 1,
+    });
+    expect(cleaned.lock_version).toBe(0);
+    expect(cleaned.numero_version_base).toBe(1);
+    expect(cleaned.operation_id).toBe('op-1');
+    expect(cleaned.version_actual).toBeUndefined();
+  });
+
+  it('toCrearVersionRecetaRequest usa snake_case y valores del detalle sin incrementar', () => {
+    const detalle = {
+      ...sampleDetalle(),
+      estado: 'EMITIDA' as const,
+      version_actual: 1,
+      lock_version: 0,
+    };
+    const form = detalleToFormModel(detalle);
+    const req = toCrearVersionRecetaRequest(form, detalle, 'fixed-op-id');
+
+    expect(req.lock_version).toBe(0);
+    expect(req.numero_version_base).toBe(1);
+    expect(req.operation_id).toBe('fixed-op-id');
+    expect(req.nombre).toBe(detalle.nombre);
+
+    const json = JSON.stringify(req);
+    expect(json).toContain('"lock_version":0');
+    expect(json).toContain('"numero_version_base":1');
+    expect(json).not.toContain('lockVersion');
+    expect(json).not.toContain('numeroVersionBase');
+    expect(json).not.toContain('version_actual');
+
+    // No inventa ni incrementa
+    expect(req.numero_version_base).toBe(detalle.version_actual);
+    expect(req.lock_version).toBe(detalle.lock_version);
   });
 });
 
@@ -314,19 +356,28 @@ describe('RecetasApiService', () => {
     expect(result.estado).toBe('EMITIDA');
   });
 
-  it('8. crearNuevaVersion hace POST /versiones', async () => {
+  it('8. crearNuevaVersion hace POST /versiones con lock_version y numero_version_base', async () => {
     const promise = service.crearNuevaVersion(50, {
       nombre: 'V2',
       fecha_emision: '2026-07-23',
       diagnostico: 'Control',
+      lock_version: 0,
+      numero_version_base: 1,
+      operation_id: '11111111-1111-1111-1111-111111111111',
     });
     const req = httpMock.expectOne(`${base}/50/versiones`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body.nombre).toBe('V2');
+    expect(req.request.body.lock_version).toBe(0);
+    expect(req.request.body.numero_version_base).toBe(1);
+    expect(req.request.body.operation_id).toBe('11111111-1111-1111-1111-111111111111');
     expect(req.request.body.version_actual).toBeUndefined();
-    req.flush({ ...sampleDetalle(), version_actual: 2 });
+    expect(req.request.body.lockVersion).toBeUndefined();
+    expect(req.request.body.numeroVersionBase).toBeUndefined();
+    req.flush({ ...sampleDetalle(), version_actual: 2, lock_version: 1, estado: 'EMITIDA' });
     const result = await promise;
     expect(result.version_actual).toBe(2);
+    expect(result.lock_version).toBe(1);
   });
 
   it('9. guardarComoCopia hace POST /copias', async () => {
@@ -503,6 +554,7 @@ function sampleDetalle(): RecetaDetalle {
     configuracion_plantilla_snapshot: null,
     estado: 'BORRADOR',
     version_actual: 0,
+    lock_version: 0,
     tiene_pdf: false,
     nombre_archivo: null,
     created_at: '2026-07-21T10:00:00',

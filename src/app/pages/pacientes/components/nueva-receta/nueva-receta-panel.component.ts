@@ -1,6 +1,9 @@
 import {
+  ChangeDetectorRef,
   Component,
+  ElementRef,
   EventEmitter,
+  HostListener,
   Input,
   OnChanges,
   OnDestroy,
@@ -8,6 +11,7 @@ import {
   Output,
   SimpleChanges,
   inject,
+  signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -17,7 +21,10 @@ import { PlantillaRecetasApiService } from 'src/app/services/plantilla-recetas-a
 import { RecetasApiService } from 'src/app/services/recetas-api.service';
 import {
   PlantillaRecetasConfigDto,
+  PrescriptionProfessionalData,
   createDefaultPlantillaConfig,
+  mergeProfesionalIntoConfig,
+  normalizePlantillaConfig,
 } from 'src/app/shared/models/plantilla-recetas.models';
 import {
   RECETA_NOMBRE_MAX_LENGTH,
@@ -32,7 +39,9 @@ import {
 import { PacienteDto } from '../../models/paciente.model';
 import {
   RecetaContenidoDinamico,
+  RecetaPreviewData,
   createEmptyRecetaContenido,
+  createEmptyRecetaPreviewData,
 } from './receta-contenido.models';
 import { RecetaSheetPreviewComponent } from './receta-sheet-preview.component';
 import { mapRecetaApiError } from 'src/app/shared/utils/api-error.mapper';
@@ -43,8 +52,14 @@ import {
   toActualizarRecetaRequest,
   toCopiarRecetaRequest,
   toCrearRecetaRequest,
+  toCrearVersionRecetaRequest,
 } from 'src/app/shared/utils/receta-form.adapters';
-import { formatLocalDate, todayLocalDate } from 'src/app/shared/utils/local-date.utils';
+import {
+  formatDisplayDate,
+  formatDisplayTime,
+  formatLocalDate,
+  todayLocalDate,
+} from 'src/app/shared/utils/local-date.utils';
 import {
   ConfirmDialogComponent,
   ConfirmDialogConfig,
@@ -105,7 +120,27 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
   fieldErrors: Record<string, boolean> = {};
   esPredeterminada = true;
   config: PlantillaRecetasConfigDto = createDefaultPlantillaConfig();
+  /** Modelo editable del formulario: fechas en ISO (lo que viaja al backend). */
   contenido: RecetaContenidoDinamico = createEmptyRecetaContenido();
+  /** Modelo de solo lectura de la vista previa: siempre una referencia nueva. */
+  datosVistaPrevia: RecetaPreviewData = createEmptyRecetaPreviewData();
+  /**
+   * Clave de remount del hijo de vista previa. Se incrementa al terminar de
+   * cargar una receta existente para recrear la hoja ya con datos (evita que
+   * queden placeholders del primer render vacío).
+   */
+  previewMountKey = 0;
+  /** Receta consultada tal como llegó del backend (base para restaurar). */
+  recetaSeleccionada: RecetaDetalle | null = null;
+
+  /**
+   * Identidad y URLs firmadas resueltas en vivo (nunca se persisten). Se
+   * reaplican sobre el snapshot cada vez que se vuelve a cargar el detalle.
+   */
+  private previewProfesional: PrescriptionProfessionalData | null = null;
+  private previewLogoUrl: string | null = null;
+  private previewFirmaUrl: string | null = null;
+  private previewSelloUrl: string | null = null;
 
   /** Nombre interno de la receta (requerido por API; no es UI de preview). */
   nombreReceta = '';
@@ -129,6 +164,20 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
   ui = createInitialRecetasUiState();
   formDirty = false;
 
+  /**
+   * Bloqueo explícito de reentrada para POST /versiones.
+   * Se activa de inmediato (antes de await) para que un doble clic no dispare
+   * dos requests concurrentes que el backend resuelve con 409.
+   */
+  readonly guardandoVersion = signal(false);
+
+  /**
+   * Tras un 409 + “Seguir editando”: la UI conserva cambios locales pero la
+   * base remota puede estar adelantada. El próximo guardado reabre el conflicto
+   * en lugar de reenviar a ciegas (evita bucle de 409).
+   */
+  conflictoVersionPendiente = false;
+
   /** Overlays locales (decisión / copia / conflicto). */
   dialogoActivo: RecetaDialogoActivo = 'ninguno';
 
@@ -149,14 +198,24 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
 
   confirmConfig: ConfirmDialogConfig | null = null;
   private confirmCallback: (() => void) | null = null;
+  /** Evita abrir dos confirmaciones de emisión en paralelo. */
+  readonly confirmacionEmisionAbierta = signal(false);
+  private emitFocusRestoreEl: HTMLElement | null = null;
   private bodyOverflowPrev = '';
   private initToken = 0;
   private modoAntesCopia: RecetaModalModo | null = null;
 
+  /** Portal móvil (≤480px): el host se mueve bajo body para salir de ion-page. */
+  private mobilePortalActive = false;
+  private portalHomeParent: Node | null = null;
+  private portalHomeNextSibling: ChildNode | null = null;
+
+  private readonly hostEl = inject(ElementRef<HTMLElement>);
   private readonly plantillaApi = inject(PlantillaRecetasApiService);
   private readonly recetasApi = inject(RecetasApiService);
   private readonly router = inject(Router);
   private readonly toastCtrl = inject(ToastController);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   get tituloPanel(): string {
     switch (this.modo) {
@@ -197,6 +256,10 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
     return this.modo === 'EDITAR_EMITIDA' && this.estadoActual === 'EMITIDA';
   }
 
+  get puedeCancelarEdicion(): boolean {
+    return this.modo === 'EDITAR_EMITIDA' && !!this.recetaSeleccionada;
+  }
+
   get puedeIniciarCopia(): boolean {
     return (
       !!this.idRecetaActual &&
@@ -231,6 +294,7 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
     return (
       this.ui.guardando ||
       this.ui.creandoVersion ||
+      this.guardandoVersion() ||
       this.ui.creandoCopia ||
       this.ui.emitiendo ||
       this.cargandoDetalle
@@ -246,8 +310,10 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnInit(): void {
-    if (this.abierto) {
+    // initToken > 0 ⇒ ngOnChanges ya inicializó en este mismo ciclo: no duplicar.
+    if (this.abierto && this.initToken === 0) {
       this.syncBodyScrollLock(true);
+      this.syncMobileBodyPortal(true);
       void this.inicializar();
     }
   }
@@ -256,30 +322,53 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
     if (changes['abierto']) {
       const abierto = !!changes['abierto'].currentValue;
       this.syncBodyScrollLock(abierto);
+      this.syncMobileBodyPortal(abierto);
       if (abierto) {
         this.vistaMovil = 'datos';
         void this.inicializar();
       }
-    } else if (
-      this.abierto &&
-      (changes['idReceta'] || changes['modo'] || changes['paciente'])
-    ) {
+      return;
+    }
+    if (!this.abierto) return;
+
+    // Un cambio de modo no debe recargar: al pasar a EDITAR se conservan los
+    // datos ya cargados. Solo se reinicia si cambia la receta o el paciente.
+    const otraReceta =
+      !!changes['idReceta'] && changes['idReceta'].currentValue !== this.idRecetaActual;
+    const otroPaciente =
+      !!changes['paciente'] &&
+      this.paciente?.id_paciente !== changes['paciente'].previousValue?.id_paciente;
+
+    if (otraReceta || otroPaciente) {
       void this.inicializar();
     }
   }
 
   ngOnDestroy(): void {
     this.syncBodyScrollLock(false);
+    this.syncMobileBodyPortal(false);
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.syncMobileBodyPortal(this.abierto);
   }
 
   setVistaMovil(vista: NuevaRecetaVistaMovil): void {
     this.vistaMovil = vista;
   }
 
+  /** Se invoca en cada (ngModelChange) del formulario. */
   marcarDirty(): void {
     if (this.camposEditables) {
       this.formDirty = true;
     }
+    this.sincronizarVistaPrevia();
+  }
+
+  /** Fuerza a Angular a recrear el hijo cuando cambia previewMountKey. */
+  trackPreviewMount(_index: number, key: number): number {
+    return key;
   }
 
   cerrar(): void {
@@ -294,6 +383,10 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
   cerrarForzado(): void {
     this.dialogoActivo = 'ninguno';
     this.formularioLocalBackup = null;
+    this.confirmConfig = null;
+    this.confirmCallback = null;
+    this.confirmacionEmisionAbierta.set(false);
+    this.emitFocusRestoreEl = null;
     this.syncBodyScrollLock(false);
     this.cerrado.emit();
   }
@@ -347,6 +440,20 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
     this.modo = 'EDITAR_EMITIDA';
   }
 
+  /** Descarta la edición y restaura la receta consultada (formulario y vista previa). */
+  cancelarEdicion(): void {
+    if (this.operacionEnCurso) return;
+    const receta = this.recetaSeleccionada;
+    if (!receta) return;
+    this.dialogoActivo = 'ninguno';
+    this.fieldErrors = {};
+    this.errorForm = '';
+    this.formularioLocalBackup = null;
+    this.conflictoVersionPendiente = false;
+    this.applyDetalle(receta, true);
+    this.modo = modoDesdeEstado(receta.estado, false);
+  }
+
   /** Guardar en modo EDITAR_EMITIDA → diálogo versión vs copia. */
   solicitarGuardarEmitida(): void {
     if (!this.puedeGuardarEmitida || this.operacionEnCurso) return;
@@ -354,8 +461,8 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
     this.dialogoActivo = 'decision_guardar';
   }
 
+  /** Única vía de entrada desde el diálogo de decisión (type=button + click). */
   elegirGuardarNuevaVersion(): void {
-    this.dialogoActivo = 'ninguno';
     void this.guardarNuevaVersion();
   }
 
@@ -430,41 +537,73 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   async guardarNuevaVersion(): Promise<void> {
-    if (this.operacionEnCurso || !this.idRecetaActual) return;
-    if (this.estadoActual !== 'EMITIDA') return;
-    if (!this.validarFormulario()) return;
+    // Reentrada: un clic / doble clic / reintento paralelo → una sola cadena.
+    if (this.guardandoVersion()) {
+      return;
+    }
+    if (!this.idRecetaActual || this.estadoActual !== 'EMITIDA') {
+      return;
+    }
+    if (this.ui.guardando || this.ui.creandoCopia || this.ui.emitiendo || this.cargandoDetalle) {
+      return;
+    }
+    if (!this.validarFormulario()) {
+      return;
+    }
 
-    this.guardarBackupLocal();
+    // Tras 409 + “Seguir editando”: no reenviar con base obsoleta; reabrir conflicto.
+    if (this.conflictoVersionPendiente) {
+      this.guardarBackupLocal();
+      this.dialogoActivo = 'conflicto_version';
+      return;
+    }
+
+    // Claim síncrono ANTES de cualquier await / cierre de diálogo.
+    this.guardandoVersion.set(true);
     this.ui.creandoVersion = true;
+    this.dialogoActivo = 'ninguno';
     this.ui.error = null;
     this.errorForm = '';
+    this.guardarBackupLocal();
+
+    const recetaId = this.idRecetaActual;
 
     try {
+      const receta = this.recetaSeleccionada;
+      if (!receta) {
+        throw new Error('No existe una receta seleccionada');
+      }
+
       const form = this.buildFormModel();
-      // No llamar PUT de borrador: el endpoint de versión aplica cambios + PDF.
-      const detalle = await this.recetasApi.crearNuevaVersion(
-        this.idRecetaActual,
-        toActualizarRecetaRequest(form),
-      );
+      // operation_id una sola vez por intento; base/lock desde el detalle (sin ++).
+      const request = toCrearVersionRecetaRequest(form, receta);
+
+      const detalle = await this.recetasApi.crearNuevaVersion(recetaId, request);
+
+      // Solo actualizar badge/estado con la respuesta real (sin incremento optimista).
       this.applyDetalle(detalle, false);
       this.modo = 'VER_EMITIDA';
       this.formDirty = false;
       this.formularioLocalBackup = null;
+      this.conflictoVersionPendiente = false;
       this.cargarHistorialLocal();
       this.historialExpandido = true;
       this.cambiosGuardados.emit({ detalle, accion: 'versionada' });
-      await this.presentToast(`Versión ${detalle.version_actual} guardada correctamente.`);
+      await this.presentToast('Nueva versión creada correctamente');
     } catch (err) {
       const mapped = mapRecetaApiError(err);
       if (mapped.status === 409) {
+        // Conserva formulario + backup; no limpia cambios locales.
         this.dialogoActivo = 'conflicto_version';
         this.errorForm = mapped.userMessage;
+        this.conflictoVersionPendiente = true;
       } else {
         this.errorForm = mapped.userMessage || 'No fue posible guardar la versión.';
         await this.presentToast(this.errorForm);
       }
     } finally {
       this.ui.creandoVersion = false;
+      this.guardandoVersion.set(false);
     }
   }
 
@@ -529,6 +668,8 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
       this.applyDetalle(detalle, true);
       this.modo = modoDesdeEstado(detalle.estado, false);
       this.formularioLocalBackup = null;
+      this.conflictoVersionPendiente = false;
+      this.cargarHistorialLocal();
       await this.presentToast('Receta recargada.');
     } catch (err) {
       await this.presentToast(mapRecetaApiError(err).userMessage);
@@ -540,11 +681,19 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
   conservarEdicionTrasConflicto(): void {
     this.dialogoActivo = 'ninguno';
     this.modo = 'EDITAR_EMITIDA';
-    // Conserva formularioLocalBackup / formDirty; no sobrescribe.
+    this.conflictoVersionPendiente = true;
+    // Conserva formularioLocalBackup / formDirty; no reenvía; no actualiza base.
   }
 
   solicitarEmitir(): void {
-    if (!this.puedeEmitir || this.operacionEnCurso) return;
+    if (!this.puedeEmitir || this.operacionEnCurso || this.confirmacionEmisionAbierta()) {
+      return;
+    }
+
+    this.emitFocusRestoreEl =
+      (document.activeElement as HTMLElement | null) ??
+      (document.getElementById('nrp-emitir-btn') as HTMLElement | null);
+    this.confirmacionEmisionAbierta.set(true);
 
     this.openConfirm(
       {
@@ -563,14 +712,13 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   onConfirmDialogConfirmed(): void {
-    this.confirmCallback?.();
-    this.confirmConfig = null;
-    this.confirmCallback = null;
+    const cb = this.confirmCallback;
+    this.cerrarConfirmacion();
+    cb?.();
   }
 
   onConfirmDialogCancelled(): void {
-    this.confirmConfig = null;
-    this.confirmCallback = null;
+    this.cerrarConfirmacion();
   }
 
   /** Abrir PDF vigente (inline). */
@@ -720,6 +868,15 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
     this.confirmCallback = onConfirm;
   }
 
+  private cerrarConfirmacion(): void {
+    this.confirmConfig = null;
+    this.confirmCallback = null;
+    this.confirmacionEmisionAbierta.set(false);
+    const restore = this.emitFocusRestoreEl;
+    this.emitFocusRestoreEl = null;
+    queueMicrotask(() => restore?.focus?.());
+  }
+
   private validarFormulario(): boolean {
     this.fieldErrors = {};
     this.errorForm = '';
@@ -797,7 +954,65 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
     };
   }
 
+  /**
+   * ÚNICO mapper de la vista previa, para todos los modos (nueva, ver, editar y
+   * copia). Siempre lee el modelo del formulario (`contenido`), nunca el DTO del
+   * backend: la receta consultada primero se vuelca al formulario y de ahí sale
+   * la vista previa, así que no hay dos fuentes de verdad que puedan divergir.
+   * Aquí se centralizan los cambios de nombre y de formato de fecha.
+   */
+  private construirDatosVistaPrevia(): RecetaPreviewData {
+    return {
+      nombreReceta: (this.nombreReceta ?? '').trim(),
+      pacienteNombre: (this.contenido.pacienteNombre ?? '').trim(),
+      edad: (this.contenido.edad ?? '').trim(),
+      fechaEmision: formatDisplayDate(this.contenido.fechaEmision),
+      diagnostico: (this.contenido.diagnostico ?? '').trim(),
+      medicamentos: (this.contenido.medicamentos ?? []).map(med => ({
+        nombre: (med.nombre ?? '').trim(),
+        dosis: (med.dosis ?? '').trim(),
+        frecuencia: (med.frecuencia ?? '').trim(),
+        duracion: (med.duracion ?? '').trim(),
+      })),
+      indicaciones: (this.contenido.indicaciones ?? '').trim(),
+      proximaCitaFecha: formatDisplayDate(this.contenido.proximaCitaFecha),
+      proximaCitaHora: formatDisplayTime(this.contenido.proximaCitaHora),
+    };
+  }
+
+  /**
+   * Regenera el modelo de vista previa desde el formulario.
+   * @param remount Si true, destruye y recrea el componente hijo (usar tras
+   *   cargar una receta existente para no heredar el primer render vacío).
+   */
+  private sincronizarVistaPrevia(remount = false): void {
+    this.datosVistaPrevia = this.construirDatosVistaPrevia();
+    if (remount) {
+      this.previewMountKey += 1;
+    }
+    this.cdr.markForCheck();
+  }
+
+  private resolverEdadTexto(
+    edad: string | null | undefined,
+    fechaNacimiento?: string | null,
+  ): string {
+    const texto = (edad ?? '').trim();
+    if (texto) return texto;
+    const iso = formatLocalDate(fechaNacimiento);
+    if (!iso) return '';
+    const anios = this.calcularEdad(iso);
+    return anios === null ? '' : `${anios} años`;
+  }
+
+  /**
+   * Vuelca la receta consultada en el MISMO formulario que usa "Nueva receta" y
+   * después regenera la vista previa desde ese formulario. El orden importa:
+   * primero el formulario completo (incluidos medicamentos), luego la apariencia
+   * y al final la vista previa.
+   */
   private applyDetalle(detalle: RecetaDetalle, resetDirty = true): void {
+    this.recetaSeleccionada = detalle;
     this.idRecetaActual = detalle.id_receta;
     this.idReceta = detalle.id_receta;
     this.estadoActual = detalle.estado;
@@ -813,12 +1028,34 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
     this.idPlantillaReceta = detalle.id_plantilla_receta ?? null;
 
     if (detalle.configuracion_plantilla_snapshot) {
-      this.config = detalle.configuracion_plantilla_snapshot;
       this.esPredeterminada = false;
     }
 
+    // 1) Backend → formulario (mismos adaptadores que el resto del panel).
     const form = detalleToFormModel(detalle);
     this.contenido = formModelToContenidoPreview(form);
+    // La edad resuelta (o derivada del nacimiento) queda en el formulario, que es
+    // el origen de la vista previa: el usuario ve exactamente lo mismo en ambos.
+    this.contenido.edad =
+      this.resolverEdadTexto(
+        form.edad_texto,
+        form.paciente_fecha_nacimiento_snapshot ?? this.paciente?.fecha_nacimiento,
+      ) || null;
+
+    // 2) Apariencia: una receta emitida conserva su snapshot; nunca se sustituye
+    //    automáticamente por la plantilla vigente del profesional. El snapshot
+    //    viene crudo del backend (puede ser parcial o de un esquema anterior),
+    //    así que SIEMPRE se normaliza. Luego se reaplican identidad y URLs
+    //    firmadas cacheadas (si ya se resolvieron) sin otra ida al servidor.
+    if (detalle.configuracion_plantilla_snapshot) {
+      this.config = this.aplicarIdentidadYRecursosLocales(
+        normalizePlantillaConfig(detalle.configuracion_plantilla_snapshot),
+      );
+    }
+
+    // 3) Vista previa desde el formulario ya completo + remount del hijo.
+    this.sincronizarVistaPrevia(true);
+
     if (resetDirty) this.formDirty = false;
   }
 
@@ -833,6 +1070,48 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
+  /**
+   * En ≤480px el panel vive dentro de ion-page (containing block + scroll del
+   * layout de Pacientes). Se teleporta el host a document.body —mismo patrón
+   * que buscar-paciente-modal— para cubrir el viewport por encima de la
+   * cabecera «← Pacientes» y del scrollbar del contenedor padre.
+   * Tablet/escritorio no se alteran.
+   */
+  private syncMobileBodyPortal(abierto: boolean): void {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return;
+
+    const mobile = window.matchMedia('(max-width: 480px)').matches;
+    const host = this.hostEl.nativeElement;
+    const shouldPortal = abierto && mobile;
+
+    if (shouldPortal && !this.mobilePortalActive) {
+      this.portalHomeParent = host.parentNode;
+      this.portalHomeNextSibling = host.nextSibling;
+      host.classList.add('receta-medica-mobile-overlay');
+      document.body.classList.add('receta-medica-overlay-open');
+      document.body.appendChild(host);
+      this.mobilePortalActive = true;
+      return;
+    }
+
+    if (!shouldPortal && this.mobilePortalActive) {
+      host.classList.remove('receta-medica-mobile-overlay');
+      document.body.classList.remove('receta-medica-overlay-open');
+      const parent = this.portalHomeParent;
+      const next = this.portalHomeNextSibling;
+      if (parent) {
+        if (next && next.parentNode === parent) {
+          parent.insertBefore(host, next);
+        } else {
+          parent.appendChild(host);
+        }
+      }
+      this.portalHomeParent = null;
+      this.portalHomeNextSibling = null;
+      this.mobilePortalActive = false;
+    }
+  }
+
   private async inicializar(): Promise<void> {
     const token = ++this.initToken;
     this.cargandoDetalle = true;
@@ -844,45 +1123,77 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
     this.dialogoActivo = 'ninguno';
     this.formularioLocalBackup = null;
 
+    this.limpiarDatosReceta();
     this.idRecetaActual = this.idReceta;
-    this.estadoActual = null;
-    this.versionActual = 0;
-    this.tienePdf = false;
-    this.nombreReceta = '';
-    this.notasInternas = '';
 
     try {
       if (this.idReceta) {
-        await this.cargarDetalle(this.idReceta);
+        await this.cargarDetalle(this.idReceta, token);
         if (token !== this.initToken) return;
         if (this.accionInicial === 'copiar') {
           this.abrirDialogoCopia();
         }
       } else {
         this.seedContenidoDesdePaciente();
-        await this.cargarPlantilla();
+        await this.cargarPlantilla(true, token);
         if (token !== this.initToken) return;
       }
     } finally {
       if (token === this.initToken) {
         this.cargandoDetalle = false;
+        // Sincronización final: ya están cargados formulario, apariencia y modo.
+        this.sincronizarVistaPrevia();
       }
     }
   }
 
-  private async cargarDetalle(id: number): Promise<void> {
+  /** Evita que queden datos de la receta anterior mientras carga la nueva. */
+  private limpiarDatosReceta(): void {
+    this.recetaSeleccionada = null;
+    this.idRecetaActual = null;
+    this.estadoActual = null;
+    this.versionActual = 0;
+    this.tienePdf = false;
+    this.nombreArchivoActual = null;
+    this.ultimaEmisionAt = null;
+    this.idRecetaOrigen = null;
+    this.nombreReceta = '';
+    this.notasInternas = '';
+    this.historialExpandido = false;
+    this.historialVersiones = [];
+    this.pdfActionLoading = null;
+    this.modoAntesCopia = null;
+    this.copiaNombreError = '';
+    this.conflictoVersionPendiente = false;
+    this.guardandoVersion.set(false);
+    this.contenido = createEmptyRecetaContenido();
+    this.datosVistaPrevia = createEmptyRecetaPreviewData();
+    this.previewProfesional = null;
+    this.previewLogoUrl = null;
+    this.previewFirmaUrl = null;
+    this.previewSelloUrl = null;
+    this.cdr.markForCheck();
+  }
+
+  private async cargarDetalle(id: number, token = this.initToken): Promise<void> {
     this.cargandoPlantilla = true;
     this.errorPlantilla = '';
     try {
       const detalle = await this.recetasApi.obtenerReceta(id);
+      // Una respuesta tardía no debe escribir sobre una apertura más reciente.
+      if (token !== this.initToken) return;
       this.applyDetalle(detalle);
 
-      if (!detalle.configuracion_plantilla_snapshot) {
-        await this.cargarPlantilla(false);
+      if (detalle.configuracion_plantilla_snapshot) {
+        // El snapshot solo guarda flags/layout: datos_visualizacion y *_url van
+        // vacíos por diseño. Igual que Nueva receta / PDF, se enriquecen en vivo
+        // con Mi perfil + URLs firmadas de la plantilla, sin reemplazar el snapshot.
+        await this.enriquecerSnapshotConIdentidadYRecursos(token);
       } else {
-        this.cargandoPlantilla = false;
+        await this.cargarPlantilla(false, token);
       }
     } catch (error) {
+      if (token !== this.initToken) return;
       this.errorForm = mapRecetaApiError(error).userMessage;
       this.config = createDefaultPlantillaConfig();
       this.seedContenidoDesdePaciente();
@@ -890,21 +1201,90 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  private async cargarPlantilla(setLoading = true): Promise<void> {
+  /**
+   * Reaplica identidad y URLs firmadas cacheadas sobre una config base (snapshot
+   * o plantilla). No hace HTTP.
+   */
+  private aplicarIdentidadYRecursosLocales(
+    base: PlantillaRecetasConfigDto,
+  ): PlantillaRecetasConfigDto {
+    const conPerfil = this.previewProfesional
+      ? mergeProfesionalIntoConfig(base, this.previewProfesional)
+      : base;
+    return {
+      ...conPerfil,
+      identidad: {
+        ...conPerfil.identidad,
+        logo_url: this.previewLogoUrl ?? conPerfil.identidad.logo_url,
+      },
+      pie: {
+        ...conPerfil.pie,
+        firma_url: this.previewFirmaUrl ?? conPerfil.pie.firma_url,
+        sello_url: this.previewSelloUrl ?? conPerfil.pie.sello_url,
+      },
+    };
+  }
+
+  /**
+   * Sobre el snapshot ya aplicado: inyecta identidad profesional (Mi perfil) y
+   * URLs firmadas vigentes de logo/firma/sello. No sustituye colores, tipografía,
+   * distribución ni visibilidad del snapshot.
+   */
+  private async enriquecerSnapshotConIdentidadYRecursos(token = this.initToken): Promise<void> {
+    this.cargandoPlantilla = true;
+    this.errorPlantilla = '';
+    try {
+      const preview = await this.plantillaApi.obtenerVistaPrevia();
+      if (token !== this.initToken) return;
+
+      this.previewProfesional = preview.profesional;
+      this.previewLogoUrl =
+        preview.logo?.downloadUrl ?? preview.configuracion.identidad.logo_url ?? null;
+      this.previewFirmaUrl =
+        preview.firma?.downloadUrl ?? preview.configuracion.pie.firma_url ?? null;
+      this.previewSelloUrl =
+        preview.sello?.downloadUrl ?? preview.configuracion.pie.sello_url ?? null;
+
+      this.config = this.aplicarIdentidadYRecursosLocales(this.config);
+
+      if (this.idPlantillaReceta == null) {
+        this.idPlantillaReceta = preview.idPlantillaReceta ?? null;
+      }
+      // Con snapshot la plantilla visual ya no es la predeterminada "en blanco".
+      this.esPredeterminada = false;
+    } catch (error) {
+      if (token !== this.initToken) return;
+      // Sin enriquecimiento: se conserva el snapshot (layout) aunque falte identidad.
+      this.errorPlantilla = mapRecetaApiError(error).userMessage;
+    } finally {
+      if (token === this.initToken) {
+        this.cargandoPlantilla = false;
+        this.sincronizarVistaPrevia(true);
+      }
+    }
+  }
+
+  private async cargarPlantilla(setLoading = true, token = this.initToken): Promise<void> {
     if (setLoading) this.cargandoPlantilla = true;
     this.errorPlantilla = '';
     try {
       const preview = await this.plantillaApi.obtenerVistaPrevia();
+      if (token !== this.initToken) return;
       this.esPredeterminada = preview.esPredeterminada ?? true;
       this.config = preview.configuracion;
       this.idPlantillaReceta = preview.idPlantillaReceta ?? null;
     } catch (error) {
+      if (token !== this.initToken) return;
       this.config = createDefaultPlantillaConfig();
       this.esPredeterminada = true;
       this.idPlantillaReceta = null;
       this.errorPlantilla = mapRecetaApiError(error).userMessage;
     } finally {
-      this.cargandoPlantilla = false;
+      if (token === this.initToken) {
+        this.cargandoPlantilla = false;
+        // La apariencia cambió: la vista previa necesita una referencia nueva.
+        this.sincronizarVistaPrevia();
+      }
     }
   }
 
@@ -924,6 +1304,7 @@ export class NuevaRecetaPanelComponent implements OnInit, OnChanges, OnDestroy {
       medicamentos: [{ nombre: '', dosis: '', frecuencia: '', duracion: '' }],
     };
     this.nombreReceta = this.nombreRecetaPorDefecto();
+    this.sincronizarVistaPrevia();
   }
 
   private calcularEdad(fechaNacimiento: string): number | null {

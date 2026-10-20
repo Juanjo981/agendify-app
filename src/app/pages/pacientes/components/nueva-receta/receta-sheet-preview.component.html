@@ -1,25 +1,29 @@
 <div class="rsp-stage">
   <article
     class="rsp-sheet"
-    aria-label="Vista previa de receta"
+    [attr.aria-label]="etiquetaHoja"
     [style.--rsp-accent]="colorPrincipal"
     [class.rsp-sheet--font-moderna]="cfg.identidad.tipografia === 'moderna'"
     [class.rsp-sheet--font-clasica]="cfg.identidad.tipografia === 'clasica'"
     [class.rsp-sheet--font-compacta]="cfg.identidad.tipografia === 'compacta'"
     [class.rsp-sheet--header-franja]="cfg.identidad.encabezado === 'franja'"
     [class.rsp-sheet--header-dividido]="cfg.identidad.encabezado === 'dividido'"
-    [class.rsp-sheet--formato-carta]="dist.formato === 'carta'"
-    [class.rsp-sheet--formato-media]="dist.formato === 'media-carta'"
-    [class.rsp-sheet--layout-moderna]="dist.layout === 'moderna'"
-    [class.rsp-sheet--layout-compacta]="dist.layout === 'compacta'"
-    [class.rsp-sheet--space-compacto]="dist.espaciado === 'compacto'"
-    [class.rsp-sheet--space-normal]="dist.espaciado === 'normal'"
-    [class.rsp-sheet--space-amplio]="dist.espaciado === 'amplio'"
-    [class.rsp-sheet--text-pequeno]="dist.tamano_texto === 'pequeno'"
-    [class.rsp-sheet--text-mediano]="dist.tamano_texto === 'mediano'"
-    [class.rsp-sheet--text-grande]="dist.tamano_texto === 'grande'">
+    [class.rsp-sheet--formato-carta]="cfg.distribucion.formato === 'carta'"
+    [class.rsp-sheet--formato-media]="cfg.distribucion.formato === 'media-carta'"
+    [class.rsp-sheet--layout-moderna]="cfg.distribucion.layout === 'moderna'"
+    [class.rsp-sheet--layout-compacta]="cfg.distribucion.layout === 'compacta'"
+    [class.rsp-sheet--space-compacto]="cfg.distribucion.espaciado === 'compacto'"
+    [class.rsp-sheet--space-normal]="cfg.distribucion.espaciado === 'normal'"
+    [class.rsp-sheet--space-amplio]="cfg.distribucion.espaciado === 'amplio'"
+    [class.rsp-sheet--text-pequeno]="cfg.distribucion.tamano_texto === 'pequeno'"
+    [class.rsp-sheet--text-mediano]="cfg.distribucion.tamano_texto === 'mediano'"
+    [class.rsp-sheet--text-grande]="cfg.distribucion.tamano_texto === 'grande'">
 
-    <div class="rsp-franja" *ngIf="cfg.identidad.encabezado === 'franja'" aria-hidden="true"></div>
+    <div
+      class="rsp-franja"
+      *ngIf="cfg.identidad.encabezado === 'franja'"
+      aria-hidden="true">
+    </div>
 
     <header
       class="rsp-header"
@@ -59,94 +63,124 @@
     <div class="rsp-body">
       <section
         class="rsp-block"
-        *ngIf="dist.secciones.datos_paciente || dist.secciones.fecha_emision || dist.secciones.edad_paciente">
-        <h4 *ngIf="dist.secciones.datos_paciente">{{ etiqueta('paciente', 'Paciente') }}</h4>
+        *ngIf="
+          cfg.distribucion.secciones.datos_paciente ||
+          cfg.distribucion.secciones.fecha_emision ||
+          cfg.distribucion.secciones.edad_paciente
+        ">
+        <h4 *ngIf="cfg.distribucion.secciones.datos_paciente">
+          {{ etiqueta('paciente', 'Paciente') }}
+        </h4>
         <div class="rsp-grid">
-          <span class="rsp-line" *ngIf="dist.secciones.datos_paciente">
-            {{ dyn.pacienteNombre || 'Nombre del paciente' }}
+          <span class="rsp-line" *ngIf="cfg.distribucion.secciones.datos_paciente">
+            {{ pacienteTexto }}
           </span>
-          <span class="rsp-line" *ngIf="dist.secciones.fecha_emision">
-            {{ dyn.fechaEmision || 'Fecha de emisión' }}
+          <span class="rsp-line" *ngIf="cfg.distribucion.secciones.fecha_emision">
+            {{ fechaTexto }}
           </span>
           <span
             class="rsp-line"
-            [class.rsp-line--wide]="!dist.secciones.fecha_emision || !dist.secciones.datos_paciente"
-            *ngIf="dist.secciones.edad_paciente">
-            {{ dyn.edad || 'Edad del paciente' }}
+            *ngIf="cfg.distribucion.secciones.edad_paciente"
+            [class.rsp-line--wide]="
+              !cfg.distribucion.secciones.fecha_emision ||
+              !cfg.distribucion.secciones.datos_paciente
+            ">
+            {{ edadTexto }}
           </span>
         </div>
       </section>
 
-      <section class="rsp-block" *ngIf="dist.secciones.diagnostico">
+      <section class="rsp-block" *ngIf="cfg.distribucion.secciones.diagnostico">
         <h4>{{ etiqueta('diagnostico', 'Diagnóstico') }}</h4>
         <div class="rsp-notes">
-          <span class="rsp-line rsp-line--wide">{{ dyn.diagnostico || ' ' }}</span>
+          <span class="rsp-line rsp-line--wide">{{ diagnosticoTexto }}</span>
         </div>
       </section>
 
-      <section class="rsp-block" *ngIf="dist.secciones.medicamentos">
+      <section class="rsp-block" *ngIf="cfg.distribucion.secciones.medicamentos">
         <h4>{{ etiqueta('medicamentos', 'Medicamentos') }}</h4>
         <div class="rsp-meds">
-          <div class="rsp-med" *ngFor="let med of medicamentosVisibles; let i = index">
+          <div
+            class="rsp-med"
+            *ngFor="let med of medicamentosVista; let i = index; trackBy: trackMed">
             <span class="rsp-med-index">{{ i + 1 }}</span>
             <div>
-              <p class="rsp-line">{{ med.nombre || 'Nombre del medicamento' }}</p>
-              <p class="rsp-line rsp-line--soft">
-                {{ med.dosis || 'Dosis' }} · {{ med.frecuencia || 'Frecuencia' }} · {{ med.duracion || 'Duración' }}
-              </p>
+              <p class="rsp-line">{{ med.nombre }}</p>
+              <p class="rsp-line rsp-line--soft">{{ med.detalle }}</p>
+            </div>
+          </div>
+          <div class="rsp-med" *ngIf="medicamentosVista.length === 0">
+            <span class="rsp-med-index">1</span>
+            <div>
+              <p class="rsp-line">{{ placeholders.medicamento }}</p>
+              <p class="rsp-line rsp-line--soft">{{ placeholders.medicamentoDetalle }}</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="rsp-block" *ngIf="dist.secciones.indicaciones">
+      <section class="rsp-block" *ngIf="cfg.distribucion.secciones.indicaciones">
         <h4>{{ etiqueta('indicaciones', 'Indicaciones') }}</h4>
         <div class="rsp-notes">
-          <span class="rsp-line rsp-line--wide">{{ dyn.indicaciones || ' ' }}</span>
-          <span class="rsp-line rsp-line--wide" *ngIf="!dyn.indicaciones"></span>
+          <span class="rsp-line rsp-line--wide">{{ indicacionesTexto }}</span>
+          <span class="rsp-line rsp-line--wide" *ngIf="!indicacionesTexto"></span>
         </div>
       </section>
 
-      <section class="rsp-block" *ngIf="dist.secciones.proxima_cita">
+      <section class="rsp-block" *ngIf="cfg.distribucion.secciones.proxima_cita">
         <h4>{{ etiqueta('proxima_cita', 'Próxima cita') }}</h4>
         <div class="rsp-grid">
-          <span class="rsp-line">{{ dyn.proximaCitaFecha || 'Fecha' }}</span>
-          <span class="rsp-line">{{ dyn.proximaCitaHora || 'Hora' }}</span>
+          <span class="rsp-line">{{ proximaCitaFechaTexto }}</span>
+          <span class="rsp-line">{{ proximaCitaHoraTexto }}</span>
         </div>
       </section>
     </div>
 
     <footer class="rsp-footer" *ngIf="tieneBloquePie">
-      <div class="rsp-sign-row" *ngIf="dist.secciones.firma || dist.secciones.sello">
-        <div class="rsp-sign" *ngIf="dist.secciones.firma">
+      <div
+        class="rsp-sign-row"
+        *ngIf="cfg.distribucion.secciones.firma || cfg.distribucion.secciones.sello">
+        <div class="rsp-sign" *ngIf="cfg.distribucion.secciones.firma">
           <div class="rsp-sign-media">
-            <img *ngIf="pie.firma_url" [src]="pie.firma_url" alt="Firma" />
-            <div *ngIf="!pie.firma_url" class="rsp-sign-line"></div>
+            <img *ngIf="cfg.pie.firma_url" [src]="cfg.pie.firma_url" alt="Firma" />
+            <div *ngIf="!cfg.pie.firma_url" class="rsp-sign-line"></div>
           </div>
-          <div class="rsp-sign-meta" *ngIf="previewFirmaNombre || previewFirmaEspecialidad || previewFirmaCedula">
+          <div
+            class="rsp-sign-meta"
+            *ngIf="previewFirmaNombre || previewFirmaEspecialidad || previewFirmaCedula">
             <p class="rsp-sign-name" *ngIf="previewFirmaNombre">{{ previewFirmaNombre }}</p>
             <p *ngIf="previewFirmaEspecialidad">{{ previewFirmaEspecialidad }}</p>
             <p *ngIf="previewFirmaCedula">{{ previewFirmaCedula }}</p>
           </div>
-          <p *ngIf="!previewFirmaNombre && !pie.firma_url">{{ etiqueta('firma', 'Firma del profesional') }}</p>
+          <p *ngIf="!previewFirmaNombre && !cfg.pie.firma_url">
+            {{ etiqueta('firma', 'Firma del profesional') }}
+          </p>
         </div>
 
-        <div class="rsp-seal" *ngIf="dist.secciones.sello">
-          <img *ngIf="pie.sello_url" [src]="pie.sello_url" alt="Sello" />
-          <span *ngIf="!pie.sello_url">Sello</span>
+        <div class="rsp-seal" *ngIf="cfg.distribucion.secciones.sello">
+          <img *ngIf="cfg.pie.sello_url" [src]="cfg.pie.sello_url" alt="Sello" />
+          <span *ngIf="!cfg.pie.sello_url">Sello</span>
         </div>
       </div>
 
-      <p class="rsp-foot" *ngIf="dist.secciones.aviso_legal && pie.texto_pie.trim()">{{ pie.texto_pie }}</p>
+      <p
+        class="rsp-foot"
+        *ngIf="cfg.distribucion.secciones.aviso_legal && cfg.pie.texto_pie.trim()">
+        {{ cfg.pie.texto_pie }}
+      </p>
 
-      <div class="rsp-contact" *ngIf="previewPieTelefono || previewPieCorreo || previewPieDireccion">
+      <div
+        class="rsp-contact"
+        *ngIf="previewPieTelefono || previewPieCorreo || previewPieDireccion">
         <span *ngIf="previewPieTelefono">{{ previewPieTelefono }}</span>
         <span *ngIf="previewPieCorreo">{{ previewPieCorreo }}</span>
         <span *ngIf="previewPieDireccion">{{ previewPieDireccion }}</span>
       </div>
 
-      <div class="rsp-meta-row" *ngIf="pie.mostrar_numero_pagina || previewFechaGeneracion">
-        <span *ngIf="pie.mostrar_numero_pagina">Pág. 1 / 1</span>
+      <div
+        class="rsp-meta-row"
+        *ngIf="cfg.pie.mostrar_numero_pagina || previewFechaGeneracion">
+        <span *ngIf="cfg.pie.mostrar_numero_pagina">Pág. 1 / 1</span>
         <span *ngIf="previewFechaGeneracion">{{ previewFechaGeneracion }}</span>
       </div>
     </footer>

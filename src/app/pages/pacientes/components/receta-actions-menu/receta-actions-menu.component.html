@@ -1,0 +1,85 @@
+<div
+  class="ram"
+  [class.ram--sheet]="isSheet"
+  [class.ram--fixed]="!isSheet"
+  role="menu"
+  [attr.aria-label]="'Acciones de ' + receta.nombre">
+
+  <header class="ram__header" [attr.title]="receta.nombre">
+    <span class="ram__title">{{ receta.nombre }}</span>
+  </header>
+
+  <div class="ram__list">
+    <button
+      type="button"
+      class="ram__item"
+      role="menuitem"
+      (click)="select('ver', $event)">
+      <ion-icon name="eye-outline" aria-hidden="true"></ion-icon>
+      <span>Ver</span>
+    </button>
+
+    <button
+      type="button"
+      class="ram__item"
+      role="menuitem"
+      *ngIf="showEditar"
+      (click)="select('editar', $event)">
+      <ion-icon name="create-outline" aria-hidden="true"></ion-icon>
+      <span>Editar</span>
+    </button>
+
+    <div class="ram__sep" *ngIf="puedeAbrirPdf" role="separator"></div>
+
+    <button
+      type="button"
+      class="ram__item"
+      role="menuitem"
+      *ngIf="puedeAbrirPdf"
+      (click)="select('abrirPdf', $event)">
+      <ion-icon name="document-outline" aria-hidden="true"></ion-icon>
+      <span>Abrir PDF</span>
+    </button>
+
+    <button
+      type="button"
+      class="ram__item"
+      role="menuitem"
+      *ngIf="puedeAbrirPdf"
+      (click)="select('imprimir', $event)">
+      <ion-icon name="print-outline" aria-hidden="true"></ion-icon>
+      <span>Imprimir</span>
+    </button>
+
+    <button
+      type="button"
+      class="ram__item"
+      role="menuitem"
+      *ngIf="puedeAbrirPdf"
+      (click)="select('descargarPdf', $event)">
+      <ion-icon name="download-outline" aria-hidden="true"></ion-icon>
+      <span>Descargar PDF</span>
+    </button>
+
+    <div class="ram__sep" *ngIf="showCopia" role="separator"></div>
+
+    <button
+      type="button"
+      class="ram__item"
+      role="menuitem"
+      *ngIf="showCopia"
+      (click)="select('copiar', $event)">
+      <ion-icon name="copy-outline" aria-hidden="true"></ion-icon>
+      <span>Guardar como copia</span>
+    </button>
+  </div>
+
+  <div class="ram__footer" *ngIf="isSheet">
+    <button
+      type="button"
+      class="ram__cancel"
+      (click)="cancel($event)">
+      Cancelar
+    </button>
+  </div>
+</div>

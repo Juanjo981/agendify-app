@@ -82,8 +82,106 @@ body.modal-open .bottom-menu {
   }
 }
 
+// ── Receta actions menu (portal fixed bajo body, anclado a “Más”) ────────────
+.receta-actions-fixed-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-overlay-dropdown) - 1);
+  background: transparent;
+}
+
+.receta-actions-fixed-host {
+  position: fixed;
+  z-index: var(--z-overlay-dropdown);
+  width: 240px;
+  max-width: min(280px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  overflow: hidden;
+  animation: ram-pop-in 140ms ease-out;
+  // No forzar top/left/transform: lo controla TS vía inline styles.
+}
+
+@keyframes ram-pop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// ── Receta actions sheet (móvil ≤768px) ──────────────────────────────────────
+ion-modal.receta-actions-sheet {
+  --width: 100%;
+  --height: auto;
+  --max-height: 80dvh;
+  --border-radius: 16px 16px 0 0;
+  --box-shadow: 0 -8px 28px rgb(15 23 42 / 14%);
+  --backdrop-opacity: 0.28;
+  align-items: flex-end;
+  z-index: var(--z-overlay-dropdown);
+
+  &::part(content) {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-height: 80dvh;
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
+    animation: ram-sheet-in 200ms ease-out;
+  }
+}
+
+@keyframes ram-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .receta-actions-fixed-host,
+  ion-modal.receta-actions-sheet::part(content) {
+    animation: none;
+  }
+}
+
 // ── In-app notify (ToastController, InAppNotifyService) ────────────────────────
 ion-toast.agf-inapp-toast::part(container) {
   border-radius: 14px;
   box-shadow: var(--shadow-elevated);
+}
+
+// ── Modal receta: portal bajo body en teléfonos estrechos (≤480px) ───────────
+// La clase se aplica en TS al teleportar app-nueva-receta-panel a document.body.
+body.receta-medica-overlay-open {
+  overflow: hidden !important;
+}
+
+body.receta-medica-overlay-open ion-router-outlet,
+body.receta-medica-overlay-open ion-page {
+  // Evita que el scroll/scrollbar del layout de Pacientes se vea detrás.
+  overflow: hidden !important;
+}
+
+.receta-medica-mobile-overlay {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: var(--app-header-height, 64px) !important;
+  bottom: calc(
+    var(--mobile-bottom-nav-height, 45px) + env(safe-area-inset-bottom, 0px)
+  ) !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: var(--z-overlay-receta-mobile-host) !important;
+  overflow: hidden !important;
+  background: #ffffff !important;
+  display: block !important;
 }

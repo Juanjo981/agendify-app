@@ -7,7 +7,6 @@ import { getAvatarColor as avatarColorUtil } from '../../shared/utils/avatar.uti
 import { formatFecha as formatFechaUtil } from '../../shared/utils/date.utils';
 import { AgfDatePickerComponent } from '../../shared/components/agf-date-picker/agf-date-picker.component';
 import { mapApiError } from 'src/app/shared/utils/api-error.mapper';
-import { AdjuntosServiceApi } from 'src/app/services/adjuntos.service.api';
 import { SesionesApiService } from './sesiones-api.service';
 import { ArchivoAdjuntoDto, SesionDto, getSessionSummary } from './models/sesion.model';
 import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
@@ -36,8 +35,6 @@ export class SesionesPage implements OnInit {
   totalPages = 0;
   loading = false;
   errorMessage = '';
-  cargandoAdjuntos = false;
-  private readonly adjuntosPorSesion = new Map<number, ArchivoAdjuntoDto | null>();
 
   filtros: FiltrosSesiones = {
     busqueda: '',
@@ -48,7 +45,6 @@ export class SesionesPage implements OnInit {
 
   constructor(
     private sesionesApi: SesionesApiService,
-    private adjuntosApi: AdjuntosServiceApi,
     private router: Router,
   ) {}
 
@@ -81,7 +77,6 @@ export class SesionesPage implements OnInit {
       this.currentPage = response.number ?? targetPage;
       this.pageSize = response.size ?? targetSize;
       this.totalPages = response.total_pages ?? 0;
-      await this.cargarResumenAdjuntos(this.sesiones);
       this.aplicarFiltrosLocales();
     } catch (err) {
       this.sesiones = [];
@@ -107,11 +102,11 @@ export class SesionesPage implements OnInit {
     }
 
     if (this.filtros.con_adjunto === 'con') {
-      resultado = resultado.filter(sesion => this.hasAdjunto(sesion.id_sesion));
+      resultado = resultado.filter(sesion => this.hasAdjunto(sesion));
     }
 
     if (this.filtros.con_adjunto === 'sin') {
-      resultado = resultado.filter(sesion => !this.hasAdjunto(sesion.id_sesion));
+      resultado = resultado.filter(sesion => !this.hasAdjunto(sesion));
     }
 
     this.sesionesFiltradas = resultado;
@@ -175,12 +170,12 @@ export class SesionesPage implements OnInit {
     return getSessionSummary(sesion);
   }
 
-  getAdjuntoPrincipal(sesionId: number): ArchivoAdjuntoDto | null {
-    return this.adjuntosPorSesion.get(sesionId) ?? null;
+  getAdjuntoPrincipal(sesion: SesionDto): ArchivoAdjuntoDto | null {
+    return this.getAdjuntoDesdeResumen(sesion) ?? null;
   }
 
-  hasAdjunto(sesionId: number): boolean {
-    return !!this.getAdjuntoPrincipal(sesionId);
+  hasAdjunto(sesion: SesionDto): boolean {
+    return !!this.getAdjuntoPrincipal(sesion);
   }
 
   getFileIcon(mimeType?: string | null): string {
@@ -188,38 +183,6 @@ export class SesionesPage implements OnInit {
     if (mimeType.startsWith('image/')) return 'image-outline';
     if (mimeType === 'application/pdf') return 'document-outline';
     return 'document-text-outline';
-  }
-
-  private async cargarResumenAdjuntos(sesiones: SesionDto[]) {
-    this.cargandoAdjuntos = true;
-
-    this.adjuntosPorSesion.clear();
-
-    const pendientes = sesiones.filter(sesion => {
-      const resumenBackend = this.getAdjuntoDesdeResumen(sesion);
-      if (resumenBackend !== undefined) {
-        this.adjuntosPorSesion.set(sesion.id_sesion, resumenBackend);
-        return false;
-      }
-      return true;
-    });
-
-    const resultados = await Promise.all(
-      pendientes.map(async sesion => {
-        try {
-          const page = await this.adjuntosApi.getBySesionId(sesion.id_sesion, { size: 1 });
-          return [sesion.id_sesion, page.content?.[0] ?? null] as const;
-        } catch {
-          return [sesion.id_sesion, null] as const;
-        }
-      })
-    );
-
-    resultados.forEach(([sesionId, archivo]) => {
-      this.adjuntosPorSesion.set(sesionId, archivo);
-    });
-
-    this.cargandoAdjuntos = false;
   }
 
   private getAdjuntoDesdeResumen(sesion: SesionDto): ArchivoAdjuntoDto | null | undefined {

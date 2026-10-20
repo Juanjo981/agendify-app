@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { ActividadRecienteItem } from './actividad-reciente.models';
@@ -12,6 +12,13 @@ import { ActividadRecienteItem } from './actividad-reciente.models';
 })
 export class ActividadRecienteTimelineComponent {
   @Input() title = 'Actividad reciente';
-  @Input() subtitle = 'Timeline visual · datos de ejemplo';
+  @Input() subtitle = 'Últimos movimientos del expediente';
   @Input() items: ActividadRecienteItem[] = [];
+  @Input() loading = false;
+  @Input() loadingMore = false;
+  @Input() error: string | null = null;
+  @Input() hasMore = false;
+
+  @Output() readonly retry = new EventEmitter<void>();
+  @Output() readonly loadMore = new EventEmitter<void>();
 }

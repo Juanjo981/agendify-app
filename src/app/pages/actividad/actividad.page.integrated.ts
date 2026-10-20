@@ -76,7 +76,10 @@ export class ActividadPageIntegrated implements OnInit {
     }
 
     try {
-      await this.solicitudApi.aprobar(this.solicitudSeleccionada.id_solicitud);
+      await this.solicitudApi.aprobar(
+        this.solicitudSeleccionada.id_cita,
+        this.solicitudSeleccionada.id_solicitud,
+      );
       this.showSolicitudModal = false;
       this.solicitudSeleccionada = null;
       await this.cargarActividad();
@@ -92,7 +95,11 @@ export class ActividadPageIntegrated implements OnInit {
     }
 
     try {
-      await this.solicitudApi.rechazar(this.solicitudSeleccionada.id_solicitud, motivo);
+      await this.solicitudApi.rechazar(
+        this.solicitudSeleccionada.id_cita,
+        this.solicitudSeleccionada.id_solicitud,
+        motivo,
+      );
       this.showSolicitudModal = false;
       this.solicitudSeleccionada = null;
       await this.cargarActividad();

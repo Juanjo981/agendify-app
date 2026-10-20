@@ -84,15 +84,24 @@
           </span>
         </div>
 
+        <div
+          class="nrp-banner nrp-banner--warn"
+          *ngIf="conflictoVersionPendiente && modo === 'EDITAR_EMITIDA' && !cargandoDetalle">
+          <span>
+            Tu edición local está basada en una versión anterior. Recarga la vigente antes de guardar
+            para evitar otro conflicto.
+          </span>
+        </div>
+
         <div class="nrp-banner nrp-banner--muted" *ngIf="modo === 'VER_ANULADA' && !cargandoDetalle">
           <span>Receta anulada. Solo lectura; puedes abrir PDFs históricos o guardar como copia.</span>
         </div>
 
-        <div class="nrp-loading" *ngIf="cargandoPlantilla || cargandoDetalle || ui.creandoVersion">
+        <div class="nrp-loading" *ngIf="cargandoPlantilla || cargandoDetalle || ui.creandoVersion || guardandoVersion()">
           <ion-spinner name="crescent"></ion-spinner>
           <span>
             {{
-              ui.creandoVersion
+              ui.creandoVersion || guardandoVersion()
                 ? 'Generando nueva versión…'
                 : cargandoDetalle
                   ? 'Cargando receta…'
@@ -126,13 +135,22 @@
             </label>
             <label class="nrp-field" [class.nrp-field--invalid]="fieldErrors['fechaEmision']">
               <span class="nrp-field__label">Fecha de emisión</span>
+              <!-- Editable: input nativo (valor ISO). Solo lectura: texto dd/MM/yyyy. -->
               <ion-input
+                *ngIf="camposEditables"
                 class="nrp-input"
                 type="date"
+                lang="es-MX"
                 [(ngModel)]="contenido.fechaEmision"
                 (ngModelChange)="marcarDirty()"
-                [readonly]="!camposEditables"
                 placeholder="YYYY-MM-DD">
+              </ion-input>
+              <ion-input
+                *ngIf="!camposEditables"
+                class="nrp-input"
+                readonly
+                [value]="datosVistaPrevia.fechaEmision"
+                placeholder="Fecha de emisión">
               </ion-input>
             </label>
             <label class="nrp-field nrp-field--age" *ngIf="config.distribucion.secciones.edad_paciente">
@@ -249,11 +267,19 @@
             <label class="nrp-field">
               <span class="nrp-field__label">Fecha</span>
               <ion-input
+                *ngIf="camposEditables"
                 class="nrp-input"
                 type="date"
+                lang="es-MX"
                 [(ngModel)]="contenido.proximaCitaFecha"
                 (ngModelChange)="marcarDirty()"
-                [readonly]="!camposEditables"
+                placeholder="Fecha">
+              </ion-input>
+              <ion-input
+                *ngIf="!camposEditables"
+                class="nrp-input"
+                readonly
+                [value]="datosVistaPrevia.proximaCitaFecha"
                 placeholder="Fecha">
               </ion-input>
             </label>
@@ -349,7 +375,13 @@
         <p>Según tu plantilla guardada</p>
       </div>
       <div class="nrp-preview-scroll">
-        <app-receta-sheet-preview [config]="config" [contenido]="contenido"></app-receta-sheet-preview>
+        <!-- trackBy previewMountKey: al cargar una receta existente se recrea el
+             hijo ya con datos, evitando placeholders del primer render vacío. -->
+        <app-receta-sheet-preview
+          *ngFor="let _ of [previewMountKey]; trackBy: trackPreviewMount"
+          [config]="config"
+          [datos]="datosVistaPrevia">
+        </app-receta-sheet-preview>
       </div>
     </div>
   </main>
@@ -358,7 +390,7 @@
     <div class="nrp-footer-actions">
       <button
         type="button"
-        class="nrp-btn nrp-btn--ghost"
+        class="nrp-btn nrp-btn--ghost nrp-act nrp-act--cerrar"
         (click)="cerrar()"
         [disabled]="operacionEnCurso">
         Cerrar
@@ -366,7 +398,7 @@
 
       <button
         type="button"
-        class="nrp-btn nrp-btn--ghost"
+        class="nrp-btn nrp-btn--ghost nrp-act nrp-act--pdf"
         *ngIf="puedeAbrirPdf"
         (click)="abrirPdfActual()"
         [disabled]="operacionEnCurso || pdfBusy"
@@ -378,7 +410,7 @@
 
       <button
         type="button"
-        class="nrp-btn nrp-btn--ghost"
+        class="nrp-btn nrp-btn--ghost nrp-act nrp-act--sec"
         *ngIf="puedeAbrirPdf"
         (click)="imprimirPdfActual()"
         [disabled]="operacionEnCurso || pdfBusy"
@@ -391,7 +423,7 @@
 
       <button
         type="button"
-        class="nrp-btn nrp-btn--ghost"
+        class="nrp-btn nrp-btn--ghost nrp-act nrp-act--sec"
         *ngIf="puedeAbrirPdf"
         (click)="descargarPdfActual()"
         [disabled]="operacionEnCurso || pdfBusy"
@@ -403,7 +435,7 @@
 
       <button
         type="button"
-        class="nrp-btn nrp-btn--ghost"
+        class="nrp-btn nrp-btn--ghost nrp-act nrp-act--sec"
         *ngIf="modo === 'VER_EMITIDA'"
         (click)="pasarAEditarEmitida()"
         [disabled]="operacionEnCurso || pdfBusy">
@@ -412,7 +444,7 @@
 
       <button
         type="button"
-        class="nrp-btn nrp-btn--ghost"
+        class="nrp-btn nrp-btn--ghost nrp-act nrp-act--sec"
         *ngIf="puedeIniciarCopia && modo !== 'EDITAR_EMITIDA'"
         (click)="abrirDialogoCopia()"
         [disabled]="operacionEnCurso || pdfBusy"
@@ -422,17 +454,18 @@
 
       <button
         type="button"
-        class="nrp-btn nrp-btn--ghost"
+        id="nrp-emitir-btn"
+        class="nrp-btn nrp-btn--ghost nrp-act nrp-act--sec"
         *ngIf="puedeEmitir"
         (click)="solicitarEmitir()"
-        [disabled]="operacionEnCurso">
+        [disabled]="operacionEnCurso || confirmacionEmisionAbierta()">
         <ion-spinner *ngIf="ui.emitiendo" name="crescent"></ion-spinner>
         <span *ngIf="!ui.emitiendo">Emitir receta</span>
       </button>
 
       <button
         type="button"
-        class="nrp-btn nrp-btn--primary"
+        class="nrp-btn nrp-btn--primary nrp-act nrp-act--primary"
         *ngIf="puedeGuardarBorrador"
         (click)="guardarBorrador()"
         [disabled]="operacionEnCurso">
@@ -442,12 +475,22 @@
 
       <button
         type="button"
-        class="nrp-btn nrp-btn--primary"
+        class="nrp-btn nrp-btn--ghost nrp-act nrp-act--sec"
+        *ngIf="puedeCancelarEdicion"
+        (click)="cancelarEdicion()"
+        [disabled]="operacionEnCurso">
+        Cancelar edición
+      </button>
+
+      <button
+        type="button"
+        class="nrp-btn nrp-btn--primary nrp-act nrp-act--primary"
         *ngIf="puedeGuardarEmitida"
         (click)="solicitarGuardarEmitida()"
-        [disabled]="operacionEnCurso">
-        <ion-spinner *ngIf="ui.creandoVersion" name="crescent"></ion-spinner>
-        <span *ngIf="!ui.creandoVersion">Guardar cambios</span>
+        [disabled]="operacionEnCurso || guardandoVersion()">
+        <ion-spinner *ngIf="guardandoVersion() || ui.creandoVersion" name="crescent"></ion-spinner>
+        <span *ngIf="!(guardandoVersion() || ui.creandoVersion)">Guardar cambios</span>
+        <span *ngIf="guardandoVersion() || ui.creandoVersion">Guardando…</span>
       </button>
     </div>
   </footer>
@@ -463,15 +506,25 @@
     aria-labelledby="nrp-decision-title"
     (click)="$event.stopPropagation()">
     <h3 id="nrp-decision-title">¿Cómo quieres guardar los cambios?</h3>
-    <button type="button" class="nrp-sheet__option" (click)="elegirGuardarNuevaVersion()">
-      <strong>Guardar como nueva versión</strong>
+    <button
+      type="button"
+      class="nrp-sheet__option"
+      (click)="elegirGuardarNuevaVersion()"
+      [disabled]="guardandoVersion() || operacionEnCurso">
+      <strong>{{ guardandoVersion() ? 'Guardando…' : 'Guardar como nueva versión' }}</strong>
       <span>Conserva la misma receta, genera un nuevo PDF e incrementa la versión. Las anteriores se conservan.</span>
     </button>
-    <button type="button" class="nrp-sheet__option" (click)="elegirGuardarComoCopia()">
+    <button
+      type="button"
+      class="nrp-sheet__option"
+      (click)="elegirGuardarComoCopia()"
+      [disabled]="guardandoVersion() || operacionEnCurso">
       <strong>Guardar como copia</strong>
       <span>La original queda intacta. Se crea una receta nueva en borrador con el nombre que indiques.</span>
     </button>
-    <button type="button" class="nrp-sheet__cancel" (click)="cancelarDialogo()">Cancelar</button>
+    <button type="button" class="nrp-sheet__cancel" (click)="cancelarDialogo()" [disabled]="guardandoVersion()">
+      Cancelar
+    </button>
   </div>
 </div>
 
@@ -543,7 +596,7 @@
     </p>
     <div class="nrp-sheet__actions">
       <button type="button" class="nrp-btn nrp-btn--ghost" (click)="conservarEdicionTrasConflicto()">
-        Cancelar
+        Seguir editando
       </button>
       <button type="button" class="nrp-btn nrp-btn--primary" (click)="recargarTrasConflicto()">
         Recargar

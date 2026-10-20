@@ -371,3 +371,20 @@
   .rsp-header { flex-direction: column; }
   .rsp-clinic { text-align: left; max-width: 100%; }
 }
+
+// Teléfono estrecho: la vista previa no debe verse como otra card anidada
+@media (max-width: 480px) {
+  .rsp-stage {
+    padding: 12px 10px 16px;
+    border: 0;
+    border-radius: 0;
+    background: #f8f9fc;
+    box-shadow: none;
+  }
+
+  .rsp-sheet {
+    border-radius: 0;
+    box-shadow: none;
+    width: 100%;
+  }
+}

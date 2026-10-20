@@ -2,6 +2,7 @@
  * Utilidades de fecha/hora clínica (LocalDate / LocalTime).
  * Evita Date.toISOString() para no cambiar el día por zona horaria.
  */
+import { formatFecha } from './date.utils';
 
 /** YYYY-MM-DD desde Date local (usa año/mes/día del calendario local). */
 export function formatLocalDate(value: Date | string | null | undefined): string | null {
@@ -65,6 +66,20 @@ export function parseLocalDate(value: string | null | undefined): Date | null {
     return null;
   }
   return date;
+}
+
+/**
+ * dd/MM/yyyy para mostrar en UI (es-MX). Cadena vacía si no hay fecha.
+ * Solo presentación: el valor enviado al backend sigue siendo ISO.
+ */
+export function formatDisplayDate(value: Date | string | null | undefined): string {
+  const iso = formatLocalDate(value);
+  return iso ? formatFecha(iso) : '';
+}
+
+/** HH:mm para mostrar en UI. Cadena vacía si no hay hora. */
+export function formatDisplayTime(value: Date | string | null | undefined): string {
+  return formatLocalTime(value) ?? '';
 }
 
 /** Hoy en calendario local como YYYY-MM-DD. */

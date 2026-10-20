@@ -4,6 +4,8 @@
 > **Base URL:** `http://localhost:8080`  
 > **Formato de fechas:** ISO-8601 (`"2026-04-03T14:30:00"` para datetime, `"2026-04-03"` para date, `"09:30:00"` para time)  
 > **Naming convention JSON:** `snake_case` (los campos Java ya están definidos en snake_case). Configurado globalmente con `spring.jackson.property-naming-strategy=SNAKE_CASE`. Los metadatos de `Page<T>` también usan snake_case (`total_elements`, `total_pages`, etc.).
+>
+> **Fuente de verdad:** Los contratos backend consolidados de la sección 21 prevalecen sobre ejemplos anteriores cuando haya diferencias. La sección integra rutas canónicas, alias temporales y formas de respuesta vigentes.
 
 ---
 
@@ -25,9 +27,11 @@
 14. [Historial de Eventos](#14-historial-de-eventos)
 15. [Endpoints Públicos para el Paciente](#15-endpoints-públicos-para-el-paciente)
 16. [Administración (ADMIN)](#16-administración-admin)
-17. [Checklist de Servicios Angular Recomendados](#17-checklist-de-servicios-angular-recomendados)
-18. [Flujos de UI Recomendados](#18-flujos-de-ui-recomendados)
-19. [Inconsistencias y Observaciones](#19-inconsistencias-y-observaciones)
+17. [Recetas Médicas](#17-recetas-médicas)
+18. [Checklist de Servicios Angular Recomendados](#18-checklist-de-servicios-angular-recomendados)
+19. [Flujos de UI Recomendados](#19-flujos-de-ui-recomendados)
+20. [Inconsistencias y Observaciones](#20-inconsistencias-y-observaciones)
+21. [Contratos Backend Consolidados](#21-contratos-backend-consolidados)
 
 ---
 
@@ -520,7 +524,8 @@ Provee KPIs, la agenda del día y estadísticas para la pantalla principal del p
 
 | | |
 |---|---|
-| **Endpoint** | `GET /api/dashboard/estadisticas-citas` |
+| **Endpoint (canonico)** | `GET /api/estadisticas/citas` |
+| **Alias legacy** | `GET /api/dashboard/estadisticas-citas` |
 | **Uso en frontend** | Gráficas (pastel por estado, serie diaria de tendencia) |
 | **Auth** | JWT (PROFESIONAL, RECEPCIONISTA) |
 
@@ -529,25 +534,7 @@ Provee KPIs, la agenda del día y estadísticas para la pantalla principal del p
 ?fecha_desde=2026-03-01&fecha_hasta=2026-03-31
 ```
 
-**Response (200):**
-```json
-{
-  "fecha_desde": "2026-03-01",
-  "fecha_hasta": "2026-03-31",
-  "total_citas": 87,
-  "conteo_por_estado": [
-    { "estado": "COMPLETADA", "cantidad": 52 },
-    { "estado": "CANCELADA", "cantidad": 10 },
-    { "estado": "PENDIENTE", "cantidad": 15 },
-    { "estado": "CONFIRMADA", "cantidad": 8 },
-    { "estado": "NO_ASISTIO", "cantidad": 2 }
-  ],
-  "serie_diaria": [
-    { "fecha": "2026-03-01", "total": 3 },
-    { "fecha": "2026-03-02", "total": 4 }
-  ]
-}
-```
+**Response (200):** El contrato vigente con `resumenes`, `series`, `rankings` y `tablas` se documenta en la sección [21.11 Estadísticas y Reportes](#2111-estadisticas-y-reportes). No usar el payload resumido anterior.
 
 **Errores:** 400 si falta `fecha_desde` o `fecha_hasta`.
 
@@ -557,23 +544,14 @@ Provee KPIs, la agenda del día y estadísticas para la pantalla principal del p
 
 | | |
 |---|---|
-| **Endpoint** | `GET /api/dashboard/estadisticas-pacientes` |
+| **Endpoint (canonico)** | `GET /api/estadisticas/pacientes` |
+| **Alias legacy** | `GET /api/dashboard/estadisticas-pacientes` |
 | **Uso en frontend** | Cards/métricas de pacientes en rango |
 | **Auth** | JWT (PROFESIONAL, RECEPCIONISTA) |
 
 **Query params:** Mismos que estadísticas de citas.
 
-**Response (200):**
-```json
-{
-  "fecha_desde": "2026-03-01",
-  "fecha_hasta": "2026-03-31",
-  "total_pacientes_con_cita_en_rango": 45,
-  "pacientes_nuevos": 8,
-  "pacientes_recurrentes": 37,
-  "total_con_sesion_en_rango": 30
-}
-```
+**Response (200):** El contrato vigente con `resumenes`, `series`, `rankings` y `tablas` se documenta en la sección [21.11 Estadísticas y Reportes](#2111-estadisticas-y-reportes). No usar el payload resumido anterior.
 
 ---
 
@@ -927,6 +905,176 @@ Estos endpoints alimentan las tabs internas del detalle de paciente. Todos son p
 | `GET /api/pacientes/{id}/historial-eventos` | Bitácora | `Page<HistorialEventoDto>` | Sort por `fecha_evento` |
 
 **Uso recomendado:** Cargar cada tab de forma lazy (solo al seleccionarla). No precargar todos.
+
+---
+
+### 5.10 Resumen Clínico del Paciente
+
+#### Indicadores de resumen
+
+| | |
+|---|---|
+| **Endpoint** | `GET /api/pacientes/{id}/resumen/indicadores` |
+| **Uso en frontend** | KPIs clínicos del tab Resumen (asistencia, cancelaciones, frecuencia, próxima cita) |
+| **Auth** | JWT (PROFESIONAL, RECEPCIONISTA) |
+
+**Response (200):** `PacienteResumenIndicadoresDto`
+```json
+{
+  "id_paciente": 15,
+  "ventana_dias": 180,
+  "fecha_desde": "2026-04-01",
+  "fecha_hasta": "2026-10-01",
+  "puntaje_general": 82,
+  "clasificacion_general": "BUENO",
+  "asistencia": {
+    "porcentaje": 87.5,
+    "clasificacion": "ALTA",
+    "citas_completadas": 14,
+    "citas_no_asistidas": 2,
+    "citas_computables": 16
+  },
+  "cancelaciones": {
+    "cantidad": 1,
+    "porcentaje": 6.25,
+    "clasificacion": "BAJAS"
+  },
+  "reprogramaciones": {
+    "cantidad": 2,
+    "porcentaje": 12.5,
+    "clasificacion": "MODERADAS"
+  },
+  "ausencias": {
+    "cantidad": 2,
+    "porcentaje": 12.5,
+    "clasificacion": "BAJAS"
+  },
+  "frecuencia": {
+    "promedio_dias": 15,
+    "clasificacion": "REGULAR",
+    "citas_completadas_consideradas": 14
+  },
+  "total_sesiones": 10,
+  "proxima_cita": {
+    "existe": true,
+    "id_cita": 42,
+    "fecha_inicio": "2026-10-25T10:00:00",
+    "fecha_fin": "2026-10-25T10:45:00",
+    "estado_cita": "PENDIENTE",
+    "motivo": "Seguimiento"
+  }
+}
+```
+
+#### Actividad de resumen
+
+| | |
+|---|---|
+| **Endpoint** | `GET /api/pacientes/{id}/resumen/actividad` |
+| **Uso en frontend** | Timeline de eventos recientes del paciente en tab Resumen |
+| **Auth** | JWT (PROFESIONAL, RECEPCIONISTA) |
+| **Paginado** | Sí (`Page<PacienteActividadEventoDto>`) |
+
+**Query params (opcionales):**
+`?page=0&size=20`
+
+**Response (200):**
+```json
+{
+  "content": [
+    {
+      "id": "evt-123",
+      "tipo": "CITA_COMPLETADA",
+      "titulo": "Cita completada",
+      "descripcion": "Sesión de seguimiento mensual",
+      "fecha_hora": "2026-10-10T17:00:00",
+      "entidad_id": 42,
+      "categoria": "CITAS",
+      "icono": "checkmark-circle-outline",
+      "metadata": {
+        "id_cita": 42
+      }
+    }
+  ],
+  "total_elements": 1,
+  "total_pages": 1,
+  "number": 0,
+  "size": 20,
+  "first": true,
+  "last": true,
+  "empty": false
+}
+```
+
+**Errores esperados:** `404` si el paciente no existe o no pertenece al profesional.
+
+---
+
+### 5.11 Checklist de Primera Sesión
+
+| | |
+|---|---|
+| **Endpoint** | `GET /api/pacientes/{id}/primera-sesion` |
+| **Uso en frontend** | Tab de admisión/checklist inicial del paciente |
+| **Auth** | JWT (PROFESIONAL, RECEPCIONISTA) |
+
+**Comportamiento esperado en lectura:**
+- `200` con `ChecklistPrimeraSesionDto` si existe.
+- `200` con `null` o `204` sin body si aún no hay checklist cargado.
+
+**Response (200):**
+```json
+{
+  "id": 10,
+  "id_paciente": 15,
+  "id_profesional": 1,
+  "consentimiento_informado": true,
+  "motivo_consulta": true,
+  "antecedentes": true,
+  "red_apoyo": false,
+  "riesgo_suicida": false,
+  "consumo_sustancias": false,
+  "violencia": false,
+  "enfermedades": true,
+  "medicacion_actual": true,
+  "firma_digital": false,
+  "nivel_inicial": "MEDIO",
+  "completados": 6,
+  "total": 10,
+  "created_at": "2026-10-01T11:20:00",
+  "updated_at": "2026-10-05T08:15:00"
+}
+```
+
+#### Guardar checklist
+
+| | |
+|---|---|
+| **Endpoint** | `PUT /api/pacientes/{id}/primera-sesion` |
+| **Auth** | JWT (PROFESIONAL, RECEPCIONISTA) |
+
+**Request:**
+```json
+{
+  "consentimiento_informado": true,
+  "motivo_consulta": true,
+  "antecedentes": true,
+  "red_apoyo": false,
+  "riesgo_suicida": false,
+  "consumo_sustancias": false,
+  "violencia": false,
+  "enfermedades": true,
+  "medicacion_actual": true,
+  "firma_digital": false,
+  "nivel_inicial": "MEDIO"
+}
+```
+
+**Response (200):** `ChecklistPrimeraSesionDto` actualizado.
+
+**Errores esperados:**
+- `404` paciente no encontrado/no accesible.
+- `422` payload inválido (ej: `nivel_inicial` fuera de `BAJO|MEDIO|ALTO`).
 
 ---
 
@@ -1841,6 +1989,8 @@ Configuración de la disponibilidad del profesional: horarios recurrentes por d�
 
 Representan la disponibilidad **recurrente** (ej: "Lunes de 09:00 a 13:00 y de 14:00 a 18:00").
 
+> Para la configuración consolidada del profesional, usar `GET/PUT /api/horarios-laborales/me`. `GET /api/horarios-laborales` se conserva por compatibilidad y crea horarios predeterminados seguros cuando aún no existen; ver [21.4 Horarios Laborales](#214-horarios-laborales).
+
 #### Listar
 `GET /api/horarios-laborales` → `List<HorarioLaboralDto>` (no paginado)
 
@@ -1952,82 +2102,17 @@ Configuración global del profesional (zona horaria, moneda, duración default d
 
 ### 12.1 Configuración del Sistema
 
-> Cada profesional tiene **como máximo una** configuración. Si no existe, crearla; si ya existe, editarla.
->
-> **Auto-creación:** Al registrar un profesional, el backend crea automáticamente una configuración con valores por defecto (`zona_horaria=America/Mexico_City`, `moneda=MXN`, `formato_hora=24H`, `duracion_cita_default_min=60`, `politica_cancelacion_horas=24`, `permite_confirmacion_publica=true`) y una regla de recordatorio (`canal=EMAIL`, `anticipacion_minutos=1440`). El frontend ya no necesita manejar el caso 404 en la carga inicial para profesionales nuevos.
+> El contrato canónico es `GET/PUT /api/configuracion-sistema/me`. El endpoint legacy `GET /api/configuracion-sistema` sigue delegando al canónico. La lectura crea defaults seguros si aún no existe la configuración; no se debe crear con `POST`. Ver [21.2 Configuración del Sistema](#212-configuracion-del-sistema).
 
-#### Obtener
-`GET /api/configuracion-sistema` → `ConfiguracionSistemaDto` (200) o `404` si no existe.
-
-```json
-{
-  "id_configuracion_sistema": 1,
-  "id_profesional": 1,
-  "zona_horaria": "America/Mexico_City",
-  "moneda": "MXN",
-  "formato_hora": "24h",
-  "duracion_cita_default_min": 45,
-  "politica_cancelacion_horas": 24,
-  "permite_confirmacion_publica": true,
-  "activo": true,
-  "created_at": "2026-01-15T10:00:00"
-}
-```
-
-**Flujo recomendado en frontend:**
-1. Al entrar a configuración: `GET /api/configuracion-sistema`
-2. Si `404`: mostrar formulario vacío con defaults → `POST` al guardar
-3. Si `200`: prellenar form → `PUT /{id}` al guardar
-
-#### Crear
-`POST /api/configuracion-sistema`
-
-```json
-{
-  "zona_horaria": "America/Mexico_City",
-  "moneda": "MXN",
-  "formato_hora": "24h",
-  "duracion_cita_default_min": 45,
-  "politica_cancelacion_horas": 24,
-  "permite_confirmacion_publica": true
-}
-```
-
-**Error `409`:** Ya existe una configuración para este profesional.
-
-#### Actualizar
-`PUT /api/configuracion-sistema/{id}` — mismos campos.
+Consultar y actualizar con `GET/PUT /api/configuracion-sistema/me`. El contrato completo de respuesta y request se documenta en [21.2 Configuración del Sistema](#212-configuracion-del-sistema).
 
 ---
 
 ### 12.2 Reglas de Recordatorio
 
-#### Listar
-`GET /api/configuracion-recordatorios` → `List<ConfiguracionRecordatorioDto>` (no paginado)
+> El contrato canónico es `GET/PUT /api/configuracion-recordatorios/me`. El listado legacy continúa funcionando; el `PUT` sincroniza la colección completa y desactiva temporalmente los IDs omitidos. Ver [21.3 Configuración de Recordatorios](#213-configuracion-de-recordatorios).
 
-Ordenadas: activas primero, luego por anticipación ascendente.
-
-#### Crear
-`POST /api/configuracion-recordatorios`
-
-```json
-{
-  "canal": "EMAIL",
-  "anticipacion_minutos": 1440,
-  "mensaje_personalizado": "Recordatorio: tiene cita mañana a las {hora}"
-}
-```
-
-| Campo | Obligatorio | Nota |
-|---|---|---|
-| `canal` | **Sí** | Ej: `EMAIL`, `SMS`, `WHATSAPP` (max 20) |
-| `anticipacion_minutos` | **Sí** | Min 1. Ej: 1440 = 24 horas antes |
-| `mensaje_personalizado` | No | Max 5000 |
-
-**Error `409`:** Ya existe regla con mismo `canal + anticipacion_minutos`.
-
-#### Actualizar / Activar / Eliminar
-Misma estructura que otros recursos con CRUD + activo + delete.
+Consultar y sincronizar la colección con `GET/PUT /api/configuracion-recordatorios/me`. El `PUT` es el contrato de actualización completo; ver [21.3 Configuración de Recordatorios](#213-configuracion-de-recordatorios).
 
 ---
 
@@ -2108,10 +2193,63 @@ Registro y gestión de intentos de comunicación (recordatorios, confirmaciones,
 
 ---
 
+### 13.4 Contador de No Leídas
+
+| | |
+|---|---|
+| **Endpoint** | `GET /api/notificaciones/no-leidas/count` |
+| **Auth** | JWT (PROFESIONAL, RECEPCIONISTA) |
+
+**Response (200):** `{ "total_no_leidas": 5 }`
+
+Este es el único formato canónico; no se deben soportar variantes de payload para el contador. Ver [21.7 Notificaciones](#217-notificaciones).
+
+**Errores esperados:** `401` no autenticado, `403` sin permisos.
+
+---
+
+### 13.5 Marcar Notificación Como Leída
+
+| | |
+|---|---|
+| **Endpoint** | `PATCH /api/notificaciones/{id}/leida` |
+| **Auth** | JWT (PROFESIONAL, RECEPCIONISTA) |
+
+**Request:**
+```json
+{}
+```
+
+**Response (200):** `NotificacionDto` actualizado. El alias temporal `/api/notificaciones/{id}/marcar-leida` también puede aceptarse.
+
+**Errores esperados:** `401` no autenticado, `403` sin permisos, `404` notificación no encontrada.
+
+---
+
+### 13.6 Marcar Todas Como Leídas
+
+| | |
+|---|---|
+| **Endpoint** | `POST /api/notificaciones/marcar-todas-leidas` |
+| **Auth** | JWT (PROFESIONAL, RECEPCIONISTA) |
+
+**Request:**
+```json
+{}
+```
+
+**Response (200):** `{ "total_actualizadas": 5, "total_no_leidas": 0 }`. El método canónico es `POST`; `PATCH` se mantiene como alias temporal.
+
+**Errores esperados:** `401` no autenticado, `403` sin permisos.
+
+---
+
 ## 14. Historial de Eventos
 
 ### Propósito
 Bitácora funcional de negocio. Registra creaciones, confirmaciones, cancelaciones, y cambios de estado automatizados. No es un log técnico.
+
+> La surface canónica del feed global es `GET /api/actividad`; `GET /api/historial-eventos` sigue disponible como contrato legacy. Ver [21.8 Actividad Global](#218-actividad-global).
 
 ### Pantallas que lo consumen
 - **Tab "Bitácora" en detalle de paciente/cita/sesión**
@@ -2182,7 +2320,8 @@ Permite al paciente gestionar su cita sin necesidad de autenticarse, usando un t
 3. El paciente ejecuta una acción (solo si token_valido):
    a) Confirmar → PATCH /public/citas/gestion/{token}/confirmar
    b) Cancelar → PATCH /public/citas/gestion/{token}/cancelar
-   c) Solicitar reprogramación → POST /public/citas/gestion/{token}/solicitudes-reprogramacion
+   c) Consultar slots → GET /public/citas/gestion/{token}/disponibilidad?fecha=YYYY-MM-DD
+   d) Solicitar reprogramación → POST /public/citas/gestion/{token}/solicitudes-reprogramacion
 
 4. Mostrar mensaje de éxito/error
    (El backend genera automáticamente una notificación al profesional)
@@ -2307,6 +2446,8 @@ Anteriormente, tokens expirados o usados retornaban 404. Ahora retornan 200 con 
 |---|---|
 | **Endpoint** | `POST /public/citas/gestion/{token}/solicitudes-reprogramacion` |
 
+> Para mostrar horarios, primero consultar `GET /public/citas/gestion/{token}/disponibilidad?fecha=YYYY-MM-DD` y pintar únicamente los slots devueltos por el backend. Contrato detallado en [21.12 Reprogramación Pública](#2112-reprogramacion-publica).
+
 **Request:**
 ```json
 {
@@ -2362,9 +2503,17 @@ CRUD de códigos de acceso para beta testers. Solo ADMIN.
 |---|---|---|---|
 | `GET /api/profesionales` | GET | ADMIN | Listar todos |
 | `POST /api/profesionales` | POST | ADMIN | Crear perfil profesional |
+| `GET /api/profesionales/me` | GET | PROFESIONAL | Perfil profesional del usuario autenticado |
+| `PUT /api/profesionales/me/perfil` | PUT | PROFESIONAL | Actualizar perfil profesional propio |
 | `GET /api/profesionales/{id}` | GET | ADMIN, PROFESIONAL | Detalle |
 | `PUT /api/profesionales/{id}` | PUT | ADMIN, PROFESIONAL | Actualizar |
 | `GET /api/profesionales/{id}/resumen` | GET | ADMIN, PROFESIONAL | Resumen con config |
+
+**GET `/api/profesionales/me` (200):** El contrato vigente está en [21.1 Perfil Profesional](#211-perfil-profesional); no usar el DTO resumido histórico.
+
+**PUT `/api/profesionales/me/perfil` request:** Ver los campos admitidos en [21.1 Perfil Profesional](#211-perfil-profesional).
+
+**Errores esperados:** `400` payload invalido, `401` no autenticado, `403` sin permisos.
 
 ---
 
@@ -2389,7 +2538,9 @@ Para vincular recepcionistas al profesional.
 | Endpoint | Método | Descripción |
 |---|---|---|
 | `GET /api/codigos-vinculacion/me` | GET | Obtener código activo |
-| `POST /api/codigos-vinculacion/regenerar` | POST | Regenerar (invalida anterior) |
+| `POST /api/codigos-vinculacion/me/regenerar` | POST | Regenerar (invalida anterior) |
+
+> `POST /api/codigos-vinculacion/regenerar` se conserva temporalmente como alias. La tabla `codigos_vinculacion` es la única fuente oficial; ver [21.5 Código de Vinculación](#215-codigo-de-vinculacion).
 
 **Flujo:** El profesional genera un código → lo comparte con el recepcionista → el recepcionista se registra usando ese código.
 
@@ -2400,6 +2551,9 @@ Para vincular recepcionistas al profesional.
 | Endpoint | Método | Auth |
 |---|---|---|
 | `GET /api/usuarios` | GET | ADMIN, PROFESIONAL |
+| `GET /api/usuarios/me` | GET | Cualquier autenticado |
+| `PUT /api/usuarios/me` | PUT | Cualquier autenticado |
+| `PUT /api/usuarios/me/password` | PUT | Cualquier autenticado |
 | `GET /api/usuarios/{id}` | GET | ADMIN, PROFESIONAL, RECEPCIONISTA |
 | `POST /api/usuarios` | POST | ADMIN, PROFESIONAL |
 | `POST /api/usuarios/registro` | POST | **Público** |
@@ -2407,6 +2561,57 @@ Para vincular recepcionistas al profesional.
 | `PUT /api/usuarios/{id}/password` | PUT | ADMIN, PROFESIONAL, RECEPCIONISTA |
 | `PATCH /api/usuarios/{id}/activo` | PATCH | ADMIN, PROFESIONAL |
 | `PATCH /api/usuarios/{id}/bloqueado` | PATCH | ADMIN, PROFESIONAL |
+
+**GET `/api/usuarios/me` (200): contrato canonico recomendado**
+
+```json
+{
+  "id_usuario": 45,
+  "nombre_completo": "Dra. Ana Lopez",
+  "correoElectronico": "ana@ejemplo.com",
+  "usuario": "ana.lopez",
+  "telefono": "5551234567",
+  "domicilio": "Calle 1",
+  "especialidad": "Psicologia Clinica",
+  "cedula_profesional": "ABC123456",
+  "nombre_consulta": "Consultorio Centro",
+  "telefono_consultorio": "5550001111",
+  "direccion_consultorio": "Av. Reforma 100",
+  "descripcion": "Atencion adultos"
+}
+```
+
+> Compatibilidad: el frontend tolera respuesta flat o anidada (`{ usuario, profesional }`), pero el contrato oficial debe mantener una sola forma estable para evitar normalizaciones ambiguas.
+
+**PUT `/api/usuarios/me` request:**
+```json
+{
+  "nombreCompleto": "Dra. Ana Lopez",
+  "correoElectronico": "ana@ejemplo.com",
+  "usuario": "ana.lopez",
+  "telefono": "5551234567",
+  "domicilio": "Calle 1",
+  "especialidad": "Psicologia Clinica",
+  "cedulaProfesional": "ABC123456",
+  "nombreConsultorio": "Consultorio Centro",
+  "telefonoConsultorio": "5550001111",
+  "direccionConsultorio": "Av. Reforma 100",
+  "descripcionProfesional": "Atencion adultos"
+}
+```
+
+**PUT `/api/usuarios/me/password` request:**
+```json
+{
+  "password_actual": "actual",
+  "nueva_password": "nuevaSegura",
+  "confirmar_nueva_password": "nuevaSegura"
+}
+```
+
+> El contrato canónico self-service es `PUT /api/usuarios/me/password`. `PUT /api/usuarios/{id}/password` se mantiene para administración; ver [21.6 Cambio de Password Propio](#216-cambio-de-password-propio).
+
+**Errores esperados:** `400` payload invalido, `401` no autenticado, `403` sin permisos, `409` conflicto de usuario/email, `422` validaciones de negocio.
 
 ---
 
@@ -2437,7 +2642,124 @@ Para vincular recepcionistas al profesional.
 
 ---
 
-## 17. Checklist de Servicios Angular Recomendados
+## 17. Recetas Médicas
+
+### Propósito
+Gestión clínica de recetas: creación, edición de borrador, emisión, anulación, copias y acceso a PDF firmado temporal.
+
+### Pantallas que lo consumen
+- **Panel de receta** (crear/editar/emitir)
+- **Listado por paciente**
+- **Acciones de copia/anulación**
+- **Descarga/visualización de PDF**
+
+> **Contrato vigente único:** familia `/api/recetas` + listado por paciente en `/api/pacientes/{id}/recetas`.
+>
+> El contrato alterno en `docs/recetas-medicas-endpoints.txt` con rutas `/profesionales/me/...` queda como referencia legacy y no debe ser usado como contrato frontend principal.
+>
+> El catálogo de rutas, roles, errores y compatibilidad vigente se amplía en [21.15 Recetas Médicas](#2115-recetas-médicas).
+
+### 17.1 Crear Receta
+
+| | |
+|---|---|
+| **Endpoint** | `POST /api/recetas` |
+| **Auth** | JWT |
+
+**Notas:** crea receta en estado `BORRADOR`.
+
+---
+
+### 17.2 Obtener Receta
+
+| | |
+|---|---|
+| **Endpoint** | `GET /api/recetas/{idReceta}` |
+| **Auth** | JWT |
+
+---
+
+### 17.3 Listar Recetas de Paciente
+
+| | |
+|---|---|
+| **Endpoint** | `GET /api/pacientes/{idPaciente}/recetas` |
+| **Auth** | JWT |
+| **Paginado** | Sí (`Page<RecetaResumen>`) |
+
+**Query params soportados por frontend:**
+`page`, `size`, `sort`, `estado`.
+
+---
+
+### 17.4 Actualizar Borrador
+
+| | |
+|---|---|
+| **Endpoint** | `PUT /api/recetas/{idReceta}` |
+| **Auth** | JWT |
+
+**Restricción:** solo recetas en `BORRADOR`.
+
+---
+
+### 17.5 Emitir Receta
+
+| | |
+|---|---|
+| **Endpoint** | `POST /api/recetas/{idReceta}/emitir` |
+| **Auth** | JWT |
+
+---
+
+### 17.6 Crear Nueva Versión
+
+| | |
+|---|---|
+| **Endpoint** | `POST /api/recetas/{idReceta}/versiones` |
+| **Auth** | JWT |
+
+---
+
+### 17.7 Guardar Como Copia
+
+| | |
+|---|---|
+| **Endpoint** | `POST /api/recetas/{idReceta}/copias` |
+| **Auth** | JWT |
+
+---
+
+### 17.8 Anular Receta
+
+| | |
+|---|---|
+| **Endpoint** | `POST /api/recetas/{idReceta}/anular` |
+| **Auth** | JWT |
+
+---
+
+### 17.9 Eliminar Receta
+
+| | |
+|---|---|
+| **Endpoint** | `DELETE /api/recetas/{idReceta}` |
+| **Auth** | JWT |
+
+---
+
+### 17.10 PDF de Receta
+
+| Endpoint | Uso |
+|---|---|
+| `GET /api/recetas/{idReceta}/pdf-url` | PDF vigente de la receta |
+| `GET /api/recetas/{idReceta}/versiones/{numeroVersion}/pdf-url` | PDF de una versión específica |
+
+**Nota:** URL firmada temporal; no persistir en storage local.
+
+---
+
+## 18. Checklist de Servicios Angular Recomendados
 
 | Servicio | Responsabilidad |
 |---|---|
@@ -2457,6 +2779,7 @@ Para vincular recepcionistas al profesional.
 | `historial.service` | Listado y detalle de eventos |
 | `dashboard.service` | Resumen, agenda hoy, estadísticas, consolidado |
 | `public-citas.service` | Endpoints públicos de gestión de cita por token |
+| `recetas.service` | Crear/listar/ver/emitir/versionar/copiar/anular recetas y obtener PDF firmado |
 | `usuarios.service` | CRUD usuarios, activar/bloquear, password |
 | `roles.service` | Catálogo de roles |
 | `codigos-beta.service` | Solo si el rol es ADMIN |
@@ -2478,9 +2801,9 @@ Para vincular recepcionistas al profesional.
 
 ---
 
-## 18. Flujos de UI Recomendados
+## 19. Flujos de UI Recomendados
 
-### 18.1 Crear Paciente
+### 19.1 Crear Paciente
 
 ```
 1. Abrir modal/page con formulario vacío
@@ -2491,7 +2814,7 @@ Para vincular recepcionistas al profesional.
 6. Si 409 → mostrar "Ya existe un paciente con estos datos"
 ```
 
-### 18.2 Crear Cita
+### 19.2 Crear Cita
 
 ```
 1. Seleccionar paciente (de lista o buscador)
@@ -2504,7 +2827,7 @@ Para vincular recepcionistas al profesional.
 8. Si 409 → "Conflicto de horario" → volver a consultar disponibilidad
 ```
 
-### 18.3 Completar Cita + Crear Sesión
+### 19.3 Completar Cita + Crear Sesión
 
 ```
 1. En detalle de cita "CONFIRMADA":
@@ -2515,7 +2838,7 @@ Para vincular recepcionistas al profesional.
 5. Si 409 → la sesión ya existe → GET /api/citas/{id}/sesion → navegar a ella
 ```
 
-### 18.4 Subir Archivo
+### 19.4 Subir Archivo
 
 ```
 1. Usuario selecciona archivo con input[type=file]
@@ -2528,7 +2851,7 @@ Para vincular recepcionistas al profesional.
 7. Si falla paso 4 → toast "Error al subir archivo" → no hacer paso 5
 ```
 
-### 18.5 Flujo Público de Cita (paciente sin login)
+### 19.5 Flujo Público de Cita (paciente sin login)
 
 ```
 1. Paciente abre link https://app.agendify.com/public/citas/{token}
@@ -2546,7 +2869,7 @@ Para vincular recepcionistas al profesional.
    → "Solicitud enviada" (si 409: "Ya hay una solicitud pendiente")
 ```
 
-### 18.6 Gestión de Sesión Expirada
+### 19.6 Gestión de Sesión Expirada
 
 ```
 1. Cualquier request del interceptor → 401
@@ -2559,22 +2882,22 @@ Para vincular recepcionistas al profesional.
 
 ---
 
-## 19. Inconsistencias y Observaciones
+## 20. Inconsistencias y Observaciones
 
-### 19.1 Campos sensibles en UsuarioDto
+### 20.1 Campos sensibles en UsuarioDto
 
 `UsuarioDto` incluye el campo `password_hash` en su definición. Aunque el mapper probablemente no lo llena, la presencia del campo en el DTO es un riesgo potencial. Verificar que nunca se envíe al frontend.
 
 > **Acción frontend:** Ignorar `password_hash` si llega en algún response. No mostrarlo en UI.
 
-### 19.2 Diferencia entre UsuarioDto y UsuarioResponseDto
+### 20.2 Diferencia entre UsuarioDto y UsuarioResponseDto
 
 - `UsuarioDto` se usa en `LoginResponseDto` y `RefreshResponseDto` (incluye campos como `password_hash`, `ultimo_login_at`).
 - `UsuarioResponseDto` se usa en endpoints CRUD de usuarios (incluye `nombre_rol`, `alias_interno`, `puesto`).
 
 > **Para frontend:** Definir dos interfaces TypeScript o una sola con campos opcionales.
 
-### 19.3 Filtros con naming inconsistente
+### 20.3 Filtros con naming inconsistente
 
 Los Filtro DTOs usan **camelCase** en algunos campos pero el backend espera los query params como se definen en Java:
 
@@ -2589,32 +2912,1607 @@ Los Filtro DTOs usan **camelCase** en algunos campos pero el backend espera los 
 >
 > **Nota sobre Jackson SNAKE_CASE:** Con la configuración global `spring.jackson.property-naming-strategy=SNAKE_CASE`, los query params de filtros `@ModelAttribute` **no** se ven afectados — siguen usando los nombres tal como están definidos en Java. Solo las respuestas JSON (bodies) se serializan en snake_case.
 
-### 19.4 Historial del paciente no usa paginación estándar
+### 20.4 Historial del paciente no usa paginación estándar
 
 `GET /api/pacientes/{id}/historial` devuelve un objeto `PacienteHistorialResponseDto` con una lista `eventos` que **no** es un `Page<T>` de Spring Data. Acepta `page` y `size` como parámetros pero la paginación se aplica en memoria.
 
 > **Impacto:** Para conjuntos de datos muy grandes, podría haber impacto en rendimiento. No confiar en la metadata estándar de `Page` para este endpoint.
 
-### 19.5 Notas clínicas usan DELETE físico
+### 20.5 Notas clínicas usan DELETE físico
 
 A diferencia de la mayoría de entidades (que usan soft delete con `activo=false`), `DELETE /api/notas-clinicas/{id}` realiza una **eliminación real** de la base de datos.
 
 > **Para UI:** Siempre mostrar diálogo de confirmación "¿Estás seguro? Esta acción no se puede deshacer."
 
-### 19.6 Campos de respuesta no usados por frontend típicamente
+### 20.6 Campos de respuesta no usados por frontend típicamente
 
 Muchos DTOs incluyen campos como `created_by`, `updated_by`, `id_profesional` que raramente se necesitan en la UI (ya que el ownership es implícito). No es necesario mapearlos en las interfaces TypeScript a menos que los uses.
 
-### 19.7 Token de confirmación — visibilidad única
+### 20.7 Token de confirmación — visibilidad única
 
 `POST /api/citas/{id}/tokens-confirmacion` es la **única oportunidad** de ver el token plano. El backend almacena solo el hash SHA-256. Si el usuario cierra el modal sin copiar el link, debe regenerar un nuevo token.
 
 > **Para UI:** Mostrar el token en un modal bloqueante con botón "Copiar link" prominente y warning de que no se podrá ver de nuevo.
 
-### 19.8 Endpoints de eliminación (DELETE) retornan el objeto eliminado
+### 20.8 Endpoints de eliminación (DELETE) retornan el objeto eliminado
 
 Los endpoints `DELETE` (archivos, alertas, horarios, bloqueos, recordatorios, notas clínicas) retornan el DTO del objeto eliminado/desactivado con status 200 (no 204). Esto puede ser útil para mostrar confirmación al usuario.
 
 ---
 
 > **Última actualización:** Generado desde el código fuente del backend de Agendify. Actualizado con: AuthMeResponseDto expandido, endpoint /api/agenda consolidado, /api/dashboard/consolidado, campos derivados en CitaDto/SesionDto/SolicitudReprogramacionDto, manejo graceful de tokens públicos, notificaciones automáticas, auto-creación de configuración, Jackson SNAKE_CASE global.
+
+---
+
+## 21. Contratos Backend Consolidados
+
+Esta seccion reune la actualizacion proveniente del backend. Para rutas o payloads que tambien aparecen en secciones anteriores, usa el contrato canonico aqui documentado; las rutas legacy se indican explicitamente.
+
+**Indice de contratos:**
+- [Perfil Profesional](#211-perfil-profesional)
+- [Configuracion del Sistema y Recordatorios](#212-configuracion-del-sistema)
+- [Horarios Laborales](#214-horarios-laborales)
+- [Codigo de Vinculacion](#215-codigo-de-vinculacion)
+- [Cambio de Password Propio](#216-cambio-de-password-propio)
+- [Notificaciones y Actividad](#217-notificaciones)
+- [Solicitudes de Reprogramacion](#219-solicitudes-de-reprogramacion)
+- [Recepcionistas](#2110-recepcionistas)
+- [Estadisticas y Reportes](#2111-estadisticas-y-reportes)
+- [Reprogramacion Publica](#2112-reprogramacion-publica)
+- [Adjuntos de Nota Clinica](#2113-adjuntos-de-nota-clinica)
+- [Ajustes Menores](#2114-ajustes-menores)
+- [Recetas Medicas](#2115-recetas-médicas)
+
+### Alcance del modulo canonico `/me`
+
+Este documento resume el contrato canonico del modulo Configuracion / Perfil / Vinculacion manteniendo compatibilidad temporal con la UI actual.
+
+### Compatibilidad temporal general
+
+- `GET /api/configuracion-sistema` sigue funcionando y delega a `GET /api/configuracion-sistema/me`.
+- `GET /api/configuracion-recordatorios` sigue funcionando y delega a `GET /api/configuracion-recordatorios/me`.
+- `GET /api/horarios-laborales` sigue funcionando y ahora asegura defaults seguros si no existian horarios.
+- `POST /api/codigos-vinculacion/regenerar` se mantiene como alias temporal de `POST /api/codigos-vinculacion/me/regenerar`.
+- `PUT /api/usuarios/{id}/password` se mantiene para administracion; el contrato canonico self-service es `PUT /api/usuarios/me/password`.
+
+### 21.1 Perfil Profesional
+
+#### GET `/api/profesionales/me`  (canónico)
+
+> Alias legacy temporal: `GET /api/profesionales/me/perfil` sigue funcionando hasta 2027-03-31 con advertencia de deprecación.
+
+```json
+{
+  "id_usuario": 1,
+  "id_profesional": 1,
+  "nombre": "Carlos",
+  "apellido": "Garcia",
+  "email": "carlos@ejemplo.com",
+  "username": "dr.garcia",
+  "fecha_nacimiento": "1985-03-15",
+  "domicilio": "Av. Reforma 100",
+  "numero_telefono": "5551234567",
+  "nombre_comercial": "Consultorio Dr. Garcia",
+  "nombre_consulta": "Consultorio Dr. Garcia",
+  "especialidad": "Psicologia Clinica",
+  "cedula_profesional": "12345678",
+  "descripcion": "Especialista en terapia cognitivo conductual",
+  "estado_onboarding": "PENDIENTE",
+  "beta_activo": true,
+  "activo": true,
+  "created_at": "2026-04-01T10:00:00",
+  "updated_at": "2026-04-08T09:15:00"
+}
+```
+
+#### PUT `/api/profesionales/me/perfil`  (canónico)
+
+```json
+{
+  "nombre": "Carlos",
+  "apellido": "Garcia",
+  "email": "carlos@ejemplo.com",
+  "username": "dr.garcia",
+  "fecha_nacimiento": "1985-03-15",
+  "domicilio": "Av. Reforma 101",
+  "numero_telefono": "5551234567",
+  "nombre_consulta": "Consultorio Garcia Centro",
+  "especialidad": "Psicologia Clinica",
+  "cedula_profesional": "12345678",
+  "descripcion": "Especialista en terapia cognitivo conductual"
+}
+```
+
+Notas:
+- `nombre_consulta` y `nombre_comercial` se aceptan como alias de entrada.
+- La fuente real sigue siendo `profesionales.nombre_comercial`.
+
+### 21.2 Configuracion del Sistema
+
+#### GET `/api/configuracion-sistema/me`
+
+```json
+{
+  "id_configuracion_sistema": 1,
+  "id_profesional": 1,
+  "zona_horaria": "America/Mexico_City",
+  "moneda": "MXN",
+  "formato_hora": "24H",
+  "duracion_cita_default_min": 45,
+  "politica_cancelacion_horas": 24,
+  "permite_confirmacion_publica": true,
+  "activo": true,
+  "created_at": "2026-04-01T10:00:00",
+  "updated_at": "2026-04-08T09:15:00"
+}
+```
+
+#### PUT `/api/configuracion-sistema/me`
+
+```json
+{
+  "zona_horaria": "America/Mexico_City",
+  "moneda": "MXN",
+  "formato_hora": "24H",
+  "duracion_cita_default_min": 50,
+  "politica_cancelacion_horas": 12,
+  "permite_confirmacion_publica": true
+}
+```
+
+Notas:
+- Si no existe fila previa, el backend crea defaults seguros y luego aplica los cambios enviados.
+
+### 21.3 Configuracion de Recordatorios
+
+#### GET `/api/configuracion-recordatorios/me`
+
+```json
+[
+  {
+    "id_configuracion_recordatorio": 1,
+    "id_profesional": 1,
+    "canal": "EMAIL",
+    "anticipacion_minutos": 1440,
+    "mensaje_personalizado": "Recordatorio: tiene cita manana a las {hora}",
+    "activo": true,
+    "created_at": "2026-04-01T10:00:00",
+    "updated_at": "2026-04-08T09:15:00"
+  },
+  {
+    "id_configuracion_recordatorio": 2,
+    "id_profesional": 1,
+    "canal": "WHATSAPP",
+    "anticipacion_minutos": 120,
+    "mensaje_personalizado": "Nos vemos hoy a las {hora}",
+    "activo": false,
+    "created_at": "2026-04-01T10:05:00",
+    "updated_at": "2026-04-08T09:15:00"
+  }
+]
+```
+
+#### PUT `/api/configuracion-recordatorios/me`
+
+```json
+{
+  "recordatorios": [
+    {
+      "id_configuracion_recordatorio": 1,
+      "canal": "EMAIL",
+      "anticipacion_minutos": 1440,
+      "mensaje_personalizado": "Recordatorio: tiene cita manana a las {hora}",
+      "activo": true
+    },
+    {
+      "canal": "WHATSAPP",
+      "anticipacion_minutos": 120,
+      "mensaje_personalizado": "Nos vemos hoy a las {hora}",
+      "activo": true
+    }
+  ]
+}
+```
+
+Notas:
+- El `PUT` sincroniza la coleccion final.
+- Los ids omitidos se desactivan temporalmente.
+
+### 21.4 Horarios Laborales
+
+#### GET `/api/horarios-laborales/me`
+
+```json
+[
+  {
+    "id_horario_laboral": 1,
+    "id_profesional": 1,
+    "dia_semana": 1,
+    "hora_inicio": "09:00:00",
+    "hora_fin": "18:00:00",
+    "activo": true,
+    "created_at": "2026-04-01T10:00:00",
+    "updated_at": "2026-04-08T09:15:00"
+  },
+  {
+    "id_horario_laboral": 2,
+    "id_profesional": 1,
+    "dia_semana": 2,
+    "hora_inicio": "09:00:00",
+    "hora_fin": "18:00:00",
+    "activo": true,
+    "created_at": "2026-04-01T10:00:00",
+    "updated_at": "2026-04-08T09:15:00"
+  }
+]
+```
+
+#### PUT `/api/horarios-laborales/me`
+
+```json
+{
+  "horarios": [
+    {
+      "id_horario_laboral": 1,
+      "dia_semana": 1,
+      "hora_inicio": "09:00:00",
+      "hora_fin": "13:00:00",
+      "activo": true
+    },
+    {
+      "dia_semana": 1,
+      "hora_inicio": "14:00:00",
+      "hora_fin": "18:00:00",
+      "activo": true
+    },
+    {
+      "id_horario_laboral": 2,
+      "dia_semana": 2,
+      "hora_inicio": "09:00:00",
+      "hora_fin": "18:00:00",
+      "activo": true
+    }
+  ]
+}
+```
+
+Notas:
+- Si el profesional no tiene horarios cargados, el backend crea defaults seguros de lunes a viernes de `09:00` a `18:00`.
+- El `PUT` sincroniza la coleccion final y desactiva ids omitidos.
+
+### 21.5 Codigo de Vinculacion
+
+#### GET `/api/codigos-vinculacion/me`
+
+```json
+{
+  "id_codigo_vinculacion": 9,
+  "codigo": "AGD4F2K9",
+  "activo": true,
+  "usado": false,
+  "fecha_expiracion": null,
+  "id_profesional": 1
+}
+```
+
+#### POST `/api/codigos-vinculacion/me/regenerar`
+
+```json
+{
+  "id_codigo_vinculacion": 10,
+  "codigo": "QW8Z2L1M",
+  "activo": true,
+  "usado": false,
+  "fecha_expiracion": null,
+  "id_profesional": 1
+}
+```
+
+Notas:
+- Antes de crear el nuevo codigo, el backend desactiva cualquier codigo vigente previo en `codigos_vinculacion`.
+- La tabla `codigos_vinculacion` es la fuente oficial y unica.
+
+### 21.6 Cambio de Password Propio
+
+#### PUT `/api/usuarios/me/password`
+
+```json
+{
+  "password_actual": "Actual123",
+  "nueva_password": "NuevaPass123",
+  "confirmar_nueva_password": "NuevaPass123"
+}
+```
+
+**Response**
+
+```json
+{
+  "mensaje": "Contrasena actualizada correctamente"
+}
+```
+
+### 21.7 Notificaciones
+
+#### GET `/api/notificaciones`
+
+Query params soportados:
+- `pacienteId`
+- `citaId`
+- `canal`
+- `estadoEnvio`
+- `tipoNotificacion`
+- `leida`
+- `fechaDesde`
+- `fechaHasta`
+- `search`
+- `page`
+- `size`
+- `sort`
+
+```json
+{
+  "content": [
+    {
+      "id_notificacion": 45,
+      "id_profesional": 3,
+      "id_paciente": 12,
+      "id_cita": 88,
+      "canal": "EMAIL",
+      "tipo_notificacion": "RECORDATORIO_CITA",
+      "destinatario": "paciente@correo.com",
+      "asunto": "Recordatorio de cita",
+      "mensaje_resumen": "Tu cita esta programada para hoy a las 18:00",
+      "estado_envio": "ENVIADA",
+      "leida": false,
+      "fecha_lectura": null,
+      "fecha_programada": "2026-04-09T18:00:00",
+      "fecha_envio": "2026-04-08T10:00:00",
+      "proveedor": "resend",
+      "error_detalle": null,
+      "created_at": "2026-04-08T09:55:00",
+      "updated_at": "2026-04-08T10:00:00",
+      "created_by": 7,
+      "updated_by": 7
+    }
+  ],
+  "total_elements": 1,
+  "total_pages": 1,
+  "size": 20,
+  "number": 0,
+  "number_of_elements": 1,
+  "first": true,
+  "last": true,
+  "empty": false
+}
+```
+
+Notas:
+- `GET /api/notificaciones` sigue siendo el endpoint canónico de listado.
+- Ahora soporta filtro por `leida=true|false`.
+
+#### PATCH `/api/notificaciones/{id}/leida`  (canónico)
+
+> Compatibilidad: `/api/notificaciones/{id}/marcar-leida` sigue aceptado temporalmente como alias legacy.
+
+```json
+{
+  "id_notificacion": 45,
+  "id_profesional": 3,
+  "id_paciente": 12,
+  "id_cita": 88,
+  "canal": "EMAIL",
+  "tipo_notificacion": "RECORDATORIO_CITA",
+  "destinatario": "paciente@correo.com",
+  "asunto": "Recordatorio de cita",
+  "mensaje_resumen": "Tu cita esta programada para hoy a las 18:00",
+  "estado_envio": "ENVIADA",
+  "leida": true,
+  "fecha_lectura": "2026-04-08T10:30:00",
+  "fecha_programada": "2026-04-09T18:00:00",
+  "fecha_envio": "2026-04-08T10:00:00",
+  "proveedor": "resend",
+  "error_detalle": null,
+  "created_at": "2026-04-08T09:55:00",
+  "updated_at": "2026-04-08T10:30:00",
+  "created_by": 7,
+  "updated_by": 7
+}
+```
+
+#### POST `/api/notificaciones/marcar-todas-leidas`  (canónico)
+
+> Compatibilidad: `PATCH /api/notificaciones/marcar-todas-leidas` sigue aceptado temporalmente como alias legacy.
+
+```json
+{
+  "total_actualizadas": 5,
+  "total_no_leidas": 0
+}
+```
+
+#### GET `/api/notificaciones/no-leidas/count`
+
+```json
+{
+  "total_no_leidas": 7
+}
+```
+
+Contrato estable del contador:
+- El formato canonico es `{ "total_no_leidas": 7 }`.
+- No se mantienen variantes concurrentes del payload para la respuesta de contador; si en algún cliente se usara un formato alternativo, debe migrarse a este contrato unificado.
+
+Notas:
+- El backend valida ownership por profesional autenticado, incluyendo contexto de recepcionista asociado.
+- El estado de lectura queda persistido en la tabla `notificaciones`.
+
+### 21.8 Actividad Global
+
+#### GET `/api/actividad`
+
+Query params soportados:
+- `entidadTipo`
+- `entidadId`
+- `eventoTipo`
+- `fechaDesde`
+- `fechaHasta`
+- `search`
+- `page`
+- `size`
+- `sort`
+
+```json
+{
+  "content": [
+    {
+      "id_actividad": 301,
+      "id_profesional": 3,
+      "entidad_tipo": "CITA",
+      "entidad_id": 88,
+      "evento_tipo": "SOLICITUD_REPROGRAMACION_APROBADA",
+      "descripcion": "Solicitud de reprogramacion aprobada y cita actualizada",
+      "usuario_actor_id": 7,
+      "fecha_evento": "2026-04-08T11:20:00",
+      "metadata_json": "{\"id_solicitud\":15,\"fecha_inicio_anterior\":\"2026-04-10T09:00:00\",\"fecha_inicio_nueva\":\"2026-04-12T10:00:00\"}"
+    }
+  ],
+  "total_elements": 1,
+  "total_pages": 1,
+  "size": 20,
+  "number": 0,
+  "number_of_elements": 1,
+  "first": true,
+  "last": true,
+  "empty": false
+}
+```
+
+Notas:
+- La fuente oficial del feed es `historial_eventos`.
+- `GET /api/historial-eventos` sigue funcionando como contrato legacy compatible.
+
+### 21.9 Solicitudes de Reprogramacion
+
+#### GET `/api/solicitudes-reprogramacion`
+
+Query params soportados:
+- `citaId`
+- `pacienteId`
+- `estadoSolicitud`
+- `origenSolicitud`
+- `fechaDesde`
+- `fechaHasta`
+- `search`
+- `page`
+- `size`
+- `sort`
+
+```json
+{
+  "content": [
+    {
+      "id_solicitud_reprogramacion": 15,
+      "id_cita": 88,
+      "id_paciente": 12,
+      "paciente_nombre": "Maria",
+      "paciente_apellido": "Lopez",
+      "fecha_inicio_cita_actual": "2026-04-10T09:00:00",
+      "fecha_fin_cita_actual": "2026-04-10T10:00:00",
+      "fecha_solicitada": "2026-04-12",
+      "hora_inicio_solicitada": "10:00:00",
+      "hora_fin_solicitada": "11:00:00",
+      "fecha_hora_inicio_solicitada": "2026-04-12T10:00:00",
+      "fecha_hora_fin_solicitada": "2026-04-12T11:00:00",
+      "motivo": "No puedo asistir ese dia",
+      "estado_solicitud": "PENDIENTE",
+      "origen_solicitud": "PACIENTE",
+      "fecha_resolucion": null,
+      "observaciones_resolucion": null,
+      "created_at": "2026-04-08T10:15:00",
+      "updated_at": "2026-04-08T10:15:00"
+    }
+  ],
+  "total_elements": 1,
+  "total_pages": 1,
+  "size": 20,
+  "number": 0,
+  "number_of_elements": 1,
+  "first": true,
+  "last": true,
+  "empty": false
+}
+```
+
+#### PATCH `/api/citas/{id_cita}/solicitudes-reprogramacion/{id_solicitud}/aprobar`
+
+```json
+{
+  "id_solicitud_reprogramacion": 15,
+  "id_cita": 88,
+  "fecha_solicitada": "2026-04-12",
+  "hora_inicio_solicitada": "10:00:00",
+  "hora_fin_solicitada": "11:00:00",
+  "motivo": "No puedo asistir ese dia",
+  "estado_solicitud": "APROBADA",
+  "origen_solicitud": "PACIENTE",
+  "fecha_resolucion": "2026-04-08T11:20:00",
+  "observaciones_resolucion": null,
+  "created_at": "2026-04-08T10:15:00",
+  "updated_at": "2026-04-08T11:20:00",
+  "created_by": 7,
+  "updated_by": 7,
+  "paciente_nombre": "Maria",
+  "paciente_apellido": "Lopez",
+  "fecha_cita": "2026-04-12T10:00:00",
+  "hora_cita": "2026-04-12T10:00:00"
+}
+```
+
+#### PATCH `/api/citas/{id_cita}/solicitudes-reprogramacion/{id_solicitud}/rechazar`
+
+Request opcional:
+
+```json
+{
+  "observaciones_resolucion": "Horario ya ocupado por otra cita"
+}
+```
+
+Response:
+
+```json
+{
+  "id_solicitud_reprogramacion": 15,
+  "id_cita": 88,
+  "fecha_solicitada": "2026-04-12",
+  "hora_inicio_solicitada": "10:00:00",
+  "hora_fin_solicitada": "11:00:00",
+  "motivo": "No puedo asistir ese dia",
+  "estado_solicitud": "RECHAZADA",
+  "origen_solicitud": "PACIENTE",
+  "fecha_resolucion": "2026-04-08T11:25:00",
+  "observaciones_resolucion": "Horario ya ocupado por otra cita",
+  "created_at": "2026-04-08T10:15:00",
+  "updated_at": "2026-04-08T11:25:00",
+  "created_by": 7,
+  "updated_by": 7,
+  "paciente_nombre": "Maria",
+  "paciente_apellido": "Lopez",
+  "fecha_cita": "2026-04-10T09:00:00",
+  "hora_cita": "2026-04-10T09:00:00"
+}
+```
+
+Notas:
+- Los endpoints anidados bajo `/api/citas/{id}/solicitudes-reprogramacion` son el contrato canónico para frontend.
+- Validación de ownership: `id_solicitud` debe pertenecer a `id_cita` y la cita debe pertenecer al profesional autenticado (o recepcionista vinculado).
+- Códigos de error esperados: `400` validación, `401` auth, `403` ownership/contexto, `404` no encontrado o mismatch cita-solicitud, `409` estado inválido o conflicto horario.
+- Compatibilidad temporal: se mantiene `PATCH /api/solicitudes-reprogramacion/{id}/aceptar` (deprecated) con respuesta equivalente y warning de deprecación.
+- Aprobar y rechazar dejan trazabilidad en `historial_eventos`.
+
+### 21.10 Recepcionistas
+
+#### Surface oficial
+
+- La surface oficial del modulo es exclusivamente `/api/recepcionistas`.
+- El backend no depende de `/api/equipo`.
+- Los permisos granulares siguen persistidos en DB.
+- El backend devuelve tambien permisos agregados por clave para evitar heuristicas fragiles en frontend.
+
+#### GET `/api/recepcionistas`
+
+```json
+[
+  {
+    "id_recepcionista": 5,
+    "id_usuario": 21,
+    "id_profesional": 3,
+    "alias_interno": "Ana admin",
+    "puesto": "Recepcion principal",
+    "nombre": "Ana",
+    "apellido": "Lopez",
+    "email": "ana@agendify.com",
+    "username": "ana.recepcion",
+    "numero_telefono": "5551234567",
+    "activo": true,
+    "created_at": "2026-04-08T12:00:00",
+    "updated_at": "2026-04-08T12:00:00",
+    "created_by": 7,
+    "updated_by": 7,
+    "permisos": [
+      {
+        "id_permiso_recepcionista": 1,
+        "id_recepcionista": 5,
+        "permiso_clave": "AGENDA",
+        "permitido": true
+      },
+      {
+        "id_permiso_recepcionista": 2,
+        "id_recepcionista": 5,
+        "permiso_clave": "PACIENTES",
+        "permitido": true
+      },
+      {
+        "id_permiso_recepcionista": 3,
+        "id_recepcionista": 5,
+        "permiso_clave": "CITAS",
+        "permitido": true
+      }
+    ],
+    "permisos_por_clave": {
+      "AGENDA": true,
+      "PACIENTES": true,
+      "CITAS": true,
+      "RECEPCIONISTAS": false
+    },
+    "modulos_habilitados": ["AGENDA", "PACIENTES", "CITAS"]
+  }
+]
+```
+
+#### GET `/api/recepcionistas/{id}`
+
+Retorna el mismo contrato enriquecido que el listado.
+
+#### GET `/api/recepcionistas/permisos/catalogo`
+
+```json
+[
+  {
+    "permiso_clave": "AGENDA",
+    "nombre": "Agenda",
+    "descripcion": "Permite ver y operar agenda, disponibilidad y calendario",
+    "modulo_ui": "agenda",
+    "permitido_por_defecto": true
+  },
+  {
+    "permiso_clave": "PACIENTES",
+    "nombre": "Pacientes",
+    "descripcion": "Permite consultar y gestionar pacientes del profesional",
+    "modulo_ui": "pacientes",
+    "permitido_por_defecto": true
+  },
+  {
+    "permiso_clave": "CITAS",
+    "nombre": "Citas",
+    "descripcion": "Permite crear, editar y operar citas del profesional",
+    "modulo_ui": "citas",
+    "permitido_por_defecto": true
+  },
+  {
+    "permiso_clave": "RECEPCIONISTAS",
+    "nombre": "Recepcionistas",
+    "descripcion": "Permite acceder al modulo administrativo de equipo y gestionar recepcionistas",
+    "modulo_ui": "recepcionistas",
+    "permitido_por_defecto": false
+  }
+]
+```
+
+#### PUT `/api/recepcionistas/{id}/permisos`
+
+```json
+{
+  "permisos": [
+    { "permiso_clave": "AGENDA", "permitido": true },
+    { "permiso_clave": "PACIENTES", "permitido": true },
+    { "permiso_clave": "CITAS", "permitido": true },
+    { "permiso_clave": "RECEPCIONISTAS", "permitido": false }
+  ]
+}
+```
+
+Notas:
+- El request valida claves duplicadas y claves fuera del catalogo oficial.
+- `permisos` mantiene el detalle granular persistido en DB.
+- `permisos_por_clave` es el mapa canonico para pintar la UI administrativa sin inferencias.
+
+### 21.11 Estadisticas y Reportes
+
+#### Surface canonica
+
+- La surface oficial de estadisticas es `/api/estadisticas`.
+- La surface oficial de reportes es `/api/reportes`.
+- El frontend ya no necesita adivinar nombres de bloques: cada respuesta expone `resumenes`, `series`, `rankings`, `tablas` e `insights` con `clave` y `nombre`.
+- El filtro de profesional usa `/api/estadisticas/profesionales/catalogo`.
+- El contrato de exportacion soporta `PDF` y `EXCEL` y devuelve metadata estable mas `contenido_base64`.
+
+#### GET `/api/estadisticas/profesionales/catalogo`
+
+```json
+[
+  {
+    "id_profesional": 3,
+    "nombre_visual": "Consultorio Dra. Ana Lopez",
+    "especialidad": "Psicologia Clinica",
+    "activo": true,
+    "seleccionado": true
+  }
+]
+```
+
+#### GET `/api/estadisticas/citas`  (canónico)
+
+> Alias legacy temporal: `/api/dashboard/estadisticas-citas` sigue activo solo hasta 2027-03-31 con `Warning` + `Deprecation: true` + `Sunset`.
+
+Query params soportados:
+- `fecha_desde`
+- `fecha_hasta`
+- `periodo` = `DIA | SEMANA | MES`
+- `profesional_id` opcional, pero debe pertenecer al contexto autenticado
+
+```json
+{
+  "fecha_desde": "2026-03-01",
+  "fecha_hasta": "2026-03-31",
+  "periodo": "DIA",
+  "profesional": {
+    "id_profesional": 3,
+    "nombre_visual": "Consultorio Dra. Ana Lopez",
+    "especialidad": "Psicologia Clinica",
+    "activo": true,
+    "seleccionado": true
+  },
+  "resumenes": [
+    {
+      "clave": "total_citas",
+      "nombre": "Total de citas",
+      "descripcion": "Total de citas activas dentro del rango filtrado",
+      "valor": 87,
+      "valor_monetario": null,
+      "porcentaje": null,
+      "unidad": "citas"
+    },
+    {
+      "clave": "tasa_cancelacion",
+      "nombre": "Tasa de cancelacion",
+      "descripcion": "Porcentaje de citas canceladas sobre el total del rango",
+      "valor": null,
+      "valor_monetario": null,
+      "porcentaje": 11.49,
+      "unidad": "%"
+    }
+  ],
+  "series": [
+    {
+      "clave": "citas_por_periodo",
+      "nombre": "Citas por periodo",
+      "descripcion": "Serie oficial para graficar tendencia de citas segun el periodo seleccionado",
+      "periodo": "DIA",
+      "puntos": [
+        {
+          "periodo_inicio": "2026-03-01",
+          "etiqueta": "2026-03-01",
+          "valor": 3,
+          "valor_monetario": null
+        },
+        {
+          "periodo_inicio": "2026-03-02",
+          "etiqueta": "2026-03-02",
+          "valor": 4,
+          "valor_monetario": null
+        }
+      ]
+    }
+  ],
+  "rankings": [
+    {
+      "clave": "estados_cita",
+      "nombre": "Estados de cita",
+      "descripcion": "Ranking oficial por volumen de citas en cada estado",
+      "items": [
+        {
+          "posicion": 1,
+          "entidad_clave": "COMPLETADA",
+          "entidad_nombre": "COMPLETADA",
+          "valor": 52,
+          "valor_monetario": null,
+          "metrica_secundaria": null
+        }
+      ]
+    }
+  ],
+  "tablas": [
+    {
+      "clave": "detalle_estados_cita",
+      "nombre": "Detalle por estado de cita",
+      "descripcion": "Tabla canonica para grids de estados y conteos",
+      "columnas": [
+        { "clave": "estado_cita", "nombre": "Estado de cita", "tipo": "STRING" },
+        { "clave": "total_citas", "nombre": "Total de citas", "tipo": "NUMBER" }
+      ],
+      "filas": [
+        {
+          "valores": {
+            "estado_cita": "COMPLETADA",
+            "total_citas": 52
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### GET `/api/estadisticas/ingresos`
+
+```json
+{
+  "fecha_desde": "2026-03-01",
+  "fecha_hasta": "2026-03-31",
+  "periodo": "SEMANA",
+  "profesional": {
+    "id_profesional": 3,
+    "nombre_visual": "Consultorio Dra. Ana Lopez",
+    "especialidad": "Psicologia Clinica",
+    "activo": true,
+    "seleccionado": true
+  },
+  "resumenes": [
+    {
+      "clave": "ingresos_cobrados",
+      "nombre": "Ingresos cobrados",
+      "descripcion": "Suma de montos con estado de pago PAGADO o PARCIAL",
+      "valor": null,
+      "valor_monetario": 15200.00,
+      "porcentaje": null,
+      "unidad": "MXN"
+    },
+    {
+      "clave": "ticket_promedio",
+      "nombre": "Ticket promedio",
+      "descripcion": "Promedio de ingreso por cita pagada",
+      "valor": null,
+      "valor_monetario": 633.33,
+      "porcentaje": null,
+      "unidad": "MXN"
+    }
+  ],
+  "series": [
+    {
+      "clave": "ingresos_por_periodo",
+      "nombre": "Ingresos por periodo",
+      "descripcion": "Serie oficial monetaria para graficas de ingresos",
+      "periodo": "SEMANA",
+      "puntos": [
+        {
+          "periodo_inicio": "2026-03-02",
+          "etiqueta": "2026-03-02",
+          "valor": null,
+          "valor_monetario": 3800.00
+        }
+      ]
+    }
+  ],
+  "rankings": [
+    {
+      "clave": "estado_pago",
+      "nombre": "Estado de pago",
+      "descripcion": "Ranking oficial de ingresos agrupados por estado de pago",
+      "items": [
+        {
+          "posicion": 1,
+          "entidad_clave": "PAGADO",
+          "entidad_nombre": "PAGADO",
+          "valor": 20,
+          "valor_monetario": 12000.00,
+          "metrica_secundaria": null
+        }
+      ]
+    }
+  ],
+  "tablas": [
+    {
+      "clave": "detalle_estado_pago",
+      "nombre": "Detalle por estado de pago",
+      "descripcion": "Tabla canonica de conteo de citas e ingresos por estado de pago",
+      "columnas": [
+        { "clave": "estado_pago", "nombre": "Estado de pago", "tipo": "STRING" },
+        { "clave": "total_citas", "nombre": "Total de citas", "tipo": "NUMBER" },
+        { "clave": "total_ingresos", "nombre": "Total de ingresos", "tipo": "MONEY" }
+      ],
+      "filas": [
+        {
+          "valores": {
+            "estado_pago": "PAGADO",
+            "total_citas": 20,
+            "total_ingresos": 12000.00
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### GET `/api/estadisticas/pacientes`  (canónico)
+
+> Alias legacy temporal: `/api/dashboard/estadisticas-pacientes` sigue activo solo hasta 2027-03-31 con `Warning` + `Deprecation: true` + `Sunset`.
+
+```json
+{
+  "fecha_desde": "2026-03-01",
+  "fecha_hasta": "2026-03-31",
+  "periodo": "MES",
+  "profesional": {
+    "id_profesional": 3,
+    "nombre_visual": "Consultorio Dra. Ana Lopez",
+    "especialidad": "Psicologia Clinica",
+    "activo": true,
+    "seleccionado": true
+  },
+  "resumenes": [
+    {
+      "clave": "pacientes_con_cita",
+      "nombre": "Pacientes con cita",
+      "descripcion": "Pacientes distintos con al menos una cita en el rango",
+      "valor": 45,
+      "valor_monetario": null,
+      "porcentaje": null,
+      "unidad": "pacientes"
+    },
+    {
+      "clave": "pacientes_nuevos",
+      "nombre": "Pacientes nuevos",
+      "descripcion": "Pacientes cuya primera cita cae en el periodo analizado",
+      "valor": 8,
+      "valor_monetario": null,
+      "porcentaje": null,
+      "unidad": "pacientes"
+    }
+  ],
+  "series": [
+    {
+      "clave": "pacientes_nuevos_por_periodo",
+      "nombre": "Pacientes nuevos por periodo",
+      "descripcion": "Serie oficial de nuevos pacientes segun su primera cita",
+      "periodo": "MES",
+      "puntos": [
+        {
+          "periodo_inicio": "2026-03-01",
+          "etiqueta": "2026-03",
+          "valor": 8,
+          "valor_monetario": null
+        }
+      ]
+    },
+    {
+      "clave": "pacientes_recurrentes_por_periodo",
+      "nombre": "Pacientes recurrentes por periodo",
+      "descripcion": "Serie oficial de pacientes recurrentes con atenciones previas",
+      "periodo": "MES",
+      "puntos": [
+        {
+          "periodo_inicio": "2026-03-01",
+          "etiqueta": "2026-03",
+          "valor": 37,
+          "valor_monetario": null
+        }
+      ]
+    }
+  ],
+  "rankings": [
+    {
+      "clave": "pacientes_mas_atendidos",
+      "nombre": "Pacientes mas atendidos",
+      "descripcion": "Ranking oficial para tablas o widgets de top pacientes",
+      "items": [
+        {
+          "posicion": 1,
+          "entidad_clave": "12",
+          "entidad_nombre": "Maria Lopez",
+          "valor": 6,
+          "valor_monetario": 4200.00,
+          "metrica_secundaria": "id_paciente=12"
+        }
+      ]
+    }
+  ],
+  "tablas": [
+    {
+      "clave": "top_pacientes",
+      "nombre": "Top pacientes",
+      "descripcion": "Tabla canonica del top de pacientes por total de citas",
+      "columnas": [
+        { "clave": "id_paciente", "nombre": "ID paciente", "tipo": "NUMBER" },
+        { "clave": "paciente_nombre", "nombre": "Paciente", "tipo": "STRING" },
+        { "clave": "total_citas", "nombre": "Total de citas", "tipo": "NUMBER" },
+        { "clave": "total_ingresos", "nombre": "Total de ingresos", "tipo": "MONEY" }
+      ],
+      "filas": [
+        {
+          "valores": {
+            "id_paciente": 12,
+            "paciente_nombre": "Maria Lopez",
+            "total_citas": 6,
+            "total_ingresos": 4200.00
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### GET `/api/estadisticas/insights`
+
+```json
+{
+  "fecha_desde": "2026-03-01",
+  "fecha_hasta": "2026-03-31",
+  "periodo": "DIA",
+  "profesional": {
+    "id_profesional": 3,
+    "nombre_visual": "Consultorio Dra. Ana Lopez",
+    "especialidad": "Psicologia Clinica",
+    "activo": true,
+    "seleccionado": true
+  },
+  "resumenes": [
+    {
+      "clave": "ingresos_cobrados",
+      "nombre": "Ingresos cobrados",
+      "descripcion": "Ingresos totales cobrados del rango",
+      "valor": null,
+      "valor_monetario": 15200.00,
+      "porcentaje": null,
+      "unidad": "MXN"
+    }
+  ],
+  "insights": [
+    {
+      "clave": "cancelacion_general",
+      "nombre": "Cancelacion general",
+      "severidad": "MEDIA",
+      "descripcion": "Se cancelaron 10 de 87 citas en el rango.",
+      "valor_resumen": "10/87"
+    }
+  ]
+}
+```
+
+#### GET `/api/reportes/preview`
+
+Query params:
+- `tipo_reporte` = `citas | ingresos | pacientes | insights`
+- `fecha_desde`
+- `fecha_hasta`
+- `periodo`
+- `profesional_id`
+
+```json
+{
+  "tipo_reporte": "citas",
+  "nombre": "Reporte de citas",
+  "fecha_desde": "2026-03-01",
+  "fecha_hasta": "2026-03-31",
+  "periodo": "DIA",
+  "profesional": {
+    "id_profesional": 3,
+    "nombre_visual": "Consultorio Dra. Ana Lopez",
+    "especialidad": "Psicologia Clinica",
+    "activo": true,
+    "seleccionado": true
+  },
+  "resumenes": [],
+  "series": [],
+  "rankings": [],
+  "tablas": []
+}
+```
+
+#### POST `/api/reportes/exportar`
+
+Request:
+
+```json
+{
+  "tipo_reporte": "ingresos",
+  "formato": "PDF",
+  "fecha_desde": "2026-03-01",
+  "fecha_hasta": "2026-03-31",
+  "periodo": "SEMANA",
+  "profesional_id": 3
+}
+```
+
+Response:
+
+```json
+{
+  "tipo_reporte": "ingresos",
+  "formato": "PDF",
+  "mime_type": "application/pdf",
+  "extension": "pdf",
+  "nombre_archivo": "agendify_ingresos_2026-04-08.pdf",
+  "generado_at": "2026-04-08T13:10:00",
+  "contenido_base64": "JVBERi0xLjQKJ...",
+  "preview": {
+    "tipo_reporte": "ingresos",
+    "nombre": "Reporte de ingresos",
+    "fecha_desde": "2026-03-01",
+    "fecha_hasta": "2026-03-31",
+    "periodo": "SEMANA",
+    "profesional": {
+      "id_profesional": 3,
+      "nombre_visual": "Consultorio Dra. Ana Lopez",
+      "especialidad": "Psicologia Clinica",
+      "activo": true,
+      "seleccionado": true
+    },
+    "resumenes": [],
+    "series": [],
+    "rankings": [],
+    "tablas": []
+  }
+}
+```
+
+Notas:
+- Si no envias `fecha_desde` y `fecha_hasta`, el backend usa una ventana segura de los ultimos 30 dias.
+- `periodo` default es `DIA`.
+- `EXCEL` se devuelve con `mime_type = application/vnd.ms-excel`.
+- El frontend puede decodificar `contenido_base64` y descargar el archivo usando `nombre_archivo`.
+
+### 21.12 Reprogramacion Publica
+
+#### Surface canonica
+
+- El flujo publico sigue usando `/public/citas/gestion/{token}`.
+- La creacion de solicitud existente `POST /public/citas/gestion/{token}/solicitudes-reprogramacion` se mantiene sin cambios de contrato.
+- El nuevo endpoint canonico para slots reales es `GET /public/citas/gestion/{token}/disponibilidad`.
+- La respuesta ya no depende de heuristicas del frontend: backend calcula slots reales usando token, horario laboral, duracion de la cita, bloqueos, citas ocupadas y configuracion del profesional.
+
+#### GET `/public/citas/gestion/{token}/disponibilidad`
+
+Contrato oficial de disponibilidad pública para reprogramación por token.
+
+Request:
+- Path param: `token` obligatorio, string público recibido por correo o SMS.
+- Query param: `fecha` obligatorio en formato `YYYY-MM-DD`.
+- El backend interpreta `fecha` y los `hora_inicio`/`hora_fin` en la zona horaria del profesional (o `America/Mexico_City` si la configuración no está definida).
+
+Response estable:
+
+```json
+{
+  "fecha": "2026-04-15",
+  "duracion_minutos": 45,
+  "total_slots": 3,
+  "slots": [
+    {
+      "hora_inicio": "11:00:00",
+      "hora_fin": "11:45:00"
+    },
+    {
+      "hora_inicio": "12:00:00",
+      "hora_fin": "12:45:00"
+    },
+    {
+      "hora_inicio": "13:00:00",
+      "hora_fin": "13:45:00"
+    }
+  ],
+  "token_valido": true,
+  "puede_solicitar_reprogramacion": true,
+  "alcance_token": "GESTION_CITA",
+  "fecha_expiracion_token": "2026-04-17T10:00:00",
+  "fecha_inicio_cita_actual": "2026-04-10T10:00:00",
+  "fecha_fin_cita_actual": "2026-04-10T10:45:00",
+  "estado_cita_actual": "PENDIENTE",
+  "profesional_nombre": "Consultorio Dra. Ana Lopez",
+  "profesional_especialidad": "Psicologia Clinica",
+  "nombre_consulta": "Consultorio Dra. Ana Lopez"
+}
+```
+
+Shape tipado para frontend:
+- `fecha`: `string` ISO `YYYY-MM-DD`
+- `duracion_minutos`: `number`
+- `total_slots`: `number`
+- `slots`: `Array<{ hora_inicio: string, hora_fin: string }>`
+- `hora_inicio` / `hora_fin`: `string` en formato `HH:mm:ss` sin offset
+- `token_valido`: `boolean`
+- `puede_solicitar_reprogramacion`: `boolean`
+- `alcance_token`: `string`
+- `fecha_expiracion_token`: `string` ISO datetime o `null`
+- `estado_cita_actual`: `string`
+- `profesional_*`: `string | null`
+
+Reglas del contrato:
+- El backend devuelve únicamente slots reales; no genera heurísticas ni "mock time slots".
+- La duración por default se toma de la cita actual; si no es válida, se usa la duración configurada del profesional.
+- Se excluye la cita actual del cálculo para evitar conflicto propio.
+- Si la fecha consultada es hoy, los slots ya pasados no se devuelven.
+- La búsqueda de disponibilidad se limita por: horario laboral, bloqueos, citas ocupadas, duración de la cita, alcance del token y vigencia del enlace.
+- Días hábiles: se respetan los horarios laborales definidos por el profesional; si la fecha no tiene horario activo, la respuesta se devuelve con `total_slots = 0` y `slots = []`.
+- El navegador/frontend no debe asumir timezone: todo el cálculo se resuelve en backend con la zona horaria del profesional.
+
+Casos de error:
+- `400` si falta `fecha` o el token no tiene alcance válido para gestionar la cita.
+- `404` si el token es inválido o no existe.
+- `410` si el enlace expiró o ya fue utilizado.
+- `409` si la cita ya no permite reprogramación por su estado actual.
+
+Ejemplos de error:
+
+```json
+{
+  "timestamp": "2026-04-09T12:00:00",
+  "status": 404,
+  "error": "Not Found",
+  "code": "RESOURCE_NOT_FOUND",
+  "message": "Token invalido o no encontrado",
+  "path": "/public/citas/gestion/abc123?fecha=2026-04-15"
+}
+```
+
+```json
+{
+  "timestamp": "2026-04-09T12:00:00",
+  "status": 410,
+  "error": "Gone",
+  "code": "TOKEN_EXPIRED",
+  "message": "El enlace ha expirado",
+  "path": "/public/citas/gestion/abc123?fecha=2026-04-15"
+}
+```
+
+> La UI puede reactivar reprogramación pública sin lógica ad hoc: el frontend solo debe validar el token y pintar `slots` como llegan desde backend; no debe inventar rangos, ni mezclar días no hábiles, ni asumir timezone local del paciente.
+
+#### POST `/public/citas/gestion/{token}/solicitudes-reprogramacion`
+
+Request actual, sin cambios:
+
+```json
+{
+  "fecha_solicitada": "2026-04-15",
+  "hora_inicio_solicitada": "11:00:00",
+  "hora_fin_solicitada": "11:45:00",
+  "motivo": "Tengo un compromiso familiar"
+}
+```
+
+Response actual, sin cambios:
+
+```json
+{
+  "id_solicitud_reprogramacion": 15,
+  "id_cita": 88,
+  "fecha_solicitada": "2026-04-15",
+  "hora_inicio_solicitada": "11:00:00",
+  "hora_fin_solicitada": "11:45:00",
+  "motivo": "Tengo un compromiso familiar",
+  "estado_solicitud": "PENDIENTE",
+  "origen_solicitud": "PACIENTE",
+  "fecha_resolucion": null,
+  "observaciones_resolucion": null,
+  "created_at": "2026-04-08T14:30:00",
+  "updated_at": "2026-04-08T14:30:00",
+  "created_by": null,
+  "updated_by": null
+}
+```
+
+Flujo recomendado para frontend:
+- Cargar `GET /public/citas/gestion/{token}` para validar el token y leer flags `puede_*`.
+- Cuando el paciente elija una fecha, pedir `GET /public/citas/gestion/{token}/disponibilidad?fecha=YYYY-MM-DD`.
+- Pintar `slots` exactamente como llegan.
+- Al seleccionar un slot, enviar los mismos valores en `POST /public/citas/gestion/{token}/solicitudes-reprogramacion`.
+
+### 21.13 Adjuntos de Nota Clinica
+
+#### Surface canonica
+
+- La tabla oficial sigue siendo `archivos_adjuntos`.
+- Para notas clinicas, `entidad_tipo` siempre es `NOTA_CLINICA`.
+- La UI puede operar desde la surface especifica `/api/notas-clinicas/{id}/archivos-adjuntos/...`.
+- La politica vigente de eliminacion es logica: el archivo queda con `activo=false`.
+
+#### GET `/api/notas-clinicas/{id}/archivos-adjuntos`
+
+```json
+{
+  "content": [
+    {
+      "id_archivo_adjunto": 44,
+      "id_profesional": 3,
+      "entidad_tipo": "NOTA_CLINICA",
+      "entidad_id": 15,
+      "nombre_original": "escala-ansiedad.pdf",
+      "nombre_storage": "abc123.pdf",
+      "mime_type": "application/pdf",
+      "extension": "pdf",
+      "tamano_bytes": 245760,
+      "storage_provider": "GCS",
+      "bucket_name": "agendify-archivos",
+      "object_key": "3/nota_clinica/15/abc123.pdf",
+      "checksum_sha256": "e3b0c44298fc1c149afbf4c8996fb924",
+      "activo": true,
+      "created_at": "2026-04-08T16:20:00",
+      "updated_at": "2026-04-08T16:20:00",
+      "created_by": 7,
+      "updated_by": 7
+    }
+  ],
+  "total_elements": 1,
+  "total_pages": 1,
+  "size": 20,
+  "number": 0,
+  "number_of_elements": 1,
+  "first": true,
+  "last": true,
+  "empty": false
+}
+```
+
+#### POST `/api/notas-clinicas/{id}/archivos-adjuntos/upload-url`
+
+Request:
+
+```json
+{
+  "nombre_original": "escala-ansiedad.pdf",
+  "mime_type": "application/pdf",
+  "tamano_bytes": 245760
+}
+```
+
+Response:
+
+```json
+{
+  "upload_url": "https://storage.googleapis.com/agendify-archivos/3/nota_clinica/15/abc123.pdf?X-Goog-Signature=...",
+  "object_key": "3/nota_clinica/15/abc123.pdf",
+  "bucket_name": "agendify-archivos",
+  "nombre_storage": "abc123.pdf",
+  "expiration": "2026-04-08T16:30:00"
+}
+```
+
+#### POST `/api/notas-clinicas/{id}/archivos-adjuntos`
+
+Request:
+
+```json
+{
+  "nombre_original": "escala-ansiedad.pdf",
+  "nombre_storage": "abc123.pdf",
+  "mime_type": "application/pdf",
+  "extension": "pdf",
+  "tamano_bytes": 245760,
+  "bucket_name": "agendify-archivos",
+  "object_key": "3/nota_clinica/15/abc123.pdf",
+  "checksum_sha256": "e3b0c44298fc1c149afbf4c8996fb924"
+}
+```
+
+Response:
+
+```json
+{
+  "id_archivo_adjunto": 44,
+  "id_profesional": 3,
+  "entidad_tipo": "NOTA_CLINICA",
+  "entidad_id": 15,
+  "nombre_original": "escala-ansiedad.pdf",
+  "nombre_storage": "abc123.pdf",
+  "mime_type": "application/pdf",
+  "extension": "pdf",
+  "tamano_bytes": 245760,
+  "storage_provider": "GCS",
+  "bucket_name": "agendify-archivos",
+  "object_key": "3/nota_clinica/15/abc123.pdf",
+  "checksum_sha256": "e3b0c44298fc1c149afbf4c8996fb924",
+  "activo": true,
+  "created_at": "2026-04-08T16:20:00",
+  "updated_at": "2026-04-08T16:20:00",
+  "created_by": 7,
+  "updated_by": 7
+}
+```
+
+#### GET `/api/notas-clinicas/{id}/archivos-adjuntos/{id_archivo}/download-url`
+
+```json
+{
+  "download_url": "https://storage.googleapis.com/agendify-archivos/3/nota_clinica/15/abc123.pdf?X-Goog-Signature=...",
+  "nombre_original": "escala-ansiedad.pdf",
+  "mime_type": "application/pdf",
+  "expiration": "2026-04-08T16:35:00"
+}
+```
+
+#### DELETE `/api/notas-clinicas/{id}/archivos-adjuntos/{id_archivo}`
+
+```json
+{
+  "id_archivo_adjunto": 44,
+  "id_profesional": 3,
+  "entidad_tipo": "NOTA_CLINICA",
+  "entidad_id": 15,
+  "nombre_original": "escala-ansiedad.pdf",
+  "nombre_storage": "abc123.pdf",
+  "mime_type": "application/pdf",
+  "extension": "pdf",
+  "tamano_bytes": 245760,
+  "storage_provider": "GCS",
+  "bucket_name": "agendify-archivos",
+  "object_key": "3/nota_clinica/15/abc123.pdf",
+  "checksum_sha256": "e3b0c44298fc1c149afbf4c8996fb924",
+  "activo": false,
+  "created_at": "2026-04-08T16:20:00",
+  "updated_at": "2026-04-08T16:25:00",
+  "created_by": 7,
+  "updated_by": 7
+}
+```
+
+Flujo recomendado:
+- Pedir `upload-url`.
+- Subir el binario directo a GCS con `PUT` usando `upload_url`.
+- Registrar metadatos con `POST /api/notas-clinicas/{id}/archivos-adjuntos`.
+- Refrescar `GET /api/notas-clinicas/{id}/archivos-adjuntos`.
+- Para abrir o descargar, pedir `download-url`.
+- Para eliminar, usar `DELETE` y remover el item de la lista local.
+
+Notas:
+- Backend valida ownership por profesional autenticado tanto de la nota como del archivo.
+- Al registrar o eliminar un adjunto se genera trazabilidad en `historial_eventos` sobre la `NOTA_CLINICA`.
+
+### 21.14 Ajustes Menores
+
+#### DELETE `/api/citas/{id}`
+
+Surface canonica de baja logica de citas.
+
+Comportamiento:
+- marca `activo = false`
+- mantiene ownership por profesional autenticado
+- si la cita ya tiene una sesion asociada responde `409`
+- si ya estaba inactiva devuelve el mismo `CitaDto`
+
+```json
+{
+  "id_cita": 42,
+  "id_profesional": 1,
+  "id_paciente": 15,
+  "fecha_inicio": "2026-04-10T10:00:00",
+  "fecha_fin": "2026-04-10T10:45:00",
+  "motivo": "Seguimiento mensual",
+  "estado_cita": "PENDIENTE",
+  "estado_pago": "PENDIENTE",
+  "monto": 800.00,
+  "origen_cita": "MANUAL",
+  "confirmado_por_paciente": false,
+  "fecha_confirmacion": null,
+  "activo": false,
+  "created_at": "2026-04-08T09:00:00",
+  "updated_at": "2026-04-08T17:10:00",
+  "created_by": 7,
+  "updated_by": 7,
+  "nombre_paciente": "Maria",
+  "apellido_paciente": "Lopez",
+  "tiene_sesion": false
+}
+```
+
+Errores:
+- `404` si la cita no pertenece al ownership
+- `409` si la cita no puede eliminarse porque ya tiene una sesion asociada
+
+#### `SesionDto`
+
+Ajuste canonico aditivo para optimizar badges de archivos adjuntos en listados:
+
+```json
+{
+  "id_sesion": 18,
+  "id_profesional": 3,
+  "id_paciente": 12,
+  "id_cita": 88,
+  "fecha_sesion": "2026-04-08T09:00:00",
+  "tipo_sesion": "SEGUIMIENTO",
+  "estatus": "ABIERTA",
+  "resumen": "Paciente con avance favorable",
+  "created_at": "2026-04-08T09:55:00",
+  "updated_at": "2026-04-08T10:15:00",
+  "created_by": 7,
+  "updated_by": 7,
+  "nombre_paciente": "Maria",
+  "apellido_paciente": "Lopez",
+  "total_adjuntos": 2
+}
+```
+
+Notas:
+- Se implemento `total_adjuntos`.
+- No se expuso `primer_adjunto` porque agrega mas costo y acopla la lista a un preview arbitrario; para detalle sigue siendo preferible consultar los adjuntos de la sesion.
+
+### 21.15 Recetas Médicas
+
+#### Contrato principal backend
+
+La familia canonica de endpoints de recetas es la siguiente. Todas son rutas principales del backend y deben tratarse como contrato oficial para frontend:
+
+| Endpoint | Método | Propósito | Auth |
+|---|---|---|---|
+| `/api/recetas` | `POST` | Crear receta en borrador | JWT (`PROFESIONAL`, `RECEPCIONISTA`) |
+| `/api/recetas/{idReceta}` | `GET` | Ver detalle de receta | JWT (`PROFESIONAL`, `RECEPCIONISTA`) |
+| `/api/pacientes/{idPaciente}/recetas` | `GET` | Listar recetas por paciente | JWT (`PROFESIONAL`, `RECEPCIONISTA`) |
+| `/api/recetas/{idReceta}` | `PUT` | Actualizar receta | JWT (`PROFESIONAL`, `RECEPCIONISTA`) |
+| `/api/recetas/{idReceta}/emitir` | `POST` | Emitir receta y generar PDF vigente | JWT (`PROFESIONAL`, `RECEPCIONISTA`) |
+| `/api/recetas/{idReceta}/versiones` | `POST` | Crear nueva versión de receta | JWT (`PROFESIONAL`, `RECEPCIONISTA`) |
+| `/api/recetas/{idReceta}/copias` | `POST` | Crear copia en borrador | JWT (`PROFESIONAL`, `RECEPCIONISTA`) |
+| `/api/recetas/{idReceta}/anular` | `POST` | Anular receta emitida | JWT (`PROFESIONAL`, `RECEPCIONISTA`) |
+| `/api/recetas/{idReceta}` | `DELETE` | Soft delete (`ELIMINADA`) | JWT (`PROFESIONAL`, `RECEPCIONISTA`) |
+| `/api/recetas/{idReceta}/pdf-url` | `GET` | Obtener URL firmada del PDF vigente | JWT (`PROFESIONAL`, `RECEPCIONISTA`) |
+| `/api/recetas/{idReceta}/versiones/{numeroVersion}/pdf-url` | `GET` | Obtener URL firmada de una versión histórica | JWT (`PROFESIONAL`, `RECEPCIONISTA`) |
+
+#### Error code esperado
+
+Los códigos de error esperados para la familia de recetas son:
+
+- `401` — autenticación requerida o JWT no válido
+- `403` — rol no autorizado para crear/editar/emitir/anular PDFs de recetas
+- `404` — receta no encontrada, no pertenece al profesional autenticado o se intenta consultar un recurso no disponible
+- `409` — conflicto de estado de receta o transición invalida (por ejemplo ya emitida, ya anulada, no permitida en estado actual)
+- `422` — request inválido o validación de payload/parametros (disposition inválido, payload con datos mal formados)
+
+> El backend centraliza estos casos en el manejador global de excepciones y mantiene la semántica estable para el frontend.
+
+#### Alias legacy y deprecación
+
+No existe alias legacy activo bajo `/api/profesionales/me/...` para recetas.
+
+- La ruta canonica oficial es la familia bajo `/api/recetas` y `/api/pacientes/{idPaciente}/recetas`.
+- No se define fecha de deprecación porque no hay alias implementado que deba migrarse.
+- Si en el futuro se agrega un alias temporal, debe incluir advertencia `Deprecation` y `Warning` con una fecha de retiro explícita.
+
+#### Flujos críticos validados
+
+Los flujos que se validan como parte del contrato principal son:
+
+1. Crear receta
+2. Listar recetas por paciente
+3. Consultar detalle de receta
+4. Emitir receta
+5. Crear copia de receta
+6. Anular receta
+7. Generar URL firmada de PDF vigente
+8. Generar URL firmada de versión histórica
+
+Estos comportamientos quedan cubiertos por la suite de regresión del backend, incluida la validación de la capa de servicio para creación, emisión, versionado, anulación y acceso a PDFs.
+
+#### Estado de compatibilidad
+
+- `POST /api/recetas` es el contrato principal para creación.
+- `GET /api/pacientes/{idPaciente}/recetas` es el listado oficial por paciente.
+- `GET /api/recetas/{idReceta}` es la vista de detalle oficial.
+- `GET /api/recetas/{idReceta}/pdf-url` y `GET /api/recetas/{idReceta}/versiones/{numeroVersion}/pdf-url` son la fuente oficial para abrir o descargar PDFs firmados.
+- No se recomienda introducir aliases adicionales sin un plan de deprecación claro.
+
+#### Observación importante para UI
+
+El contrato de recetas no tiene una ruta legacy activa bajo `/api/profesionales/me`. El frontend debe usar siempre la familia de endpoints canónica bajo `/api` para evitar ambigüedad y mantener una sola fuente de verdad.

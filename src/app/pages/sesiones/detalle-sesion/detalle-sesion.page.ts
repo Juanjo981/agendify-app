@@ -11,6 +11,7 @@ import {
   ArchivoAdjuntoDto,
   SesionDto,
   SesionArchivoLocal,
+  SesionStatusUpdateRequest,
   getSessionSummary,
   hasTerminalStatus,
 } from '../models/sesion.model';
@@ -63,12 +64,50 @@ export class DetalleSesionPage implements OnInit {
     return !!this.sesion && !hasTerminalStatus(this.sesion);
   }
 
+  get puedeCambiarEstatus(): boolean {
+    return this.puedeEditar && !this.saving;
+  }
+
   get resumenSesion(): string {
     return this.sesion ? getSessionSummary(this.sesion) : '';
   }
 
   volver() {
     this.router.navigate(['/dashboard/sesiones']);
+  }
+
+  cerrarSesion() {
+    if (!this.sesion || !this.puedeCambiarEstatus) return;
+
+    this.openConfirm(
+      {
+        title: 'Cerrar sesión',
+        message: 'La sesión se marcará como CERRADA y ya no podrá editarse.',
+        confirmLabel: 'Cerrar sesión',
+        variant: 'primary',
+        icon: 'checkmark-circle-outline',
+      },
+      () => {
+        void this.confirmarCambioEstatus('CERRADA');
+      }
+    );
+  }
+
+  cancelarSesion() {
+    if (!this.sesion || !this.puedeCambiarEstatus) return;
+
+    this.openConfirm(
+      {
+        title: 'Cancelar sesión',
+        message: 'La sesión se marcará como CANCELADA y ya no podrá editarse.',
+        confirmLabel: 'Cancelar sesión',
+        variant: 'danger',
+        icon: 'close-circle-outline',
+      },
+      () => {
+        void this.confirmarCambioEstatus('CANCELADA');
+      }
+    );
   }
 
   async recargar() {
@@ -211,6 +250,19 @@ export class DetalleSesionPage implements OnInit {
       await this.cargarAdjuntos();
     } catch (err) {
       await this.presentAlert('No se pudo eliminar el adjunto', mapApiError(err).userMessage);
+    }
+  }
+
+  private async confirmarCambioEstatus(estatus: SesionStatusUpdateRequest['estatus']) {
+    if (!this.sesion) return;
+
+    this.saving = true;
+    try {
+      this.sesion = await this.sesionesApi.updateStatus(this.sesion.id_sesion, { estatus });
+    } catch (err) {
+      await this.presentAlert('No se pudo cambiar el estatus', mapApiError(err).userMessage);
+    } finally {
+      this.saving = false;
     }
   }
 

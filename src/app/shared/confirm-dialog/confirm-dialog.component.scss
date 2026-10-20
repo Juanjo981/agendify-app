@@ -1,5 +1,10 @@
 // ─── Confirm Dialog — Premium glassmorphism ──────────────────────────────────
-// Reusable across any Agendify page that imports ConfirmDialogComponent
+// Reusable across any Agendify page that imports ConfirmDialogComponent.
+// El host se teleporta a document.body; z-index usa la escala global de overlays.
+
+:host {
+  display: contents;
+}
 
 // ─── Backdrop ────────────────────────────────────────────────────────────────
 .cfd-backdrop {
@@ -8,7 +13,7 @@
   background: var(--overlay-modal);
   backdrop-filter: blur(6px) saturate(130%);
   -webkit-backdrop-filter: blur(6px) saturate(130%);
-  z-index: 1100;
+  z-index: var(--z-overlay-confirm-backdrop);
   animation: cfdFadeIn 0.15s ease;
 }
 
@@ -29,7 +34,7 @@
     0 24px 64px var(--overlay-soft),
     0 4px 16px var(--shadow-soft);
 
-  z-index: 1101;
+  z-index: var(--z-overlay-confirm-dialog);
   padding: 28px 28px 24px;
 
   display: flex;

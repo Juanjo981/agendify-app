@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { publicAppBaseUrl } from 'src/environments/api-url';
 
 export interface CitaGestionPublicaResponseDto {
   fecha_inicio: string;
@@ -30,21 +31,9 @@ export interface SolicitudReprogramacionPublicaRequest {
   motivo: string;
 }
 
-export interface DisponibilidadPublicaSlotDto {
-  hora_inicio: string;
-  hora_fin: string;
-}
-
-export interface DisponibilidadPublicaResponseDto {
-  fecha: string;
-  duracion_minutos: number;
-  total_slots: number;
-  slots: DisponibilidadPublicaSlotDto[];
-}
-
 @Injectable({ providedIn: 'root' })
 export class ConfirmacionPublicaService {
-  private readonly publicBase = `${environment.apiUrl.replace(/\/api\/?$/, '')}/public/citas/gestion`;
+  private readonly publicBase = `${publicAppBaseUrl(environment.apiUrl)}/public/citas/gestion`;
 
   constructor(private http: HttpClient) {}
 
@@ -69,23 +58,6 @@ export class ConfirmacionPublicaService {
   solicitarReprogramacion(token: string, body: SolicitudReprogramacionPublicaRequest): Promise<unknown> {
     return firstValueFrom(
       this.http.post(`${this.publicBase}/${encodeURIComponent(token)}/solicitudes-reprogramacion`, body)
-    );
-  }
-
-  getDisponibilidad(token: string, params: {
-    fecha: string;
-    duracionMinutos?: number;
-  }): Promise<DisponibilidadPublicaResponseDto> {
-    return firstValueFrom(
-      this.http.get<DisponibilidadPublicaResponseDto>(
-        `${this.publicBase}/${encodeURIComponent(token)}/disponibilidad`,
-        {
-          params: {
-            fecha: params.fecha,
-            ...(params.duracionMinutos ? { duracionMinutos: String(params.duracionMinutos) } : {}),
-          },
-        },
-      )
     );
   }
 }

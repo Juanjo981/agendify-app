@@ -2,8 +2,10 @@
   type="button"
   class="eci"
   [class.eci--checked]="checked"
+  [disabled]="disabled"
   (click)="toggle()"
   [attr.aria-checked]="checked"
+  [attr.aria-label]="label"
   role="checkbox"
 >
   <span class="eci__box" aria-hidden="true">

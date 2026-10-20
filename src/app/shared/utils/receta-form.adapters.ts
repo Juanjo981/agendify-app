@@ -7,6 +7,7 @@ import {
   ActualizarRecetaRequest,
   CopiarRecetaRequest,
   CrearRecetaRequest,
+  CrearVersionRecetaRequest,
   RecetaDetalle,
   RecetaFormModel,
   RecetaMedicamentoFormItem,
@@ -90,9 +91,35 @@ export function toCrearRecetaRequest(
   };
 }
 
-/** Formulario → PUT borrador / POST nueva versión. */
+/** Formulario → PUT borrador. */
 export function toActualizarRecetaRequest(form: RecetaFormModel): ActualizarRecetaRequest {
   return basePayloadFromForm(form);
+}
+
+/**
+ * Formulario + detalle cargado → POST /versiones.
+ * Toma `numero_version_base` y `lock_version` del detalle (sin ++ local).
+ * `lock_version: 0` es válido y debe conservarse.
+ */
+export function toCrearVersionRecetaRequest(
+  form: RecetaFormModel,
+  receta: RecetaDetalle,
+  operationId?: string,
+): CrearVersionRecetaRequest {
+  if (receta.lock_version === null || receta.lock_version === undefined) {
+    throw new Error('La receta no contiene lock_version');
+  }
+  if (receta.version_actual === null || receta.version_actual === undefined) {
+    throw new Error('La receta no contiene version_actual');
+  }
+
+  const base = basePayloadFromForm(form);
+  return {
+    ...base,
+    operation_id: operationId ?? crypto.randomUUID(),
+    numero_version_base: receta.version_actual,
+    lock_version: receta.lock_version,
+  };
 }
 
 export function toCopiarRecetaRequest(input: {

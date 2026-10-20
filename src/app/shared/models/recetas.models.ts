@@ -83,8 +83,33 @@ export interface CrearRecetaRequest {
   medicamentos?: RecetaMedicamentoRequest[];
 }
 
-/** PUT /api/recetas/{id} y POST /api/recetas/{id}/versiones */
+/** PUT /api/recetas/{id} — solo BORRADOR */
 export interface ActualizarRecetaRequest {
+  nombre: string;
+  id_plantilla_receta?: number | null;
+  fecha_emision: string;
+  paciente_nombre?: string | null;
+  paciente_fecha_nacimiento_snapshot?: string | null;
+  edad_texto?: string | null;
+  diagnostico?: string | null;
+  indicaciones?: string | null;
+  proxima_cita_fecha?: string | null;
+  proxima_cita_hora?: string | null;
+  notas_internas?: string | null;
+  configuracion_plantilla_snapshot?: PlantillaRecetasConfigDto | null;
+  medicamentos?: RecetaMedicamentoRequest[];
+}
+
+/**
+ * POST /api/recetas/{id}/versiones — CrearVersionRecetaRequestDto.
+ * `numero_version_base` = version_actual del detalle cargado.
+ * `lock_version` = lock técnico del detalle (puede ser 0).
+ * No incrementar en frontend.
+ */
+export interface CrearVersionRecetaRequest {
+  operation_id?: string;
+  numero_version_base: number;
+  lock_version: number;
   nombre: string;
   id_plantilla_receta?: number | null;
   fecha_emision: string;
@@ -129,7 +154,13 @@ export interface RecetaDetalle {
   notas_internas: string | null;
   configuracion_plantilla_snapshot: PlantillaRecetasConfigDto | null;
   estado: RecetaEstado;
+  /** Número clínico vigente (p. ej. 1). Fuente de `numero_version_base` al versionar. */
   version_actual: number;
+  /**
+   * Versión técnica de concurrencia (puede ser 0).
+   * Obligatorio al crear nueva versión: enviar sin modificar.
+   */
+  lock_version: number;
   tiene_pdf: boolean;
   nombre_archivo: string | null;
   created_at: string | null;

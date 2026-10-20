@@ -25,6 +25,14 @@ describe('NuevaRecetaPanelComponent', () => {
     fecha_nacimiento: '1990-01-15',
   } as PacienteDto;
 
+  /** La plantilla por defecto trae la sección de diagnóstico apagada. */
+  const configConDiagnostico = () => {
+    const config = createDefaultPlantillaConfig();
+    config.distribucion.secciones.diagnostico = true;
+    config.distribucion.secciones.sello = true;
+    return config;
+  };
+
   const detalleBorrador = (overrides: Partial<RecetaDetalle> = {}): RecetaDetalle => ({
     id_receta: 50,
     id_profesional: 7,
@@ -44,6 +52,7 @@ describe('NuevaRecetaPanelComponent', () => {
     configuracion_plantilla_snapshot: createDefaultPlantillaConfig(),
     estado: 'BORRADOR',
     version_actual: 0,
+    lock_version: 0,
     tiene_pdf: false,
     nombre_archivo: null,
     created_at: null,
@@ -86,7 +95,39 @@ describe('NuevaRecetaPanelComponent', () => {
       esPredeterminada: true,
       idPlantillaReceta: 3,
       profesional: {
-        nombreCompleto: 'Dra. Ana',
+        nombreCompleto: 'Juan José Alvarez Martinez',
+        especialidad: 'Psicólogo',
+        cedulaProfesional: '12345678',
+        correoElectronico: 'juan@agendify.test',
+        telefono: '555-0100',
+        nombreConsultorio: 'Consultorio Norte',
+        telefonoConsultorio: '555-0200',
+        direccionConsultorio: 'Calle 1',
+        descripcionProfesional: '',
+      },
+      logo: {
+        archivoId: 1,
+        tipo: 'logo',
+        downloadUrl: 'https://cdn.test/logo.png',
+        nombreOriginal: 'logo.png',
+        mimeType: 'image/png',
+        expiration: '',
+      },
+      firma: {
+        archivoId: 2,
+        tipo: 'firma',
+        downloadUrl: 'https://cdn.test/firma.png',
+        nombreOriginal: 'firma.png',
+        mimeType: 'image/png',
+        expiration: '',
+      },
+      sello: {
+        archivoId: 3,
+        tipo: 'sello',
+        downloadUrl: 'https://cdn.test/sello.png',
+        nombreOriginal: 'sello.png',
+        mimeType: 'image/png',
+        expiration: '',
       },
     });
 
@@ -225,17 +266,60 @@ describe('NuevaRecetaPanelComponent', () => {
 
     component.solicitarEmitir();
     expect(component.confirmConfig?.title).toBe('Emitir receta');
+    expect(component.confirmacionEmisionAbierta()).toBeTrue();
+    fixture.detectChanges();
+
+    const dialog = document.body.querySelector('.cfd-dialog');
+    expect(dialog).toBeTruthy();
+    expect(document.body.contains(dialog)).toBeTrue();
 
     recetasApi.emitirReceta.and.resolveTo(
-      detalleBorrador({ estado: 'EMITIDA', version_actual: 1, tiene_pdf: true }),
+      detalleBorrador({ estado: 'EMITIDA', version_actual: 1, lock_version: 0, tiene_pdf: true }),
     );
     component.onConfirmDialogConfirmed();
     await fixture.whenStable();
 
     expect(recetasApi.emitirReceta).toHaveBeenCalledWith(50);
+    expect(recetasApi.emitirReceta).toHaveBeenCalledTimes(1);
     expect(component.modo).toBe('VER_EMITIDA');
     expect(component.estadoActual).toBe('EMITIDA');
     expect(component.versionActual).toBe(1);
+    expect(component.confirmacionEmisionAbierta()).toBeFalse();
+    expect(component.abierto).toBeTrue();
+  });
+
+  it('confirmación de emisión queda por encima del panel (portal a body)', async () => {
+    recetasApi.obtenerReceta.and.resolveTo(detalleBorrador());
+    await openPanelAndWait('EDITAR_BORRADOR', 50);
+
+    component.solicitarEmitir();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const confirmHost = document.body.querySelector('app-confirm-dialog');
+    const backdrop = document.body.querySelector('.cfd-backdrop') as HTMLElement | null;
+    const dialog = document.body.querySelector('.cfd-dialog') as HTMLElement | null;
+    const panel = fixture.nativeElement.querySelector('.nrp-panel') as HTMLElement | null;
+
+    expect(confirmHost?.parentElement).toBe(document.body);
+    expect(backdrop).toBeTruthy();
+    expect(dialog).toBeTruthy();
+    expect(panel).toBeTruthy();
+    expect(component.abierto).toBeTrue();
+    // No queda atrapada dentro del panel / overflow del host de receta.
+    expect(panel!.contains(backdrop!)).toBeFalse();
+    expect(panel!.contains(dialog!)).toBeFalse();
+  });
+
+  it('no abre una segunda confirmación de emisión mientras la primera está abierta', async () => {
+    recetasApi.obtenerReceta.and.resolveTo(detalleBorrador());
+    await openPanelAndWait('EDITAR_BORRADOR', 50);
+
+    component.solicitarEmitir();
+    const firstConfig = component.confirmConfig;
+    component.solicitarEmitir();
+    expect(component.confirmConfig).toBe(firstConfig);
+    expect(component.confirmacionEmisionAbierta()).toBeTrue();
   });
 
   it('7. guarda cambios pendientes antes de emitir', async () => {
@@ -257,15 +341,20 @@ describe('NuevaRecetaPanelComponent', () => {
     expect(recetasApi.emitirReceta).toHaveBeenCalled();
   });
 
-  it('8. cancelar confirmación no emite', async () => {
+  it('8. cancelar confirmación no emite y mantiene el panel abierto', async () => {
     recetasApi.obtenerReceta.and.resolveTo(detalleBorrador());
     await openPanelAndWait('EDITAR_BORRADOR', 50);
+    component.contenido.diagnostico = 'Dx local';
 
     component.solicitarEmitir();
+    expect(component.confirmacionEmisionAbierta()).toBeTrue();
     component.onConfirmDialogCancelled();
 
     expect(recetasApi.emitirReceta).not.toHaveBeenCalled();
     expect(component.confirmConfig).toBeNull();
+    expect(component.confirmacionEmisionAbierta()).toBeFalse();
+    expect(component.abierto).toBeTrue();
+    expect(component.contenido.diagnostico).toBe('Dx local');
   });
 
   it('9. muestra estado visual BORRADOR / EMITIDA', async () => {
@@ -296,6 +385,267 @@ describe('NuevaRecetaPanelComponent', () => {
     expect(component.contenido.diagnostico).toBe('Gripe');
     expect(component.contenido.medicamentos[0].nombre).toBe('Ibuprofeno');
     expect(component.camposEditables).toBeFalse();
+  });
+
+  async function abrirConInputs(
+    modo: typeof component.modo,
+    id: number | null,
+  ): Promise<void> {
+    fixture.componentRef.setInput('paciente', paciente);
+    fixture.componentRef.setInput('modo', modo);
+    fixture.componentRef.setInput('idReceta', id);
+    fixture.componentRef.setInput('abierto', true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  function textoVistaPrevia(): string {
+    const preview: HTMLElement = fixture.nativeElement.querySelector('.nrp-preview-col');
+    return preview.textContent ?? '';
+  }
+
+  it('VER: la vista previa muestra los datos reales de la receta', async () => {
+    recetasApi.obtenerReceta.and.resolveTo(
+      detalleBorrador({
+        estado: 'EMITIDA',
+        version_actual: 1,
+        tiene_pdf: true,
+        configuracion_plantilla_snapshot: configConDiagnostico(),
+      }),
+    );
+
+    await abrirConInputs('VER_EMITIDA', 50);
+
+    const texto = textoVistaPrevia();
+    expect(texto).toContain('Juan Pérez');
+    expect(texto).toContain('36 años');
+    expect(texto).toContain('21/07/2026');
+    expect(texto).toContain('Gripe');
+    expect(texto).toContain('Reposo');
+    expect(texto).toContain('Ibuprofeno');
+    expect(texto).toContain('400 mg');
+    expect(texto).toContain('c/8h');
+    expect(texto).toContain('3 días');
+    expect(texto).not.toContain('Nombre del paciente');
+    expect(texto).not.toContain('Edad del paciente');
+    expect(texto).not.toContain('Fecha de emisión');
+    // Layout del snapshot + identidad/recursos en vivo (como Nueva receta).
+    expect(component.config.distribucion.secciones.diagnostico).toBeTrue();
+    expect(component.config.datos_visualizacion.nombre).toBe('Juan José Alvarez Martinez');
+    expect(component.config.identidad.logo_url).toBe('https://cdn.test/logo.png');
+    expect(component.config.pie.firma_url).toBe('https://cdn.test/firma.png');
+    expect(component.config.pie.sello_url).toBe('https://cdn.test/sello.png');
+    expect(texto).toContain('Juan José Alvarez Martinez');
+    expect(texto).toContain('Psicólogo');
+    expect(fixture.nativeElement.querySelector('.rsp-sign-media img')?.getAttribute('src')).toBe(
+      'https://cdn.test/firma.png',
+    );
+    expect(fixture.nativeElement.querySelector('.rsp-seal img')?.getAttribute('src')).toBe(
+      'https://cdn.test/sello.png',
+    );
+    // Pie: fecha de emisión, no la del día de hoy.
+    expect(texto).toContain('21 jul 2026');
+  });
+
+  it('VER: enriquece identidad sin reemplazar el layout del snapshot', async () => {
+    const snapshot = configConDiagnostico();
+    snapshot.identidad.tipografia = 'compacta';
+    snapshot.identidad.color_id = 'verde';
+    snapshot.pie.mostrar_fecha_generacion = true;
+
+    recetasApi.obtenerReceta.and.resolveTo(
+      detalleBorrador({
+        estado: 'EMITIDA',
+        version_actual: 1,
+        tiene_pdf: true,
+        configuracion_plantilla_snapshot: snapshot,
+      }),
+    );
+
+    await abrirConInputs('VER_EMITIDA', 50);
+
+    expect(plantillaApi.obtenerVistaPrevia).toHaveBeenCalled();
+    expect(component.config.identidad.tipografia).toBe('compacta');
+    expect(component.config.identidad.color_id).toBe('verde');
+    expect(component.config.distribucion.secciones.diagnostico).toBeTrue();
+    expect(component.config.datos_visualizacion.nombre).toContain('Juan José');
+    expect(component.config.identidad.logo_url).toContain('logo.png');
+  });
+
+  it('EDITAR: la vista previa sigue los cambios del formulario y se restaura al cancelar', async () => {
+    recetasApi.obtenerReceta.and.resolveTo(
+      detalleBorrador({
+        estado: 'EMITIDA',
+        version_actual: 1,
+        tiene_pdf: true,
+        configuracion_plantilla_snapshot: configConDiagnostico(),
+      }),
+    );
+    await abrirConInputs('VER_EMITIDA', 50);
+
+    component.pasarAEditarEmitida();
+    fixture.detectChanges();
+    expect(textoVistaPrevia()).toContain('Gripe');
+
+    const previaAntes = component.datosVistaPrevia;
+    component.contenido.diagnostico = 'Faringitis';
+    component.contenido.medicamentos[0].nombre = 'Amoxicilina';
+    component.marcarDirty();
+    fixture.detectChanges();
+
+    expect(component.datosVistaPrevia).not.toBe(previaAntes);
+    expect(textoVistaPrevia()).toContain('Faringitis');
+    expect(textoVistaPrevia()).toContain('Amoxicilina');
+
+    component.cancelarEdicion();
+    fixture.detectChanges();
+
+    expect(component.modo).toBe('VER_EMITIDA');
+    expect(component.contenido.diagnostico).toBe('Gripe');
+    expect(textoVistaPrevia()).toContain('Gripe');
+    expect(textoVistaPrevia()).not.toContain('Faringitis');
+  });
+
+  it('abrir otra receta no deja datos de la anterior', async () => {
+    recetasApi.obtenerReceta.and.resolveTo(detalleBorrador());
+    await abrirConInputs('EDITAR_BORRADOR', 50);
+    expect(textoVistaPrevia()).toContain('Ibuprofeno');
+
+    recetasApi.obtenerReceta.and.resolveTo(
+      detalleBorrador({
+        id_receta: 51,
+        nombre: 'Receta B',
+        diagnostico: 'Dermatitis',
+        indicaciones: 'Evitar sol',
+        fecha_emision: '2026-07-25',
+        medicamentos: [
+          {
+            id_receta_medicamento: 9,
+            orden: 1,
+            nombre: 'Loratadina',
+            dosis: '10 mg',
+            frecuencia: 'c/24h',
+            duracion: '7 días',
+            indicaciones_adicionales: null,
+            created_at: null,
+            updated_at: null,
+          },
+        ],
+      }),
+    );
+    fixture.componentRef.setInput('idReceta', 51);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const texto = textoVistaPrevia();
+    expect(texto).toContain('Loratadina');
+    expect(texto).toContain('25/07/2026');
+    expect(texto).toContain('Evitar sol');
+    expect(texto).not.toContain('Ibuprofeno');
+    expect(texto).not.toContain('Reposo');
+  });
+
+  it('cambiar de modo no vuelve a consultar el detalle', async () => {
+    recetasApi.obtenerReceta.and.resolveTo(
+      detalleBorrador({ estado: 'EMITIDA', version_actual: 1, tiene_pdf: true }),
+    );
+    await abrirConInputs('VER_EMITIDA', 50);
+    expect(recetasApi.obtenerReceta).toHaveBeenCalledTimes(1);
+
+    fixture.componentRef.setInput('modo', 'EDITAR_EMITIDA');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(recetasApi.obtenerReceta).toHaveBeenCalledTimes(1);
+    expect(textoVistaPrevia()).toContain('Ibuprofeno');
+  });
+
+  it('una plantilla que responde tarde no pisa la receta ya cargada', async () => {
+    const configTardia = createDefaultPlantillaConfig();
+    configTardia.identidad.tipografia = 'clasica';
+    let resolverPlantilla: () => void = () => undefined;
+    const plantillaLenta = new Promise(resolve => {
+      resolverPlantilla = () =>
+        resolve({
+          configuracion: configTardia,
+          esPredeterminada: true,
+          idPlantillaReceta: 9,
+          profesional: {
+            nombreCompleto: 'Dra. Ana',
+            especialidad: '',
+            cedulaProfesional: '',
+            correoElectronico: '',
+            telefono: '',
+            nombreConsultorio: '',
+            telefonoConsultorio: '',
+            direccionConsultorio: '',
+            descripcionProfesional: '',
+          },
+          logo: null,
+          firma: null,
+          sello: null,
+        });
+    });
+    plantillaApi.obtenerVistaPrevia.and.returnValue(plantillaLenta as never);
+
+    // Apertura 1: receta nueva, la plantilla queda en vuelo.
+    await abrirConInputs('CREAR', null);
+
+    // Apertura 2: receta existente con su propio snapshot.
+    const snapshot = configConDiagnostico();
+    recetasApi.obtenerReceta.and.resolveTo(
+      detalleBorrador({ estado: 'EMITIDA', version_actual: 1, configuracion_plantilla_snapshot: snapshot }),
+    );
+    fixture.componentRef.setInput('modo', 'VER_EMITIDA');
+    fixture.componentRef.setInput('idReceta', 50);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    resolverPlantilla();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // Conserva el snapshot (diagnóstico activo) y no la plantilla tardía (tipografía clásica).
+    expect(component.config.distribucion.secciones.diagnostico).toBeTrue();
+    expect(component.config.identidad.tipografia).toBe('moderna');
+    expect(textoVistaPrevia()).toContain('Ibuprofeno');
+    expect(textoVistaPrevia()).toContain('Juan Pérez');
+  });
+
+  it('un snapshot parcial (esquema viejo) no congela la vista previa', async () => {
+    // Reproduce el bug real: un snapshot guardado sin todas las claves del
+    // esquema actual rompía el render de la hoja a mitad de refresco y la
+    // dejaba con placeholders aunque el formulario cargara bien.
+    const snapshotParcial = {
+      identidad: { color_id: 'azul' },
+      distribucion: { secciones: { diagnostico: true } },
+    } as unknown as ReturnType<typeof createDefaultPlantillaConfig>;
+
+    recetasApi.obtenerReceta.and.resolveTo(
+      detalleBorrador({
+        estado: 'EMITIDA',
+        version_actual: 1,
+        tiene_pdf: true,
+        configuracion_plantilla_snapshot: snapshotParcial,
+      }),
+    );
+
+    await abrirConInputs('VER_EMITIDA', 50);
+
+    const texto = textoVistaPrevia();
+    expect(texto).toContain('Juan Pérez');
+    expect(texto).toContain('36 años');
+    expect(texto).toContain('21/07/2026');
+    expect(texto).toContain('Gripe');
+    expect(texto).toContain('Ibuprofeno');
+    expect(texto).not.toContain('Nombre del paciente');
+    // La normalización rellenó las claves ausentes con la config por defecto.
+    expect(component.config.distribucion.etiquetas.paciente).toBe('Paciente');
+    expect(component.config.identidad.color_id).toBe('azul');
   });
 
   it('14. abre modo correcto según estado', async () => {
@@ -468,7 +818,7 @@ describe('NuevaRecetaPanelComponent', () => {
 
   it('guardar nueva versión actualiza versionActual e historial', async () => {
     recetasApi.obtenerReceta.and.resolveTo(
-      detalleBorrador({ estado: 'EMITIDA', version_actual: 1, tiene_pdf: true }),
+      detalleBorrador({ estado: 'EMITIDA', version_actual: 1, lock_version: 0, tiene_pdf: true }),
     );
     await openPanelAndWait('EDITAR_EMITIDA', 50);
 
@@ -476,6 +826,7 @@ describe('NuevaRecetaPanelComponent', () => {
       detalleBorrador({
         estado: 'EMITIDA',
         version_actual: 2,
+        lock_version: 1,
         tiene_pdf: true,
         nombre_archivo: 'receta-v2.pdf',
       }),
@@ -486,11 +837,111 @@ describe('NuevaRecetaPanelComponent', () => {
     await fixture.whenStable();
 
     expect(recetasApi.actualizarBorrador).not.toHaveBeenCalled();
-    expect(recetasApi.crearNuevaVersion).toHaveBeenCalledWith(50, jasmine.any(Object));
+    expect(recetasApi.crearNuevaVersion).toHaveBeenCalledTimes(1);
+    const [id, body] = recetasApi.crearNuevaVersion.calls.mostRecent().args;
+    expect(id).toBe(50);
+    expect(body.lock_version).toBe(0);
+    expect(body.numero_version_base).toBe(1);
+    expect(body.operation_id).toBeTruthy();
+    expect('version_actual' in body).toBeFalse();
     expect(component.versionActual).toBe(2);
+    expect(component.recetaSeleccionada?.lock_version).toBe(1);
     expect(component.modo).toBe('VER_EMITIDA');
     expect(component.historialVersiones[0].es_actual).toBeTrue();
     expect(component.historialVersiones[0].numero_version).toBe(2);
+    expect(component.guardandoVersion()).toBeFalse();
+  });
+
+  it('un clic en guardar nueva versión dispara exactamente un POST', async () => {
+    recetasApi.obtenerReceta.and.resolveTo(
+      detalleBorrador({ estado: 'EMITIDA', version_actual: 1, tiene_pdf: true }),
+    );
+    await openPanelAndWait('EDITAR_EMITIDA', 50);
+
+    let resolvePost!: (value: RecetaDetalle) => void;
+    recetasApi.crearNuevaVersion.and.returnValue(
+      new Promise<RecetaDetalle>(resolve => {
+        resolvePost = resolve;
+      }),
+    );
+
+    component.solicitarGuardarEmitida();
+    fixture.detectChanges();
+    const option: HTMLButtonElement | null = fixture.nativeElement.querySelector(
+      '.nrp-sheet__option',
+    );
+    expect(option).toBeTruthy();
+    expect(option!.type).toBe('button');
+
+    const pending = component.guardarNuevaVersion();
+    await Promise.resolve();
+
+    expect(recetasApi.crearNuevaVersion).toHaveBeenCalledTimes(1);
+    expect(component.guardandoVersion()).toBeTrue();
+    fixture.detectChanges();
+    const optionWhileSaving: HTMLButtonElement | null = fixture.nativeElement.querySelector(
+      '.nrp-sheet__option',
+    );
+    // El diálogo de decisión ya se cerró; el footer muestra Guardando…
+    expect(optionWhileSaving).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Guardando…');
+
+    resolvePost(
+      detalleBorrador({
+        estado: 'EMITIDA',
+        version_actual: 2,
+        tiene_pdf: true,
+      }),
+    );
+    await pending;
+    expect(component.guardandoVersion()).toBeFalse();
+    expect(component.versionActual).toBe(2);
+  });
+
+  it('doble clic rápido en guardar nueva versión dispara un solo POST', async () => {
+    recetasApi.obtenerReceta.and.resolveTo(
+      detalleBorrador({ estado: 'EMITIDA', version_actual: 1, tiene_pdf: true }),
+    );
+    await openPanelAndWait('EDITAR_EMITIDA', 50);
+
+    let resolvePost!: (value: RecetaDetalle) => void;
+    recetasApi.crearNuevaVersion.and.returnValue(
+      new Promise<RecetaDetalle>(resolve => {
+        resolvePost = resolve;
+      }),
+    );
+
+    void component.guardarNuevaVersion();
+    void component.guardarNuevaVersion();
+    await Promise.resolve();
+
+    expect(recetasApi.crearNuevaVersion).toHaveBeenCalledTimes(1);
+
+    resolvePost(
+      detalleBorrador({
+        estado: 'EMITIDA',
+        version_actual: 2,
+        tiene_pdf: true,
+      }),
+    );
+    await fixture.whenStable();
+    expect(component.versionActual).toBe(2);
+  });
+
+  it('opción de nueva versión es type=button sin ngSubmit duplicado', async () => {
+    recetasApi.obtenerReceta.and.resolveTo(
+      detalleBorrador({ estado: 'EMITIDA', version_actual: 1, tiene_pdf: true }),
+    );
+    await openPanelAndWait('EDITAR_EMITIDA', 50);
+    component.solicitarGuardarEmitida();
+    fixture.detectChanges();
+
+    const option: HTMLButtonElement | null = fixture.nativeElement.querySelector(
+      '.nrp-sheet__option',
+    );
+    expect(option).toBeTruthy();
+    expect(option!.type).toBe('button');
+    expect(fixture.nativeElement.querySelector('form')).toBeNull();
   });
 
   it('maneja conflicto 409 sin sobrescribir automáticamente', async () => {
@@ -516,7 +967,67 @@ describe('NuevaRecetaPanelComponent', () => {
     expect(component.dialogoActivo).toBe('conflicto_version');
     expect(component.formularioLocalBackup).toBeTruthy();
     expect(component.contenido.diagnostico).toBe('Cambio local');
+    expect(component.conflictoVersionPendiente).toBeTrue();
+    expect(component.versionActual).toBe(1);
     expect(JSON.stringify(localStorage)).not.toContain('Cambio local');
+  });
+
+  it('Recargar tras 409 obtiene versión vigente y reemplaza formulario', async () => {
+    recetasApi.obtenerReceta.and.resolveTo(
+      detalleBorrador({ estado: 'EMITIDA', version_actual: 1, tiene_pdf: true, diagnostico: 'Local' }),
+    );
+    await openPanelAndWait('EDITAR_EMITIDA', 50);
+    component.contenido.diagnostico = 'Cambio local';
+    component.formDirty = true;
+    component.conflictoVersionPendiente = true;
+    component.dialogoActivo = 'conflicto_version';
+
+    recetasApi.obtenerReceta.and.resolveTo(
+      detalleBorrador({
+        estado: 'EMITIDA',
+        version_actual: 2,
+        tiene_pdf: true,
+        diagnostico: 'Remoto vigente',
+      }),
+    );
+
+    await component.recargarTrasConflicto();
+
+    expect(component.dialogoActivo).toBe('ninguno');
+    expect(component.conflictoVersionPendiente).toBeFalse();
+    expect(component.versionActual).toBe(2);
+    expect(component.contenido.diagnostico).toBe('Remoto vigente');
+    expect(component.formularioLocalBackup).toBeNull();
+  });
+
+  it('Seguir editando tras 409 cierra conflicto y conserva cambios locales', async () => {
+    recetasApi.obtenerReceta.and.resolveTo(
+      detalleBorrador({ estado: 'EMITIDA', version_actual: 1, tiene_pdf: true }),
+    );
+    await openPanelAndWait('EDITAR_EMITIDA', 50);
+    component.contenido.diagnostico = 'Cambio local';
+    component.formDirty = true;
+    component.dialogoActivo = 'conflicto_version';
+    component.conflictoVersionPendiente = true;
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Seguir editando');
+
+    component.conservarEdicionTrasConflicto();
+    fixture.detectChanges();
+
+    expect(component.dialogoActivo).toBe('ninguno');
+    expect(component.modo).toBe('EDITAR_EMITIDA');
+    expect(component.contenido.diagnostico).toBe('Cambio local');
+    expect(component.conflictoVersionPendiente).toBeTrue();
+    expect(fixture.nativeElement.textContent).toContain('versión anterior');
+    // No reenvía automáticamente
+    expect(recetasApi.crearNuevaVersion).not.toHaveBeenCalled();
+
+    // Reintento sin recargar: reabre conflicto, sin segundo POST
+    await component.guardarNuevaVersion();
+    expect(component.dialogoActivo).toBe('conflicto_version');
+    expect(recetasApi.crearNuevaVersion).not.toHaveBeenCalled();
   });
 
   it('guardar como copia exige nombre, crea borrador v0 y abre edición', async () => {

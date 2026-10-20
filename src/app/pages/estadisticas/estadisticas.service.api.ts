@@ -5,6 +5,7 @@ import { SessionService } from 'src/app/services/session.service';
 import { CurrencyPreferenceService } from 'src/app/services/currency-preference.service';
 import { buildQueryParams } from 'src/app/shared/utils/query-params.utils';
 import { environment } from 'src/environments/environment';
+import { normalizeApiBaseUrl } from 'src/environments/api-url';
 import {
   CitasPorPeriodo,
   CitasPorPeriodoDto,
@@ -82,8 +83,9 @@ interface ExportacionReportePayload {
 
 @Injectable({ providedIn: 'root' })
 export class EstadisticasApiService {
-  private readonly base = `${environment.apiUrl}/estadisticas`;
-  private readonly profesionalesUrl = `${environment.apiUrl}/profesionales`;
+  private readonly apiRoot = normalizeApiBaseUrl(environment.apiUrl);
+  private readonly base = `${this.apiRoot}/estadisticas`;
+  private readonly profesionalesUrl = `${this.apiRoot}/profesionales`;
   private readonly filtrosSubject = new BehaviorSubject<FiltroEstadisticas>(this.getFiltrosIniciales());
 
   readonly filtros$ = this.filtrosSubject.asObservable();

@@ -55,7 +55,6 @@
 
     <p class="ses-counter">
       Mostrando <strong>{{ sesionesFiltradas.length }}</strong> de <strong>{{ totalSesiones }}</strong> sesiones
-      <span *ngIf="cargandoAdjuntos"> · verificando adjuntos...</span>
     </p>
 
     <div *ngIf="loading" class="ses-empty">
@@ -115,11 +114,11 @@
 
           <div class="ses-col ses-col--adj">
             <span class="ses-data-label">Adjunto</span>
-            <span class="ses-adj-badge ses-adj-badge--con" *ngIf="getAdjuntoPrincipal(s.id_sesion) as adjunto">
+            <span class="ses-adj-badge ses-adj-badge--con" *ngIf="getAdjuntoPrincipal(s) as adjunto">
               <ion-icon [name]="getFileIcon(adjunto.mime_type)"></ion-icon>
               <span class="ses-adj-name">{{ adjunto.nombre_original }}</span>
             </span>
-            <span class="ses-adj-no" *ngIf="!hasAdjunto(s.id_sesion)">-</span>
+            <span class="ses-adj-no" *ngIf="!hasAdjunto(s)">-</span>
           </div>
 
           <div class="ses-col ses-col--creada">
@@ -165,7 +164,7 @@
                 {{ formatFecha(s.fecha_sesion) }}
               </span>
             </div>
-            <span class="ses-card__adj-dot" *ngIf="hasAdjunto(s.id_sesion)">
+            <span class="ses-card__adj-dot" *ngIf="hasAdjunto(s)">
               <ion-icon name="attach-outline"></ion-icon>
             </span>
           </div>

@@ -9,24 +9,52 @@
         <p class="psc__subtitle">{{ subtitle }}</p>
       </div>
     </div>
-    <span class="psc__progress">{{ completedCount }}/{{ items.length }}</span>
+    <span class="psc__progress" *ngIf="loaded() && hasPrimeraSesion() && !error()">
+      {{ completedCount }}/{{ totalItems }}
+    </span>
   </header>
 
-  <div class="psc__list">
-    <app-eval-checklist-item
-      *ngFor="let item of items; let i = index"
-      [id]="item.id"
-      [label]="item.label"
-      [checked]="!!item.checked"
-      (checkedChange)="onItemToggle(i, $event)">
-    </app-eval-checklist-item>
+  <div class="psc__skeleton" *ngIf="loading() && !loaded()" aria-busy="true">
+    <ion-skeleton-text animated *ngFor="let _ of [0,1,2,3,4]" style="height: 44px; border-radius: 12px;"></ion-skeleton-text>
   </div>
 
-  <div class="psc__summary">
-    <app-eval-risk-level
-      title="Nivel inicial"
-      [selected]="riskLevel"
-      (selectedChange)="onRiskChange($event)">
-    </app-eval-risk-level>
+  <div class="psc__error" *ngIf="!loading() && error()">
+    <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
+    <p>No se pudo cargar el checklist</p>
+    <span>{{ error() }}</span>
+    <button type="button" class="psc__retry" (click)="reintentar()">Reintentar</button>
   </div>
+
+  <ng-container *ngIf="loaded() && hasPrimeraSesion() && !error()">
+    <div class="psc__list">
+      <app-eval-checklist-item
+        *ngFor="let campo of campos"
+        [id]="campo.key"
+        [label]="campo.label"
+        [checked]="getValue(campo.key)"
+        [disabled]="controlesDeshabilitados"
+        (checkedChange)="onItemToggle(campo.key, $event)">
+      </app-eval-checklist-item>
+    </div>
+
+    <div class="psc__summary">
+      <app-eval-risk-level
+        title="Nivel inicial"
+        [selected]="form.controls.nivel_inicial.value"
+        [disabled]="controlesDeshabilitados"
+        (selectedChange)="onRiskChange($event)">
+      </app-eval-risk-level>
+    </div>
+
+    <div class="psc__actions">
+      <button
+        type="button"
+        class="psc__save"
+        [disabled]="guardando() || loading() || !form.dirty"
+        (click)="guardar()">
+        <ion-spinner *ngIf="guardando()" name="crescent"></ion-spinner>
+        <span>{{ guardando() ? 'Guardando…' : 'Guardar cambios' }}</span>
+      </button>
+    </div>
+  </ng-container>
 </section>

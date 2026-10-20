@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { normalizeApiBaseUrl } from 'src/environments/api-url';
 import { buildQueryParams } from 'src/app/shared/utils/query-params.utils';
 import { PageResponse } from 'src/app/shared/models/page.model';
 import {
@@ -17,7 +18,8 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class AdjuntosServiceApi {
-  private readonly base = `${environment.apiUrl}/archivos-adjuntos`;
+  private readonly apiRoot = normalizeApiBaseUrl(environment.apiUrl);
+  private readonly base = `${this.apiRoot}/archivos-adjuntos`;
 
   constructor(private http: HttpClient) {}
 
@@ -56,7 +58,7 @@ export class AdjuntosServiceApi {
 
     return firstValueFrom(
       this.http.get<PageResponse<ArchivoAdjuntoDto>>(
-        `${environment.apiUrl}/sesiones/${sesionId}/archivos-adjuntos`,
+        `${this.apiRoot}/sesiones/${sesionId}/archivos-adjuntos`,
         { params: query }
       )
     );
@@ -74,7 +76,7 @@ export class AdjuntosServiceApi {
 
     return firstValueFrom(
       this.http.get<PageResponse<ArchivoAdjuntoDto>>(
-        `${environment.apiUrl}/notas-clinicas/${notaClinicaId}/archivos-adjuntos`,
+        `${this.apiRoot}/notas-clinicas/${notaClinicaId}/archivos-adjuntos`,
         { params: query }
       )
     );

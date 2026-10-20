@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { normalizeApiBaseUrl } from 'src/environments/api-url';
 import { buildQueryParams } from 'src/app/shared/utils/query-params.utils';
 import { withLegacyCitaFields } from '../citas/models/cita.model';
 import {
@@ -13,9 +14,10 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class AgendaApiService {
-  private readonly agendaBase = `${environment.apiUrl}/agenda`;
-  private readonly bloqueosBase = `${environment.apiUrl}/bloqueos-horario`;
-  private readonly configuracionAgendaBase = `${environment.apiUrl}/configuracion/agenda`;
+  private readonly apiRoot = normalizeApiBaseUrl(environment.apiUrl);
+  private readonly agendaBase = `${this.apiRoot}/agenda`;
+  private readonly bloqueosBase = `${this.apiRoot}/bloqueos-horario`;
+  private readonly configuracionAgendaBase = `${this.apiRoot}/configuracion/agenda`;
 
   constructor(private http: HttpClient) {}
 
@@ -23,25 +25,25 @@ export class AgendaApiService {
     const query = buildQueryParams({ mes, anio });
 
     return firstValueFrom(
-      this.http.get<any>(this.agendaBase, { params: query })
+      this.http.get<unknown>(this.agendaBase, { params: query })
     ).then(raw => this.normalizeAgenda(raw));
   }
 
   getConfiguracionAgenda(): Promise<ConfiguracionJornadaDto> {
     return firstValueFrom(
-      this.http.get<any>(this.configuracionAgendaBase)
+      this.http.get<unknown>(this.configuracionAgendaBase)
     ).then(raw => this.normalizeConfiguracion(raw));
   }
 
   createBloqueo(body: BloqueoHorarioUpsertRequest): Promise<BloqueoHorarioDto> {
     return firstValueFrom(
-      this.http.post<any>(this.bloqueosBase, body)
+      this.http.post<unknown>(this.bloqueosBase, body)
     ).then(raw => this.normalizeBloqueo(raw));
   }
 
   updateBloqueo(id: number, body: BloqueoHorarioUpsertRequest): Promise<BloqueoHorarioDto> {
     return firstValueFrom(
-      this.http.put<any>(`${this.bloqueosBase}/${id}`, body)
+      this.http.put<unknown>(`${this.bloqueosBase}/${id}`, body)
     ).then(raw => this.normalizeBloqueo(raw));
   }
 
