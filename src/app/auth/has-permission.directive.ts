@@ -1,4 +1,5 @@
-import { Directive, Input, OnInit, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Directive, Input, OnDestroy, OnInit, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { AuthorizationService } from './authorization.service';
 import { Modulo } from './permission.types';
 
@@ -34,9 +35,11 @@ import { Modulo } from './permission.types';
   selector: '[appHasPermission]',
   standalone: true,
 })
-export class HasPermissionDirective implements OnInit {
+export class HasPermissionDirective implements OnInit, OnDestroy {
 
   private _modulo: Modulo | string = '';
+  private sessionChangesSubscription: Subscription | null = null;
+  private rendered = false;
 
   /** The module identifier to check. Accepts a Modulo enum or a plain string. */
   @Input() set appHasPermission(modulo: Modulo | string) {
@@ -50,10 +53,22 @@ export class HasPermissionDirective implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    if (this.authSvc.canAccessModule(this._modulo)) {
+    this.updateView();
+    this.sessionChangesSubscription = this.authSvc.sessionChanges$.subscribe(() => this.updateView());
+  }
+
+  ngOnDestroy(): void {
+    this.sessionChangesSubscription?.unsubscribe();
+  }
+
+  private updateView(): void {
+    const canAccess = this.authSvc.canAccessModule(this._modulo);
+    if (canAccess && !this.rendered) {
       this.vcRef.createEmbeddedView(this.templateRef);
-    } else {
+      this.rendered = true;
+    } else if (!canAccess && this.rendered) {
       this.vcRef.clear();
+      this.rendered = false;
     }
   }
 }

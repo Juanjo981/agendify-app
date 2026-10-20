@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Subject } from 'rxjs';
 import { AuthMeResponse, ProfesionalInfo } from '../shared/models/auth.models';
 import { MiPerfilResponse } from '../shared/models/perfil.models';
 import { RolUsuario } from '../shared/models/rol.model';
@@ -34,6 +35,9 @@ const BACKEND_KEY_TO_PERMISO: Record<string, Permiso> = {
 @Injectable({ providedIn: 'root' })
 export class SessionService {
 
+  private readonly sessionChanges = new Subject<void>();
+  readonly sessionChanges$ = this.sessionChanges.asObservable();
+
   private _user: AuthMeResponse | null = null;
   private _permisos: PermisosRecepcionista | null = null;
 
@@ -45,6 +49,7 @@ export class SessionService {
   setUser(user: AuthMeResponse): void {
     this._user = user;
     this._permisos = this.mapPermisosFromBackend(user.permisos);
+    this.sessionChanges.next();
   }
 
   /**
@@ -53,6 +58,7 @@ export class SessionService {
   clearSession(): void {
     this._user = null;
     this._permisos = null;
+    this.sessionChanges.next();
   }
 
   /** Whether a user is currently loaded in the session. */

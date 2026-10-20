@@ -192,25 +192,82 @@
         <!-- BODY SCROLLEABLE -->
         <div class="blk-body">
 
+          <p class="blk-error" role="alert" *ngIf="blockErrorMessage">{{ blockErrorMessage }}</p>
+
           <!-- SECCIÓN: FECHA -->
           <div class="blk-section">
-            <p class="blk-section-label">Fecha</p>
-            <button class="blk-field-btn" (click)="openBlockDatePicker()">
+            <p class="blk-section-label" id="block-date-mode-label">Fecha</p>
+            <div class="blk-segment" role="group" aria-labelledby="block-date-mode-label">
+              <button type="button" class="blk-seg-btn blk-date-mode-btn"
+                [class.active]="dateMode === 'single'"
+                [attr.aria-pressed]="dateMode === 'single'"
+                [disabled]="!!editingBlock"
+                (click)="setBlockDateMode('single')">
+                Un día
+              </button>
+              <button type="button" class="blk-seg-btn blk-date-mode-btn"
+                [class.active]="dateMode === 'range'"
+                [attr.aria-pressed]="dateMode === 'range'"
+                [disabled]="!!editingBlock"
+                (click)="setBlockDateMode('range')">
+                Rango de días
+              </button>
+            </div>
+
+            <button *ngIf="dateMode === 'single'"
+              id="block-single-date"
+              type="button"
+              class="blk-field-btn"
+              aria-label="Seleccionar fecha"
+              [attr.aria-invalid]="blockErrors.fecha ? 'true' : null"
+              aria-describedby="block-single-date-error"
+              (click)="openBlockDatePicker('single')">
               <ion-icon name="calendar-outline"></ion-icon>
-              <span>{{ blockForm.fecha ?? 'Seleccionar fecha...' }}</span>
+              <span>{{ blockForm.singleDate ?? 'Seleccionar fecha...' }}</span>
               <ion-icon name="chevron-forward-outline" class="blk-field-chevron"></ion-icon>
             </button>
-            <p class="blk-error" *ngIf="blockErrors.fecha">{{ blockErrors.fecha }}</p>
+            <p id="block-single-date-error" class="blk-error" role="alert" *ngIf="blockErrors.fecha">
+              {{ blockErrors.fecha }}
+            </p>
+
+            <div class="blk-date-range-row" *ngIf="dateMode === 'range'">
+              <div class="blk-range-field">
+                <label class="blk-range-label" id="block-start-date-label" for="block-start-date">Desde</label>
+                <button id="block-start-date" type="button" class="blk-field-btn"
+                  [attr.aria-invalid]="blockErrors.startDate ? 'true' : null"
+                  [attr.aria-describedby]="blockErrors.startDate ? 'block-start-date-error' : null"
+                  (click)="openBlockDatePicker('start')">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  <span>{{ blockForm.startDate ?? 'Seleccionar fecha...' }}</span>
+                </button>
+                <p id="block-start-date-error" class="blk-error" role="alert" *ngIf="blockErrors.startDate">
+                  {{ blockErrors.startDate }}
+                </p>
+              </div>
+              <div class="blk-range-field">
+                <label class="blk-range-label" id="block-end-date-label" for="block-end-date">Hasta</label>
+                <button id="block-end-date" type="button" class="blk-field-btn"
+                  [attr.aria-invalid]="blockErrors.endDate ? 'true' : null"
+                  [attr.aria-describedby]="blockErrors.endDate ? 'block-end-date-error' : null"
+                  (click)="openBlockDatePicker('end')">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  <span>{{ blockForm.endDate ?? 'Seleccionar fecha...' }}</span>
+                </button>
+                <p id="block-end-date-error" class="blk-error" role="alert" *ngIf="blockErrors.endDate">
+                  {{ blockErrors.endDate }}
+                </p>
+              </div>
+            </div>
           </div>
 
           <!-- SECCIÓN: TIPO (todo el día / rango) -->
           <div class="blk-section">
             <p class="blk-section-label">Tipo de bloqueo</p>
             <div class="blk-segment">
-              <button class="blk-seg-btn" [class.active]="blockForm.allDay" (click)="blockForm.allDay = true">
+              <button type="button" class="blk-seg-btn" [class.active]="blockForm.allDay" [attr.aria-pressed]="blockForm.allDay" (click)="blockForm.allDay = true">
                 <ion-icon name="sunny-outline"></ion-icon> Todo el día
               </button>
-              <button class="blk-seg-btn" [class.active]="!blockForm.allDay" (click)="blockForm.allDay = false">
+              <button type="button" class="blk-seg-btn" [class.active]="!blockForm.allDay" [attr.aria-pressed]="!blockForm.allDay" (click)="blockForm.allDay = false">
                 <ion-icon name="time-outline"></ion-icon> Rango de horas
               </button>
             </div>
@@ -222,7 +279,7 @@
             <div class="blk-range-row">
               <div class="blk-range-field">
                 <span class="blk-range-label">Desde</span>
-                <button class="blk-field-btn blk-hour-btn" (click)="openBlockHourModal('block-inicio')">
+                <button type="button" class="blk-field-btn blk-hour-btn" (click)="openBlockHourModal('block-inicio')">
                   <ion-icon name="time-outline"></ion-icon>
                   <span>{{ blockForm.horaInicio ?? 'Hora inicio' }}</span>
                 </button>
@@ -230,7 +287,7 @@
               <ion-icon name="arrow-forward-outline" class="blk-range-arrow"></ion-icon>
               <div class="blk-range-field">
                 <span class="blk-range-label">Hasta</span>
-                <button class="blk-field-btn blk-hour-btn" (click)="openBlockHourModal('block-fin')">
+                <button type="button" class="blk-field-btn blk-hour-btn" (click)="openBlockHourModal('block-fin')">
                   <ion-icon name="time-outline"></ion-icon>
                   <span>{{ blockForm.horaFin ?? 'Hora fin' }}</span>
                 </button>
@@ -243,7 +300,7 @@
           <div class="blk-section">
             <p class="blk-section-label">Motivo <span class="blk-optional">(opcional)</span></p>
             <div class="blk-chips">
-              <button class="blk-chip"
+              <button type="button" class="blk-chip"
                 *ngFor="let c of blockChips"
                 [class.active]="blockForm.motivo === c"
                 (click)="applyBlockChip(c)">
@@ -261,13 +318,18 @@
           <div class="blk-section">
             <p class="blk-section-label">Repetición</p>
             <div class="blk-repeat-grid">
-              <button class="blk-repeat-btn"
+              <button type="button" class="blk-repeat-btn"
                 *ngFor="let r of repeatOptions"
                 [class.active]="blockForm.repeat === r.value"
+                [disabled]="dateMode === 'range' && r.value !== 'none'"
+                [attr.aria-pressed]="blockForm.repeat === r.value"
                 (click)="blockForm.repeat = r.value">
                 {{ r.label }}
               </button>
             </div>
+            <p class="blk-helper" *ngIf="dateMode === 'range'">
+              El rango ya define varios días; la repetición no aplica.
+            </p>
           </div>
 
           <!-- RESUMEN -->
@@ -280,8 +342,8 @@
 
         <!-- FOOTER STICKY -->
         <div class="blk-footer">
-          <button class="blk-btn blk-btn--ghost" (click)="closeBlockModal()">Cancelar</button>
-          <button class="blk-btn blk-btn--solid" (click)="saveBlock()">
+          <button type="button" class="blk-btn blk-btn--ghost" (click)="closeBlockModal()">Cancelar</button>
+          <button type="button" class="blk-btn blk-btn--solid" [disabled]="saving" (click)="saveBlock()">
             <ion-icon name="lock-closed-outline"></ion-icon>
             {{ saving ? 'Guardando...' : (editingBlock ? 'Actualizar bloqueo' : 'Guardar bloqueo') }}
           </button>
@@ -528,7 +590,11 @@
       </ion-header>
 
       <ion-content>
-        <ion-datetime presentation="date" (ionChange)="selectDate($event)"></ion-datetime>
+        <ion-datetime
+          presentation="date"
+          [value]="activeBlockDateField === 'single' ? blockForm.singleDate : activeBlockDateField === 'start' ? blockForm.startDate : activeBlockDateField === 'end' ? blockForm.endDate : null"
+          (ionChange)="selectDate($event)">
+        </ion-datetime>
       </ion-content>
     </ng-template>
   </ion-modal>
@@ -563,5 +629,3 @@
   </ng-template>
 
 </ion-modal>
-
-

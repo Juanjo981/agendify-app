@@ -53,6 +53,8 @@ interface CalendarEvent {
 }
 
 type DayOccupancyStatus = 'green' | 'yellow' | 'red' | 'empty';
+type BlockDateMode = 'single' | 'range';
+type BlockDateField = 'single' | 'start' | 'end';
 
 interface CalendarDay {
   date: Date;
@@ -163,9 +165,13 @@ export class AgendaPage implements OnInit, OnDestroy {
   showBlockModal = false;
   editingBlock: BloqueoHorarioDto | null = null;
   blockDateMode = false;
+  activeBlockDateField: BlockDateField | null = null;
+  dateMode: BlockDateMode = 'single';
 
   blockForm = {
-    fecha: null as string | null,
+    singleDate: null as string | null,
+    startDate: null as string | null,
+    endDate: null as string | null,
     allDay: true,
     horaInicio: null as string | null,
     horaFin: null as string | null,
@@ -174,7 +180,8 @@ export class AgendaPage implements OnInit, OnDestroy {
     createdAt: null as string | null,
   };
 
-  blockErrors: { fecha?: string; rango?: string } = {};
+  blockErrors: { fecha?: string; startDate?: string; endDate?: string; rango?: string } = {};
+  blockErrorMessage = '';
 
   readonly blockChips = ['Comida', 'Vacaciones', 'Reunion', 'Urgencia', 'Capacitacion', 'Personal'];
   readonly repeatOptions = [
@@ -591,8 +598,11 @@ export class AgendaPage implements OnInit, OnDestroy {
 
   openBlockModal() {
     this.editingBlock = null;
+    this.dateMode = 'single';
     this.blockForm = {
-      fecha: this.selectedDay?.fullDate ?? this.formatDateLocal(new Date()),
+      singleDate: this.selectedDay?.fullDate ?? this.formatDateLocal(new Date()),
+      startDate: null,
+      endDate: null,
       allDay: true,
       horaInicio: this.toDisplayHour(this.configuracionJornada?.hora_inicio || '09:00'),
       horaFin: this.toDisplayHour(this.configuracionJornada?.hora_fin || '18:00'),
@@ -601,6 +611,7 @@ export class AgendaPage implements OnInit, OnDestroy {
       createdAt: null,
     };
     this.blockErrors = {};
+    this.blockErrorMessage = '';
     this.showBlockModal = true;
   }
 
@@ -608,14 +619,18 @@ export class AgendaPage implements OnInit, OnDestroy {
     this.showBlockModal = false;
     this.editingBlock = null;
     this.selectingHourForBlock = null;
+    this.activeBlockDateField = null;
   }
 
   editarBloqueo(ev: CalendarEvent) {
     if (!ev.bloqueo) return;
     const bloqueo = ev.bloqueo;
     this.editingBlock = bloqueo;
+    this.dateMode = 'single';
     this.blockForm = {
-      fecha: bloqueo.fecha || this.toDatePart(bloqueo.fecha_inicio),
+      singleDate: bloqueo.fecha || this.toDatePart(bloqueo.fecha_inicio),
+      startDate: null,
+      endDate: null,
       allDay: Boolean(bloqueo.todo_el_dia),
       horaInicio: this.toDisplayHour(bloqueo.hora_inicio || this.toTimePart(bloqueo.fecha_inicio)),
       horaFin: this.toDisplayHour(bloqueo.hora_fin || this.toTimePart(bloqueo.fecha_fin)),
@@ -624,11 +639,28 @@ export class AgendaPage implements OnInit, OnDestroy {
       createdAt: null,
     };
     this.blockErrors = {};
+    this.blockErrorMessage = '';
     this.showBlockModal = true;
   }
 
-  openBlockDatePicker() {
-    this.activeDateField = 'inicio';
+  setBlockDateMode(mode: BlockDateMode) {
+    if (this.editingBlock || this.dateMode === mode) return;
+
+    if (mode === 'range') {
+      const initialDate = this.blockForm.singleDate;
+      this.blockForm.startDate = initialDate;
+      this.blockForm.endDate = initialDate;
+    } else {
+      this.blockForm.singleDate = this.blockForm.startDate ?? this.blockForm.singleDate;
+    }
+
+    this.dateMode = mode;
+    this.blockForm.repeat = 'none';
+    this.blockErrors = {};
+  }
+
+  openBlockDatePicker(field: BlockDateField = 'single') {
+    this.activeBlockDateField = field;
     this.blockDateMode = true;
     this.showDateModal = true;
   }
@@ -644,11 +676,16 @@ export class AgendaPage implements OnInit, OnDestroy {
   }
 
   get blockSummary(): string {
-    if (!this.blockForm.fecha) return '-';
-    const [y, m, d] = this.blockForm.fecha.split('-').map(Number);
-    const date = new Date(y, m - 1, d);
-    const days = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
-    const label = `${days[date.getDay()]} ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
+    const dateLabel = (value: string | null): string => {
+      if (!value) return '?';
+      const [y, m, d] = value.split('-').map(Number);
+      const date = new Date(y, m - 1, d);
+      const days = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
+      return `${days[date.getDay()]} ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
+    };
+    const label = this.dateMode === 'single'
+      ? dateLabel(this.blockForm.singleDate)
+      : `${dateLabel(this.blockForm.startDate)} al ${dateLabel(this.blockForm.endDate)}`;
     const timeLabel = this.blockForm.allDay ? 'Todo el dia' : `${this.blockForm.horaInicio ?? '?'}-${this.blockForm.horaFin ?? '?'}`;
     const motivo = this.blockForm.motivo ? ` · ${this.blockForm.motivo}` : '';
     return `${label} · ${timeLabel}${motivo}`;
@@ -656,8 +693,19 @@ export class AgendaPage implements OnInit, OnDestroy {
 
   validateBlock(): boolean {
     this.blockErrors = {};
-    if (!this.blockForm.fecha) {
-      this.blockErrors.fecha = 'Elige una fecha para el bloqueo.';
+    if (this.dateMode === 'single') {
+      if (!this.blockForm.singleDate) {
+        this.blockErrors.fecha = 'Elige una fecha para el bloqueo.';
+      }
+    } else {
+      if (!this.blockForm.startDate) {
+        this.blockErrors.startDate = 'Elige la fecha de inicio.';
+      }
+      if (!this.blockForm.endDate) {
+        this.blockErrors.endDate = 'Elige la fecha de fin.';
+      } else if (this.blockForm.startDate && this.blockForm.endDate < this.blockForm.startDate) {
+        this.blockErrors.endDate = 'La fecha Hasta no puede ser anterior a Desde.';
+      }
     }
     if (!this.blockForm.allDay) {
       if (!this.blockForm.horaInicio || !this.blockForm.horaFin) {
@@ -670,23 +718,30 @@ export class AgendaPage implements OnInit, OnDestroy {
   }
 
   async saveBlock() {
-    if (!this.validateBlock() || !this.blockForm.fecha) return;
+    if (!this.validateBlock()) return;
     this.saving = true;
     this.errorMessage = '';
+    this.blockErrorMessage = '';
 
     try {
-      const body = this.mapBlockFormToRequest();
       if (this.editingBlock?.id_bloqueo_horario) {
-        await this.agendaApi.updateBloqueo(this.editingBlock.id_bloqueo_horario, body);
+        await this.agendaApi.updateBloqueo(
+          this.editingBlock.id_bloqueo_horario,
+          this.mapBlockFormToRequest(this.blockForm.singleDate!),
+        );
         this.successMessage = 'Bloqueo actualizado correctamente.';
+      } else if (this.dateMode === 'range') {
+        const created = await this.createBlockRange();
+        if (!created) return;
+        this.successMessage = 'Bloqueos creados correctamente para el rango seleccionado.';
       } else {
-        await this.agendaApi.createBloqueo(body);
+        await this.agendaApi.createBloqueo(this.mapBlockFormToRequest(this.blockForm.singleDate!));
         this.successMessage = 'Bloqueo creado correctamente.';
       }
       this.closeBlockModal();
       this.agendaRefresh.requestRefresh('agenda');
     } catch (err) {
-      this.errorMessage = mapApiError(err).userMessage;
+      this.blockErrorMessage = mapApiError(err).userMessage;
     } finally {
       this.saving = false;
     }
@@ -1048,13 +1103,30 @@ export class AgendaPage implements OnInit, OnDestroy {
     this.showDateModal = false;
     this.activeDateField = null;
     this.blockDateMode = false;
+    this.activeBlockDateField = null;
   }
 
   selectDate(event: any) {
     const value = event.detail.value;
     if (this.blockDateMode) {
-      this.blockForm.fecha = value?.split('T')[0] ?? value;
-      this.blockErrors.fecha = undefined;
+      const selectedDate = value?.split('T')[0] ?? value;
+      if (this.activeBlockDateField === 'single') {
+        this.blockForm.singleDate = selectedDate;
+        this.blockErrors.fecha = undefined;
+      } else if (this.activeBlockDateField === 'start') {
+        this.blockForm.startDate = selectedDate;
+        this.blockErrors.startDate = undefined;
+        if (this.blockForm.endDate && this.blockForm.endDate >= selectedDate) {
+          this.blockErrors.endDate = undefined;
+        } else if (this.blockForm.endDate) {
+          this.blockErrors.endDate = 'La fecha Hasta no puede ser anterior a Desde.';
+        }
+      } else if (this.activeBlockDateField === 'end') {
+        this.blockForm.endDate = selectedDate;
+        this.blockErrors.endDate = this.blockForm.startDate && selectedDate < this.blockForm.startDate
+          ? 'La fecha Hasta no puede ser anterior a Desde.'
+          : undefined;
+      }
       this.closeDateModal();
       return;
     }
@@ -1120,16 +1192,66 @@ export class AgendaPage implements OnInit, OnDestroy {
     return createAnimation().addAnimation([backdropAnimation, wrapperAnimation]);
   }
 
-  private mapBlockFormToRequest(): BloqueoHorarioUpsertRequest {
+  private mapBlockFormToRequest(date: string): BloqueoHorarioUpsertRequest {
     const horaInicio = this.blockForm.allDay ? '00:00:00' : `${this.to24Hour(this.blockForm.horaInicio)}:00`;
     const horaFin = this.blockForm.allDay ? '23:59:00' : `${this.to24Hour(this.blockForm.horaFin)}:00`;
     return {
-      fecha: this.blockForm.fecha!,
+      fecha: date,
       hora_inicio: horaInicio,
       hora_fin: horaFin,
       motivo: this.blockForm.motivo.trim() || undefined,
       tipo_bloqueo: 'PERSONAL',
     };
+  }
+
+  private async createBlockRange(): Promise<boolean> {
+    const dates = this.getDatesInBlockRange(this.blockForm.startDate!, this.blockForm.endDate!);
+    const created: BloqueoHorarioDto[] = [];
+
+    try {
+      for (const date of dates) {
+        created.push(await this.agendaApi.createBloqueo(this.mapBlockFormToRequest(date)));
+      }
+    } catch (error) {
+      let rollbackFailures = 0;
+      for (const block of created) {
+        if (!block.id_bloqueo_horario) {
+          rollbackFailures++;
+          continue;
+        }
+        try {
+          await this.agendaApi.deleteBloqueo(block.id_bloqueo_horario);
+        } catch {
+          rollbackFailures++;
+        }
+      }
+
+      if (rollbackFailures > 0) {
+        this.blockErrorMessage =
+          `No se completó el rango: se crearon ${created.length} de ${dates.length} bloqueos ` +
+          `y no se pudieron revertir ${rollbackFailures}. Actualiza la agenda antes de reintentar.`;
+        return false;
+      }
+
+      throw error;
+    }
+
+    return true;
+  }
+
+  private getDatesInBlockRange(startDate: string, endDate: string): string[] {
+    const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
+    const [endYear, endMonth, endDay] = endDate.split('-').map(Number);
+    const current = new Date(Date.UTC(startYear, startMonth - 1, startDay));
+    const end = Date.UTC(endYear, endMonth - 1, endDay);
+    const dates: string[] = [];
+
+    while (current.getTime() <= end) {
+      dates.push(current.toISOString().slice(0, 10));
+      current.setUTCDate(current.getUTCDate() + 1);
+    }
+
+    return dates;
   }
 
   private buildHourOptions(config?: ConfiguracionJornadaDto): string[] {

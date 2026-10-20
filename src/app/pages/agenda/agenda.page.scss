@@ -2613,10 +2613,17 @@ ion-modal.block-modal::part(content) {
     transform: translateY(0);
     box-shadow: none;
   }
+
 }
 
 .blk-hour-btn {
   min-width: 0;
+}
+
+.blk-date-range-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 /* ---- Segment (todo el día / rango) ---- */
@@ -2660,6 +2667,7 @@ ion-modal.block-modal::part(content) {
     border-color: var(--border-medium);
     color: var(--text-strong);
   }
+
 }
 
 /* ---- Range row ---- */
@@ -2703,6 +2711,13 @@ ion-modal.block-modal::part(content) {
   font-size: 13px;
   font-weight: 500;
   color: var(--danger);
+}
+
+.blk-helper {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
 }
 
 /* ---- Chips ---- */
@@ -2795,6 +2810,7 @@ ion-modal.block-modal::part(content) {
     color: var(--accent-blue-dark);
     font-weight: 700;
   }
+
 }
 
 /* ---- Summary card ---- */
@@ -2857,6 +2873,7 @@ ion-modal.block-modal::part(content) {
     transform: scale(0.96) !important;
     opacity: 0.85;
   }
+
 }
 
 .blk-btn--solid {
@@ -2880,8 +2897,27 @@ ion-modal.block-modal::part(content) {
   }
 }
 
+.blk-wrapper button:focus-visible {
+  outline: 3px solid var(--primary-ring);
+  outline-offset: 2px;
+}
+
+.blk-seg-btn:disabled,
+.blk-repeat-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.blk-repeat-btn:disabled {
+  transform: none;
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 480px) {
+  .blk-date-range-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .blk-range-row {
     flex-direction: column;
     align-items: stretch;

@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 import { SessionService } from '../services/session.service';
 import { Permiso, Modulo } from './permission.types';
 import { MODULO_PERMISO, SEGMENTO_MODULO, RUTA_MODULO } from './permission.maps';
@@ -33,6 +34,10 @@ import { MODULO_PERMISO, SEGMENTO_MODULO, RUTA_MODULO } from './permission.maps'
 export class AuthorizationService {
 
   constructor(private session: SessionService) {}
+
+  get sessionChanges$(): Observable<void> {
+    return this.session.sessionChanges$;
+  }
 
   // ─── Role queries ────────────────────────────────────────────────────────────
 
